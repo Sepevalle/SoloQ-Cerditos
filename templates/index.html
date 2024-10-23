@@ -45,12 +45,6 @@
     <!-- Tabla con los datos -->
     <div class="container">
         <h1>Lista de Jugadores</h1>
-        
-        <!-- Mostrar la fecha y hora de la última carga -->
-        <div class="alert alert-info" role="alert">
-            Última carga de datos: {{ last_updated }}
-        </div>
-
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
                 <thead class="table-dark">
@@ -58,29 +52,29 @@
                         <th>Posición</th>
                         <th>Jugador</th>
                         <th>Game Name</th>
-                        <th>Elo</th> <!-- Elo concatenado -->
+                        <th>Elo</th>
                         <th>Wins</th>
                         <th>Losses</th>
-                        <th>Total Games</th> <!-- Nueva columna añadida -->
-                        <th>Win Rate</th> <!-- Win Rate al final -->
+                        <th>Total Games</th>
+                        <th>Win Rate</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for jugador in datos_jugadores %}
-                    {% set total_games = jugador.wins + jugador.losses %} <!-- Cálculo de Total Games -->
+                    {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                     <tr>
-                        <td>{{ loop.index }}</td> <!-- Posición -->
+                        <td>{{ loop.index }}</td>
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
                         <td>
                             <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
                             {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                        </td> <!-- Elo concatenado con imagen -->
+                        </td>
                         <td>{{ jugador.wins }}</td>
                         <td>{{ jugador.losses }}</td>
-                        <td>{{ total_games }}</td> <!-- Mostrar Total Games -->
-                        <td>{{ win_rate | round(2) }}%</td> <!-- Win Rate -->
+                        <td>{{ total_games }}</td>
+                        <td>{{ win_rate | round(2) }}%</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -90,7 +84,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Definición de las imágenes de los rangos
         const imagenesElo = {
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
             "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
@@ -103,7 +96,6 @@
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
         };
 
-        // Función para obtener el valor de clasificación
         function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
             const tierOrden = {
                 "CHALLENGER": 9,
@@ -125,7 +117,6 @@
                 "IV": 0
             };
 
-            // Retornar un valor que se puede usar para ordenar
             return {
                 tierValue: tierOrden[tier] || 0,
                 rankValue: rankOrden[rank] || 0,
@@ -133,13 +124,11 @@
             };
         }
 
-        // Función para ordenar los jugadores
         function ordenarJugadores(jugadores) {
             return jugadores.sort((a, b) => {
                 const aValor = obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
                 const bValor = obtenerValorDeClasificacion(b.tier, b.rank, b.league_points);
 
-                // Primero se ordena por el valor de tier, luego por rank y finalmente por LPs
                 if (aValor.tierValue !== bValor.tierValue) {
                     return bValor.tierValue - aValor.tierValue; // Orden descendente
                 }
@@ -152,9 +141,7 @@
 
         // Inicializar DataTable para ordenar
         document.addEventListener('DOMContentLoaded', function() {
-            const jugadores = []; // Aquí deberías cargar los jugadores desde tu backend o fuente de datos
-            // Suponiendo que `datos_jugadores` es un arreglo de objetos que tienes en tu contexto
-            const datosJugadores = {{ datos_jugadores|tojson }};
+            const datosJugadores = {{ datos_jugadores|tojson }}; // Cargar datos desde tu backend
             const jugadoresOrdenados = ordenarJugadores(datosJugadores);
 
             // Actualizar la tabla con los jugadores ordenados
@@ -162,7 +149,7 @@
             tableBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
             jugadoresOrdenados.forEach((jugador, index) => {
                 const totalGames = jugador.wins + jugador.losses; // Calcula el total de juegos
-                const winRate = (jugador.wins / totalGames * 100) || 0; // Calcula el win rate
+                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Calcula el win rate
                 const row = `
                     <tr>
                         <td>${index + 1}</td>
@@ -174,8 +161,8 @@
                         </td>
                         <td>${jugador.wins}</td>
                         <td>${jugador.losses}</td>
-                        <td>${totalGames}</td> <!-- Mostrar Total Games -->
-                        <td>${winRate.toFixed(2)}%</td>
+                        <td>${totalGames}</td>
+                        <td>${winRate}%</td>
                     </tr>
                 `;
                 tableBody.insertAdjacentHTML('beforeend', row);
@@ -188,6 +175,7 @@
         .banner-img {
             max-width: 100%; /* Asegura que la imagen no exceda el ancho del contenedor */
             height: auto; /* Mantiene la relación de aspecto */
+            border-radius: 10px; /* Bordes redondeados */
         }
 
         /* Bordes redondeados para el banner */
