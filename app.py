@@ -107,8 +107,9 @@ def obtener_datos_jugadores():
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
-    last_updated = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))  # Formatea el timestamp
-    return render_template('index.html', datos_jugadores=datos_jugadores, last_updated=last_updated)
+    
+    # Enviar el timestamp para ser procesado en la plantilla
+    return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
