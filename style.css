@@ -1,35 +1,32 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datos de Jugadores</title>
-    <link rel="stylesheet" href="style.css"> <!-- Asegúrate de que la ruta sea correcta -->
-</head>
-<body>
-    <h1>Lista de Jugadores</h1>
-    <table border="1">
-        <tr>
-            <th>Posición</th>
-            <th>Jugador</th>
-            <th>Game Name</th>
-            <th>Elo</th>
-            <th>Wins</th>
-            <th>Losses</th>
-            <th>Win Rate</th>
-        </tr>
-        {% for jugador in datos_jugadores %}
-        {% set win_rate = (jugador.wins / (jugador.wins + jugador.losses) * 100) if (jugador.wins + jugador.losses) > 0 else 0 %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ jugador.jugador }}</td>
-            <td>{{ jugador.game_name }}</td>
-            <td>{{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)</td>
-            <td>{{ jugador.wins }}</td>
-            <td>{{ jugador.losses }}</td>
-            <td class="{% if win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">{{ win_rate | round(2) }}%</td> <!-- Cambiado a la sintaxis correcta -->
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
+/* Estilo para la imagen del banner */
+.banner-img {
+    max-width: 100%; /* Asegura que la imagen no exceda el ancho del contenedor */
+    height: auto; /* Mantiene la relación de aspecto */
+}
+
+/* Estilo para la tabla */
+.table {
+    margin-top: 20px; /* Espacio superior para la tabla */
+}
+
+.table td, .table th {
+    text-align: center; /* Centrar el texto en todas las celdas */
+    padding: 10px; /* Agregar relleno a las celdas para mejor presentación */
+}
+
+.table th {
+    text-align: center; /* Centrar el encabezado */
+    background-color: #343a40; /* Color de fondo del encabezado */
+    color: white; /* Color del texto del encabezado */
+    font-weight: bold; /* Negrita para los encabezados */
+}
+
+/* Opcional: Estilo para filas de la tabla al pasar el ratón */
+.table tr:hover {
+    background-color: #f1f1f1; /* Color de fondo al pasar el ratón sobre las filas */
+}
+
+/* Asegurarse de que la tabla no desborde el contenedor */
+.table-responsive {
+    overflow-x: auto; /* Agregar desplazamiento horizontal si es necesario */
+}
