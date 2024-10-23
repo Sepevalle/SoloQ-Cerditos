@@ -67,7 +67,7 @@ def obtener_datos_jugadores():
 
     # Comprobar si los datos en caché son válidos
     if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
-        return cache['datos_jugadores']
+        return cache['datos_jugadores'], cache['timestamp']
 
     api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
@@ -102,12 +102,13 @@ def obtener_datos_jugadores():
     cache['datos_jugadores'] = todos_los_datos
     cache['timestamp'] = time.time()
     
-    return todos_los_datos
+    return todos_los_datos, cache['timestamp']  # Devuelve también la timestamp
 
 @app.route('/')
 def index():
-    datos_jugadores = obtener_datos_jugadores()
-    return render_template('index.html', datos_jugadores=datos_jugadores)
+    datos_jugadores, timestamp = obtener_datos_jugadores()
+    last_updated = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))  # Formatea el timestamp
+    return render_template('index.html', datos_jugadores=datos_jugadores, last_updated=last_updated)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
