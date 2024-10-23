@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -50,7 +50,6 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Posición</th>
-                        <th>Foto</th> <!-- Columna para la foto del jugador -->
                         <th>Jugador</th>
                         <th>Game Name</th>
                         <th>Elo</th> <!-- Elo concatenado -->
@@ -64,13 +63,10 @@
                     {% set win_rate = (jugador.wins / (jugador.wins + jugador.losses) * 100) if (jugador.wins + jugador.losses) > 0 else 0 %}
                     <tr>
                         <td>{{ loop.index }}</td> <!-- Posición -->
-                        <td>
-                            <img src="{{ jugador.imagen }}" alt="{{ jugador.jugador }}" style="width: 40px; height: 40px;"> <!-- Foto del jugador -->
-                        </td>
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
                         <td>
-                            <img src="{{ imagenesElo[jugador.tier] }}" alt="{{ jugador.tier }}" style="width: 40px; height: 40px;"> 
+                            <img src="" alt="{{ jugador.tier }}" style="width: 40px; height: 40px;" class="elo-image">
                             {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                         </td> <!-- Elo concatenado con imagen -->
                         <td>{{ jugador.wins }}</td>
@@ -160,10 +156,12 @@
                 const row = `
                     <tr>
                         <td>${index + 1}</td>
-                        <td><img src="${jugador.imagen}" alt="${jugador.jugador}" style="width: 40px; height: 40px;"></td>
                         <td>${jugador.jugador}</td>
                         <td>${jugador.game_name}</td>
-                        <td><img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)</td>
+                        <td>
+                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> 
+                            ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
+                        </td>
                         <td>${jugador.wins}</td>
                         <td>${jugador.losses}</td>
                         <td>${winRate.toFixed(2)}%</td>
@@ -193,5 +191,4 @@
 
 </body>
 </html>
-
 
