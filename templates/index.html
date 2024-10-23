@@ -1,218 +1,51 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datos de Jugadores</title>
-    <!-- Bootstrap 5.3.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- Tu CSS personalizado -->
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <!-- Navbar con filtros -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#"><i class="fas fa-trophy"></i> SoloQ Challenge Cerditos y Valientes</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item d-flex align-items-center">
-                        <label for="filtro" class="nav-link mb-0 me-2">Filtrar por Queue Type:</label>
-                        <select id="filtro" class="form-select me-2">
-                            <option value="RANKED_SOLO_5x5" selected>SoloQ</option>
-                            <option value="RANKED_FLEX_SR">Flex</option>
-                            <option value="todo">TODO</option>
-                        </select>
-                    </li>
-                </ul>
-                <!-- Botón de Modo Oscuro alineado a la derecha -->
-                <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Imagen del banner ajustada al tamaño de la tabla -->
-    <div class="container my-4 d-flex justify-content-center">
-        <img src="usuarios/Banner.jpg" alt="Banner" class="banner-img" id="banner-img">
-    </div>
-
-    <!-- Tabla con los datos -->
-    <div class="container">
-        <h1>Lista de Jugadores</h1>
-        <div class="table-responsive">
-            <table class="table table-hover table-striped" id="jugadoresTable">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Posición</th>
-                        <th>Jugador</th>
-                        <th>Game Name</th>
-                        <th>Elo</th> <!-- Elo concatenado -->
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Win Rate</th> <!-- Win Rate al final -->
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for jugador in datos_jugadores %}
-                    {% set win_rate = (jugador.wins / (jugador.wins + jugador.losses) * 100) if (jugador.wins + jugador.losses) > 0 else 0 %}
-                    <tr data-queue-type="{{ jugador.queue_type }}">
-                        <td>{{ loop.index }}</td> <!-- Posición -->
-                        <td>{{ jugador.jugador }}</td>
-                        <td>{{ jugador.game_name }}</td>
-                        <td>{{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)</td> <!-- Elo concatenado -->
-                        <td>{{ jugador.wins }}</td>
-                        <td>{{ jugador.losses }}</td>
-                        <td class="{{ win_rate >= 50 ? 'text-success' : 'text-danger' }}">
-                            {{ win_rate | round(2) }}%
-                        </td> <!-- Win Rate con colores -->
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Función para obtener el valor de clasificación
-        function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
-            const tierOrden = {
-                "CHALLENGER": 9,
-                "GRANDMASTER": 8,
-                "MASTER": 7,
-                "DIAMOND": 6,
-                "EMERALD": 5,
-                "PLATINUM": 4,
-                "GOLD": 3,
-                "SILVER": 2,
-                "BRONZE": 1,
-                "IRON": 0
-            };
-
-            const rankOrden = {
-                "I": 3,
-                "II": 2,
-                "III": 1,
-                "IV": 0
-            };
-
-            // Retornar un valor que se puede usar para ordenar
-            return {
-                tierValue: tierOrden[tier] || 0,
-                rankValue: rankOrden[rank] || 0,
-                leaguePoints: leaguePoints
-            };
-        }
-
-        // Función para ordenar los jugadores
-        function ordenarJugadores(jugadores) {
-            return jugadores.sort((a, b) => {
-                const aValor = obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
-                const bValor = obtenerValorDeClasificacion(b.tier, b.rank, b.league_points);
-
-                // Primero se ordena por el valor de tier, luego por rank y finalmente por LPs
-                if (aValor.tierValue !== bValor.tierValue) {
-                    return bValor.tierValue - aValor.tierValue; // Orden descendente
-                }
-                if (aValor.rankValue !== bValor.rankValue) {
-                    return bValor.rankValue - aValor.rankValue; // Orden descendente
-                }
-                return bValor.leaguePoints - aValor.leaguePoints; // Orden descendente
-            });
-        }
-
-        // Inicializar DataTable para ordenar
-        document.addEventListener('DOMContentLoaded', function() {
-            const jugadores = []; // Aquí deberías cargar los jugadores desde tu backend o fuente de datos
-            // Suponiendo que `datos_jugadores` es un arreglo de objetos que tienes en tu contexto
-            const datosJugadores = {{ datos_jugadores|tojson }};
-            const jugadoresOrdenados = ordenarJugadores(datosJugadores);
-
-            // Actualizar la tabla con los jugadores ordenados
-            const tableBody = document.querySelector('#jugadoresTable tbody');
-            tableBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
-            jugadoresOrdenados.forEach((jugador, index) => {
-                const winRate = (jugador.wins / (jugador.wins + jugador.losses) * 100) || 0;
-                const row = `
-                    <tr data-queue-type="${jugador.queue_type}">
-                        <td>${index + 1}</td>
-                        <td>${jugador.jugador}</td>
-                        <td>${jugador.game_name}</td>
-                        <td>${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)</td>
-                        <td>${jugador.wins}</td>
-                        <td>${jugador.losses}</td>
-                        <td class="${winRate >= 50 ? 'text-success' : 'text-danger'}">
-                            ${winRate.toFixed(2)}%
-                        </td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row; // Añadir la fila a la tabla
-            });
-
-            // Inicializar DataTable (opcional si lo necesitas)
-            const table = new DataTable('#jugadoresTable', {
-                perPage: 10,
-                perPageSelect: [10, 25, 50, 100],
-                sortable: true
-            });
-
-            // Configuración del filtro
-            const filtro = document.getElementById('filtro');
-            filtro.addEventListener('change', () => {
-                const selectedQueueType = filtro.value;
-                const rows = tableBody.querySelectorAll('tr');
-
-                rows.forEach(row => {
-                    const queueType = row.getAttribute('data-queue-type');
-                    if (selectedQueueType === 'todo' || queueType === selectedQueueType) {
-                        row.style.display = ''; // Mostrar fila
-                    } else {
-                        row.style.display = 'none'; // Ocultar fila
-                    }
-                });
-            });
-        });
-
-        // Modo oscuro
-        const toggleModeButton = document.getElementById('toggle-mode');
-        toggleModeButton.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-        });
-    </script>
-
     <style>
-        /* Estilos para modo oscuro */
-        body.dark-mode {
-            background-color: #121212; /* Fondo oscuro */
-            color: #ffffff; /* Color de texto blanco */
+        .text-success {
+            color: green;
         }
-
-        /* Ajustar colores de la navbar en modo oscuro */
-        .navbar-light.bg-light {
-            background-color: #1c1c1c !important; /* Fondo oscuro para la navbar */
-            border-color: #454d55; /* Color de borde */
-        }
-
-        /* Ajustar colores de la tabla en modo oscuro */
-        .table {
-            background-color: #1c1c1c; /* Fondo oscuro para la tabla */
-            color: #ffffff; /* Color de texto blanco */
-        }
-
-        /* Estilo de la tabla */
-        .table td, .table th {
-            text-align: center; /* Centrar el texto en todas las celdas */
-        }
-
-        .table th {
-            text-align: center; /* Centrar el encabezado */
+        .text-danger {
+            color: red;
         }
     </style>
+</head>
+<body>
+    <h1>Lista de Jugadores</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Posición</th>
+                <th>Jugador</th>
+                <th>Game Name</th>
+                <th>Elo</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Win Rate</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for jugador in datos_jugadores %}
+                {% set win_rate = (jugador.wins / (jugador.wins + jugador.losses) * 100) if (jugador.wins + jugador.losses) > 0 else 0 %}
+                <tr>
+                    <td>{{ loop.index }}</td> <!-- Posición -->
+                    <td>{{ jugador.jugador }}</td>
+                    <td>{{ jugador.game_name }}</td>
+                    <td>
+                        <img src="{{ imagenesElo[jugador.tier] }}" alt="{{ jugador.tier }}" style="width: 40px; height: 40px;">
+                        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+                    </td>
+                    <td>{{ jugador.wins }}</td>
+                    <td>{{ jugador.losses }}</td>
+                    <td class="{% if win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">
+                        {{ win_rate | round(2) }}%
+                    </td> <!-- Win Rate con clase dinámica -->
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 </html>
