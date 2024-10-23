@@ -1,24 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>SoloQ Cerditos</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datos de Jugadores</title>
 </head>
 <body>
-    <h1>SoloQ Cerditos</h1>
-    <ul>
-    {% for datos_jugador in datos_jugadores %}
-        <li>
-            {{ datos_jugador.game_name }} ({{ datos_jugador.jugador }})
-            <ul>
-                <li>Queue Type: {{ datos_jugador.queue_type }}</li>
-                <li>Tier: {{ datos_jugador.tier }}</li>
-                <li>Rank: {{ datos_jugador.rank }}</li>
-                <li>League Points: {{ datos_jugador.league_points }}</li>
-                <li>Wins: {{ datos_jugador.wins }}</li>
-                <li>Losses: {{ datos_jugador.losses }}</li>
-            </ul>
-        </li>
-    {% endfor %}
-    </ul>
+    <h1>Lista de Jugadores</h1>
+    <table border="1">
+        <tr>
+            <th>Jugador</th>
+            <th>Game Name</th>
+            <th>Queue Type</th>
+            <th>Tier</th>
+            <th>Rank</th>
+            <th>League Points</th>
+            <th>Wins</th>
+            <th>Losses</th>
+        </tr>
+        {% for jugador in datos_jugadores %}
+        <tr>
+            <td>{{ jugador.jugador }}</td>
+            <td>{{ jugador.game_name }}</td>
+            <td>{{ jugador.queue_type }}</td>
+            <td>{{ jugador.tier }}</td>
+            <td>{{ jugador.rank }}</td>
+            <td>{{ jugador.league_points }}</td>
+            <td>{{ jugador.wins }}</td>
+            <td>{{ jugador.losses }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>

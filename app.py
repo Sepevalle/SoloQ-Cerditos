@@ -1,7 +1,6 @@
 from flask import Flask, render_template
 import requests
 import os
-import json
 
 app = Flask(__name__)
 
@@ -78,7 +77,7 @@ def obtener_datos_jugadores():
                             "queue_type": entry.get('queueType', 'Desconocido'),
                             "tier": entry.get('tier', 'Sin rango'),
                             "rank": entry.get('rank', ''),
-                            "league_points": entry. get('leaguePoints', 0),
+                            "league_points": entry.get('leaguePoints', 0),
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
                             "jugador": jugador
