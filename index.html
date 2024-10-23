@@ -52,7 +52,7 @@
                         <th>Posición</th>
                         <th>Jugador</th>
                         <th>Game Name</th>
-                        <th>Elo</th> <!-- Elo concatenado con logo -->
+                        <th>Elo</th> <!-- Elo concatenado -->
                         <th>Wins</th>
                         <th>Losses</th>
                         <th>Win Rate</th> <!-- Win Rate al final -->
@@ -61,14 +61,14 @@
                 <tbody>
                     {% for jugador in datos_jugadores %}
                     {% set win_rate = (jugador.wins / (jugador.wins + jugador.losses) * 100) if (jugador.wins + jugador.losses) > 0 else 0 %}
-                    <tr data-queue-type="{{ jugador.queue_type }}">
+                    <tr>
                         <td>{{ loop.index }}</td> <!-- Posición -->
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
                         <td>
-                            <img src="{{ obtenerImagenDeTier(jugador.tier) }}" alt="{{ jugador.tier }}" style="width: 30px; height: 30px;"> <!-- Logo de Elo -->
+                            <img src="" alt="{{ jugador.tier }}" style="width: 40px; height: 40px;" class="elo-image">
                             {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                        </td> <!-- Elo concatenado con logo -->
+                        </td> <!-- Elo concatenado con imagen -->
                         <td>{{ jugador.wins }}</td>
                         <td>{{ jugador.losses }}</td>
                         <td>{{ win_rate | round(2) }}%</td> <!-- Win Rate -->
@@ -81,22 +81,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Función para obtener la URL de la imagen según el tier
-        function obtenerImagenDeTier(tier) {
-            const imagenesTier = {
-                "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png",
-                "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
-                "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
-                "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Diamond.png",
-                "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
-                "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
-                "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
-                "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
-                "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
-                "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png"
-            };
-            return imagenesTier[tier] || "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/default.png"; // Imagen por defecto
-        }
+        // Definición de las imágenes de los rangos
+        const imagenesElo = {
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
+        };
 
         // Función para obtener el valor de clasificación
         function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
@@ -158,12 +154,12 @@
             jugadoresOrdenados.forEach((jugador, index) => {
                 const winRate = (jugador.wins / (jugador.wins + jugador.losses) * 100) || 0;
                 const row = `
-                    <tr data-queue-type="${jugador.queue_type}">
+                    <tr>
                         <td>${index + 1}</td>
                         <td>${jugador.jugador}</td>
                         <td>${jugador.game_name}</td>
                         <td>
-                            <img src="${obtenerImagenDeTier(jugador.tier)}" alt="${jugador.tier}" style="width: 30px; height: 30px;">
+                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> 
                             ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
                         </td>
                         <td>${jugador.wins}</td>
@@ -171,31 +167,27 @@
                         <td>${winRate.toFixed(2)}%</td>
                     </tr>
                 `;
-                tableBody.innerHTML += row; // Añadir la fila a la tabla
-            });
-
-            // Inicializar DataTable (opcional si lo necesitas)
-            const table = new DataTable('#jugadoresTable', {
-                perPage: 10,
-                perPageSelect: [10, 25, 50, 100],
-                sortable: true
-            });
-
-            // Configuración del filtro
-            const filtro = document.getElementById('filtro');
-            filtro.addEventListener('change', () => {
-                const selectedQueueType = filtro.value;
-                const rows = tableBody.querySelectorAll('tr');
-
-                rows.forEach(row => {
-                    if (selectedQueueType === "todo" || row.dataset.queueType === selectedQueueType) {
-                        row.style.display = ""; // Mostrar la fila
-                    } else {
-                        row.style.display = "none"; // Ocultar la fila
-                    }
-                });
+                tableBody.insertAdjacentHTML('beforeend', row);
             });
         });
     </script>
+
+    <style>
+        /* Estilo para la imagen del banner */
+        .banner-img {
+            max-width: 100%; /* Asegura que la imagen no exceda el ancho del contenedor */
+            height: auto; /* Mantiene la relación de aspecto */
+        }
+
+        /* Bordes redondeados para el banner */
+        .table td, .table th {
+            text-align: center; /* Centrar el texto en todas las celdas */
+        }
+
+        .table th {
+            text-align: center; /* Centrar el encabezado */
+        }
+    </style>
+
 </body>
 </html>
