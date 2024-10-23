@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -55,12 +55,14 @@
                         <th>Elo</th> <!-- Elo concatenado -->
                         <th>Wins</th>
                         <th>Losses</th>
+                        <th>Total Games</th> <!-- Nueva columna añadida -->
                         <th>Win Rate</th> <!-- Win Rate al final -->
                     </tr>
                 </thead>
                 <tbody>
                     {% for jugador in datos_jugadores %}
-                    {% set win_rate = (jugador.wins / (jugador.wins + jugador.losses) * 100) if (jugador.wins + jugador.losses) > 0 else 0 %}
+                    {% set total_games = jugador.wins + jugador.losses %} <!-- Cálculo de Total Games -->
+                    {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                     <tr>
                         <td>{{ loop.index }}</td> <!-- Posición -->
                         <td>{{ jugador.jugador }}</td>
@@ -71,6 +73,7 @@
                         </td> <!-- Elo concatenado con imagen -->
                         <td>{{ jugador.wins }}</td>
                         <td>{{ jugador.losses }}</td>
+                        <td>{{ total_games }}</td> <!-- Mostrar Total Games -->
                         <td>{{ win_rate | round(2) }}%</td> <!-- Win Rate -->
                     </tr>
                     {% endfor %}
@@ -152,7 +155,8 @@
             const tableBody = document.querySelector('#jugadoresTable tbody');
             tableBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
             jugadoresOrdenados.forEach((jugador, index) => {
-                const winRate = (jugador.wins / (jugador.wins + jugador.losses) * 100) || 0;
+                const totalGames = jugador.wins + jugador.losses; // Calcula el total de juegos
+                const winRate = (jugador.wins / totalGames * 100) || 0; // Calcula el win rate
                 const row = `
                     <tr>
                         <td>${index + 1}</td>
@@ -164,6 +168,7 @@
                         </td>
                         <td>${jugador.wins}</td>
                         <td>${jugador.losses}</td>
+                        <td>${totalGames}</td> <!-- Mostrar Total Games -->
                         <td>${winRate.toFixed(2)}%</td>
                     </tr>
                 `;
@@ -191,4 +196,3 @@
 
 </body>
 </html>
-
