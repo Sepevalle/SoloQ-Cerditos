@@ -1,8 +1,16 @@
 from flask import Flask, render_template
 import requests
 import os
+import time
 
 app = Flask(__name__)
+
+# Caché para almacenar los datos de los jugadores
+cache = {
+    "datos_jugadores": None,
+    "timestamp": 0
+}
+CACHE_TIMEOUT = 300  # 300 segundos = 5 minutos
 
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
@@ -55,6 +63,12 @@ def leer_cuentas(url):
         return []
 
 def obtener_datos_jugadores():
+    global cache
+
+    # Comprobar si los datos en caché son válidos
+    if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
+        return cache['datos_jugadores']
+
     api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     cuentas = leer_cuentas(url_cuentas)
@@ -84,6 +98,10 @@ def obtener_datos_jugadores():
                         }
                         todos_los_datos.append(datos_jugador)
 
+    # Actualizar el caché
+    cache['datos_jugadores'] = todos_los_datos
+    cache['timestamp'] = time.time()
+    
     return todos_los_datos
 
 @app.route('/')
