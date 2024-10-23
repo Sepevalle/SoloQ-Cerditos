@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SoloQ Cerditos</title>
+</head>
+<body>
+    <h1>SoloQ Cerditos</h1>
+    <ul>
+    {% for datos_jugador in datos_jugadores %}
+        <li>
+            {{ datos_jugador.game_name }} ({{ datos_jugador.jugador }})
+            <ul>
+                <li>Queue Type: {{ datos_jugador.queue_type }}</li>
+                <li>Tier: {{ datos_jugador.tier }}</li>
+                <li>Rank: {{ datos_jugador.rank }}</li>
+                <li>League Points: {{ datos_jugador.league_points }}</li>
+                <li>Wins: {{ datos_jugador.wins }}</li>
+                <li>Losses: {{ datos_jugador.losses }}</li>
+            </ul>
+        </li>
+    {% endfor %}
+    </ul>
+</body>
+</html>
