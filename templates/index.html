@@ -82,7 +82,13 @@
         </div>
     </div>
 
+    <!-- Mostrar la última actualización -->
+    <div class="text-center my-4">Última actualización: <span id="lastUpdated"></span></div>
+
+    <!-- Bootstrap 5.3.3 JS y dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script para ajustar y mostrar la hora de la última actualización -->
     <script>
         const imagenesElo = {
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
@@ -96,6 +102,29 @@
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
         };
 
+        // Función para ajustar la hora a UTC+2
+        function ajustarHoraUTC2(timestamp) {
+            let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
+            date.setHours(date.getHours() + 2); // Ajustar la hora sumando 2 horas
+
+            // Formatear la fecha y hora para mostrarla
+            let year = date.getFullYear();
+            let month = ('0' + (date.getMonth() + 1)).slice(-2);
+            let day = ('0' + date.getDate()).slice(-2);
+            let hours = ('0' + date.getHours()).slice(-2);
+            let minutes = ('0' + date.getMinutes()).slice(-2);
+            let seconds = ('0' + date.getSeconds()).slice(-2);
+
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+        // Obtener el timestamp desde el servidor (pasado desde Flask)
+        const timestamp = {{ timestamp }};
+        
+        // Ajustar la hora y mostrarla
+        document.getElementById('lastUpdated').innerText = ajustarHoraUTC2(timestamp);
+
+        // Función para clasificar jugadores según Elo
         function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
             const tierOrden = {
                 "CHALLENGER": 9,
@@ -124,6 +153,7 @@
             };
         }
 
+        // Función para ordenar jugadores
         function ordenarJugadores(jugadores) {
             return jugadores.sort((a, b) => {
                 const aValor = obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
