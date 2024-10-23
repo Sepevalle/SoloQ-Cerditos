@@ -45,6 +45,12 @@
     <!-- Tabla con los datos -->
     <div class="container">
         <h1>Lista de Jugadores</h1>
+        
+        <!-- Mostrar la fecha y hora de la última carga -->
+        <div class="alert alert-info" role="alert">
+            Última carga de datos: {{ last_updated }}
+        </div>
+
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
                 <thead class="table-dark">
