@@ -61,7 +61,7 @@
                 <tbody>
                     {% for jugador in datos_jugadores %}
                     {% set win_rate = (jugador.wins / (jugador.wins + jugador.losses) * 100) if (jugador.wins + jugador.losses) > 0 else 0 %}
-                    <tr>
+                    <tr data-queue-type="{{ jugador.queue_type }}">
                         <td>{{ loop.index }}</td> <!-- Posición -->
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
@@ -138,7 +138,7 @@
             jugadoresOrdenados.forEach((jugador, index) => {
                 const winRate = (jugador.wins / (jugador.wins + jugador.losses) * 100) || 0;
                 const row = `
-                    <tr>
+                    <tr data-queue-type="${jugador.queue_type}">
                         <td>${index + 1}</td>
                         <td>${jugador.jugador}</td>
                         <td>${jugador.game_name}</td>
@@ -151,10 +151,27 @@
                 tableBody.innerHTML += row; // Añadir la fila a la tabla
             });
 
+            // Inicializar DataTable (opcional si lo necesitas)
             const table = new DataTable('#jugadoresTable', {
                 perPage: 10,
                 perPageSelect: [10, 25, 50, 100],
                 sortable: true
+            });
+
+            // Configuración del filtro
+            const filtro = document.getElementById('filtro');
+            filtro.addEventListener('change', () => {
+                const selectedQueueType = filtro.value;
+                const rows = tableBody.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    const queueType = row.getAttribute('data-queue-type');
+                    if (selectedQueueType === 'todo' || queueType === selectedQueueType) {
+                        row.style.display = ''; // Mostrar fila
+                    } else {
+                        row.style.display = 'none'; // Ocultar fila
+                    }
+                });
             });
         });
 
@@ -180,25 +197,10 @@
         /* Estilo del banner */
         .banner-img {
             width: 100%; /* Hacer que el banner sea responsivo */
-            height: auto; /* Mantener la proporción de la imagen */
-            object-fit: contain; /* Evita el recorte de la imagen */
-            border-radius: 10px;
+            height: auto; /* Mantener la proporción de aspecto */
         }
 
-        /* Estilos para la tabla en modo oscuro */
-        body.dark-mode .table-dark {
-            background-color: #1a1a1a; /* Fondo de la tabla en modo oscuro */
-            color: white; /* Color de texto dentro de la tabla */
-        }
-
-        body.dark-mode .table th,
-        body.dark-mode .table td {
-            background-color: #2a2a2a; /* Color de fondo de las celdas en modo oscuro */
-            border-color: #444444; /* Color del borde de las celdas en modo oscuro */
-            color: #ffffff; /* Color de texto de las celdas en modo oscuro */
-        }
-
-        /* Centrado de la tabla */
+        /* Estilo de la tabla */
         .table td, .table th {
             text-align: center; /* Centrar el texto en todas las celdas */
         }
@@ -207,6 +209,5 @@
             text-align: center; /* Centrar el encabezado */
         }
     </style>
-
 </body>
 </html>
