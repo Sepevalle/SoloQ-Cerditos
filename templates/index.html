@@ -68,7 +68,9 @@
                         <td>{{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)</td> <!-- Elo concatenado -->
                         <td>{{ jugador.wins }}</td>
                         <td>{{ jugador.losses }}</td>
-                        <td>{{ win_rate | round(2) }}%</td> <!-- Win Rate -->
+                        <td class="{{ win_rate >= 50 ? 'text-success' : 'text-danger' }}">
+                            {{ win_rate | round(2) }}%
+                        </td> <!-- Win Rate con colores -->
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -145,7 +147,9 @@
                         <td>${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)</td>
                         <td>${jugador.wins}</td>
                         <td>${jugador.losses}</td>
-                        <td>${winRate.toFixed(2)}%</td>
+                        <td class="${winRate >= 50 ? 'text-success' : 'text-danger'}">
+                            ${winRate.toFixed(2)}%
+                        </td>
                     </tr>
                 `;
                 tableBody.innerHTML += row; // Añadir la fila a la tabla
@@ -191,13 +195,14 @@
 
         /* Ajustar colores de la navbar en modo oscuro */
         .navbar-light.bg-light {
-            background-color: #1a1a1a; /* Fondo oscuro de la navbar */
+            background-color: #1c1c1c !important; /* Fondo oscuro para la navbar */
+            border-color: #454d55; /* Color de borde */
         }
 
-        /* Estilo del banner */
-        .banner-img {
-            width: 100%; /* Hacer que el banner sea responsivo */
-            height: auto; /* Mantener la proporción de aspecto */
+        /* Ajustar colores de la tabla en modo oscuro */
+        .table {
+            background-color: #1c1c1c; /* Fondo oscuro para la tabla */
+            color: #ffffff; /* Color de texto blanco */
         }
 
         /* Estilo de la tabla */
