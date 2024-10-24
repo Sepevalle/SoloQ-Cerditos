@@ -225,6 +225,15 @@
             text-align: center; /* Centrar el encabezado */
         }
     </style>
+<script>
+    // Ocultar el loader una vez que la página se ha cargado completamente
+    window.onload = function() {
+        var preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.style.display = 'none'; // Esconde el loader
+        }
+    };
+</script>
 
 </body>
 </html>
