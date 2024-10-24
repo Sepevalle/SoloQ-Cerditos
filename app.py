@@ -117,7 +117,7 @@ def keep_alive():
     while True:
         try:
             # Cambia la URL por la de tu aplicación en Render
-            requests.get('https://tu-app-en-render.com/')
+            requests.get('https://soloq-cerditos.onrender.com/')
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
