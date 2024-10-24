@@ -13,13 +13,6 @@
 </head>
 <body>
 
-    <!-- Loader al inicio de la página -->
-    <div id="preloader" class="d-flex justify-content-center align-items-center" style="height: 100vh;">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Cargando...</span>
-        </div>
-    </div>
-
     <!-- Navbar con filtros -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
@@ -223,16 +216,6 @@
             text-align: center; /* Centrar el encabezado */
         }
     </style>
-
-    <script>
-        // Ocultar el loader una vez que la página se ha cargado completamente
-        window.onload = function() {
-            var preloader = document.getElementById('preloader');
-            if (preloader) {
-                preloader.style.display = 'none'; // Esconde el loader
-            }
-        };
-    </script>
 
 </body>
 </html>
