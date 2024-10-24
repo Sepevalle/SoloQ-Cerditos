@@ -88,7 +88,10 @@
 
     <!-- Tabla con los datos -->
     <div class="container">
-        <h1>Lista de Jugadores</h1>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>Lista de Jugadores</h1>
+            <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
+        </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
                 <thead class="table-dark">
@@ -127,7 +130,7 @@
     </div>
 
     <!-- Mostrar la última actualización -->
-    <div class="text-center my-4">Última actualización: <span id="lastUpdated"></span></div>
+    <div class="text-center my-4"></div>
 
     <!-- Bootstrap 5.3.3 JS y dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -166,7 +169,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const lastUpdatedElement = document.getElementById('lastUpdated');
             const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
-            lastUpdatedElement.textContent = ajustarHoraUTC2(timestamp);
+            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualiza el texto
         });
 
         // Función para obtener valor de clasificación
