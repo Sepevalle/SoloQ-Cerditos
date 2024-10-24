@@ -2,6 +2,7 @@ from flask import Flask, render_template
 import requests
 import os
 import time
+import threading  # Importar threading para ejecutar la función keep_alive en un hilo
 
 app = Flask(__name__)
 
@@ -111,6 +112,22 @@ def index():
     # Enviar el timestamp para ser procesado en la plantilla
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
+# Función que hará peticiones periódicas a la app para evitar hibernación
+def keep_alive():
+    while True:
+        try:
+            # Cambia la URL por la de tu aplicación en Render
+            requests.get('https://tu-app-en-render.com/')
+            print("Manteniendo la aplicación activa con una solicitud.")
+        except requests.exceptions.RequestException as e:
+            print(f"Error: {e}")
+        time.sleep(600)  # Esperar 5 minutos
+
 if __name__ == "__main__":
+    # Iniciar el hilo para mantener la app activa
+    thread = threading.Thread(target=keep_alive)
+    thread.daemon = True  # El hilo se detendrá si el programa principal se detiene
+    thread.start()
+
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
