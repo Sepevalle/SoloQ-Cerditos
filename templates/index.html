@@ -14,12 +14,11 @@
 <body>
 
     <!-- Loader al inicio de la página -->
-<div id="preloader" class="d-flex justify-content-center align-items-center" style="height: 100vh;">
-    <div class="spinner-border" role="status">
-        <span class="visually-hidden">Cargando...</span>
+    <div id="preloader" class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
     </div>
-</div>
-
 
     <!-- Navbar con filtros -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
@@ -39,7 +38,6 @@
                         </select>
                     </li>
                 </ul>
-                <!-- Botón de Modo Oscuro alineado a la derecha -->
                 <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
             </div>
         </div>
@@ -113,7 +111,7 @@
         // Función para ajustar la hora a UTC+2
         function ajustarHoraUTC2(timestamp) {
             let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
-            date.setHours(date.getHours() ); // Ajustar la hora sumando 2 horas
+            date.setHours(date.getHours()); // Ajustar la hora sumando 2 horas
 
             // Formatear la fecha y hora para mostrarla
             let year = date.getFullYear();
@@ -225,15 +223,16 @@
             text-align: center; /* Centrar el encabezado */
         }
     </style>
-<script>
-    // Ocultar el loader una vez que la página se ha cargado completamente
-    window.onload = function() {
-        var preloader = document.getElementById('preloader');
-        if (preloader) {
-            preloader.style.display = 'none'; // Esconde el loader
-        }
-    };
-</script>
+
+    <script>
+        // Ocultar el loader una vez que la página se ha cargado completamente
+        window.onload = function() {
+            var preloader = document.getElementById('preloader');
+            if (preloader) {
+                preloader.style.display = 'none'; // Esconde el loader
+            }
+        };
+    </script>
 
 </body>
 </html>
