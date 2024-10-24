@@ -107,7 +107,7 @@
                     {% for jugador in datos_jugadores %}
                     {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                    <tr>
+                    <tr class="queue-type {{ jugador.queue_type }}"> <!-- Agregar clase para el tipo de cola -->
                         <td>{{ loop.index }}</td>
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
@@ -162,19 +162,19 @@
             return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         }
 
-        // Obtener el timestamp desde el servidor (pasado desde Flask)
-        const timestamp = {{ timestamp }};
-        
-        // Ajustar la hora y mostrarla
-        document.getElementById('lastUpdated').innerText = ajustarHoraUTC2(timestamp);
+        // Mostrar la última actualización
+        document.addEventListener('DOMContentLoaded', function() {
+            const lastUpdatedElement = document.getElementById('lastUpdated');
+            const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
+            lastUpdatedElement.textContent = ajustarHoraUTC2(timestamp);
+        });
 
-        // Función para clasificar jugadores según Elo
+        // Función para obtener valor de clasificación
         function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
             const tierOrden = {
-                "CHALLENGER": 9,
-                "GRANDMASTER": 8,
-                "MASTER": 7,
-                "DIAMOND": 6,
+                "CHALLENGER": 8,
+                "GRANDMASTER": 7,
+                "MASTER": 6,
                 "EMERALD": 5,
                 "PLATINUM": 4,
                 "GOLD": 3,
@@ -225,7 +225,7 @@
                 const totalGames = jugador.wins + jugador.losses; // Calcula el total de juegos
                 const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Calcula el win rate
                 const row = `
-                    <tr>
+                    <tr class="queue-type ${jugador.queue_type}"> <!-- Agregar clase para el tipo de cola -->
                         <td>${index + 1}</td>
                         <td>${jugador.jugador}</td>
                         <td>${jugador.game_name}</td>
@@ -240,6 +240,23 @@
                     </tr>
                 `;
                 tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            // Agregar evento para el filtro
+            const filtroSelect = document.getElementById('filtro');
+            filtroSelect.addEventListener('change', (event) => {
+                const selectedQueue = event.target.value;
+                const rows = tableBody.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    // Obtener el tipo de cola de la clase del tr
+                    const queueType = row.classList.contains('queue-type') ? row.classList[1] : '';
+                    if (selectedQueue === 'todo' || queueType === selectedQueue) {
+                        row.style.display = ''; // Mostrar la fila
+                    } else {
+                        row.style.display = 'none'; // Ocultar la fila
+                    }
+                });
             });
         });
 
