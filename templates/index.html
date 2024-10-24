@@ -8,9 +8,46 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- Tu CSS personalizado -->
-    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"> <!-- DataTables CSS -->
+    <style>
+        /* Estilo para la imagen del banner */
+        .banner-img {
+            max-width: 100%; /* Asegura que la imagen no exceda el ancho del contenedor */
+            height: auto; /* Mantiene la relación de aspecto */
+            border-radius: 10px; /* Bordes redondeados */
+        }
+
+        /* Bordes redondeados para el banner */
+        .table td, .table th {
+            text-align: center; /* Centrar el texto en todas las celdas */
+        }
+
+        .table th {
+            text-align: center; /* Centrar el encabezado */
+        }
+
+        /* Estilo para el modo oscuro */
+        body.dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        .navbar-dark {
+            background-color: #1f1f1f;
+        }
+
+        .table-dark {
+            background-color: #343a40;
+        }
+
+        /* Indicadores de orden en la tabla */
+        th.asc::after {
+            content: ' 🔼'; /* Indicador de orden ascendente */
+        }
+
+        th.desc::after {
+            content: ' 🔽'; /* Indicador de orden descendente */
+        }
+    </style>
 </head>
 <body>
 
@@ -44,20 +81,19 @@
 
     <!-- Tabla con los datos -->
     <div class="container">
-        <h1>Lista de Jugadores</h1>
-        <div class="text-right mb-2" id="lastUpdatedContainer">Última actualización: <span id="lastUpdated"></span></div>
+        <h1>Lista de Jugadores <span id="lastUpdated"></span></h1>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
                 <thead class="table-dark">
                     <tr>
-                        <th>Posición</th>
-                        <th>Jugador</th>
-                        <th>Game Name</th>
-                        <th>Elo</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Total Games</th>
-                        <th>Win Rate</th>
+                        <th data-sort="number">Posición</th>
+                        <th data-sort="string">Jugador</th>
+                        <th data-sort="string">Game Name</th>
+                        <th data-sort="string">Elo</th>
+                        <th data-sort="number">Wins</th>
+                        <th data-sort="number">Losses</th>
+                        <th data-sort="number">Total Games</th>
+                        <th data-sort="number">Win Rate</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -85,9 +121,8 @@
 
     <!-- Bootstrap 5.3.3 JS y dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script> <!-- DataTables JS -->
 
+    <!-- Script para ajustar y mostrar la hora de la última actualización -->
     <script>
         const imagenesElo = {
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
@@ -103,66 +138,99 @@
 
         // Función para ajustar la hora a UTC+2
         function ajustarHoraUTC2(timestamp) {
-            let date = new Date(timestamp * 1000);
-            date.setHours(date.getHours() + 2); // Ajustar a UTC+2
+            let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
+            date.setHours(date.getHours()); // Ajustar la hora sumando 2 horas
 
-            // Formatear la fecha y hora
-            let year = date.getFullYear();
-            let month = ('0' + (date.getMonth() + 1)).slice(-2);
+            // Formatear la fecha y hora para mostrarla en formato DD-MM-YYYY
             let day = ('0' + date.getDate()).slice(-2);
+            let month = ('0' + (date.getMonth() + 1)).slice(-2);
+            let year = date.getFullYear();
             let hours = ('0' + date.getHours()).slice(-2);
             let minutes = ('0' + date.getMinutes()).slice(-2);
-            let seconds = ('0' + date.getSeconds()).slice(-2);
 
-            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`; // Formato DD-MM-YYYY
+            return `${day}-${month}-${year} ${hours}:${minutes}`;
         }
 
         // Obtener el timestamp desde el servidor (pasado desde Flask)
         const timestamp = {{ timestamp }};
+        
+        // Ajustar la hora y mostrarla
         document.getElementById('lastUpdated').innerText = ajustarHoraUTC2(timestamp);
 
-        // Inicializar DataTable para ordenar
-        $(document).ready(function() {
-            $('#jugadoresTable').DataTable(); // Inicializa DataTable
+        // Función para clasificar jugadores según Elo
+        function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
+            const tierOrden = {
+                "CHALLENGER": 9,
+                "GRANDMASTER": 8,
+                "MASTER": 7,
+                "DIAMOND": 6,
+                "EMERALD": 5,
+                "PLATINUM": 4,
+                "GOLD": 3,
+                "SILVER": 2,
+                "BRONZE": 1,
+                "IRON": 0
+            };
 
-            const datosJugadores = {{ datos_jugadores|tojson }};
-            const tableBody = $('#jugadoresTable tbody');
-            tableBody.empty(); // Limpiar el cuerpo de la tabla
+            const rankOrden = {
+                "I": 3,
+                "II": 2,
+                "III": 1,
+                "IV": 0
+            };
 
-            datosJugadores.forEach((jugador, index) => {
-                const totalGames = jugador.wins + jugador.losses;
-                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0;
-                const row = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${jugador.jugador}</td>
-                        <td>${jugador.game_name}</td>
-                        <td>
-                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> 
-                            ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
-                        </td>
-                        <td>${jugador.wins}</td>
-                        <td>${jugador.losses}</td>
-                        <td>${totalGames}</td>
-                        <td>${winRate}%</td>
-                    </tr>
-                `;
-                tableBody.append(row);
+            return tierOrden[tier] * 1000 + rankOrden[rank] * 100 + leaguePoints; // Devuelve un valor único para cada clasificación
+        }
+
+        // Reemplazar las imágenes de Elo en la tabla
+        document.querySelectorAll('.elo-image').forEach((img, index) => {
+            const tier = {{ datos_jugadores[index].tier|tojson }};
+            img.src = imagenesElo[tier];
+        });
+
+        // Función para ordenar la tabla
+        function sortTable(table, col, order) {
+            const dirModifier = order === 'asc' ? 1 : -1;
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            // Determina el tipo de columna
+            const sortType = table.querySelector(`th:nth-child(${col + 1})`).getAttribute('data-sort');
+
+            rows.sort((a, b) => {
+                const aText = a.children[col].innerText;
+                const bText = b.children[col].innerText;
+
+                // Comparación de texto o número
+                const aValue = sortType === 'number' ? parseFloat(aText) : aText;
+                const bValue = sortType === 'number' ? parseFloat(bText) : aText;
+
+                return (aValue > bValue ? 1 : -1) * dirModifier;
+            });
+
+            // Reañade las filas ordenadas al tbody
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Event listeners para los encabezados de la tabla
+        document.querySelectorAll('th').forEach(header => {
+            header.addEventListener('click', () => {
+                const table = header.closest('table');
+                const index = Array.from(header.parentNode.children).indexOf(header);
+                const currentIsAscending = header.classList.contains('asc');
+
+                // Alterna entre ascendente y descendente
+                sortTable(table, index, currentIsAscending ? 'desc' : 'asc');
+
+                // Cambia las clases para indicar el orden
+                header.classList.toggle('asc', !currentIsAscending);
+                header.classList.toggle('desc', currentIsAscending);
             });
         });
 
-        // Cambiar modo de visualización
-        document.getElementById('toggle-mode').onclick = function() {
-            document.body.classList.toggle('bg-dark');
-            document.body.classList.toggle('text-light');
-            document.getElementById('banner-img').classList.toggle('img-dark');
-            document.querySelectorAll('th, td').forEach(el => el.classList.toggle('table-dark'));
-        };
-
-        // Filtro de tabla
-        document.getElementById('filtro').addEventListener('change', function() {
-            const tipoCola = this.value;
-            $('#jugadoresTable').DataTable().search(tipoCola).draw(); // Filtrar por tipo de cola
+        // Funcionalidad para el botón de modo oscuro
+        document.getElementById('toggle-mode').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
         });
     </script>
 </body>
