@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
     <!-- Tu CSS personalizado -->
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
     <style>
@@ -134,6 +136,10 @@
 
     <!-- Bootstrap 5.3.3 JS y dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
     <!-- Script para ajustar y mostrar la hora de la última actualización -->
     <script>
@@ -161,105 +167,38 @@
             let hours = ('0' + date.getHours()).slice(-2);
             let minutes = ('0' + date.getMinutes()).slice(-2);
             let seconds = ('0' + date.getSeconds()).slice(-2);
-
             return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
         }
 
-        // Mostrar la última actualización
-        document.addEventListener('DOMContentLoaded', function() {
-            const lastUpdatedElement = document.getElementById('lastUpdated');
-            const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
-            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualiza el texto
+        // Establecer la fecha de última actualización
+        document.addEventListener('DOMContentLoaded', () => {
+            const timestamp = 1698180449; // Tiempo de la última actualización en formato timestamp
+            const formattedDate = ajustarHoraUTC2(timestamp);
+            document.getElementById('lastUpdated').innerText = `Última actualización: ${formattedDate}`;
         });
 
-        // Función para obtener valor de clasificación
-        function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
-            const tierOrden = {
-                "CHALLENGER": 8,
-                "GRANDMASTER": 7,
-                "MASTER": 6,
-                "EMERALD": 5,
-                "PLATINUM": 4,
-                "GOLD": 3,
-                "SILVER": 2,
-                "BRONZE": 1,
-                "IRON": 0
-            };
-
-            const rankOrden = {
-                "I": 4,
-                "II": 3,
-                "III": 2,
-                "IV": 1
-            };
-
-            return {
-                tierValue: tierOrden[tier] || 0,
-                rankValue: rankOrden[rank] || 0,
-                leaguePoints: leaguePoints
-            };
-        }
-
-        // Función para ordenar jugadores
-        function ordenarJugadores(jugadores) {
-            return jugadores.sort((a, b) => {
-                const aValor = obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
-                const bValor = obtenerValorDeClasificacion(b.tier, b.rank, b.league_points);
-
-                if (aValor.tierValue !== bValor.tierValue) {
-                    return bValor.tierValue - aValor.tierValue; // Orden descendente
-                }
-                if (aValor.rankValue !== bValor.rankValue) {
-                    return bValor.rankValue - aValor.rankValue; // Orden descendente
-                }
-                return bValor.leaguePoints - aValor.leaguePoints; // Orden descendente
-            });
-        }
-
-        // Inicializar DataTable para ordenar
-        document.addEventListener('DOMContentLoaded', function() {
-            const datosJugadores = {{ datos_jugadores|tojson }}; // Cargar datos desde tu backend
-            const jugadoresOrdenados = ordenarJugadores(datosJugadores);
-
-            // Actualizar la tabla con los jugadores ordenados
-            const tableBody = document.querySelector('#jugadoresTable tbody');
-            tableBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
-            jugadoresOrdenados.forEach((jugador, index) => {
-                const totalGames = jugador.wins + jugador.losses; // Calcula el total de juegos
-                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Calcula el win rate
-                const row = `
-                    <tr class="queue-type ${jugador.queue_type}"> <!-- Agregar clase para el tipo de cola -->
-                        <td>${index + 1}</td>
-                        <td>${jugador.jugador}</td>
-                        <td>${jugador.game_name}</td>
-                        <td>
-                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> 
-                            ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
-                        </td>
-                        <td>${jugador.wins}</td>
-                        <td>${jugador.losses}</td>
-                        <td>${totalGames}</td>
-                        <td>${winRate}%</td>
-                    </tr>
-                `;
-                tableBody.insertAdjacentHTML('beforeend', row);
+        // Inicializar DataTable
+        $(document).ready(function () {
+            const table = $('#jugadoresTable').DataTable({
+                order: [] // Sin orden por defecto
             });
 
             // Agregar evento para el filtro
             const filtroSelect = document.getElementById('filtro');
             filtroSelect.addEventListener('change', (event) => {
                 const selectedQueue = event.target.value;
-                const rows = tableBody.querySelectorAll('tr');
+                const rows = table.rows().nodes(); // Obtener todas las filas de la tabla
 
-                rows.forEach(row => {
+                rows.forEach((row) => {
                     // Obtener el tipo de cola de la clase del tr
-                    const queueType = row.classList.contains('queue-type') ? row.classList[1] : '';
+                    const queueType = $(row).attr('class').split(' ')[1];
                     if (selectedQueue === 'todo' || queueType === selectedQueue) {
-                        row.style.display = ''; // Mostrar la fila
+                        $(row).show(); // Mostrar la fila
                     } else {
-                        row.style.display = 'none'; // Ocultar la fila
+                        $(row).hide(); // Ocultar la fila
                     }
                 });
+                table.columns.adjust().draw(); // Ajustar columnas y redibujar
             });
         });
 
