@@ -26,13 +26,23 @@
             color: white;
         }
 
+        .dark-mode .navbar-brand,
+        .dark-mode .nav-link {
+            color: white; /* Cambia el color del texto de la navbar a blanco */
+        }
+
+        .dark-mode .table {
+            background-color: #343a40 !important; /* Fondo de la tabla */
+            color: white; /* Color del texto de la tabla */
+        }
+
         .dark-mode .table-dark {
-            background-color: #343a40 !important;
-            color: white;
+            background-color: #343a40 !important; /* Fondo de la tabla oscura */
+            color: white; /* Color del texto de la tabla oscura */
         }
 
         .dark-mode .table-dark th {
-            background-color: #343a40 !important;
+            background-color: #454d55 !important; /* Fondo de las cabeceras de la tabla */
         }
 
         .dark-mode .btn-secondary {
@@ -174,10 +184,10 @@
             };
 
             const rankOrden = {
-                "I": 3,
-                "II": 2,
-                "III": 1,
-                "IV": 0
+                "I": 4,
+                "II": 3,
+                "III": 2,
+                "IV": 1
             };
 
             return {
@@ -240,24 +250,6 @@
             toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
         });
     </script>
-
-    <style>
-        /* Estilo para la imagen del banner */
-        .banner-img {
-            max-width: 100%; /* Asegura que la imagen no exceda el ancho del contenedor */
-            height: auto; /* Mantiene la relación de aspecto */
-            border-radius: 10px; /* Bordes redondeados */
-        }
-
-        /* Bordes redondeados para el banner */
-        .table td, .table th {
-            text-align: center; /* Centrar el texto en todas las celdas */
-        }
-
-        .table th {
-            text-align: center; /* Centrar el encabezado */
-        }
-    </style>
 
 </body>
 </html>
