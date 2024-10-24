@@ -117,7 +117,7 @@
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
                         <td>
-                            <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
+                            <img src="{{ imagenesElo[jugador.tier] }}" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
                             {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                         </td>
                         <td>{{ jugador.wins }}</td>
