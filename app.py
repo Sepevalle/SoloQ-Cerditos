@@ -80,8 +80,10 @@ def obtener_datos_jugadores():
 
     # Comprobar si los datos en caché son válidos
     if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
+        print("Caché válido, usando datos en caché.")
         return cache['datos_jugadores'], cache['timestamp']
 
+    print("Caché no válido, obteniendo nuevos datos.")
     api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     cuentas = leer_cuentas(url_cuentas)
