@@ -55,7 +55,6 @@ def obtener_estado_partida(api_key, puuid):
         print(f"Error al obtener el estado de la partida: {response.status_code} - {response.text}")
         return None  # Error al consultar
 
-
 def leer_cuentas(url):
     try:
         response = requests.get(url)
@@ -97,10 +96,8 @@ def obtener_datos_jugadores():
             if summoner_info:
                 summoner_id = summoner_info['id']
                 elo_info = obtener_elo(api_key, summoner_id)
+                estado_partida = obtener_estado_partida(api_key, puuid)
 
-                 estado_partida = obtener_estado_partida(api_key, puuid)
-
-                
                 if elo_info:
                     for entry in elo_info:
                         datos_jugador = {
@@ -138,7 +135,7 @@ def keep_alive():
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
-        time.sleep(600)  # Esperar 5 minutos
+        time.sleep(600)  # Esperar 10 minutos
 
 if __name__ == "__main__":
     # Iniciar el hilo para mantener la app activa
