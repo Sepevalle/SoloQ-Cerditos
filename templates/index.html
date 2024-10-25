@@ -123,7 +123,13 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
-                        <td>{{ 'Sí' if jugador.ingame else 'No' }}</td>
+                        <td>
+                        {% if jugador.en_partida %}
+                            <span class="text-success">Sí</span>
+                        {% else %}
+                            <span class="text-danger">No</span>
+                        {% endif %}
+                    </td>
                     </tr>
                     {% endfor %}
                 </tbody>
