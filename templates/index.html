@@ -4,61 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Soloq Cerditos</title>
-    <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- Tu CSS personalizado -->
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
     <style>
         /* Estilos para el modo oscuro */
-        body {
-            transition: background-color 0.3s, color 0.3s; /* Transición suave */
-        }
-
-        .dark-mode {
-            background-color: #121212;
-            color: #ffffff;
-        }
-
-        .dark-mode .navbar {
-            background-color: #343a40 !important;
-            color: white;
-        }
-
-        .dark-mode .navbar-brand,
-        .dark-mode .nav-link {
-            color: white; /* Cambia el color del texto de la navbar a blanco */
-        }
-
-        .dark-mode .table {
-            background-color: #343a40 !important; /* Fondo de la tabla */
-            color: white; /* Color del texto de la tabla */
-        }
-
-        .dark-mode .table-dark {
-            background-color: #343a40 !important; /* Fondo de la tabla oscura */
-            color: white; /* Color del texto de la tabla oscura */
-        }
-
-        .dark-mode .table-dark th {
-            background-color: #454d55 !important; /* Fondo de las cabeceras de la tabla */
-        }
-
-        .dark-mode .btn-secondary {
-            background-color: #6c757d !important;
-            border-color: #6c757d !important;
-        }
-
-        /* Estilo de tabla */
-        .table td, .table th {
-            text-align: center; /* Centrar el texto en todas las celdas */
-        }
-
-        /* Margen para evitar que la navbar cubra el banner */
-        .banner-container {
-            margin-top: 60px; /* Ajusta según la altura de la barra de navegación */
-        }
+        body { transition: background-color 0.3s, color 0.3s; }
+        .dark-mode { background-color: #121212; color: #ffffff; }
+        .dark-mode .navbar, .dark-mode .navbar-brand, .dark-mode .nav-link { background-color: #343a40 !important; color: white; }
+        .dark-mode .table, .dark-mode .table-dark { background-color: #343a40 !important; color: white; }
+        .dark-mode .table-dark th { background-color: #454d55 !important; }
+        .dark-mode .btn-secondary { background-color: #6c757d !important; border-color: #6c757d !important; }
+        .table td, .table th { text-align: center; }
     </style>
 </head>
 <body>
@@ -86,8 +43,8 @@
         </div>
     </nav>
 
-    <!-- Imagen del banner ajustada al tamaño de la tabla -->
-    <div class="container my-4 d-flex justify-content-center banner-container">
+    <!-- Imagen del banner -->
+    <div class="container my-4 d-flex justify-content-center">
         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Banner.jpg" alt="Banner" class="banner-img" id="banner-img">
     </div>
 
@@ -95,7 +52,7 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Cerdos Valientes</h1>
-            <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
+            <div id="lastUpdated" class="text-end"></div>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
@@ -115,12 +72,12 @@
                     {% for jugador in datos_jugadores %}
                     {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                    <tr class="queue-type {{ jugador.queue_type }}"> <!-- Agregar clase para el tipo de cola -->
+                    <tr class="queue-type {{ jugador.queue_type }}">
                         <td>{{ loop.index }}</td>
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
                         <td>
-                            <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
+                            <img src="{{ imagenesElo[jugador.tier] }}" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;">
                             {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                         </td>
                         <td>{{ jugador.wins }}</td>
@@ -134,12 +91,52 @@
         </div>
     </div>
 
-    <!-- Mostrar la última actualización -->
-    <div class="text-center my-4"></div>
-
-    <!-- Bootstrap 5.3.3 JS y dependencias -->
+    <!-- Bootstrap JS y dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Script para actualizar la tabla y funciones JavaScript (igual que antes) -->
+
+    <!-- Script para ajustar y mostrar la hora de la última actualización -->
+    <script>
+        // Función de ajuste UTC y visualización de hora
+        function ajustarHoraUTC2(timestamp) {
+            let date = new Date(timestamp * 1000);
+            let formattedDate = date.toLocaleString('es-ES', { timeZone: 'UTC', hour12: false });
+            return formattedDate.replace(',', ''); 
+        }
+
+        // Mostrar última actualización
+        document.addEventListener('DOMContentLoaded', () => {
+            const lastUpdatedElement = document.getElementById('lastUpdated');
+            const timestamp = {{ timestamp|tojson }};
+            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`;
+        });
+        const imagenesElo = {
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
+        };
+
+
+        ;
+
+        // Alternar modo oscuro
+        document.getElementById('toggle-mode').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
+        });
+
+        // Aplicar filtro de cola
+        document.getElementById('filtro').addEventListener('change', (event) => {
+            const selectedQueue = event.target.value;
+            document.querySelectorAll('#jugadoresTable tbody tr').forEach(row => {
+                row.style.display = selectedQueue === 'todo' || row.classList.contains(selectedQueue) ? '' : 'none';
+            });
+        });
+    </script>
 </body>
 </html>
