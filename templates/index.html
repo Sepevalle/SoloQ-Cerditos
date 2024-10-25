@@ -124,13 +124,7 @@
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
                         <td>{{ 'Sí' if jugador.en_partida else 'No' }}</td>
-                        <td>
-                        {% if jugador.en_partida %}
-                            <span class="text-success">Sí</span>
-                        {% else %}
-                            <span class="text-danger">No</span>
-                        {% endif %}
-                    </td>
+                        <td>{{ 'Sí' if jugador.en_partida else 'No' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
