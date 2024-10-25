@@ -2,7 +2,7 @@ from flask import Flask, render_template
 import requests
 import os
 import time
-import threading  
+import threading  # Importar threading para ejecutar la función keep_alive en un hilo
 
 app = Flask(__name__)
 
@@ -43,18 +43,6 @@ def obtener_elo(api_key, summoner_id):
         print(f"Error al obtener Elo: {response.status_code} - {response.text}")
         return None
 
-def obtener_estado_partida(api_key, puuid):
-    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        return True  # El jugador está en partida
-    elif response.status_code == 404:
-        return False  # El jugador no está en partida
-    else:
-        print(f"Error al obtener el estado de la partida: {response.status_code} - {response.text}")
-        return None  # Error al consultar
-
 def leer_cuentas(url):
     try:
         response = requests.get(url)
@@ -75,15 +63,23 @@ def leer_cuentas(url):
         print(f"Error al leer las cuentas: {e}")
         return []
 
+def obtener_estado_partida(api_key, puuid):
+    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        return True  # El jugador está en partida
+    elif response.status_code == 404:
+        return False  # El jugador no está en partida
+    else:
+
 def obtener_datos_jugadores():
     global cache
 
     # Comprobar si los datos en caché son válidos
     if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
-        print("Caché válido, usando datos en caché.")
         return cache['datos_jugadores'], cache['timestamp']
 
-    print("Caché no válido, obteniendo nuevos datos.")
     api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     cuentas = leer_cuentas(url_cuentas)
@@ -99,9 +95,6 @@ def obtener_datos_jugadores():
                 summoner_id = summoner_info['id']
                 elo_info = obtener_elo(api_key, summoner_id)
 
-                # Verificar si el jugador está en partida usando el PUUID
-                estado_partida = obtener_estado_partida(api_key, puuid)
-
                 if elo_info:
                     for entry in elo_info:
                         datos_jugador = {
@@ -113,7 +106,7 @@ def obtener_datos_jugadores():
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
                             "jugador": jugador,
-                            "en_partida": estado_partida if estado_partida is not None else False  # Manejar el caso None
+				"en_partida": estado_partida if estado_partida is not None else False
                         }
                         todos_los_datos.append(datos_jugador)
 
@@ -139,7 +132,7 @@ def keep_alive():
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
-        time.sleep(600)  # Esperar 10 minutos para hacer una nueva solicitud
+        time.sleep(600)  # Esperar 5 minutos
 
 if __name__ == "__main__":
     # Iniciar el hilo para mantener la app activa
