@@ -2,7 +2,6 @@ from flask import Flask, render_template
 import requests
 import os
 import time
-import threading  # Importar threading para ejecutar la función keep_alive en un hilo
 
 app = Flask(__name__)
 
@@ -42,19 +41,6 @@ def obtener_elo(api_key, summoner_id):
     else:
         print(f"Error al obtener Elo: {response.status_code} - {response.text}")
         return None
-        
-def obtener_estado_partida(api_key, puuid):
-    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        return True  # El jugador está en partida
-    elif response.status_code == 404:
-        return False  # El jugador no está en partida
-    else:
-        print(f"Error al obtener el estado de la partida: {response.status_code} - {response.text}")
-        return None  # Error al consultar
-
 
 def leer_cuentas(url):
     try:
@@ -98,9 +84,6 @@ def obtener_datos_jugadores():
                 summoner_id = summoner_info['id']
                 elo_info = obtener_elo(api_key, summoner_id)
 
-                 estado_partida = obtener_estado_partida(api_key, puuid)
-
-                
                 if elo_info:
                     for entry in elo_info:
                         datos_jugador = {
@@ -111,8 +94,7 @@ def obtener_datos_jugadores():
                             "league_points": entry.get('leaguePoints', 0),
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
-                            "jugador": jugador,
-                            "en_partida": 1 if estado_partida else 0  # Indicador si está en partida
+                            "jugador": jugador
                         }
                         todos_los_datos.append(datos_jugador)
 
@@ -129,22 +111,6 @@ def index():
     # Enviar el timestamp para ser procesado en la plantilla
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
-# Función que hará peticiones periódicas a la app para evitar hibernación
-def keep_alive():
-    while True:
-        try:
-            # Cambia la URL por la de tu aplicación en Render
-            requests.get('https://soloq-cerditos.onrender.com/')
-            print("Manteniendo la aplicación activa con una solicitud.")
-        except requests.exceptions.RequestException as e:
-            print(f"Error: {e}")
-        time.sleep(600)  # Esperar 5 minutos
-
 if __name__ == "__main__":
-    # Iniciar el hilo para mantener la app activa
-    thread = threading.Thread(target=keep_alive)
-    thread.daemon = True  # El hilo se detendrá si el programa principal se detiene
-    thread.start()
-
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
