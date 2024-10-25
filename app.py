@@ -43,15 +43,6 @@ def obtener_elo(api_key, summoner_id):
         print(f"Error al obtener Elo: {response.status_code} - {response.text}")
         return None
 
-def obtener_estado_partida(api_key, puuid):
-    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        return True  # El jugador está en partida
-    else:
-        return False
-
 def leer_cuentas(url):
     try:
         response = requests.get(url)
@@ -93,7 +84,7 @@ def obtener_datos_jugadores():
             if summoner_info:
                 summoner_id = summoner_info['id']
                 elo_info = obtener_elo(api_key, summoner_id)
-                estado_partida = obtener_estado_partida(api_key, puuid)
+
                 if elo_info:
                     for entry in elo_info:
                         datos_jugador = {
@@ -104,8 +95,7 @@ def obtener_datos_jugadores():
                             "league_points": entry.get('leaguePoints', 0),
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
-                            "jugador": jugador,
-                            "en_partida": estado_partida if estado_partida is not None else False
+                            "jugador": jugador
                         }
                         todos_los_datos.append(datos_jugador)
 
@@ -131,7 +121,7 @@ def keep_alive():
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
-        time.sleep(600)  # Esperar 10 minutos
+        time.sleep(600)  # Esperar 5 minutos
 
 if __name__ == "__main__":
     # Iniciar el hilo para mantener la app activa
