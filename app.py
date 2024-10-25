@@ -72,6 +72,8 @@ def obtener_estado_partida(api_key, puuid):
     elif response.status_code == 404:
         return False  # El jugador no está en partida
     else:
+        print(f"Error al obtener el estado de la partida: {response.status_code} - {response.text}")
+        return None
 
 def obtener_datos_jugadores():
     global cache
