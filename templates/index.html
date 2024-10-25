@@ -104,6 +104,7 @@
                         <th>Losses</th>
                         <th>Total Games</th>
                         <th>Win Rate</th>
+                        <th>En Partida</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -122,6 +123,7 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
+                        <td>{{ 'Sí' if jugador.ingame else 'No' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
