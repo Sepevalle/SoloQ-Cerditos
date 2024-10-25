@@ -111,7 +111,7 @@ def obtener_datos_jugadores():
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
                             "jugador": jugador,
-                            "en_partida": 1 if estado_partida else 0  # Indicador si está en partida
+                            "en_partida": estado_partida  
                         }
                         todos_los_datos.append(datos_jugador)
 
