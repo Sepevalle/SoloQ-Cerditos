@@ -49,11 +49,8 @@ def obtener_estado_partida(api_key, puuid):
     
     if response.status_code == 200:
         return True  # El jugador está en partida
-    elif response.status_code == 404:
-        return False  # El jugador no está en partida
     else:
-        print(f"Error al obtener el estado de la partida: {response.status_code} - {response.text}")
-        return None  # Error al consultar
+        return False  # El jugador no está en partida
 
 def leer_cuentas(url):
     try:
