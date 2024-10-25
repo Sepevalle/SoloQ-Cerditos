@@ -87,7 +87,7 @@
     </div>
 
     <!-- Tabla con los datos -->
-<div class="container">
+    <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Cerdos Valientes</h1>
             <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
@@ -123,7 +123,13 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
-                        <td>{{ 'Sí' if jugador.en_partida else 'No' }}</td>
+                        <td>
+                        {% if jugador.en_partida %}
+                            <span class="text-success">Sí</span>
+                        {% else %}
+                            <span class="text-danger">No</span>
+                        {% endif %}
+                    </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -164,14 +170,14 @@
             let minutes = ('0' + date.getMinutes()).slice(-2);
             let seconds = ('0' + date.getSeconds()).slice(-2);
 
-            return ${day}-${month}-${year} ${hours}:${minutes}:${seconds};
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
         }
 
         // Mostrar la última actualización
         document.addEventListener('DOMContentLoaded', function() {
             const lastUpdatedElement = document.getElementById('lastUpdated');
             const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
-            lastUpdatedElement.textContent = Última actualización: ${ajustarHoraUTC2(timestamp)}; // Actualiza el texto
+            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualiza el texto
         });
 
         // Función para obtener valor de clasificación
@@ -229,7 +235,7 @@
             jugadoresOrdenados.forEach((jugador, index) => {
                 const totalGames = jugador.wins + jugador.losses; // Calcula el total de juegos
                 const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Calcula el win rate
-                const row = 
+                const row = `
                     <tr class="queue-type ${jugador.queue_type}"> <!-- Agregar clase para el tipo de cola -->
                         <td>${index + 1}</td>
                         <td>${jugador.jugador}</td>
@@ -243,7 +249,7 @@
                         <td>${totalGames}</td>
                         <td>${winRate}%</td>
                     </tr>
-                ;
+                `;
                 tableBody.insertAdjacentHTML('beforeend', row);
             });
 
