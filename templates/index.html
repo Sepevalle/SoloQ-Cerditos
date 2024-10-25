@@ -132,13 +132,13 @@
             let minutes = ('0' + date.getMinutes()).slice(-2);
             let seconds = ('0' + date.getSeconds()).slice(-2);
 
-            return ${day}-${month}-${year} ${hours}:${minutes}:${seconds};
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             const lastUpdatedElement = document.getElementById('lastUpdated');
             const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
-            lastUpdatedElement.textContent = Última actualización: ${ajustarHoraUTC2(timestamp)};
+            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`;
 
             const datosJugadores = {{ datos_jugadores|tojson }}; // Cargar datos desde tu backend
             const tableBody = document.querySelector('#jugadoresTable tbody');
@@ -147,7 +147,7 @@
             datosJugadores.forEach((jugador, index) => {
                 const totalGames = jugador.wins + jugador.losses; // Total de juegos
                 const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Win rate
-                const row = 
+                const row = `
                     <tr class="queue-type ${jugador.queue_type}"> 
                         <td>${index + 1}</td>
                         <td>${jugador.jugador}</td>
@@ -160,7 +160,7 @@
                         <td>${jugador.losses}</td>
                         <td>${totalGames}</td>
                         <td>${winRate}%</td>
-                    </tr>;
+                    </tr>`;
                 tableBody.innerHTML += row;
             });
 
