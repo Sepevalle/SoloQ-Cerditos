@@ -9,18 +9,51 @@
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
     <style>
         /* Estilos para el modo oscuro */
-        body { transition: background-color 0.3s, color 0.3s; }
-        .dark-mode { background-color: #121212; color: #ffffff; }
-        .dark-mode .navbar, .dark-mode .navbar-brand, .dark-mode .nav-link { background-color: #343a40 !important; color: white; }
-        .dark-mode .table, .dark-mode .table-dark { background-color: #343a40 !important; color: white; }
-        .dark-mode .table-dark th { background-color: #454d55 !important; }
-        .dark-mode .btn-secondary { background-color: #6c757d !important; border-color: #6c757d !important; }
-        .table td, .table th { text-align: center; }
+        body {
+            transition: background-color 0.3s, color 0.3s; /* Transición suave */
+        }
+
+        .dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        .dark-mode .navbar {
+            background-color: #343a40 !important;
+            color: white;
+        }
+
+        .dark-mode .navbar-brand,
+        .dark-mode .nav-link {
+            color: white; /* Cambia el color del texto de la navbar a blanco */
+        }
+
+        .dark-mode .table {
+            background-color: #343a40 !important; /* Fondo de la tabla */
+            color: white; /* Color del texto de la tabla */
+        }
+
+        .dark-mode .table-dark {
+            background-color: #343a40 !important; /* Fondo de la tabla oscura */
+            color: white; /* Color del texto de la tabla oscura */
+        }
+
+        .dark-mode .table-dark th {
+            background-color: #454d55 !important; /* Fondo de las cabeceras de la tabla */
+        }
+
+        .dark-mode .btn-secondary {
+            background-color: #6c757d !important;
+            border-color: #6c757d !important;
+        }
+
+        .table td, .table th {
+            text-align: center; /* Centrar el texto en todas las celdas */
+        }
     </style>
 </head>
 <body>
 
-    <!-- Navbar con filtros -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="#"><i class="fas fa-trophy"></i> SoloQ Challenge Cerditos y Valientes</a>
@@ -43,12 +76,10 @@
         </div>
     </nav>
 
-    <!-- Imagen del banner -->
     <div class="container my-4 d-flex justify-content-center">
         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Banner.jpg" alt="Banner" class="banner-img" id="banner-img">
     </div>
 
-    <!-- Tabla con los datos -->
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Cerdos Valientes</h1>
@@ -69,46 +100,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for jugador in datos_jugadores %}
-                    {% set total_games = jugador.wins + jugador.losses %}
-                    {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                    <tr class="queue-type {{ jugador.queue_type }}">
-                        <td>{{ loop.index }}</td>
-                        <td>{{ jugador.jugador }}</td>
-                        <td>{{ jugador.game_name }}</td>
-                        <td>
-                            <img src="{{ imagenesElo[jugador.tier] }}" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;">
-                            {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                        </td>
-                        <td>{{ jugador.wins }}</td>
-                        <td>{{ jugador.losses }}</td>
-                        <td>{{ total_games }}</td>
-                        <td>{{ win_rate | round(2) }}%</td>
-                    </tr>
-                    {% endfor %}
+                    <!-- Aquí se agregarán las filas dinámicamente -->
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Bootstrap JS y dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Script para ajustar y mostrar la hora de la última actualización -->
     <script>
-        // Función de ajuste UTC y visualización de hora
-        function ajustarHoraUTC2(timestamp) {
-            let date = new Date(timestamp * 1000);
-            let formattedDate = date.toLocaleString('es-ES', { timeZone: 'UTC', hour12: false });
-            return formattedDate.replace(',', ''); 
-        }
-
-        // Mostrar última actualización
-        document.addEventListener('DOMContentLoaded', () => {
-            const lastUpdatedElement = document.getElementById('lastUpdated');
-            const timestamp = {{ timestamp|tojson }};
-            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`;
-        });
         const imagenesElo = {
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
             "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
@@ -121,20 +120,67 @@
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
         };
 
+        // Función para ajustar la hora a UTC+2
+        function ajustarHoraUTC2(timestamp) {
+            let date = new Date(timestamp * 1000);
+            date.setHours(date.getHours() + 2); // Ajustar la hora sumando 2 horas
 
-        
+            let day = ('0' + date.getDate()).slice(-2);
+            let month = ('0' + (date.getMonth() + 1)).slice(-2);
+            let year = date.getFullYear();
+            let hours = ('0' + date.getHours()).slice(-2);
+            let minutes = ('0' + date.getMinutes()).slice(-2);
+            let seconds = ('0' + date.getSeconds()).slice(-2);
 
-        // Alternar modo oscuro
-        document.getElementById('toggle-mode').addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
-        });
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+        }
 
-        // Aplicar filtro de cola
-        document.getElementById('filtro').addEventListener('change', (event) => {
-            const selectedQueue = event.target.value;
-            document.querySelectorAll('#jugadoresTable tbody tr').forEach(row => {
-                row.style.display = selectedQueue === 'todo' || row.classList.contains(selectedQueue) ? '' : 'none';
+        document.addEventListener('DOMContentLoaded', function() {
+            const lastUpdatedElement = document.getElementById('lastUpdated');
+            const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
+            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`;
+
+            const datosJugadores = {{ datos_jugadores|tojson }}; // Cargar datos desde tu backend
+            const tableBody = document.querySelector('#jugadoresTable tbody');
+            tableBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
+
+            datosJugadores.forEach((jugador, index) => {
+                const totalGames = jugador.wins + jugador.losses; // Total de juegos
+                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Win rate
+                const row = `
+                    <tr class="queue-type ${jugador.queue_type}"> 
+                        <td>${index + 1}</td>
+                        <td>${jugador.jugador}</td>
+                        <td>${jugador.game_name}</td>
+                        <td>
+                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> 
+                            ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
+                        </td>
+                        <td>${jugador.wins}</td>
+                        <td>${jugador.losses}</td>
+                        <td>${totalGames}</td>
+                        <td>${winRate}%</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+
+            // Activar el filtro por tipo de cola
+            document.getElementById('filtro').addEventListener('change', function() {
+                const selectedValue = this.value;
+                const rows = tableBody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    if (selectedValue === 'todo' || row.classList.contains(selectedValue)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            // Modo oscuro
+            const toggleButton = document.getElementById('toggle-mode');
+            toggleButton.addEventListener('click', function() {
+                document.body.classList.toggle('dark-mode');
             });
         });
     </script>
