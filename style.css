@@ -1,32 +1,72 @@
-/* Estilo para la imagen del banner */
-.banner-img {
-    max-width: 100%; /* Asegura que la imagen no exceda el ancho del contenedor */
-    height: auto; /* Mantiene la relación de aspecto */
+/* Estilos para el modo oscuro */
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff; /* Color de texto en modo oscuro */
 }
 
-/* Estilo para la tabla */
-.table {
-    margin-top: 20px; /* Espacio superior para la tabla */
+/* Ajustar colores de la navbar en modo oscuro */
+.navbar-dark {
+    background-color: #1a1a1a;
 }
 
+.dark-mode .table {
+    background-color: #1a1a1a; /* Color de fondo de la tabla en modo oscuro */
+}
+
+.dark-mode .table th,
+.dark-mode .table td {
+    background-color: #2a2a2a; /* Color de fondo de las celdas en modo oscuro */
+    border-color: #444444; /* Color del borde de las celdas en modo oscuro */
+    color: #ffffff; /* Color de texto de las celdas en modo oscuro */
+}
+
+.dark-mode .table th {
+    color: #ffffff; /* Color de texto de los encabezados de la tabla en modo oscuro */
+}
+
+/* Colores para win rates */
+.win-rate-alto {
+    color: lightgreen !important; /* Color para win rates altos */
+    font-weight: bold; /* Negrita para win rates altos */
+}
+
+.win-rate-bajo {
+    color: tomato !important; /* Color para win rates bajos */
+    font-weight: bold; /* Negrita para win rates bajos */
+}
+
+/* Estilos de las imágenes */
+.img-jugador {
+    width: 40px; /* Ajusta el tamaño de la imagen */
+    height: 40px; /* Ajusta el tamaño de la imagen */
+    border-radius: 50%; /* Para imágenes redondas */
+    margin-right: 5px; /* Espacio entre la imagen y el nombre */
+}
+
+.tier-icon {
+    width: 20px; /* Ajusta el tamaño de la imagen del tier */
+    height: 20px; /* Ajusta el tamaño de la imagen del tier */
+    margin-right: 5px; /* Espacio entre la imagen del tier y el texto */
+}
+
+/* Centrar contenido de todas las celdas de la tabla */
 .table td, .table th {
-    text-align: center; /* Centrar el texto en todas las celdas */
-    padding: 10px; /* Agregar relleno a las celdas para mejor presentación */
+    text-align: center; /* Centrar texto */
+    vertical-align: middle; /* Alinear verticalmente en el medio */
 }
 
-.table th {
-    text-align: center; /* Centrar el encabezado */
-    background-color: #343a40; /* Color de fondo del encabezado */
-    color: white; /* Color del texto del encabezado */
-    font-weight: bold; /* Negrita para los encabezados */
+/* Ajustar la columna de Jugador para que sea más estrecha */
+.table td:nth-child(2) {
+    width: 12%; /* Ajusta este valor según tus necesidades, aquí se reduce el ancho */
 }
 
-/* Opcional: Estilo para filas de la tabla al pasar el ratón */
-.table tr:hover {
-    background-color: #f1f1f1; /* Color de fondo al pasar el ratón sobre las filas */
+/* Alinear el título de la tabla al centro */
+.table-dark th {
+    text-align: center; /* Centrar encabezados */
 }
 
-/* Asegurarse de que la tabla no desborde el contenedor */
-.table-responsive {
-    overflow-x: auto; /* Agregar desplazamiento horizontal si es necesario */
+/* Estilo del banner */
+.banner-img {
+    width: 100%; /* Hacer que el banner sea responsivo */
+    height: auto; /* Mantener la proporción de la imagen */
 }
