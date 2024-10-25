@@ -111,7 +111,7 @@ def obtener_datos_jugadores():
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
                             "jugador": jugador,
-                            "en_partida": estado_partida  
+                            "en_partida": estado_partida if estado_partida is not None else False  # Manejar el caso None
                         }
                         todos_los_datos.append(datos_jugador)
 
@@ -137,7 +137,7 @@ def keep_alive():
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
-        time.sleep(600)  # Esperar 5 minutos
+        time.sleep(600)  # Esperar 10 minutos para hacer una nueva solicitud
 
 if __name__ == "__main__":
     # Iniciar el hilo para mantener la app activa
