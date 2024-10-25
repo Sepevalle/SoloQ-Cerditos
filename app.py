@@ -93,7 +93,7 @@ def obtener_datos_jugadores():
             if summoner_info:
                 summoner_id = summoner_info['id']
                 elo_info = obtener_elo(api_key, summoner_id)
-		estado_partida = obtener_estado_partida(api_key, puuid)
+                estado_partida = obtener_estado_partida(api_key, puuid)
                 if elo_info:
                     for entry in elo_info:
                         datos_jugador = {
@@ -105,7 +105,7 @@ def obtener_datos_jugadores():
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
                             "jugador": jugador,
-				"en_partida": estado_partida if estado_partida is not None else False
+                            "en_partida": estado_partida if estado_partida is not None else False
                         }
                         todos_los_datos.append(datos_jugador)
 
@@ -131,7 +131,7 @@ def keep_alive():
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
-        time.sleep(600)  # Esperar 5 minutos
+        time.sleep(600)  # Esperar 10 minutos
 
 if __name__ == "__main__":
     # Iniciar el hilo para mantener la app activa
