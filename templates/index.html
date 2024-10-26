@@ -111,6 +111,7 @@
                     {% for jugador in datos_jugadores %}
                     {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
+                    {% for jugador in datos_jugadores|sort(attribute='valor_clasificacion', reverse=True) %}
                     <tr class="queue-type {{ jugador.queue_type }}">
                         <td>{{ loop.index }}</td>
                         <td>{{ jugador.jugador }}</td>
