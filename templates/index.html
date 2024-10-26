@@ -82,7 +82,7 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Jugadores</h1>
-            <div id="lastUpdated" class="text-end">Última actualización: {{ timestamp }}</div> <!-- Cambiado para mostrar el timestamp -->
+            <div id="lastUpdated" class="text-end">Última actualización: --</div>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
@@ -144,6 +144,14 @@
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
         };
 
+        // Función para mostrar la hora de última actualización en formato UTC+2
+        function actualizarHora() {
+            const now = new Date();
+            now.setHours(now.getHours() + 2); // Ajuste de zona horaria (UTC+2)
+            const formattedDate = ${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')};
+            document.getElementById('lastUpdated').innerText = Última actualización: ${formattedDate};
+        }
+
         // Función para obtener valor de clasificación
         function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
             const tierOrden = {
@@ -177,12 +185,116 @@
             });
         }
 
-        // Cambiar a modo oscuro
-        document.getElementById('toggle-mode').onclick = function() {
+        // Función para filtrar por Queue Type
+        function filtrarPorQueueType() {
+            const selectedQueue = document.getElementById('filtro').value;
+            const rows = document.querySelectorAll('#jugadoresTable tbody tr');
+
+            rows.forEach(row => {
+                const queueType = row.classList.contains('queue-type') ? row.classList[1] : '';
+                if (selectedQueue === 'todo' || selectedQueue === queueType) {
+                    row.style.display = ''; // Mostrar fila
+                } else {
+                    row.style.display = 'none'; // Ocultar fila
+                }
+            });
+        }
+
+        // Modo oscuro
+        function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
-            this.classList.toggle('btn-light');
-            this.classList.toggle('btn-dark');
-        };
+        }
+
+        // Llamar a actualizarHora y actualizar tabla
+        document.addEventListener('DOMContentLoaded', function() {
+            actualizarHora(); // Llamamos a actualizarHora al cargar la página
+
+            const datosJugadores = {{ datos_jugadores|tojson }};
+            const jugadoresOrdenados = ordenarJugadores(datosJugadores);
+
+            const tableBody = document.querySelector('#jugadoresTable tbody');
+            tableBody.innerHTML = '';
+            jugadoresOrdenados.forEach((jugador, index) => {
+                const totalGames = jugador.wins + jugador.losses;
+                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0;
+                const row = 
+                    <tr class="queue-type ${jugador.queue_type}">
+                        <td>${index + 1}</td>
+                        <td>${jugador.jugador}</td>
+                        <td>${jugador.game_name}</td>
+                        <td>
+                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;">
+                            ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
+                        </td>
+                        <td>${jugador.wins}</td>
+                        <td>${jugador.losses}</td>
+                        <td>${totalGames}</td>
+                        <td>${winRate}%</td>
+                        <td>
+                            <span class="badge ${jugador.en_partida ? 'bg-success' : 'bg-secondary'}">
+                                ${jugador.en_partida ? 'En Partida' : 'Inactivo'}
+                            </span>
+                        </td>
+                    </tr>
+                ;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            // Llamar a la función de filtro al cambiar el select
+            document.getElementById('filtro').addEventListener('change', () => {
+                filtrarPorQueueType(); // Llama a la función de filtrado
+                // Re-ordenar después de filtrar
+                const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+                const jugadoresFiltrados = visibleRows.map(row => {
+                    return {
+                        jugador: row.children[1].innerText,
+                        game_name: row.children[2].innerText,
+                        tier: row.children[3].innerText.split(' ')[0], // Extrae el tier del texto
+                        rank: row.children[3].innerText.split(' ')[1], // Extrae el rank del texto
+                        league_points: parseInt(row.children[3].innerText.match(/\((\d+) LPs\)/)[1]), // Extrae LPs
+                        wins: parseInt(row.children[4].innerText),
+                        losses: parseInt(row.children[5].innerText),
+                        en_partida: row.children[8].innerText === 'En Partida',
+                        queue_type: row.classList[1] // Guarda el tipo de cola
+                    };
+                });
+
+                const jugadoresOrdenados = ordenarJugadores(jugadoresFiltrados);
+
+                tableBody.innerHTML = ''; // Limpiar la tabla
+                jugadoresOrdenados.forEach((jugador, index) => {
+                    const totalGames = jugador.wins + jugador.losses;
+                    const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0;
+                    const row = 
+                        <tr class="queue-type ${jugador.queue_type}">
+                            <td>${index + 1}</td>
+                            <td>${jugador.jugador}</td>
+                            <td>${jugador.game_name}</td>
+                            <td>
+                                <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;">
+                                ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
+                            </td>
+                            <td>${jugador.wins}</td>
+                            <td>${jugador.losses}</td>
+                            <td>${totalGames}</td>
+                            <td>${winRate}%</td>
+                            <td>
+                                <span class="badge ${jugador.en_partida ? 'bg-success' : 'bg-secondary'}">
+                                    ${jugador.en_partida ? 'En Partida' : 'Inactivo'}
+                                </span>
+                            </td>
+                        </tr>
+                    ;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+            });
+
+            // Llamar a toggleDarkMode al hacer clic en el botón
+            document.getElementById('toggle-mode').addEventListener('click', toggleDarkMode);
+
+            // Llamamos a actualizarHora cada vez que los datos cambian
+            actualizarHora();
+        });
     </script>
 </body>
 </html>
