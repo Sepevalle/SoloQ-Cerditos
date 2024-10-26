@@ -73,7 +73,7 @@ def leer_cuentas(url):
 
 def obtener_partida(api_key, summoner_id):
     try:
-        url = f"https://euw1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/{summoner_id}?api_key={api_key}"
+        url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
         response = requests.get(url)
         
         if response.status_code == 429:  # Rate limit excedido
