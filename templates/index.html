@@ -123,6 +123,7 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
+                        <td>{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
