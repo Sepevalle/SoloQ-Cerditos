@@ -108,7 +108,6 @@
                         <th>Losses</th>
                         <th>Total Games</th>
                         <th>Win Rate</th>
-                        <th>Valor Clasificación</th> <!-- Nueva columna -->
                         <th>Estado</th>
                     </tr>
                 </thead>
@@ -128,7 +127,6 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
-                        <td>{{ jugador.valor_clasificacion }}</td> <!-- Mostrar el valor de clasificación -->
                         <td>{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
                     </tr>
                     {% endfor %}
