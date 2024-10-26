@@ -49,7 +49,8 @@ def obtener_estado_partida(summoner_id, api_key):
     try:
         response = requests.get(url)
         return response.status_code == 200
-    except:
+    except Exception as e:
+        print(f"Error al obtener estado de la partida: {e}")
         return False
 
 def leer_cuentas(url):
@@ -123,7 +124,6 @@ def formatear_timestamp(timestamp):
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
     formatted_timestamp = formatear_timestamp(timestamp)  # Formatear timestamp
-    # Enviar el timestamp formateado para ser procesado en la plantilla
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=formatted_timestamp)
 
 @app.route('/estado-partida')
