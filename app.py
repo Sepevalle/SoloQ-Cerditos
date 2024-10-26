@@ -119,6 +119,10 @@ def obtener_datos_jugadores():
                     if elo_info:
                         en_partida = esta_en_partida(api_key, puuid)  # Verifica si el jugador está en partida
 
+                        # Definir las URLs del perfil y del estado en partida
+                        url_perfil = f"https://www.op.gg/summoners/euw/{riot_id}-{region}"
+                        url_ingame = f"https://www.op.gg/summoners/euw/{riot_id}-{region}/ingame"
+
                         for entry in elo_info:
                             datos_jugador = {
                                 "game_name": riot_id,
@@ -129,7 +133,9 @@ def obtener_datos_jugadores():
                                 "wins": entry.get('wins', 0),
                                 "losses": entry.get('losses', 0),
                                 "jugador": jugador,
-                                "en_partida": en_partida,  # Agrega el estado del jugador
+                                "url_perfil": url_perfil,  # URL del perfil
+                                "url_ingame": url_ingame,    # URL del estado en partida
+                                "en_partida": en_partida,     # Agrega el estado del jugador
                                 "valor_clasificacion": calcular_valor_clasificacion(
                                     entry.get('tier', 'Sin rango'),
                                     entry.get('rank', ''),
