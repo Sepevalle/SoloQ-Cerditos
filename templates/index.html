@@ -13,46 +13,38 @@
     <style>
         /* Estilos para el modo oscuro */
         body {
-            transition: background-color 0.3s, color 0.3s; /* Transición suave */
+            transition: background-color 0.3s, color 0.3s;
         }
-
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
-
         .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
-
         .dark-mode .navbar-brand,
         .dark-mode .nav-link {
-            color: white; /* Cambia el color del texto de la navbar a blanco */
+            color: white;
         }
-
         .dark-mode .table {
-            background-color: #343a40 !important; /* Fondo de la tabla */
-            color: white; /* Color del texto de la tabla */
+            background-color: #343a40 !important;
+            color: white;
         }
-
         .dark-mode .table-dark {
-            background-color: #343a40 !important; /* Fondo de la tabla oscura */
-            color: white; /* Color del texto de la tabla oscura */
+            background-color: #343a40 !important;
+            color: white;
         }
-
         .dark-mode .table-dark th {
-            background-color: #454d55 !important; /* Fondo de las cabeceras de la tabla */
+            background-color: #454d55 !important;
         }
-
         .dark-mode .btn-secondary {
             background-color: #6c757d !important;
             border-color: #6c757d !important;
         }
-
         /* Estilo de tabla */
         .table td, .table th {
-            text-align: center; /* Centrar el texto en todas las celdas */
+            text-align: center;
         }
     </style>
 </head>
@@ -87,10 +79,10 @@
     </div>
 
     <!-- Tabla con los datos -->
-<div class="container">
+    <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Jugadores</h1>
-            <div id="lastUpdated" class="text-end"></div>
+            <div id="lastUpdated" class="text-end">Última actualización: --</div>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
@@ -138,7 +130,7 @@
     <!-- Mostrar la última actualización -->
     <div class="text-center my-4"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         const imagenesElo = {
@@ -154,69 +146,66 @@
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
         };
 
-        // Función para ajustar la hora a UTC+2
-        function ajustarHoraUTC2(timestamp) {
-            let date = new Date(timestamp * 1000);
-            date.setHours(date.getHours());
-            let day = ('0' + date.getDate()).slice(-2);
-            let month = ('0' + (date.getMonth() + 1)).slice(-2);
-            let year = date.getFullYear();
-            let hours = ('0' + date.getHours()).slice(-2);
-            let minutes = ('0' + date.getMinutes()).slice(-2);
-            let seconds = ('0' + date.getSeconds()).slice(-2);
-            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+        // Función para mostrar la hora de última actualización en formato UTC+2
+        function actualizarHora() {
+            const now = new Date();
+            now.setHours(now.getHours() + 2); // Ajuste de zona horaria (UTC+2)
+            const formattedDate = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('lastUpdated').innerText = `Última actualización: ${formattedDate}`;
         }
 
         // Función para obtener valor de clasificación
         function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
             const tierOrden = {
-                "CHALLENGER": 8,
-                "GRANDMASTER": 7,
-                "MASTER": 6,
-                "EMERALD": 5,
-                "PLATINUM": 4,
-                "GOLD": 3,
-                "SILVER": 2,
-                "BRONZE": 1,
-                "IRON": 0
+                "IRON": 1,
+                "BRONZE": 2,
+                "SILVER": 3,
+                "GOLD": 4,
+                "PLATINUM": 5,
+                "EMERALD": 6,
+                "DIAMOND": 7,
+                "MASTER": 8,
+                "GRANDMASTER": 9,
+                "CHALLENGER": 10
             };
-
-            const rankOrden = {
-                "I": 4,
-                "II": 3,
-                "III": 2,
-                "IV": 1
-            };
-
-            return {
-                tierValue: tierOrden[tier] || 0,
-                rankValue: rankOrden[rank] || 0,
-                leaguePoints: leaguePoints
-            };
+            return tierOrden[tier] * 1000 + rank + (leaguePoints / 100);
         }
 
         // Función para ordenar jugadores
-        function ordenarJugadores(jugadores) {
-            return jugadores.sort((a, b) => {
-                const aValor = obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
-                const bValor = obtenerValorDeClasificacion(b.tier, b.rank, b.league_points);
-
-                if (aValor.tierValue !== bValor.tierValue) {
-                    return bValor.tierValue - aValor.tierValue;
-                }
-                if (aValor.rankValue !== bValor.rankValue) {
-                    return bValor.rankValue - aValor.rankValue;
-                }
-                return bValor.leaguePoints - aValor.leaguePoints;
+        function ordenarJugadores(datosJugadores) {
+            return datosJugadores.sort((a, b) => {
+                return obtenerValorDeClasificacion(b.tier, b.rank, b.league_points) - 
+                       obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
             });
         }
 
-        // Inicializar tabla y ordenar
+        // Función para filtrar por Queue Type
+        function filtrarPorQueueType() {
+            const selectedQueue = document.getElementById('filtro').value;
+            const rows = document.querySelectorAll('#jugadoresTable tbody tr');
+
+            rows.forEach(row => {
+                const queueType = row.classList.contains('queue-type') ? row.classList[1] : '';
+                if (selectedQueue === 'todo' || selectedQueue === queueType) {
+                    row.style.display = ''; // Mostrar fila
+                } else {
+                    row.style.display = 'none'; // Ocultar fila
+                }
+            });
+        }
+
+        // Modo oscuro
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        // Llamar a actualizarHora y actualizar tabla
         document.addEventListener('DOMContentLoaded', function() {
+            actualizarHora(); // Llamamos a actualizarHora al cargar la página
+
             const datosJugadores = {{ datos_jugadores|tojson }};
             const jugadoresOrdenados = ordenarJugadores(datosJugadores);
 
-            // Actualizar la tabla con los jugadores ordenados
             const tableBody = document.querySelector('#jugadoresTable tbody');
             tableBody.innerHTML = '';
             jugadoresOrdenados.forEach((jugador, index) => {
@@ -228,8 +217,7 @@
                         <td>${jugador.jugador}</td>
                         <td>${jugador.game_name}</td>
                         <td>
-                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" 
-                                 style="width: 40px; height: 40px;"> 
+                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;">
                             ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
                         </td>
                         <td>${jugador.wins}</td>
@@ -245,11 +233,16 @@
                 `;
                 tableBody.insertAdjacentHTML('beforeend', row);
             });
+
+            // Llamar a la función de filtro al cambiar el select
+            document.getElementById('filtro').addEventListener('change', filtrarPorQueueType);
+            
+            // Llamar a toggleDarkMode al hacer clic en el botón
+            document.getElementById('toggle-mode').addEventListener('click', toggleDarkMode);
+
+            // Llamamos a actualizarHora cada vez que los datos cambian
+            actualizarHora();
         });
-
-
-        
     </script>
 </body>
 </html>
-         
