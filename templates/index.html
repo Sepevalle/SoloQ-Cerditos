@@ -147,7 +147,7 @@
         // Función para mostrar la hora de última actualización en formato UTC+2
         function actualizarHora() {
             const now = new Date();
-            now.setHours(now.getHours() + 2); // Ajuste de zona horaria (UTC+2)
+            now.setHours(now.getHours() ); // Ajuste de zona horaria (UTC+2)
             const formattedDate = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
             document.getElementById('lastUpdated').innerText = `Última actualización: ${formattedDate}`;
         }
