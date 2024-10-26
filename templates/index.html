@@ -94,40 +94,40 @@
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Posición</th>
-                        <th>Jugador</th>
-                        <th>Game Name</th>
-                        <th>Elo</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Total Games</th>
-                        <th>Win Rate</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for jugador in datos_jugadores %}
-                    {% set total_games = jugador.wins + jugador.losses %}
-                    {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                    <tr class="queue-type {{ jugador.queue_type }}"> <!-- Agregar clase para el tipo de cola -->
-                        <td>{{ loop.index }}</td>
-                        <td>{{ jugador.jugador }}</td>
-                        <td>{{ jugador.game_name }}</td>
-                        <td>
-                            <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
-                            {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                        </td>
-                        <td>{{ jugador.wins }}</td>
-                        <td>{{ jugador.losses }}</td>
-                        <td>{{ total_games }}</td>
-                        <td>{{ win_rate | round(2) }}%</td>
-                        <td>{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <thead class="table-dark">
+        <tr>
+            <th>Posición</th>
+            <th>Jugador</th>
+            <th>Game Name</th>
+            <th>Elo</th>
+            <th>Wins</th>
+            <th>Losses</th>
+            <th>Total Games</th>
+            <th>Win Rate</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for jugador in datos_jugadores %}
+        {% set total_games = jugador.wins + jugador.losses %}
+        {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
+        <tr class="queue-type {{ jugador.queue_type }}">
+            <td>{{ loop.index }}</td>
+            <td>{{ jugador.jugador }}</td>
+            <td>{{ jugador.game_name }}</td>
+            <td>
+                <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
+                {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+            </td>
+            <td>{{ jugador.wins }}</td>
+            <td>{{ jugador.losses }}</td>
+            <td>{{ total_games }}</td>
+            <td>{{ win_rate | round(2) }}%</td>
+            <td>{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
         </div>
     </div>
 
