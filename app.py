@@ -1,17 +1,24 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 import requests
 import os
 import time
-import threading  # Importar threading para ejecutar la función keep_alive en un hilo
+import threading
 
 app = Flask(__name__)
 
-# Caché para almacenar los datos de los jugadores
+# Caché general para datos de jugadores
 cache = {
     "datos_jugadores": None,
     "timestamp": 0
 }
-CACHE_TIMEOUT = 300  # 300 segundos = 5 minutos
+CACHE_TIMEOUT = 300  # 5 minutos
+
+# Caché específico para estados de partida
+cache_estado_partida = {
+    "datos": None,
+    "timestamp": 0
+}
+CACHE_TIMEOUT_PARTIDA = 120  # 2 minutos
 
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
@@ -63,14 +70,30 @@ def leer_cuentas(url):
         print(f"Error al leer las cuentas: {e}")
         return []
 
+
+def obtener_partida(api_key, summoner_id):
+    try:
+        url = f"https://euw1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/{summoner_id}?api_key={api_key}"
+        response = requests.get(url)
+        
+        if response.status_code == 429:  # Rate limit excedido
+            retry_after = int(response.headers.get('Retry-After', 5))
+            time.sleep(retry_after)
+            return obtener_partida(api_key, summoner_id)
+            
+        return response.status_code == 200
+        
+    except Exception as e:
+        print(f"Error al obtener estado de partida: {e}")
+        return False
+
 def obtener_datos_jugadores():
     global cache
 
-    # Comprobar si los datos en caché son válidos
     if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
         return cache['datos_jugadores'], cache['timestamp']
 
-    api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
+    api_key = os.environ.get('RIOT_API_KEY')
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     cuentas = leer_cuentas(url_cuentas)
     todos_los_datos = []
@@ -84,6 +107,7 @@ def obtener_datos_jugadores():
             if summoner_info:
                 summoner_id = summoner_info['id']
                 elo_info = obtener_elo(api_key, summoner_id)
+                en_partida = obtener_partida(api_key, summoner_id)
 
                 if elo_info:
                     for entry in elo_info:
@@ -95,22 +119,42 @@ def obtener_datos_jugadores():
                             "league_points": entry.get('leaguePoints', 0),
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
-                            "jugador": jugador
+                            "jugador": jugador,
+                            "summoner_id": summoner_id,
+                            "en_partida": en_partida
                         }
                         todos_los_datos.append(datos_jugador)
 
-    # Actualizar el caché
     cache['datos_jugadores'] = todos_los_datos
     cache['timestamp'] = time.time()
     
-    return todos_los_datos, cache['timestamp']  # Devuelve también la timestamp
+    return todos_los_datos, cache['timestamp']
+
+@app.route('/estado-partida')
+def estado_partida():
+    datos_jugadores, _ = obtener_datos_jugadores()
+    estados = []
+    api_key = os.environ.get('RIOT_API_KEY')
+
+    for jugador in datos_jugadores:
+        summoner_id = jugador.get('summoner_id')
+        if summoner_id:
+            estado = obtener_partida(api_key, summoner_id)
+            estados.append({
+                'summoner_id': summoner_id,
+                'en_partida': estado
+            })
+
+    return jsonify(estados)
 
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
-    
-    # Enviar el timestamp para ser procesado en la plantilla
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
+
+
+    
+  
 
 # Función que hará peticiones periódicas a la app para evitar hibernación
 def keep_alive():
