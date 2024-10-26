@@ -157,18 +157,26 @@
         // Función para obtener valor de clasificación
         function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
             const tierOrden = {
-                "IRON": 1,
-                "BRONZE": 2,
-                "SILVER": 3,
-                "GOLD": 4,
-                "PLATINUM": 5,
-                "EMERALD": 6,
-                "DIAMOND": 7,
-                "MASTER": 8,
+                "CHALLENGER": 10,
                 "GRANDMASTER": 9,
-                "CHALLENGER": 10
+                "MASTER": 8,
+                "EMERALD": 7,
+                "PLATINUM": 6,
+                "GOLD": 5,
+                "SILVER": 4,
+                "BRONZE": 3,
+                "IRON": 2
             };
-            return tierOrden[tier] * 1000 + rank + (leaguePoints / 100);
+
+            const rankOrden = {
+                "I": 4,
+                "II": 3,
+                "III": 2,
+                "IV": 1
+            };
+
+            // Retorna un valor numérico que representa la clasificación total
+            return tierOrden[tier] * 1000 + rankOrden[rank] * 100 + leaguePoints;
         }
 
         // Función para ordenar jugadores
