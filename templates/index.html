@@ -165,7 +165,7 @@
     <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
     <td>{{ jugador.jugador }}</td>
  <td><a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a></td>
-        <td><img src="" alt="{{ jugador.tier }}" style="width: 27px; height: 27px;" class="elo-image">
+        <td><img src="" alt="{{ jugador.tier }}" style="width: 27px; height: 32px;" class="elo-image">
         {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
     </td>
     <td>{{ jugador.wins }}</td>
@@ -206,7 +206,7 @@
         // Función para ajustar la hora a UTC+2
         function ajustarHoraUTC2(timestamp) {
             let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
-            date.setHours(date.getHours() + 2); // Ajustar la hora a UTC+2
+            date.setHours(date.getHours() ); // Ajustar la hora a UTC+2
 
             let day = ('0' + date.getDate()).slice(-2);
             let month = ('0' + (date.getMonth() + 1)).slice(-2);
