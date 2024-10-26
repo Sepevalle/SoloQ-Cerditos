@@ -46,13 +46,7 @@ def obtener_elo(api_key, summoner_id):
 def esta_en_partida(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
     response = requests.get(url)
-    if response.status_code == 200:
-        return True  # El jugador está en partida
-    elif response.status_code == 404:
-        return False  # El jugador no está en partida
-    else:
-        print(f"Error al verificar si está en partida: {response.status_code} - {response.text}")
-        return None  # Manejar otros errores
+    return response.status_code == 200  # Devuelve True si está en partida, False si no
 
 def leer_cuentas(url):
     try:
