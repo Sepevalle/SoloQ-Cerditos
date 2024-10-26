@@ -9,42 +9,50 @@
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <!-- Tu CSS personalizado -->
-    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
     <style>
         /* Estilos para el modo oscuro */
         body {
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 0.3s, color 0.3s; /* Transición suave */
         }
+
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
+
         .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
+
         .dark-mode .navbar-brand,
         .dark-mode .nav-link {
-            color: white;
+            color: white; /* Cambia el color del texto de la navbar a blanco */
         }
+
         .dark-mode .table {
-            background-color: #343a40 !important;
-            color: white;
+            background-color: #343a40 !important; /* Fondo de la tabla */
+            color: white; /* Color del texto de la tabla */
         }
+
         .dark-mode .table-dark {
-            background-color: #343a40 !important;
-            color: white;
+            background-color: #343a40 !important; /* Fondo de la tabla oscura */
+            color: white; /* Color del texto de la tabla oscura */
         }
+
         .dark-mode .table-dark th {
-            background-color: #454d55 !important;
+            background-color: #454d55 !important; /* Fondo de las cabeceras de la tabla */
         }
+
         .dark-mode .btn-secondary {
             background-color: #6c757d !important;
             border-color: #6c757d !important;
         }
+
         /* Estilo de tabla */
         .table td, .table th {
-            text-align: center;
+            text-align: center; /* Centrar el texto en todas las celdas */
         }
     </style>
 </head>
@@ -75,14 +83,14 @@
 
     <!-- Imagen del banner ajustada al tamaño de la tabla -->
     <div class="container my-4 d-flex justify-content-center">
-        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Banner.jpg" alt="Banner" class="banner-img" id="banner-img">
+        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Banner.jpg" alt="Banner" class="banner-img" id="banner-img">
     </div>
 
     <!-- Tabla con los datos -->
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Jugadores</h1>
-            <div id="lastUpdated" class="text-end">Última actualización: --</div>
+            <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
@@ -96,31 +104,24 @@
                         <th>Losses</th>
                         <th>Total Games</th>
                         <th>Win Rate</th>
-                        <th>Estado</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for jugador in datos_jugadores %}
                     {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                    <tr class="queue-type {{ jugador.queue_type }}">
+                    <tr class="queue-type {{ jugador.queue_type }}"> <!-- Agregar clase para el tipo de cola -->
                         <td>{{ loop.index }}</td>
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
                         <td>
-                            <img src="${imagenesElo[jugador.tier]}" alt="{{ jugador.tier }}" 
-                                 style="width: 32px; height: 32px;" class="elo-image">
+                            <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
                             {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                         </td>
                         <td>{{ jugador.wins }}</td>
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
-                        <td>
-                            <span class="badge {% if jugador.en_partida %}bg-success{% else %}bg-secondary{% endif %}">
-                                {% if jugador.en_partida %}En Partida{% else %}Inactivo{% endif %}
-                            </span>
-                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -128,38 +129,147 @@
         </div>
     </div>
 
+    <!-- Mostrar la última actualización -->
+    <div class="text-center my-4"></div>
+
+    <!-- Bootstrap 5.3.3 JS y dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Script para ajustar y mostrar la hora de la última actualización -->
     <script>
         const imagenesElo = {
-            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
-            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
-            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
-            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
-            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Platinum.png",
-            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
-            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Diamond.png",
-            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Master.png",
-            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Grandmaster.png",
-            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Challenger.png"
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
         };
 
-        // Función para mostrar la hora de última actualización en formato UTC+2
-        function actualizarHora() {
-            const now = new Date();
-            now.setHours(now.getHours() + 2); // Ajuste de zona horaria (UTC+2)
-            const formattedDate = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            document.getElementById('lastUpdated').innerText = `Última actualización: ${formattedDate}`;
+        // Función para ajustar la hora a UTC+2
+        function ajustarHoraUTC2(timestamp) {
+            let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
+            date.setHours(date.getHours()); // Ajustar la hora sumando 2 horas
+
+            // Formatear la fecha y hora para mostrarla en formato DD-MM-YYYY
+            let day = ('0' + date.getDate()).slice(-2);
+            let month = ('0' + (date.getMonth() + 1)).slice(-2);
+            let year = date.getFullYear();
+            let hours = ('0' + date.getHours()).slice(-2);
+            let minutes = ('0' + date.getMinutes()).slice(-2);
+            let seconds = ('0' + date.getSeconds()).slice(-2);
+
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
         }
 
+        // Mostrar la última actualización
         document.addEventListener('DOMContentLoaded', function() {
-            actualizarHora(); // Llamamos a actualizarHora al cargar la página
+            const lastUpdatedElement = document.getElementById('lastUpdated');
+            const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
+            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualiza el texto
+        });
 
-            // Llamar a toggleDarkMode al hacer clic en el botón
-            document.getElementById('toggle-mode').addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
+        // Función para obtener valor de clasificación
+        function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
+            const tierOrden = {
+                "CHALLENGER": 8,
+                "GRANDMASTER": 7,
+                "MASTER": 6,
+                "EMERALD": 5,
+                "PLATINUM": 4,
+                "GOLD": 3,
+                "SILVER": 2,
+                "BRONZE": 1,
+                "IRON": 0
+            };
+
+            const rankOrden = {
+                "I": 4,
+                "II": 3,
+                "III": 2,
+                "IV": 1
+            };
+
+            return {
+                tierValue: tierOrden[tier] || 0,
+                rankValue: rankOrden[rank] || 0,
+                leaguePoints: leaguePoints
+            };
+        }
+
+        // Función para ordenar jugadores
+        function ordenarJugadores(jugadores) {
+            return jugadores.sort((a, b) => {
+                const aValor = obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
+                const bValor = obtenerValorDeClasificacion(b.tier, b.rank, b.league_points);
+
+                if (aValor.tierValue !== bValor.tierValue) {
+                    return bValor.tierValue - aValor.tierValue; // Orden descendente
+                }
+                if (aValor.rankValue !== bValor.rankValue) {
+                    return bValor.rankValue - aValor.rankValue; // Orden descendente
+                }
+                return bValor.leaguePoints - aValor.leaguePoints; // Orden descendente
+            });
+        }
+
+        // Inicializar DataTable para ordenar
+        document.addEventListener('DOMContentLoaded', function() {
+            const datosJugadores = {{ datos_jugadores|tojson }}; // Cargar datos desde tu backend
+            const jugadoresOrdenados = ordenarJugadores(datosJugadores);
+
+            // Actualizar la tabla con los jugadores ordenados
+            const tableBody = document.querySelector('#jugadoresTable tbody');
+            tableBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
+            jugadoresOrdenados.forEach((jugador, index) => {
+                const totalGames = jugador.wins + jugador.losses; // Calcula el total de juegos
+                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Calcula el win rate
+                const row = `
+                    <tr class="queue-type ${jugador.queue_type}"> <!-- Agregar clase para el tipo de cola -->
+                        <td>${index + 1}</td>
+                        <td>${jugador.jugador}</td>
+                        <td>${jugador.game_name}</td>
+                        <td>
+                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> 
+                            ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
+                        </td>
+                        <td>${jugador.wins}</td>
+                        <td>${jugador.losses}</td>
+                        <td>${totalGames}</td>
+                        <td>${winRate}%</td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            // Agregar evento para el filtro
+            const filtroSelect = document.getElementById('filtro');
+            filtroSelect.addEventListener('change', (event) => {
+                const selectedQueue = event.target.value;
+                const rows = tableBody.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    // Obtener el tipo de cola de la clase del tr
+                    const queueType = row.classList.contains('queue-type') ? row.classList[1] : '';
+                    if (selectedQueue === 'todo' || queueType === selectedQueue) {
+                        row.style.display = ''; // Mostrar la fila
+                    } else {
+                        row.style.display = 'none'; // Ocultar la fila
+                    }
+                });
             });
         });
+
+        // Función para alternar el modo oscuro
+        const toggleButton = document.getElementById('toggle-mode');
+        toggleButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
+        });
     </script>
+
 </body>
 </html>
