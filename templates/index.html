@@ -137,20 +137,22 @@
                     {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                     <tr class="queue-type {{ jugador.queue_type }}">
-                        <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
-                        <td>{{ jugador.jugador }}</td>
-                        <td>{{ jugador.game_name }}</td>
-                        <td>
-                            <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
-                            {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                        </td>
-                        <td>{{ jugador.wins }}</td>
-                        <td>{{ jugador.losses }}</td>
-                        <td>{{ total_games }}</td>
-                        <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '{:.2f}'.format(win_rate) }}%</td>
-                        <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
-                        <td class="{% if jugador.en_partida %}estado-en-partida{% endif %}">{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
-                    </tr>
+    <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
+    <td><a href="{{ jugador.url_perfil }}" target="_blank">{{ jugador.jugador }}</a></td>
+    <td>{{ jugador.game_name }}</td>
+    <td>
+        <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
+        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+    </td>
+    <td>{{ jugador.wins }}</td>
+    <td>{{ jugador.losses }}</td>
+    <td>{{ total_games }}</td>
+    <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '{:.2f}'.format(win_rate) }}%</td>
+    <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
+    <td class="{% if jugador.en_partida %}estado-en-partida{% endif %}">
+        <a href="{{ jugador.url_ingame }}" target="_blank">{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</a>
+    </td>
+</tr>
                     {% endfor %}
                 </tbody>
             </table>
