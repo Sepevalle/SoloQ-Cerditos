@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,18 +52,21 @@
         }
 
         /* Estilo de tabla */
-        .table td, .table th {
+        .table td,
+        .table th {
             text-align: center; /* Centrar el texto en todas las celdas */
         }
     </style>
 </head>
+
 <body>
 
     <!-- Navbar con filtros -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="#"><i class="fas fa-trophy"></i> SoloQ Challenge Cerditos y Valientes</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarContent">
@@ -104,6 +108,7 @@
                         <th>Losses</th>
                         <th>Total Games</th>
                         <th>Win Rate</th>
+                        <th>Valor Clasificación</th> <!-- Nueva columna -->
                         <th>Estado</th>
                     </tr>
                 </thead>
@@ -111,7 +116,6 @@
                     {% for jugador in datos_jugadores %}
                     {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                    {% for jugador in datos_jugadores|sort(attribute='valor_clasificacion', reverse=True) %}
                     <tr class="queue-type {{ jugador.queue_type }}">
                         <td>{{ loop.index }}</td>
                         <td>{{ jugador.jugador }}</td>
@@ -124,6 +128,7 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
+                        <td>{{ jugador.valor_clasificacion }}</td> <!-- Mostrar el valor de clasificación -->
                         <td>{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
                     </tr>
                     {% endfor %}
@@ -169,14 +174,14 @@
         }
 
         // Mostrar la última actualización
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const lastUpdatedElement = document.getElementById('lastUpdated');
             const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
             lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualizar el contenido
         });
 
         // Asignar imágenes de Elo
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const elos = document.querySelectorAll('.elo-image');
             elos.forEach(elo => {
                 const tier = elo.alt.toUpperCase();
@@ -188,14 +193,14 @@
 
         // Funcionalidad del modo oscuro
         const toggleButton = document.getElementById('toggle-mode');
-        toggleButton.addEventListener('click', function() {
+        toggleButton.addEventListener('click', function () {
             document.body.classList.toggle('dark-mode');
             toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
         });
 
         // Filtro de jugadores por tipo de cola
         const filtro = document.getElementById('filtro');
-        filtro.addEventListener('change', function() {
+        filtro.addEventListener('change', function () {
             const selectedQueue = this.value;
             const filas = document.querySelectorAll('#jugadoresTable tbody tr');
 
@@ -208,6 +213,22 @@
                 }
             });
         });
+
+        // Ordenar la tabla por valor_clasificacion al cargar la página
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBody = document.querySelector('#jugadoresTable tbody');
+            const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
+
+            rowsArray.sort((a, b) => {
+                const valorA = parseFloat(a.cells[8].textContent); // Accede a la columna de valor_clasificacion
+                const valorB = parseFloat(b.cells[8].textContent);
+                return valorB - valorA; // Ordenar de mayor a menor
+            });
+
+            // Reemplazar el contenido de tbody con las filas ordenadas
+            rowsArray.forEach(row => tableBody.appendChild(row));
+        });
     </script>
 </body>
+
 </html>
