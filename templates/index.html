@@ -123,7 +123,7 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
-                        <td>{{ jugador.estado }} <!-- Nueva columna "Estado" con datos correspondientes --></td>
+                        <td>{{ 'Sí' if jugador.en_partida else 'No' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
