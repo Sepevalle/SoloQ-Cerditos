@@ -142,7 +142,7 @@
                         <td>{{ jugador.wins }}</td>
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
-                        <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ win_rate | round(2) }}%</td>
+                        <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '{:.2f}'.format(win_rate) }}%</td>
                         <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
                         <td>{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
                     </tr>
