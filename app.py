@@ -3,6 +3,7 @@ import requests
 import os
 import time
 import threading
+from datetime import datetime  # Importar datetime
 
 app = Flask(__name__)
 
@@ -114,10 +115,15 @@ def obtener_datos_jugadores():
     
     return todos_los_datos, cache['timestamp']
 
+def formatear_timestamp(timestamp):
+    dt_object = datetime.fromtimestamp(timestamp)  # Convertir el timestamp a datetime
+    return dt_object.strftime("%d-%m-%Y %H:%M:%S")  # Formato deseado
+
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
-    return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
+    formatted_timestamp = formatear_timestamp(timestamp)  # Formatear timestamp
+    return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=formatted_timestamp)
 
 @app.route('/estado-partida')
 def estado_partida():
