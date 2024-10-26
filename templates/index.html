@@ -127,8 +127,6 @@
             </table>
         </div>
     </div>
-    <!-- Mostrar la última actualización -->
-    <div class="text-center my-4"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -243,8 +241,54 @@
             });
 
             // Llamar a la función de filtro al cambiar el select
-            document.getElementById('filtro').addEventListener('change', filtrarPorQueueType);
-            
+            document.getElementById('filtro').addEventListener('change', () => {
+                filtrarPorQueueType(); // Llama a la función de filtrado
+                // Re-ordenar después de filtrar
+                const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+                const jugadoresFiltrados = visibleRows.map(row => {
+                    return {
+                        jugador: row.children[1].innerText,
+                        game_name: row.children[2].innerText,
+                        tier: row.children[3].innerText.split(' ')[0], // Extrae el tier del texto
+                        rank: row.children[3].innerText.split(' ')[1], // Extrae el rank del texto
+                        league_points: parseInt(row.children[3].innerText.match(/\((\d+) LPs\)/)[1]), // Extrae LPs
+                        wins: parseInt(row.children[4].innerText),
+                        losses: parseInt(row.children[5].innerText),
+                        en_partida: row.children[8].innerText === 'En Partida',
+                        queue_type: row.classList[1] // Guarda el tipo de cola
+                    };
+                });
+
+                const jugadoresOrdenados = ordenarJugadores(jugadoresFiltrados);
+
+                tableBody.innerHTML = ''; // Limpiar la tabla
+                jugadoresOrdenados.forEach((jugador, index) => {
+                    const totalGames = jugador.wins + jugador.losses;
+                    const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0;
+                    const row = `
+                        <tr class="queue-type ${jugador.queue_type}">
+                            <td>${index + 1}</td>
+                            <td>${jugador.jugador}</td>
+                            <td>${jugador.game_name}</td>
+                            <td>
+                                <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;">
+                                ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
+                            </td>
+                            <td>${jugador.wins}</td>
+                            <td>${jugador.losses}</td>
+                            <td>${totalGames}</td>
+                            <td>${winRate}%</td>
+                            <td>
+                                <span class="badge ${jugador.en_partida ? 'bg-success' : 'bg-secondary'}">
+                                    ${jugador.en_partida ? 'En Partida' : 'Inactivo'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+            });
+
             // Llamar a toggleDarkMode al hacer clic en el botón
             document.getElementById('toggle-mode').addEventListener('click', toggleDarkMode);
 
