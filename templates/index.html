@@ -123,10 +123,13 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
-                        <td class="estado-partida {{ 'en-partida' if jugador.en_partida else 'no-partida' }}">
-            {{ 'En Partida' if jugador.en_partida else 'No' }}
+                        <td>
+            {% if jugador.en_partida %}
+                <span class="badge bg-success">En Partida</span>
+            {% else %}
+                <span class="badge bg-secondary">Inactivo</span>
+            {% endif %}
         </td>
-                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
