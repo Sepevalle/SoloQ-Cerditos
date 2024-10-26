@@ -246,31 +246,10 @@
                 tableBody.insertAdjacentHTML('beforeend', row);
             });
         });
-   // Agregar evento para el filtro
-            const filtroSelect = document.getElementById('filtro');
-            filtroSelect.addEventListener('change', (event) => {
-                const selectedQueue = event.target.value;
-                const rows = tableBody.querySelectorAll('tr');
 
-                rows.forEach(row => {
-                    // Obtener el tipo de cola de la clase del tr
-                    const queueType = row.classList.contains('queue-type') ? row.classList[1] : '';
-                    if (selectedQueue === 'todo' || queueType === selectedQueue) {
-                        row.style.display = ''; // Mostrar la fila
-                    } else {
-                        row.style.display = 'none'; // Ocultar la fila
-                    }
-                });
-            });
-        });
 
-        // Función para alternar el modo oscuro
-        const toggleButton = document.getElementById('toggle-mode');
-        toggleButton.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
-        });
+        
     </script>
-
 </body>
 </html>
+         
