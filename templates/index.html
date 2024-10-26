@@ -56,6 +56,11 @@
         .table th {
             text-align: center; /* Centrar el texto en todas las celdas */
         }
+
+        /* Ocultar la columna de valor_clasificacion */
+        .hidden {
+            display: none; /* Ocultar columna */
+        }
     </style>
 </head>
 
@@ -108,6 +113,7 @@
                         <th>Losses</th>
                         <th>Total Games</th>
                         <th>Win Rate</th>
+                        <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
                         <th>Estado</th>
                     </tr>
                 </thead>
@@ -127,6 +133,7 @@
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
+                        <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
                         <td>{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
                     </tr>
                     {% endfor %}
@@ -158,11 +165,10 @@
         // Función para ajustar la hora a UTC+2
         function ajustarHoraUTC2(timestamp) {
             let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
-            date.setHours(date.getHours() + 2); // Ajustar la hora sumando 2 horas
+            date.setHours(date.getHours() + 2); // Ajustar la hora a UTC+2
 
-            // Formatear la fecha y hora para mostrarla en formato DD-MM-YYYY
             let day = ('0' + date.getDate()).slice(-2);
-            let month = ('0' + (date.getMonth() + 1)).slice(-2); // Los meses son de 0-11
+            let month = ('0' + (date.getMonth() + 1)).slice(-2);
             let year = date.getFullYear();
             let hours = ('0' + date.getHours()).slice(-2);
             let minutes = ('0' + date.getMinutes()).slice(-2);
