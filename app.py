@@ -68,6 +68,31 @@ def leer_cuentas(url):
         print(f"Error al leer las cuentas: {e}")
         return []
 
+def calcular_valor_clasificacion(tier, rank, league_points):
+    tierOrden = {
+        "CHALLENGER": 8,
+        "GRANDMASTER": 7,
+        "MASTER": 6,
+        "EMERALD": 5,
+        "PLATINUM": 4,
+        "GOLD": 3,
+        "SILVER": 2,
+        "BRONZE": 1,
+        "IRON": 0
+    }
+
+    rankOrden = {
+        "I": 4,
+        "II": 3,
+        "III": 2,
+        "IV": 1
+    }
+
+    tierValue = tierOrden.get(tier.upper(), 0)
+    rankValue = rankOrden.get(rank, 0)
+
+    return tierValue * 100 + rankValue * 10 + league_points
+
 def obtener_datos_jugadores():
     global cache
 
@@ -104,7 +129,12 @@ def obtener_datos_jugadores():
                                 "wins": entry.get('wins', 0),
                                 "losses": entry.get('losses', 0),
                                 "jugador": jugador,
-                                "en_partida": en_partida  # Agrega el estado del jugador
+                                "en_partida": en_partida,  # Agrega el estado del jugador
+                                "valor_clasificacion": calcular_valor_clasificacion(
+                                    entry.get('tier', 'Sin rango'),
+                                    entry.get('rank', ''),
+                                    entry.get('leaguePoints', 0)
+                                )  # Calcular el valor de clasificación
                             }
                             todos_los_datos.append(datos_jugador)
 
