@@ -1,9 +1,8 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template
 import requests
 import os
 import time
-import threading
-from datetime import datetime  # Importar datetime
+import threading  # Importar threading para ejecutar la función keep_alive en un hilo
 
 app = Flask(__name__)
 
@@ -44,15 +43,6 @@ def obtener_elo(api_key, summoner_id):
         print(f"Error al obtener Elo: {response.status_code} - {response.text}")
         return None
 
-def obtener_estado_partida(summoner_id, api_key):
-    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{summoner_id}?api_key={api_key}"
-    try:
-        response = requests.get(url)
-        return response.status_code == 200
-    except Exception as e:
-        print(f"Error al obtener estado de la partida: {e}")
-        return False
-
 def leer_cuentas(url):
     try:
         response = requests.get(url)
@@ -76,6 +66,7 @@ def leer_cuentas(url):
 def obtener_datos_jugadores():
     global cache
 
+    # Comprobar si los datos en caché son válidos
     if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
         return cache['datos_jugadores'], cache['timestamp']
 
@@ -93,7 +84,6 @@ def obtener_datos_jugadores():
             if summoner_info:
                 summoner_id = summoner_info['id']
                 elo_info = obtener_elo(api_key, summoner_id)
-                en_partida = obtener_estado_partida(summoner_id, api_key)
 
                 if elo_info:
                     for entry in elo_info:
@@ -105,56 +95,38 @@ def obtener_datos_jugadores():
                             "league_points": entry.get('leaguePoints', 0),
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
-                            "jugador": jugador,
-                            "puuid": puuid,
-                            "en_partida": en_partida
+                            "jugador": jugador
                         }
                         todos_los_datos.append(datos_jugador)
 
+    # Actualizar el caché
     cache['datos_jugadores'] = todos_los_datos
     cache['timestamp'] = time.time()
     
-    return todos_los_datos, cache['timestamp']
-
-def formatear_timestamp(timestamp):
-    dt_object = datetime.fromtimestamp(timestamp)  # Convertir el timestamp a datetime
-    return dt_object.strftime("%d-%m-%Y %H:%M:%S")  # Formato deseado
+    return todos_los_datos, cache['timestamp']  # Devuelve también la timestamp
 
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
-    formatted_timestamp = formatear_timestamp(timestamp)  # Formatear timestamp
-    return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=formatted_timestamp)
-
-@app.route('/estado-partida')
-def estado_partida():
-    api_key = os.environ.get('RIOT_API_KEY')
-    datos_jugadores = cache.get('datos_jugadores', [])
-    estados = []
     
-    for jugador in datos_jugadores:
-        summoner_info = obtener_id_invocador(api_key, jugador['puuid'])
-        if summoner_info:
-            en_partida = obtener_estado_partida(summoner_info['id'], api_key)
-            estados.append({
-                'puuid': jugador['puuid'],
-                'en_partida': en_partida
-            })
-    
-    return jsonify(estados)
+    # Enviar el timestamp para ser procesado en la plantilla
+    return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
+# Función que hará peticiones periódicas a la app para evitar hibernación
 def keep_alive():
     while True:
         try:
+            # Cambia la URL por la de tu aplicación en Render
             requests.get('https://soloq-cerditos.onrender.com/')
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
-        time.sleep(600)
+        time.sleep(600)  # Esperar 5 minutos
 
 if __name__ == "__main__":
+    # Iniciar el hilo para mantener la app activa
     thread = threading.Thread(target=keep_alive)
-    thread.daemon = True
+    thread.daemon = True  # El hilo se detendrá si el programa principal se detiene
     thread.start()
 
     port = int(os.environ.get("PORT", 5000))
