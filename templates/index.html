@@ -4,101 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datos de Jugadores</title>
-    <!-- Combinar CSS en un solo archivo -->
+    <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Tu CSS personalizado -->
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
     <style>
+        /* Estilos para el modo oscuro */
         body {
-            transition: background-color 0.3s, color 0.3s;
-            padding-top: 60px;
+            transition: background-color 0.3s, color 0.3s; /* Transición suave */
         }
+
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
+
         .dark-mode .navbar {
-            background-color: #343a40 !important;
-        }
-        .dark-mode .table {
             background-color: #343a40 !important;
             color: white;
         }
+
+        .dark-mode .navbar-brand,
+        .dark-mode .nav-link {
+            color: white; /* Cambia el color del texto de la navbar a blanco */
+        }
+
+        .dark-mode .table {
+            background-color: #343a40 !important; /* Fondo de la tabla */
+            color: white; /* Color del texto de la tabla */
+        }
+
+        .dark-mode .table-dark {
+            background-color: #343a40 !important; /* Fondo de la tabla oscura */
+            color: white; /* Color del texto de la tabla oscura */
+        }
+
+        .dark-mode .table-dark th {
+            background-color: #454d55 !important; /* Fondo de las cabeceras de la tabla */
+        }
+
+        .dark-mode .btn-secondary {
+            background-color: #6c757d !important;
+            border-color: #6c757d !important;
+        }
+
+        /* Estilo de tabla */
         .table td, .table th {
-            text-align: center;
-            vertical-align: middle;
-        }
-        .badge {
-            font-size: 0.9em;
-            padding: 0.5em 0.7em;
-        }
-        .elo-image {
-            width: 32px;
-            height: 32px;
-            vertical-align: middle;
-        }
-        .banner-img {
-            max-width: 100%;
-            height: auto;
+            text-align: center; /* Centrar el texto en todas las celdas */
         }
     </style>
 </head>
 <body>
+
+    <!-- Navbar con filtros -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#"><i class="fas fa-trophy"></i> SoloQ Challenge</a>
-            <div class="d-flex align-items-center">
-                <select id="filtro" class="form-select me-2">
-                    <option value="RANKED_SOLO_5x5" selected>SoloQ</option>
-                    <option value="RANKED_FLEX_SR">Flex</option>
-                    <option value="todo">TODO</option>
-                </select>
-                <button id="toggle-mode" class="btn btn-secondary">Modo Oscuro</button>
+            <a class="navbar-brand" href="#"><i class="fas fa-trophy"></i> SoloQ Challenge Cerditos y Valientes</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item d-flex align-items-center">
+                        <label for="filtro" class="nav-link mb-0 me-2">Filtrar por Queue Type:</label>
+                        <select id="filtro" class="form-select me-2">
+                            <option value="RANKED_SOLO_5x5" selected>SoloQ</option>
+                            <option value="RANKED_FLEX_SR">Flex</option>
+                            <option value="todo">TODO</option>
+                        </select>
+                    </li>
+                </ul>
+                <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
             </div>
         </div>
     </nav>
 
+    <!-- Imagen del banner ajustada al tamaño de la tabla -->
+    <div class="container my-4 d-flex justify-content-center">
+        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Banner.jpg" alt="Banner" class="banner-img" id="banner-img">
+    </div>
+
+    <!-- Tabla con los datos -->
     <div class="container">
-        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Banner.jpg" 
-             alt="Banner" 
-             class="banner-img mb-4"
-             loading="lazy">
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Jugadores</h1>
-            <div id="lastUpdated"></div>
+            <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
         </div>
-
         <div class="table-responsive">
-            <table class="table table-hover" id="jugadoresTable">
+            <table class="table table-hover table-striped" id="jugadoresTable">
                 <thead class="table-dark">
                     <tr>
-                        <th>Pos</th>
+                        <th>Posición</th>
                         <th>Jugador</th>
                         <th>Game Name</th>
                         <th>Elo</th>
-                        <th>W</th>
-                        <th>L</th>
-                        <th>Total</th>
-                        <th>WR</th>
-                        <th>Estado</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Total Games</th>
+                        <th>Win Rate</th>
+                        <th>Estado</th> <!-- Nueva columna "Estado" -->
                     </tr>
                 </thead>
-                <tbody id="tableBody">
-                    <!-- El contenido se generará dinámicamente -->
+                <tbody>
+                    {% for jugador in datos_jugadores %}
+                    {% set total_games = jugador.wins + jugador.losses %}
+                    {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
+                    <tr class="queue-type {{ jugador.queue_type }}"> <!-- Agregar clase para el tipo de cola -->
+                        <td>{{ loop.index }}</td>
+                        <td>{{ jugador.jugador }}</td>
+                        <td>{{ jugador.game_name }}</td>
+                        <td>
+                            <img src="" alt="{{ jugador.tier }}" style="width: 32px; height: 32px;" class="elo-image">
+                            {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+                        </td>
+                        <td>{{ jugador.wins }}</td>
+                        <td>{{ jugador.losses }}</td>
+                        <td>{{ total_games }}</td>
+                        <td>{{ win_rate | round(2) }}%</td>
+                        <td>{{ jugador.estado }} <!-- Nueva columna "Estado" con datos correspondientes --></td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script>
-        // Cachear elementos DOM frecuentemente usados
-        const tableBody = document.getElementById('tableBody');
-        const filtroSelect = document.getElementById('filtro');
-        const toggleButton = document.getElementById('toggle-mode');
-        const lastUpdatedElement = document.getElementById('lastUpdated');
+    <!-- Mostrar la última actualización -->
+    <div class="text-center my-4"></div>
 
-        // Precarga de imágenes de elo
+    <!-- Bootstrap 5.3.3 JS y dependencias -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script para ajustar y mostrar la hora de la última actualización -->
+    <script>
         const imagenesElo = {
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
             "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
@@ -111,105 +151,128 @@
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
         };
 
-        // Función para renderizar la tabla
-        function renderizarTabla(datos) {
-            const fragmento = document.createDocumentFragment();
-            
-            datos.forEach((jugador, index) => {
-                const tr = document.createElement('tr');
-                const totalGames = jugador.wins + jugador.losses;
-                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0;
+        // Función para ajustar la hora a UTC+2
+        function ajustarHoraUTC2(timestamp) {
+            let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
+            date.setHours(date.getHours()); // Ajustar la hora sumando 2 horas
 
-                tr.className = `queue-type ${jugador.queue_type}`;
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${jugador.jugador}</td>
-                    <td>${jugador.game_name}</td>
-                    <td>
-                        <img src="logos_elo/${imagenesElo[jugador.tier]}" 
-                             alt="${jugador.tier}" 
-                             class="elo-image"
-                             loading="lazy">
-                        ${jugador.tier} ${jugador.rank} (${jugador.league_points} LP)
-                    </td>
-                    <td>${jugador.wins}</td>
-                    <td>${jugador.losses}</td>
-                    <td>${totalGames}</td>
-                    <td>${winRate}%</td>
-                    <td><span class="badge bg-secondary">Inactivo</span></td>
+            // Formatear la fecha y hora para mostrarla en formato DD-MM-YYYY
+            let day = ('0' + date.getDate()).slice(-2);
+            let month = ('0' + (date.getMonth() + 1)).slice(-2);
+            let year = date.getFullYear();
+            let hours = ('0' + date.getHours()).slice(-2);
+            let minutes = ('0' + date.getMinutes()).slice(-2);
+            let seconds = ('0' + date.getSeconds()).slice(-2);
+
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+        }
+
+        // Mostrar la última actualización
+        document.addEventListener('DOMContentLoaded', function() {
+            const lastUpdatedElement = document.getElementById(' lastUpdated');
+            const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
+            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualiza el texto
+        });
+
+        // Función para obtener valor de clasificación
+        function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
+            const tierOrden = {
+                "CHALLENGER": 8,
+                "GRANDMASTER": 7,
+                "MASTER": 6,
+                "EMERALD": 5,
+                "PLATINUM": 4,
+                "GOLD": 3,
+                "SILVER": 2,
+                "BRONZE": 1,
+                "IRON": 0
+            };
+
+            const rankOrden = {
+                "I": 4,
+                "II": 3,
+                "III": 2,
+                "IV": 1
+            };
+
+            return {
+                tierValue: tierOrden[tier] || 0,
+                rankValue: rankOrden[rank] || 0,
+                leaguePoints: leaguePoints
+            };
+        }
+
+        // Función para ordenar jugadores
+        function ordenarJugadores(jugadores) {
+            return jugadores.sort((a, b) => {
+                const aValor = obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
+                const bValor = obtenerValorDeClasificacion(b.tier, b.rank, b.league_points);
+
+                if (aValor.tierValue !== bValor.tierValue) {
+                    return bValor.tierValue - aValor.tierValue; // Orden descendente
+                }
+                if (aValor.rankValue !== bValor.rankValue) {
+                    return bValor.rankValue - aValor.rankValue; // Orden descendente
+                }
+                return bValor.leaguePoints - aValor.leaguePoints; // Orden descendente
+            });
+        }
+
+        // Inicializar DataTable para ordenar
+        document.addEventListener('DOMContentLoaded', function() {
+            const datosJugadores = {{ datos_jugadores|tojson }}; // Cargar datos desde tu backend
+            const jugadoresOrdenados = ordenarJugadores(datosJugadores);
+
+            // Actualizar la tabla con los jugadores ordenados
+            const tableBody = document.querySelector('#jugadoresTable tbody');
+            tableBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
+            jugadoresOrdenados.forEach((jugador, index) => {
+                const totalGames = jugador.wins + jugador.losses; // Calcula el total de juegos
+                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Calcula el win rate
+                const row = `
+                    <tr class="queue-type ${jugador.queue_type}"> <!-- Agregar clase para el tipo de cola -->
+                        <td>${index + 1}</td>
+                        <td>${jugador.jugador}</td>
+                        <td>${jugador.game_name}</td>
+                        <td>
+                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> 
+                            ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
+                        </td>
+                        <td>${jugador.wins}</td>
+                        <td>${jugador.losses}</td>
+                        <td>${totalGames}</td>
+                        <td>${winRate}%</td>
+                        <td>${jugador.estado}</td> <!-- Nueva columna "Estado" -->
+                    </tr>
                 `;
-                fragmento.appendChild(tr);
+                tableBody.insertAdjacentHTML('beforeend', row);
             });
 
-            tableBody.innerHTML = '';
-            tableBody.appendChild(fragmento);
-        }
+            // Agregar evento para el filtro
+            const filtroSelect = document.getElementById('filtro');
+            filtroSelect.addEventListener('change', (event) => {
+                const selectedQueue = event.target.value;
+                const rows = tableBody.querySelectorAll('tr');
 
-        // Función para filtrar jugadores
-        function filtrarJugadores() {
-            const selectedQueue = filtroSelect.value;
-            const rows = tableBody.getElementsByTagName('tr');
-            
-            for (let row of rows) {
-                row.style.display = 
-                    selectedQueue === 'todo' || row.classList.contains(selectedQueue) 
-                        ? '' 
-                        : 'none';
-            }
-        }
-
-        // Event Listeners
-        filtroSelect.addEventListener('change', filtrarJugadores);
-        
-        toggleButton.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            toggleButton.textContent = 
-                document.body.classList.contains('dark-mode') 
-                    ? 'Modo Claro' 
-                    : 'Modo Oscuro';
-        });
-
-        // Inicialización
-        document.addEventListener('DOMContentLoaded', () => {
-            const datos = {{ datos_jugadores|tojson }};
-            renderizarTabla(datos);
-            
-            // Actualizar timestamp
-            const timestamp = {{ timestamp|tojson }};
-            const fecha = new Date(timestamp * 1000);
-            lastUpdatedElement.textContent = `Última actualización: ${fecha.toLocaleString()}`;
-        });
-
-        // Actualización periódica del estado
-        let actualizacionEnProgreso = false;
-
-        async function actualizarEstado() {
-            if (actualizacionEnProgreso) return;
-            
-            actualizacionEnProgreso = true;
-            try {
-                const response = await fetch('/estado-partida');
-                const estados = await response.json();
-                
-                estados.forEach(estado => {
-                    const row = tableBody.querySelector(`tr[data-puuid="${estado.puuid}"]`);
-                    if (row) {
-                        const estadoCell = row.querySelector('td:last-child');
-                        estadoCell.innerHTML = `
-                            <span class="badge ${estado.en_partida ? 'bg-success' : 'bg-secondary'}">
-                                ${estado.en_partida ? 'En Partida' : 'Inactivo'}
-                            </span>
-                        `;
+                rows.forEach(row => {
+                    // Obtener el tipo de cola de la clase del tr
+                    const queueType = row.classList.contains('queue-type') ? row.classList[1] : '';
+                    if (selectedQueue === 'todo' || queueType === selectedQueue) {
+                        row.style.display = ''; // Mostrar la fila
+                    } else {
+                        row.style.display = 'none'; // Ocultar la fila
                     }
                 });
-            } catch (error) {
-                console.error('Error:', error);
-            } finally {
-                actualizacionEnProgreso = false;
-            }
-        }
+            });
+        });
 
-        setInterval(actualizarEstado, 120000);
+        // Función para alternar el modo oscuro
+        const toggleButton = document.getElementById('toggle-mode');
+        toggleButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
+        });
     </script>
+
 </body>
 </html>
