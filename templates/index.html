@@ -61,14 +61,14 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item d-flex align-items-center">
                         <label for="filtro" class="nav-link mb-0 me-2">Filtrar por Queue Type:</label>
-                        <select id="filtro" class="form-select me-2" onchange="filtrarPorQueueType()">
+                        <select id="filtro" class="form-select me-2">
                             <option value="RANKED_SOLO_5x5" selected>SoloQ</option>
                             <option value="RANKED_FLEX_SR">Flex</option>
                             <option value="todo">TODO</option>
                         </select>
                     </li>
                 </ul>
-                <button id="toggle-mode" class="btn btn-secondary ms-auto" onclick="toggleDarkMode()">Modo Oscuro</button>
+                <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
             </div>
         </div>
     </nav>
@@ -82,7 +82,7 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Jugadores</h1>
-            <div id="lastUpdated" class="text-end">Última actualización: --</div>
+            <div id="lastUpdated" class="text-end">Última actualización: {{ timestamp }}</div> <!-- Utiliza timestamp -->
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
@@ -144,14 +144,6 @@
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
         };
 
-        // Función para mostrar la hora de última actualización en formato UTC+2
-        function actualizarHora() {
-            const now = new Date();
-            now.setHours(now.getHours() + 2); // Ajuste de zona horaria (UTC+2)
-            const formattedDate = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            document.getElementById('lastUpdated').innerText = `Última actualización: ${formattedDate}`;
-        }
-
         // Función para obtener valor de clasificación
         function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
             const tierOrden = {
@@ -165,42 +157,8 @@
                 "BRONZE": 3,
                 "IRON": 2
             };
-
-            const rankOrden = {
-                "I": 4,
-                "II": 3,
-                "III": 2,
-                "IV": 1
-            };
-
-            return tierOrden[tier] * 10 + rankOrden[rank] + (leaguePoints / 100);
+            return tierOrden[tier] * 1000 + parseInt(rank) + (parseInt(leaguePoints) / 100);
         }
-
-        // Filtrar por Queue Type
-        function filtrarPorQueueType() {
-            const queueType = document.getElementById('filtro').value;
-            const filas = document.querySelectorAll('#jugadoresTable tbody tr');
-            filas.forEach(fila => {
-                if (queueType === "todo" || fila.classList.contains(queueType)) {
-                    fila.style.display = '';
-                } else {
-                    fila.style.display = 'none';
-                }
-            });
-        }
-
-        // Alternar entre modo oscuro y claro
-        function toggleDarkMode() {
-            const body = document.body;
-            body.classList.toggle('dark-mode');
-            const button = document.getElementById('toggle-mode');
-            button.textContent = body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
-        }
-
-        // Actualizar la hora al cargar la página
-        window.onload = function() {
-            actualizarHora();
-        };
     </script>
 </body>
 </html>
