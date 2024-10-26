@@ -1,3 +1,31 @@
+/* Estilos para el estado de partida */
+.estado-partida {
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.en-partida {
+    color: #4CAF50;
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.no-partida {
+    color: #757575;
+}
+
+@keyframes actualizar {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.actualizando {
+    animation: actualizar 0.5s ease;
+}
+
+/* En modo oscuro */
+.dark-mode .en
+
 /* Estilos para el modo oscuro */
 body.dark-mode {
     background-color: #121212;
