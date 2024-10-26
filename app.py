@@ -43,6 +43,17 @@ def obtener_elo(api_key, summoner_id):
         print(f"Error al obtener Elo: {response.status_code} - {response.text}")
         return None
 
+def esta_en_partida(api_key, puuid):
+    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return True  # El jugador está en partida
+    elif response.status_code == 404:
+        return False  # El jugador no está en partida
+    else:
+        print(f"Error al verificar si está en partida: {response.status_code} - {response.text}")
+        return None  # Manejar otros errores
+
 def leer_cuentas(url):
     try:
         response = requests.get(url)
@@ -87,6 +98,8 @@ def obtener_datos_jugadores():
                     elo_info = obtener_elo(api_key, summoner_id)
 
                     if elo_info:
+                        en_partida = esta_en_partida(api_key, puuid)  # Verifica si el jugador está en partida
+
                         for entry in elo_info:
                             datos_jugador = {
                                 "game_name": riot_id,
@@ -96,7 +109,8 @@ def obtener_datos_jugadores():
                                 "league_points": entry.get('leaguePoints', 0),
                                 "wins": entry.get('wins', 0),
                                 "losses": entry.get('losses', 0),
-                                "jugador": jugador
+                                "jugador": jugador,
+                                "en_partida": en_partida  # Agrega el estado del jugador
                             }
                             todos_los_datos.append(datos_jugador)
 
