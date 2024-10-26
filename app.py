@@ -120,8 +120,11 @@ def obtener_datos_jugadores():
                         en_partida = esta_en_partida(api_key, puuid)  # Verifica si el jugador está en partida
 
                         # Definir las URLs del perfil y del estado en partida
-                        url_perfil = f"https://www.op.gg/summoners/euw/{riot_id}-{region}"
-                        url_ingame = f"https://www.op.gg/summoners/euw/{riot_id}-{region}/ingame"
+                        riot_id_modified = riot_id.replace("#", "-")
+
+                        # Genera las URLs
+                        url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
+                        url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
 
                         for entry in elo_info:
                             datos_jugador = {
