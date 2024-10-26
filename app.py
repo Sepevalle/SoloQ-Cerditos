@@ -123,6 +123,7 @@ def formatear_timestamp(timestamp):
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
     formatted_timestamp = formatear_timestamp(timestamp)  # Formatear timestamp
+    # Enviar el timestamp formateado para ser procesado en la plantilla
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=formatted_timestamp)
 
 @app.route('/estado-partida')
