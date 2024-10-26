@@ -43,12 +43,11 @@ def obtener_elo(api_key, summoner_id):
         print(f"Error al obtener Elo: {response.status_code} - {response.text}")
         return None
 
-def verificar_estado_partida(api_key, puuid):
-    """Verifica si un jugador está en partida usando la API v5"""
-    url = f"https://europe.api.riotgames.com/lol/spectator/v5/active-games/by-puuid/{puuid}?api_key={api_key}"
+def obtener_estado_partida(summoner_id, api_key):
+    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{summoner_id}?api_key={api_key}"
     try:
         response = requests.get(url)
-        return response.status_code == 200  # True si está en partida, False si no
+        return response.status_code == 200
     except:
         return False
 
@@ -78,7 +77,7 @@ def obtener_datos_jugadores():
     if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
         return cache['datos_jugadores'], cache['timestamp']
 
-    api_key = os.environ.get('RIOT_API_KEY', 'TU_API_KEY')
+    api_key = os.environ.get('RIOT_API_KEY', 'TU-API-KEY-AQUI')
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     cuentas = leer_cuentas(url_cuentas)
     todos_los_datos = []
@@ -92,12 +91,11 @@ def obtener_datos_jugadores():
             if summoner_info:
                 summoner_id = summoner_info['id']
                 elo_info = obtener_elo(api_key, summoner_id)
-                en_partida = verificar_estado_partida(api_key, puuid)
+                en_partida = obtener_estado_partida(summoner_id, api_key)
 
                 if elo_info:
                     for entry in elo_info:
                         datos_jugador = {
-                            "puuid": puuid,
                             "game_name": riot_id,
                             "queue_type": entry.get('queueType', 'Desconocido'),
                             "tier": entry.get('tier', 'Sin rango'),
@@ -106,6 +104,7 @@ def obtener_datos_jugadores():
                             "wins": entry.get('wins', 0),
                             "losses": entry.get('losses', 0),
                             "jugador": jugador,
+                            "puuid": puuid,
                             "en_partida": en_partida
                         }
                         todos_los_datos.append(datos_jugador)
@@ -121,26 +120,20 @@ def index():
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
 @app.route('/estado-partida')
-def obtener_estado_partida():
-    api_key = os.environ.get('RIOT_API_KEY', 'TU_API_KEY')
-    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
-    cuentas = leer_cuentas(url_cuentas)
+def estado_partida():
+    api_key = os.environ.get('RIOT_API_KEY')
+    datos_jugadores = cache.get('datos_jugadores', [])
     estados = []
-
-    for riot_id, jugador in cuentas:
-        region = riot_id.split('#')[-1]
-        puuid_info = obtener_puuid(api_key, riot_id.split('#')[0], region)
-        
-        if puuid_info:
-            puuid = puuid_info['puuid']
-            en_partida = verificar_estado_partida(api_key, puuid)
-            
+    
+    for jugador in datos_jugadores:
+        summoner_info = obtener_id_invocador(api_key, jugador['puuid'])
+        if summoner_info:
+            en_partida = obtener_estado_partida(summoner_info['id'], api_key)
             estados.append({
-                'puuid': puuid,
-                'jugador': jugador,
+                'puuid': jugador['puuid'],
                 'en_partida': en_partida
             })
-
+    
     return jsonify(estados)
 
 def keep_alive():
