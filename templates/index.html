@@ -13,7 +13,7 @@
     <style>
         /* Estilos para el modo oscuro */
         body {
-            transition: background-color 0.3s, color 0.3s; /* Transición suave */
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .dark-mode {
@@ -28,21 +28,21 @@
 
         .dark-mode .navbar-brand,
         .dark-mode .nav-link {
-            color: white; /* Cambia el color del texto de la navbar a blanco */
+            color: white;
         }
 
         .dark-mode .table {
-            background-color: #343a40 !important; /* Fondo de la tabla */
-            color: white; /* Color del texto de la tabla */
+            background-color: #343a40 !important;
+            color: white;
         }
 
         .dark-mode .table-dark {
-            background-color: #343a40 !important; /* Fondo de la tabla oscura */
-            color: white; /* Color del texto de la tabla oscura */
+            background-color: #343a40 !important;
+            color: white;
         }
 
         .dark-mode .table-dark th {
-            background-color: #454d55 !important; /* Fondo de las cabeceras de la tabla */
+            background-color: #454d55 !important;
         }
 
         .dark-mode .btn-secondary {
@@ -52,7 +52,21 @@
 
         /* Estilo de tabla */
         .table td, .table th {
-            text-align: center; /* Centrar el texto en todas las celdas */
+            text-align: center;
+        }
+
+        /* Estilos para los badges */
+        .badge {
+            font-size: 0.9em;
+            padding: 0.5em 0.7em;
+        }
+
+        .dark-mode .badge.bg-secondary {
+            background-color: #6c757d !important;
+        }
+
+        .dark-mode .badge.bg-success {
+            background-color: #198754 !important;
         }
     </style>
 </head>
@@ -62,7 +76,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="#"><i class="fas fa-trophy"></i> SoloQ Challenge Cerditos y Valientes</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarContent">
@@ -81,7 +95,7 @@
         </div>
     </nav>
 
-    <!-- Imagen del banner ajustada al tamaño de la tabla -->
+    <!-- Imagen del banner -->
     <div class="container my-4 d-flex justify-content-center">
         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Banner.jpg" alt="Banner" class="banner-img" id="banner-img">
     </div>
@@ -90,7 +104,7 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Jugadores</h1>
-            <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
+            <div id="lastUpdated" class="text-end"></div>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="jugadoresTable">
@@ -111,7 +125,7 @@
                     {% for jugador in datos_jugadores %}
                     {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                    <tr class="queue-type {{ jugador.queue_type }}"> <!-- Agregar clase para el tipo de cola -->
+                    <tr class="queue-type {{ jugador.queue_type }}" data-puuid="{{ jugador.puuid }}">
                         <td>{{ loop.index }}</td>
                         <td>{{ jugador.jugador }}</td>
                         <td>{{ jugador.game_name }}</td>
@@ -124,50 +138,22 @@
                         <td>{{ total_games }}</td>
                         <td>{{ win_rate | round(2) }}%</td>
                         <td>
-            {% if jugador.en_partida %}
-                <span class="badge bg-success">En Partida</span>
-            {% else %}
-                <span class="badge bg-secondary">Inactivo</span>
-            {% endif %}
-        </td>
+                            {% if jugador.en_partida %}
+                                <span class="badge bg-success">En Partida</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Mostrar la última actualización -->
-    <div class="text-center my-4"></div>
-
-    <!-- Bootstrap 5.3.3 JS y dependencias -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-
-<script>
-    function actualizarEstadoPartida() {
-        fetch('/estado-partida')
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(jugador => {
-                    const fila = document.querySelector(`tr[data-summoner-id="${jugador.summoner_id}"]`);
-                    if (fila) {
-                        const celda = fila.querySelector('.estado-partida');
-                        celda.textContent = jugador.en_partida ? 'En Partida' : 'No';
-                        celda.className = `estado-partida ${jugador.en_partida ? 'en-partida' : 'no-partida'}`;
-                        celda.classList.add('actualizando');
-                        setTimeout(() => celda.classList.remove('actualizando'), 500);
-                    }
-                });
-            })
-            .catch(error => console.error('Error:', error));
-    }
-
-    // Actualizar cada 2 minutos (120000 ms)
-    setInterval(actualizarEstadoPartida, 120000);
-</script>
-
-    
-    <!-- Script para ajustar y mostrar la hora de la última actualización -->
     <script>
         const imagenesElo = {
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
@@ -175,133 +161,41 @@
             "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
             "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
             "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
-            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/ refs/heads/main/logos_elo/Emerald.png",
             "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
-            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
-            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png"
         };
 
-        // Función para ajustar la hora a UTC+2
-        function ajustarHoraUTC2(timestamp) {
-            let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
-            date.setHours(date.getHours()); // Ajustar la hora sumando 2 horas
-
-            // Formatear la fecha y hora para mostrarla en formato DD-MM-YYYY
-            let day = ('0' + date.getDate()).slice(-2);
-            let month = ('0' + (date.getMonth() + 1)).slice(-2);
-            let year = date.getFullYear();
-            let hours = ('0' + date.getHours()).slice(-2);
-            let minutes = ('0' + date.getMinutes()).slice(-2);
-            let seconds = ('0' + date.getSeconds()).slice(-2);
-
-            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+        // Función para actualizar el estado de los jugadores
+        function actualizarEstadoJugadores() {
+            fetch('/estado-partida')
+                .then(response => response.json())
+                .then(estados => {
+                    estados.forEach(estado => {
+                        const fila = document.querySelector(`tr[data-puuid="${estado.puuid}"]`);
+                        if (fila) {
+                            const celdaEstado = fila.querySelector('td:last-child');
+                            if (estado.en_partida) {
+                                celdaEstado.innerHTML = '<span class="badge bg-success">En Partida</span>';
+                            } else {
+                                celdaEstado.innerHTML = '<span class="badge bg-secondary">Inactivo</span>';
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-        // Mostrar la última actualización
-        document.addEventListener('DOMContentLoaded', function() {
-            const lastUpdatedElement = document.getElementById('lastUpdated');
-            const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
-            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualiza el texto
-        });
+        // Actualizar estados cada 2 minutos
+        setInterval(actualizarEstadoJugadores, 120000);
 
-        // Función para obtener valor de clasificación
-        function obtenerValorDeClasificacion(tier, rank, leaguePoints) {
-            const tierOrden = {
-                "CHALLENGER": 8,
-                "GRANDMASTER": 7,
-                "MASTER": 6,
-                "EMERALD": 5,
-                "PLATINUM": 4,
-                "GOLD": 3,
-                "SILVER": 2,
-                "BRONZE": 1,
-                "IRON": 0
-            };
+        // También actualizar al cargar la página
+        document.addEventListener('DOMContentLoaded', actualizarEstadoJugadores);
 
-            const rankOrden = {
-                "I": 4,
-                "II": 3,
-                "III": 2,
-                "IV": 1
-            };
-
-            return {
-                tierValue: tierOrden[tier] || 0,
-                rankValue: rankOrden[rank] || 0,
-                leaguePoints: leaguePoints
-            };
-        }
-
-        // Función para ordenar jugadores
-        function ordenarJugadores(jugadores) {
-            return jugadores.sort((a, b) => {
-                const aValor = obtenerValorDeClasificacion(a.tier, a.rank, a.league_points);
-                const bValor = obtenerValorDeClasificacion(b.tier, b.rank, b.league_points);
-
-                if (aValor.tierValue !== bValor.tierValue) {
-                    return bValor.tierValue - aValor.tierValue; // Orden descendente
-                }
-                if (aValor.rankValue !== bValor.rankValue) {
-                    return bValor.rankValue - aValor.rankValue; // Orden descendente
-                }
-                return bValor.leaguePoints - aValor.leaguePoints; // Orden descendente
-            });
-        }
-
-        // Inicializar DataTable para ordenar
-        document.addEventListener('DOMContentLoaded', function() {
-            const datosJugadores = {{ datos_jugadores|tojson }}; // Cargar datos desde tu backend
-            const jugadoresOrdenados = ordenarJugadores(datosJugadores);
-
-            // Actualizar la tabla con los jugadores ordenados
-            const tableBody = document.querySelector('#jugadoresTable tbody');
-            tableBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
-            jugadoresOrdenados.forEach((jugador, index) => {
-                const totalGames = jugador.wins + jugador.losses; // Calcula el total de juegos
-                const winRate = totalGames > 0 ? (jugador.wins / totalGames * 100).toFixed(2) : 0; // Calcula el win rate
-                const row = `
-                    <tr class="queue-type ${jugador.queue_type}"> <!-- Agregar clase para el tipo de cola -->
-                        <td>${index + 1}</td>
-                        <td>${jugador.jugador}</td>
-                        <td>${jugador.game_name}</td>
-                        <td>
-                            <img src="${imagenesElo[jugador.tier]}" alt="${jugador.tier}" style="width: 40px; height: 40px;"> 
-                            ${jugador.tier} ${jugador.rank} (${jugador.league_points} LPs)
-                        </td>
-                        <td>${jugador.wins}</td>
-                        <td>${jugador.losses}</td>
-                        <td>${totalGames}</td>
-                        <td>${winRate}%</td>
-                    </tr>
-                `;
-                tableBody.insertAdjacentHTML('beforeend', row);
-            });
-
-            // Agregar evento para el filtro
-            const filtroSelect = document.getElementById('filtro');
-            filtroSelect.addEventListener('change', (event) => {
-                const selectedQueue = event.target.value;
-                const rows = tableBody.querySelectorAll('tr');
-
-                rows.forEach(row => {
-                    // Obtener el tipo de cola de la clase del tr
-                    const queueType = row.classList.contains('queue-type') ? row.classList[1] : '';
-                    if (selectedQueue === 'todo' || queueType === selectedQueue) {
-                        row.style.display = ''; // Mostrar la fila
-                    } else {
-                        row.style.display = 'none'; // Ocultar la fila
-                    }
-                });
-            });
-        });
-
-        // Función para alternar el modo oscuro
-        const toggleButton = document.getElementById('toggle-mode');
-        toggleButton.addEventListener('click', () => {
+        // Toggle dark mode
+        document.getElementById('toggle-mode').addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
-            toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
         });
     </script>
-
 </body>
 </html>
