@@ -27,6 +27,11 @@
     font-weight: bold; /* Negrita para win rates bajos */
 }
 
+        .estado-en-partida {
+    color: #ffcc00; /* Cambia el color a lo que prefieras */
+    font-weight: bold; /* Establece el texto en negrita */
+}
+        
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
@@ -144,7 +149,7 @@
                         <td>{{ total_games }}</td>
                         <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '{:.2f}'.format(win_rate) }}%</td>
                         <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
-                        <td>{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
+                        <td class="{% if jugador.en_partida %}estado-en-partida{% endif %}">{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
