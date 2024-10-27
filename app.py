@@ -145,6 +145,9 @@ def obtener_datos_jugadores():
                             champion_id = entry.get('championId', 0)
                             nombre_campeon = obtener_nombre_campeon(champion_id)  # Obtener nombre del campeón
 
+                            # Depuración para verificar los datos
+                            print(f"Riot ID: {riot_id}, Champion ID: {champion_id}, Nombre Campeón: {nombre_campeon}")
+
                             datos_jugador = {
                                 "game_name": riot_id,
                                 "queue_type": entry.get('queueType', 'Desconocido'),
@@ -174,6 +177,8 @@ def obtener_datos_jugadores():
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
+    # Para depuración, imprime los datos de los jugadores
+    print(json.dumps(datos_jugadores, indent=2))  # Para ver los datos que se están enviando a la plantilla
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
 # Función que hará peticiones periódicas a la app para evitar hibernación
