@@ -23,15 +23,25 @@ def cargar_campeones():
     response = requests.get(url_campeones)
     if response.status_code == 200:
         campeones = response.json()["data"]
-        return {int(campeon["key"]): campeon["id"] for campeon in campeones.values()}
+        # Crear un diccionario que asocie el ID del campeón con su información completa
+        return {
+            int(campeon["key"]): {
+                "id": campeon["id"],
+                "name": campeon["name"],
+                "title": campeon["title"],
+                "blurb": campeon["blurb"],
+                "stats": campeon["stats"],
+                "image": campeon["image"],
+                "tags": campeon["tags"]
+            }
+            for campeon in campeones.values()
+        }
     else:
         print(f"Error al cargar campeones: {response.status_code}")
         return {}
 
-campeones = cargar_campeones()
-
-def obtener_nombre_campeon(champion_id):
-    return campeones.get(champion_id, "Desconocido")
+def obtener_info_campeon(champion_id):
+    return campeones.get(champion_id, {"name": "Desconocido", "title": "", "blurb": ""})
 
 # Resto del código sigue igual...
 
@@ -143,34 +153,27 @@ def obtener_datos_jugadores():
                         url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
                         url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
 
-                        for entry in elo_info:
-                            champion_id = entry.get('championId', 0)
-                            nombre_campeon = obtener_nombre_campeon(champion_id)  # Obtener nombre del campeón
+for entry in elo_info:
+    champion_id = entry.get('championId', 0)
+    campeon_info = obtener_info_campeon(champion_id)  # Obtener toda la info del campeón
 
-                            # Depuración para verificar los datos
-                            print(f"Riot ID: {riot_id}, Champion ID: {champion_id}, Nombre Campeón: {nombre_campeon}")
-
-                            datos_jugador = {
-                                "game_name": riot_id,
-                                "queue_type": entry.get('queueType', 'Desconocido'),
-                                "tier": entry.get('tier', 'Sin rango'),
-                                "rank": entry.get('rank', ''),
-                                "league_points": entry.get('leaguePoints', 0),
-                                "wins": entry.get('wins', 0),
-                                "losses": entry.get('losses', 0),
-                                "jugador": jugador,
-                                "url_perfil": url_perfil,
-                                "url_ingame": url_ingame,
-                                "en_partida": en_partida,
-                                "valor_clasificacion": calcular_valor_clasificacion(
-                                    entry.get('tier', 'Sin rango'),
-                                    entry.get('rank', ''),
-                                    entry.get('leaguePoints', 0)
-                                ),
-                                "nombre_campeon": nombre_campeon  # Agregar el nombre del campeón
-                            }
-                            todos_los_datos.append(datos_jugador)
-
+    datos_jugador = {
+        "game_name": riot_id,
+        "queue_type": entry.get('queueType', 'Desconocido'),
+        "tier": entry.get('tier', 'Sin rango'),
+        "rank": entry.get('rank', ''),
+        "league_points": entry.get('leaguePoints', 0),
+        "wins": entry.get('wins', 0),
+        "losses": entry.get('losses', 0),
+        "jugador": jugador,
+        "nombre_campeon": campeon_info["name"],
+        "titulo_campeon": campeon_info["title"],
+        "blurb_campeon": campeon_info["blurb"],
+        "imagen_campeon": campeon_info["image"]["full"],
+        "tags_campeon": campeon_info["tags"]
+    }
+    todos_los_datos.append(datos_jugador)
+    
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = time.time()
 
