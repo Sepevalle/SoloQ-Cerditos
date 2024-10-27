@@ -3,6 +3,7 @@ import requests
 import os
 import time
 import threading
+import json
 
 app = Flask(__name__)
 
@@ -15,6 +16,15 @@ CACHE_TIMEOUT = 300  # 5 minutos
 
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()  # Crear un lock
+
+# Cargar datos de campeones desde el archivo JSON
+def cargar_datos_campeones():
+    with open("champion.json", "r") as f:
+        data = json.load(f)
+        return {int(campeon["key"]): campeon["id"] for campeon in data["data"].values()}
+
+# Diccionario global de campeones
+campeones_dict = cargar_datos_campeones()
 
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
@@ -43,65 +53,14 @@ def obtener_elo(api_key, summoner_id):
         print(f"Error al obtener Elo: {response.status_code} - {response.text}")
         return None
 
-def esta_en_partida(api_key, puuid):
-    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    return response.status_code == 200  # Devuelve True si está en partida, False si no
-
-def leer_cuentas(url):
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            contenido = response.text.strip().split(';')
-            cuentas = []
-            for linea in contenido:
-                partes = linea.split(',')
-                if len(partes) == 2:
-                    riot_id = partes[0].strip()
-                    jugador = partes[1].strip()
-                    cuentas.append((riot_id, jugador))
-            return cuentas
-        else:
-            print(f"Error al leer el archivo: {response.status_code}")
-            return []
-    except Exception as e:
-        print(f"Error al leer las cuentas: {e}")
-        return []
-
-def calcular_valor_clasificacion(tier, rank, league_points):
-    tierOrden = {
-        "CHALLENGER": 8,
-        "GRANDMASTER": 7,
-        "MASTER": 6,
-        "EMERALD": 5,
-        "PLATINUM": 4,
-        "GOLD": 3,
-        "SILVER": 2,
-        "BRONZE": 1,
-        "IRON": 0
-    }
-
-    rankOrden = {
-        "I": 4,
-        "II": 3,
-        "III": 2,
-        "IV": 1
-    }
-
-    tierValue = tierOrden.get(tier.upper(), 0)
-    rankValue = rankOrden.get(rank, 0)
-
-    return tierValue * 10000 + rankValue * 1000 + league_points
-
 def obtener_datos_jugadores():
     global cache
 
-    # Bloqueo para controlar el acceso a la caché
     with cache_lock:
         if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
             return cache['datos_jugadores'], cache['timestamp']
         
-        api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
+        api_key = os.environ.get('RIOT_API_KEY', 'YOUR_RIOT_API_KEY')
         url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
         cuentas = leer_cuentas(url_cuentas)
         todos_los_datos = []
@@ -117,12 +76,25 @@ def obtener_datos_jugadores():
                     elo_info = obtener_elo(api_key, summoner_id)
 
                     if elo_info:
-                        en_partida = esta_en_partida(api_key, puuid)  # Verifica si el jugador está en partida
+                        en_partida = False
+                        campeon_actual = None
+                        url_imagen_campeon = None
+                        
+                        # Comprobar si el jugador está en partida
+                        url_partida = f"https://euw1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/{summoner_id}?api_key={api_key}"
+                        response_partida = requests.get(url_partida)
 
-                        # Definir las URLs del perfil y del estado en partida
+                        if response_partida.status_code == 200:
+                            partida = response_partida.json()
+                            en_partida = True
+                            for participante in partida['participants']:
+                                if participante['summonerId'] == summoner_id:
+                                    champion_id = participante['championId']
+                                    campeon_actual = campeones_dict.get(champion_id, "Desconocido")
+                                    url_imagen_campeon = f"http://ddragon.leagueoflegends.com/cdn/13.18.1/img/champion/{campeon_actual}.png"
+                                    break
+
                         riot_id_modified = riot_id.replace("#", "-")
-
-                        # Genera las URLs
                         url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
                         url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
 
@@ -136,18 +108,19 @@ def obtener_datos_jugadores():
                                 "wins": entry.get('wins', 0),
                                 "losses": entry.get('losses', 0),
                                 "jugador": jugador,
-                                "url_perfil": url_perfil,  # URL del perfil
-                                "url_ingame": url_ingame,    # URL del estado en partida
-                                "en_partida": en_partida,     # Agrega el estado del jugador
+                                "url_perfil": url_perfil,
+                                "url_ingame": url_ingame,
+                                "en_partida": en_partida,
+                                "campeon_actual": campeon_actual,  
+                                "url_imagen_campeon": url_imagen_campeon,  
                                 "valor_clasificacion": calcular_valor_clasificacion(
                                     entry.get('tier', 'Sin rango'),
                                     entry.get('rank', ''),
                                     entry.get('leaguePoints', 0)
-                                )  # Calcular el valor de clasificación
+                                )
                             }
                             todos_los_datos.append(datos_jugador)
 
-        # Actualizar la caché solo después de completar todos los datos
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = time.time()
 
@@ -158,7 +131,7 @@ def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
-# Función que hará peticiones periódicas a la app para evitar hibernación
+# Mantener la app activa
 def keep_alive():
     while True:
         try:
