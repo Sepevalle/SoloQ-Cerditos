@@ -18,7 +18,8 @@ CACHE_TIMEOUT = 300  # 5 minutos
 cache_lock = threading.Lock()  # Crear un lock
 
 def cargar_campeones():
-    url_campeones = "https://ddragon.leagueoflegends.com/cdn/13.19.1/data/es_ES/champion.json"
+    # Actualizado a la versión 14.20.1
+    url_campeones = "https://ddragon.leagueoflegends.com/cdn/14.20.1/data/es_ES/champion.json"
     response = requests.get(url_campeones)
     if response.status_code == 200:
         campeones = response.json()["data"]
@@ -32,6 +33,7 @@ campeones = cargar_campeones()
 def obtener_nombre_campeon(champion_id):
     return campeones.get(champion_id, "Desconocido")
 
+# Resto del código sigue igual...
 
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
