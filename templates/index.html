@@ -141,57 +141,63 @@
             <h1>Lista de Jugadores</h1>
             <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover table-striped" id="jugadoresTable">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Posición</th>
-                        <th>Jugador</th>
-                        <th>Game Name</th>
-                        <th>Elo</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Total Games</th>
-                        <th>Win Rate</th>
-                        <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
-                        <th>Estado1</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for jugador in datos_jugadores %}
-                    {% set total_games = jugador.wins + jugador.losses %}
-                    {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-      <tr class="queue-type {{ jugador.queue_type }}">
-    <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
-    <td>{{ jugador.jugador }}</td>
- <td><a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a></td>
-        <td><img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
-        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-    </td>
-    <td>{{ jugador.wins }}</td>
-    <td>{{ jugador.losses }}</td>
-    <td>{{ total_games }}</td>
-    <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '{:.2f}'.format(win_rate) }}%</td>
-    <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
-<td class="{% if jugador.en_partida %}estado-en-partida{% endif %}">
-        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">{{ 'En Partida' if jugador.en_partida else 'Inactivo' }}</a>
-    </td>
-<td class="{% if jugador.en_partida %}estado-en-partida{% endif %}">
-    <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-        {{ 'En Partida' if jugador.en_partida else 'Inactivo' }}
-    </a>
-    {% if jugador.en_partida %}
-        <img src="{{ jugador.imagen_campeon }}" alt="Campeón" style="width: 30px; height: 30px; margin-left: 5px;">
-    {% endif %}
-</td>
+<div class="table-responsive">
+    <table class="table table-hover table-striped" id="jugadoresTable">
+        <thead class="table-dark">
+            <tr>
+                <th>Posición</th>
+                <th>Jugador</th>
+                <th>Game Name</th>
+                <th>Elo</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Total Games</th>
+                <th>Win Rate</th>
+                <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
+                <th>Estado</th>
+                <th>Campeón</th> <!-- Nueva columna para el campeón -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for jugador in datos_jugadores %}
+            {% set total_games = jugador.wins + jugador.losses %}
+            {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
+            <tr class="queue-type {{ jugador.queue_type }}">
+                <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
+                <td>{{ jugador.jugador }}</td>
+                <td>
+                    <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
+                </td>
+                <td>
+                    <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
+                    {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+                </td>
+                <td>{{ jugador.wins }}</td>
+                <td>{{ jugador.losses }}</td>
+                <td>{{ total_games }}</td>
+                <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                    {{ '{:.2f}'.format(win_rate) }}%
+                </td>
+                <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
+                <td>
+                    <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
+                        {{ 'En Partida' if jugador.en_partida else 'Inactivo' }}
+                    </a>
+                </td>
+                <td>
+                    {% if jugador.en_partida %}
+                        <img src="{{ jugador.imagen_campeon }}" alt="{{ jugador.nombre_campeon }}" style="width: 30px; height: 30px; margin-left: 5px;">
+                    {% else %}
+                        <span>No disponible</span> <!-- O puedes dejarlo vacío -->
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 
-</tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </div>
 
     <!-- Mostrar la última actualización -->
