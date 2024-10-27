@@ -155,6 +155,7 @@
                 <th>Win Rate</th>
                 <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
                 <th>Estado</th>
+                <th>CampeónN</th> <!-- Nueva columna para el campeón -->
                 <th>Campeón</th> <!-- Nueva columna para el campeón -->
             </tr>
         </thead>
@@ -184,6 +185,7 @@
                         {{ 'En Partida' if jugador.en_partida else 'Inactivo' }}
                     </a>
                 </td>
+                <td>{{ jugador.nombre_campeon }}</td>
                 <td>
                     {% if jugador.en_partida %}
                         <img src="http://ddragon.leagueoflegends.com/cdn/13.18.1/img/champion/{{ jugador.nombre_campeon }}.png" 
