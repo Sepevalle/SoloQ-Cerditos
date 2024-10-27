@@ -155,10 +155,7 @@
                 <th>Win Rate</th>
                 <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
                 <th>Estado</th>
-                <th>CampeónN</th> <!-- Nueva columna para el campeón -->
-                <th>Campeón</th> <!-- Nueva columna para el campeón -->
-                <th>Campeónid</th> 
-            </tr>
+                </tr>
         </thead>
         <tbody>
             {% for jugador in datos_jugadores %}
@@ -193,15 +190,7 @@
         Inactivo
     {% endif %}
 </td>               
-                 <td>
-                    {% if jugador.en_partida %}
-                        <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                             alt="{{ jugador.nombre_campeon }}" 
-                             style="width: 30px; height: 30px; margin-left: 5px;">
-                    {% else %}
-                        <span>No disponible</span> <!-- O puedes dejarlo vacío -->
-                    {% endif %}
-                </td>
+                
             </tr>
             {% endfor %}
         </tbody>
