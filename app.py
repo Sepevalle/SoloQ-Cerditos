@@ -3,6 +3,7 @@ import requests
 import os
 import time
 import threading
+import json
 
 app = Flask(__name__)
 
@@ -14,7 +15,7 @@ cache = {
 CACHE_TIMEOUT = 300  # 5 minutos
 
 # Para proteger la caché en un entorno multihilo
-cache_lock = threading.Lock()
+cache_lock = threading.Lock()  # Crear un lock
 
 def cargar_campeones():
     # Actualizado a la versión 14.20.1
@@ -22,16 +23,20 @@ def cargar_campeones():
     response = requests.get(url_campeones)
     if response.status_code == 200:
         campeones = response.json()["data"]
-        # Crear un diccionario que asocie el ID del campeón con su nombre
-        return {int(campeon["key"]): campeon["name"] for campeon in campeones.values()}
+        return {int(campeon["key"]): campeon["id"] for campeon in campeones.values()}
     else:
         print(f"Error al cargar campeones: {response.status_code}")
         return {}
 
 campeones = cargar_campeones()
 
+def obtener_nombre_campeon(champion_id):
+    return campeones.get(champion_id, "Desconocido")
+
+# Resto del código sigue igual...
+
 def obtener_puuid(api_key, riot_id, region):
-    url = f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
+    url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
@@ -40,7 +45,7 @@ def obtener_puuid(api_key, riot_id, region):
         return None
 
 def obtener_id_invocador(api_key, puuid):
-    url = f"https://{puuid['region']}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
+    url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
@@ -49,7 +54,7 @@ def obtener_id_invocador(api_key, puuid):
         return None
 
 def obtener_elo(api_key, summoner_id):
-    url = f"https://{summoner_id['region']}.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={api_key}"
+    url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
@@ -58,7 +63,7 @@ def obtener_elo(api_key, summoner_id):
         return None
 
 def esta_en_partida(api_key, puuid):
-    url = f"https://{puuid['region']}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
+    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()  # Devuelve la información del juego
@@ -140,7 +145,10 @@ def obtener_datos_jugadores():
 
                         for entry in elo_info:
                             champion_id = entry.get('championId', 0)
-                            nombre_campeon = campeones.get(champion_id, "Desconocido")  # Obtener nombre del campeón
+                            nombre_campeon = obtener_nombre_campeon(champion_id)  # Obtener nombre del campeón
+
+                            # Depuración para verificar los datos
+                            print(f"Riot ID: {riot_id}, Champion ID: {champion_id}, Nombre Campeón: {nombre_campeon}")
 
                             datos_jugador = {
                                 "game_name": riot_id,
@@ -159,8 +167,7 @@ def obtener_datos_jugadores():
                                     entry.get('rank', ''),
                                     entry.get('leaguePoints', 0)
                                 ),
-                                "nombre_campeon": nombre_campeon,  # Agregar el nombre del campeón
-                                "champion_id": champion_id  # Agregar el ID del campeón
+                                "nombre_campeon": nombre_campeon  # Agregar el nombre del campeón
                             }
                             todos_los_datos.append(datos_jugador)
 
@@ -172,6 +179,8 @@ def obtener_datos_jugadores():
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
+    # Para depuración, imprime los datos de los jugadores
+    print(json.dumps(datos_jugadores, indent=2))  # Para ver los datos que se están enviando a la plantilla
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
 # Función que hará peticiones periódicas a la app para evitar hibernación
