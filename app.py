@@ -17,11 +17,33 @@ CACHE_TIMEOUT = 300  # 5 minutos
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()  # Crear un lock
 
-# Cargar datos de campeones desde el archivo JSON
+# Función para obtener la versión más reciente de la API de Data Dragon
+def obtener_version_mas_reciente():
+    url_version = "http://ddragon.leagueoflegends.com/api/versions.json"
+    response = requests.get(url_version)
+    
+    if response.status_code == 200:
+        return response.json()[0]  # La primera versión es la más reciente
+    else:
+        print(f"Error al obtener la versión: {response.status_code} - {response.text}")
+        return None
+
+# Función para cargar datos de campeones desde la API de Data Dragon
 def cargar_datos_campeones():
-    with open("champion.json", "r") as f:
-        data = json.load(f)
-        return {int(campeon["key"]): campeon["id"] for campeon in data["data"].values()}
+    version = obtener_version_mas_reciente()
+    
+    if version:
+        url = f"http://ddragon.leagueoflegends.com/cdn/{version}/data/es_ES/champion.json"
+        response = requests.get(url)
+        
+        if response.status_code == 200:
+            data = response.json()
+            return {int(campeon["key"]): campeon["id"] for campeon in data["data"].values()}
+        else:
+            print(f"Error al cargar campeones: {response.status_code} - {response.text}")
+            return {}
+    else:
+        return {}
 
 # Diccionario global de campeones
 campeones_dict = cargar_datos_campeones()
@@ -52,6 +74,56 @@ def obtener_elo(api_key, summoner_id):
     else:
         print(f"Error al obtener Elo: {response.status_code} - {response.text}")
         return None
+
+def esta_en_partida(api_key, summoner_id):
+    url = f"https://euw1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/{summoner_id}?api_key={api_key}"
+    response = requests.get(url)
+    return response.status_code == 200  # Devuelve True si está en partida, False si no
+
+def leer_cuentas(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            contenido = response.text.strip().split(';')
+            cuentas = []
+            for linea in contenido:
+                partes = linea.split(',')
+                if len(partes) == 2:
+                    riot_id = partes[0].strip()
+                    jugador = partes[1].strip()
+                    cuentas.append((riot_id, jugador))
+            return cuentas
+        else:
+            print(f"Error al leer el archivo: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error al leer las cuentas: {e}")
+        return []
+
+def calcular_valor_clasificacion(tier, rank, league_points):
+    tierOrden = {
+        "CHALLENGER": 8,
+        "GRANDMASTER": 7,
+        "MASTER": 6,
+        "EMERALD": 5,
+        "PLATINUM": 4,
+        "GOLD": 3,
+        "SILVER": 2,
+        "BRONZE": 1,
+        "IRON": 0
+    }
+
+    rankOrden = {
+        "I": 4,
+        "II": 3,
+        "III": 2,
+        "IV": 1
+    }
+
+    tierValue = tierOrden.get(tier.upper(), 0)
+    rankValue = rankOrden.get(rank, 0)
+
+    return tierValue * 10000 + rankValue * 1000 + league_points
 
 def obtener_datos_jugadores():
     global cache
@@ -91,7 +163,7 @@ def obtener_datos_jugadores():
                                 if participante['summonerId'] == summoner_id:
                                     champion_id = participante['championId']
                                     campeon_actual = campeones_dict.get(champion_id, "Desconocido")
-                                    url_imagen_campeon = f"http://ddragon.leagueoflegends.com/cdn/13.18.1/img/champion/{campeon_actual}.png"
+                                    url_imagen_campeon = f"http://ddragon.leagueoflegends.com/cdn/{obtener_version_mas_reciente()}/img/champion/{campeon_actual}.png"
                                     break
 
                         riot_id_modified = riot_id.replace("#", "-")
@@ -111,8 +183,8 @@ def obtener_datos_jugadores():
                                 "url_perfil": url_perfil,
                                 "url_ingame": url_ingame,
                                 "en_partida": en_partida,
-                                "campeon_actual": campeon_actual,  
-                                "url_imagen_campeon": url_imagen_campeon,  
+                                "campeon_actual": campeon_actual,
+                                "url_imagen_campeon": url_imagen_campeon,
                                 "valor_clasificacion": calcular_valor_clasificacion(
                                     entry.get('tier', 'Sin rango'),
                                     entry.get('rank', ''),
