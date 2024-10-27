@@ -143,7 +143,7 @@ def obtener_datos_jugadores():
         if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
             return cache['datos_jugadores'], cache['timestamp']
         
-        api_key = os.environ.get('RIOT_API_KEY', 'YOUR_RIOT_API_KEY')
+        api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
         url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
         cuentas = leer_cuentas(url_cuentas)
         todos_los_datos = []
