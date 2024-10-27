@@ -3,6 +3,7 @@ import requests
 import os
 import time
 import threading
+import json
 
 app = Flask(__name__)
 
@@ -15,6 +16,22 @@ CACHE_TIMEOUT = 300  # 5 minutos
 
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()  # Crear un lock
+
+def cargar_campeones():
+    url_campeones = "https://ddragon.leagueoflegends.com/cdn/13.19.1/data/es_ES/champion.json"
+    response = requests.get(url_campeones)
+    if response.status_code == 200:
+        campeones = response.json()["data"]
+        return {int(campeon["key"]): campeon["id"] for campeon in campeones.values()}
+    else:
+        print(f"Error al cargar campeones: {response.status_code}")
+        return {}
+
+campeones = cargar_campeones()
+
+def obtener_nombre_campeon(champion_id):
+    return campeones.get(champion_id, "Desconocido")
+
 
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
@@ -46,7 +63,10 @@ def obtener_elo(api_key, summoner_id):
 def esta_en_partida(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
     response = requests.get(url)
-    return response.status_code == 200  # Devuelve True si está en partida, False si no
+    if response.status_code == 200:
+        return response.json()  # Devuelve la información del juego
+    else:
+        return None  # Devuelve None si no está en partida
 
 def leer_cuentas(url):
     try:
@@ -96,11 +116,10 @@ def calcular_valor_clasificacion(tier, rank, league_points):
 def obtener_datos_jugadores():
     global cache
 
-    # Bloqueo para controlar el acceso a la caché
     with cache_lock:
         if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
             return cache['datos_jugadores'], cache['timestamp']
-        
+
         api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
         url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
         cuentas = leer_cuentas(url_cuentas)
@@ -117,16 +136,15 @@ def obtener_datos_jugadores():
                     elo_info = obtener_elo(api_key, summoner_id)
 
                     if elo_info:
-                        en_partida = esta_en_partida(api_key, puuid)  # Verifica si el jugador está en partida
-
-                        # Definir las URLs del perfil y del estado en partida
+                        en_partida = esta_en_partida(api_key, puuid)
                         riot_id_modified = riot_id.replace("#", "-")
-
-                        # Genera las URLs
                         url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
                         url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
 
                         for entry in elo_info:
+                            champion_id = entry.get('championId', 0)
+                            nombre_campeon = obtener_nombre_campeon(champion_id)  # Obtener nombre del campeón
+
                             datos_jugador = {
                                 "game_name": riot_id,
                                 "queue_type": entry.get('queueType', 'Desconocido'),
@@ -136,18 +154,18 @@ def obtener_datos_jugadores():
                                 "wins": entry.get('wins', 0),
                                 "losses": entry.get('losses', 0),
                                 "jugador": jugador,
-                                "url_perfil": url_perfil,  # URL del perfil
-                                "url_ingame": url_ingame,    # URL del estado en partida
-                                "en_partida": en_partida,     # Agrega el estado del jugador
+                                "url_perfil": url_perfil,
+                                "url_ingame": url_ingame,
+                                "en_partida": en_partida,
                                 "valor_clasificacion": calcular_valor_clasificacion(
                                     entry.get('tier', 'Sin rango'),
                                     entry.get('rank', ''),
                                     entry.get('leaguePoints', 0)
-                                )  # Calcular el valor de clasificación
+                                ),
+                                "nombre_campeon": nombre_campeon  # Agregar el nombre del campeón
                             }
                             todos_los_datos.append(datos_jugador)
 
-        # Actualizar la caché solo después de completar todos los datos
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = time.time()
 
