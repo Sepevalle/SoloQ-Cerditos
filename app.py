@@ -66,9 +66,12 @@ def esta_en_partida(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
-        return response.json()  # Devuelve la información del juego
-    else:
-        return None  # Devuelve None si no está en partida
+        data = response.json()
+        for participant in data.get("participants", []):
+            if participant['puuid'] == puuid:
+                return participant.get('championId', None)  # Devuelve solo el championId
+    return None  # Devuelve None si no está en partida
+
 
 def leer_cuentas(url):
     try:
@@ -138,17 +141,13 @@ def obtener_datos_jugadores():
                     elo_info = obtener_elo(api_key, summoner_id)
 
                     if elo_info:
-                        en_partida = esta_en_partida(api_key, puuid)
+                        champion_id = esta_en_partida(api_key, puuid)  # Ahora solo obtenemos el championId
                         riot_id_modified = riot_id.replace("#", "-")
                         url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
                         url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
 
                         for entry in elo_info:
-                            champion_id = entry.get('championId', 0)
-                            nombre_campeon = obtener_nombre_campeon(champion_id)  # Obtener nombre del campeón
-
-                            # Depuración para verificar los datos
-                            print(f"Riot ID: {riot_id}, Champion ID: {champion_id}, Nombre Campeón: {nombre_campeon}")
+                            nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"  # Obtener el nombre del campeón si está en partida
 
                             datos_jugador = {
                                 "game_name": riot_id,
@@ -161,13 +160,14 @@ def obtener_datos_jugadores():
                                 "jugador": jugador,
                                 "url_perfil": url_perfil,
                                 "url_ingame": url_ingame,
-                                "en_partida": en_partida,
+                                "en_partida": champion_id is not None,  # Indicamos si está en partida
                                 "valor_clasificacion": calcular_valor_clasificacion(
                                     entry.get('tier', 'Sin rango'),
                                     entry.get('rank', ''),
                                     entry.get('leaguePoints', 0)
                                 ),
-                                "nombre_campeon": nombre_campeon  # Agregar el nombre del campeón
+                                "nombre_campeon": nombre_campeon,  # Nombre del campeón
+                                "champion_id": champion_id if champion_id else "Desconocido"  # ID del campeón (si está en partida)
                             }
                             todos_los_datos.append(datos_jugador)
 
@@ -175,7 +175,7 @@ def obtener_datos_jugadores():
         cache['timestamp'] = time.time()
 
         return todos_los_datos, cache['timestamp']
-
+        
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
