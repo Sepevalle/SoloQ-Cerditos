@@ -5,6 +5,7 @@ import time
 import threading
 import json
 
+
 app = Flask(__name__)
 
 # Caché para almacenar los datos de los jugadores
@@ -48,6 +49,14 @@ def cargar_datos_campeones():
 # Diccionario global de campeones
 campeones_dict = cargar_datos_campeones()
 
+
+
+
+
+
+
+
+
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
     response = requests.get(url)
@@ -79,6 +88,8 @@ def esta_en_partida(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
     response = requests.get(url)
     return response.status_code == 200  # Devuelve True si está en partida, False si no
+
+
 
 def leer_cuentas(url):
     try:
