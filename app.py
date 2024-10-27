@@ -3,8 +3,6 @@ import requests
 import os
 import time
 import threading
-import json
-
 
 app = Flask(__name__)
 
@@ -17,45 +15,6 @@ CACHE_TIMEOUT = 300  # 5 minutos
 
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()  # Crear un lock
-
-# Función para obtener la versión más reciente de la API de Data Dragon
-def obtener_version_mas_reciente():
-    url_version = "http://ddragon.leagueoflegends.com/api/versions.json"
-    response = requests.get(url_version)
-    
-    if response.status_code == 200:
-        return response.json()[0]  # La primera versión es la más reciente
-    else:
-        print(f"Error al obtener la versión: {response.status_code} - {response.text}")
-        return None
-
-# Función para cargar datos de campeones desde la API de Data Dragon
-def cargar_datos_campeones():
-    version = obtener_version_mas_reciente()
-    
-    if version:
-        url = f"http://ddragon.leagueoflegends.com/cdn/{version}/data/es_ES/champion.json"
-        response = requests.get(url)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return {int(campeon["key"]): campeon["id"] for campeon in data["data"].values()}
-        else:
-            print(f"Error al cargar campeones: {response.status_code} - {response.text}")
-            return {}
-    else:
-        return {}
-
-# Diccionario global de campeones
-campeones_dict = cargar_datos_campeones()
-
-
-
-
-
-
-
-
 
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
@@ -88,8 +47,6 @@ def esta_en_partida(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
     response = requests.get(url)
     return response.status_code == 200  # Devuelve True si está en partida, False si no
-
-
 
 def leer_cuentas(url):
     try:
@@ -136,7 +93,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
 
     return tierValue * 10000 + rankValue * 1000 + league_points
 
-ef obtener_datos_jugadores():
+def obtener_datos_jugadores():
     global cache
 
     # Bloqueo para controlar el acceso a la caché
@@ -190,6 +147,7 @@ ef obtener_datos_jugadores():
                             }
                             todos_los_datos.append(datos_jugador)
 
+        # Actualizar la caché solo después de completar todos los datos
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = time.time()
 
@@ -200,7 +158,7 @@ def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
     return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
-# Mantener la app activa
+# Función que hará peticiones periódicas a la app para evitar hibernación
 def keep_alive():
     while True:
         try:
