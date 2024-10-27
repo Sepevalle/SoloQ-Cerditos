@@ -136,9 +136,10 @@ def calcular_valor_clasificacion(tier, rank, league_points):
 
     return tierValue * 10000 + rankValue * 1000 + league_points
 
-def obtener_datos_jugadores():
+ef obtener_datos_jugadores():
     global cache
 
+    # Bloqueo para controlar el acceso a la caché
     with cache_lock:
         if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
             return cache['datos_jugadores'], cache['timestamp']
@@ -159,25 +160,12 @@ def obtener_datos_jugadores():
                     elo_info = obtener_elo(api_key, summoner_id)
 
                     if elo_info:
-                        en_partida = False
-                        campeon_actual = None
-                        url_imagen_campeon = None
-                        
-                        # Comprobar si el jugador está en partida
-                        url_partida = f"https://euw1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/{summoner_id}?api_key={api_key}"
-                        response_partida = requests.get(url_partida)
+                        en_partida = esta_en_partida(api_key, puuid)  # Verifica si el jugador está en partida
 
-                        if response_partida.status_code == 200:
-                            partida = response_partida.json()
-                            en_partida = True
-                            for participante in partida['participants']:
-                                if participante['summonerId'] == summoner_id:
-                                    champion_id = participante['championId']
-                                    campeon_actual = campeones_dict.get(champion_id, "Desconocido")
-                                    url_imagen_campeon = f"http://ddragon.leagueoflegends.com/cdn/{obtener_version_mas_reciente()}/img/champion/{campeon_actual}.png"
-                                    break
-
+                        # Definir las URLs del perfil y del estado en partida
                         riot_id_modified = riot_id.replace("#", "-")
+
+                        # Genera las URLs
                         url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
                         url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
 
@@ -191,16 +179,14 @@ def obtener_datos_jugadores():
                                 "wins": entry.get('wins', 0),
                                 "losses": entry.get('losses', 0),
                                 "jugador": jugador,
-                                "url_perfil": url_perfil,
-                                "url_ingame": url_ingame,
-                                "en_partida": en_partida,
-                                "campeon_actual": campeon_actual,
-                                "url_imagen_campeon": url_imagen_campeon,
+                                "url_perfil": url_perfil,  # URL del perfil
+                                "url_ingame": url_ingame,    # URL del estado en partida
+                                "en_partida": en_partida,     # Agrega el estado del jugador
                                 "valor_clasificacion": calcular_valor_clasificacion(
                                     entry.get('tier', 'Sin rango'),
                                     entry.get('rank', ''),
                                     entry.get('leaguePoints', 0)
-                                )
+                                )  # Calcular el valor de clasificación
                             }
                             todos_los_datos.append(datos_jugador)
 
