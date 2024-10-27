@@ -76,7 +76,7 @@ def obtener_elo(api_key, summoner_id):
         return None
 
 def esta_en_partida(api_key, summoner_id):
-    url = f"https://euw1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/{summoner_id}?api_key={api_key}"
+    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{summoner_id}?api_key={api_key}"
     response = requests.get(url)
     return response.status_code == 200  # Devuelve True si está en partida, False si no
 
