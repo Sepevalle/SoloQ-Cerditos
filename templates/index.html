@@ -187,7 +187,16 @@
                     </a>
                 </td>
                 <td>{{ jugador.nombre_campeon }}</td>
-                 <td>{{ jugador.champion_id}}</td>
+                <td>
+    {% if jugador.en_partida %}
+        En Partida 
+        <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
+             alt="{{ jugador.nombre_campeon }}" 
+             style="width: 40px; height: 40px; vertical-align: middle; margin-left: 5px;" />
+    {% else %}
+        Inactivo
+    {% endif %}
+</td>               
                  <td>
                     {% if jugador.en_partida %}
                         <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
