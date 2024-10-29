@@ -151,6 +151,7 @@
                 <th>Jugador</th>
                 <th>Game Name</th>
                 <th>Elo</th>
+                <th >Valor Clasificación</th> 
                 <th>Wins</th>
                 <th>Losses</th>
                 <th>Total Games</th>
@@ -173,6 +174,7 @@
                     <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
                     {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                 </td>
+                <td >{{ jugador.valor_clasificacion }}</td>
                 <td>{{ jugador.wins }}</td>
                 <td>{{ jugador.losses }}</td>
                 <td>{{ total_games }}</td>
@@ -219,6 +221,7 @@
             "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
             "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
             "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
+            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/DIAMOND.png",
             "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
             "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
