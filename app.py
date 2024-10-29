@@ -95,9 +95,10 @@ def leer_cuentas(url):
 
 def calcular_valor_clasificacion(tier, rank, league_points):
     tierOrden = {
-        "CHALLENGER": 8,
+        "CHALLENGER": 7,
         "GRANDMASTER": 7,
-        "MASTER": 6,
+        "MASTER": 7,
+        "DIAMOND":6,
         "EMERALD": 5,
         "PLATINUM": 4,
         "GOLD": 3,
@@ -116,7 +117,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
     tierValue = tierOrden.get(tier.upper(), 0)
     rankValue = rankOrden.get(rank, 0)
 
-    return tierValue * 10000 + rankValue * 1000 + league_points
+    return tierValue * 400 + rankValue * 100 + league_points - 100
 
 def obtener_datos_jugadores():
     global cache
