@@ -95,9 +95,10 @@ def leer_cuentas(url):
 
 def calcular_valor_clasificacion(tier, rank, league_points):
     tierOrden = {
-        "CHALLENGER": 8,
+        "CHALLENGER": 7,
         "GRANDMASTER": 7,
-        "MASTER": 6,
+        "MASTER": 7,
+        "DIAMOND":6,
         "EMERALD": 5,
         "PLATINUM": 4,
         "GOLD": 3,
