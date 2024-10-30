@@ -107,12 +107,12 @@
                         <th>Jugador</th>
                         <th>Game Name</th>
                         <th>Elo</th>
+                        <th>Diferencia</th> <!-- Nueva columna para la diferencia -->
                         <th>Wins</th>
                         <th>Losses</th>
                         <th>Total Games</th>
                         <th>Win Rate</th>
                         <th class="hidden">Valor Clasificación</th> <!-- Oculta esta columna -->
-                        <th>Diferencia</th> <!-- Nueva columna para la diferencia -->
                         <th>Estado</th>
                     </tr>
                 </thead>
@@ -128,6 +128,7 @@
                             <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
                             {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                         </td>
+                        <td></td> <!-- Nueva celda para diferencia -->
                         <td>{{ jugador.wins }}</td>
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
@@ -135,7 +136,6 @@
                             {{ '{:.2f}'.format(win_rate) }}%
                         </td>
                         <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor de clasificación oculto -->
-                        <td></td> <!-- Nueva celda para diferencia -->
                         <td>
                             <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
                                 {% if jugador.en_partida %}
