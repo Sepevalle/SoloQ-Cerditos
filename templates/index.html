@@ -10,52 +10,79 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- CSS personalizado -->
+    <!-- Tu CSS personalizado -->
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
     <style>
+        /* Estilos para el modo oscuro */
         body {
             transition: background-color 0.3s, color 0.3s;
         }
+
         .banner-img {
             margin-top: 40px;
             width: 100%;
             max-height: 600px;
             object-fit: contain;
         }
+
         .win-rate-alto {
             color: #228B22 !important;
         }
+
         .win-rate-bajo {
             color: tomato !important;
         }
+
         .estado-en-partida {
             color: #007BFF !important;
             font-weight: bold;
         }
+
         .table a {
             color: inherit;
             text-decoration: none;
         }
-        .link-estado:hover, .link-perfil:hover {
+
+        .link-estado {
+            color: #007BFF;
+        }
+
+        .link-perfil:hover, .link-estado:hover {
             text-decoration: underline;
         }
+
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
-        .dark-mode .navbar, .dark-mode .table {
+
+        .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
+
+        .dark-mode .navbar-brand, .dark-mode .nav-link {
+            color: white;
+        }
+
+        .dark-mode .table {
+            background-color: #343a40 !important;
+            color: white;
+        }
+
         .dark-mode .table-dark th {
             background-color: #454d55 !important;
         }
+
         .dark-mode .btn-secondary {
             background-color: #6c757d !important;
+            border-color: #6c757d !important;
         }
+
         .table td, .table th {
             text-align: center;
         }
+
         .hidden {
             display: none;
         }
@@ -63,7 +90,6 @@
 </head>
 
 <body>
-
     <!-- Navbar con filtros -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
@@ -93,7 +119,7 @@
         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/IMG_9912.webp" alt="Banner" class="banner-img" id="banner-img">
     </div>
 
-    <!-- Tabla de datos -->
+    <!-- Tabla de jugadores -->
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1>Lista de Jugadores</h1>
@@ -107,12 +133,11 @@
                         <th>Jugador</th>
                         <th>Game Name</th>
                         <th>Elo</th>
-                        <th>Diferencia</th> <!-- Nueva columna para la diferencia -->
                         <th>Wins</th>
                         <th>Losses</th>
                         <th>Total Games</th>
                         <th>Win Rate</th>
-                        <th class="hidden">Valor Clasificación</th> <!-- Oculta esta columna -->
+                        <th class="hidden">Valor Clasificación</th>
                         <th>Estado</th>
                     </tr>
                 </thead>
@@ -121,21 +146,22 @@
                     {% set total_games = jugador.wins + jugador.losses %}
                     {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                     <tr class="queue-type {{ jugador.queue_type }}">
-                        <td></td> <!-- Celda de posición a actualizar por JavaScript -->
+                        <td></td>
                         <td>{{ jugador.jugador }}</td>
-                        <td><a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a></td>
+                        <td>
+                            <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
+                        </td>
                         <td>
                             <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
                             {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                         </td>
-                        <td></td> <!-- Nueva celda para diferencia -->
                         <td>{{ jugador.wins }}</td>
                         <td>{{ jugador.losses }}</td>
                         <td>{{ total_games }}</td>
                         <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                             {{ '{:.2f}'.format(win_rate) }}%
                         </td>
-                        <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor de clasificación oculto -->
+                        <td class="hidden">{{ jugador.valor_clasificacion }}</td>
                         <td>
                             <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
                                 {% if jugador.en_partida %}
@@ -155,29 +181,41 @@
         </div>
     </div>
 
-    <!-- Script de funcionalidad -->
-    <script>
-        // Script para el modo oscuro, asignar imágenes de Elo, y calcular diferencias en valor de clasificación
-        document.addEventListener('DOMContentLoaded', function () {
-            // Función para actualizar tabla y calcular diferencia
-            const tableBody = document.querySelector('#jugadoresTable tbody');
-            const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
+    <!-- Bootstrap 5.3.3 JS y dependencias -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-            // Ordenar filas y calcular diferencia en valor de clasificación
-            rowsArray.sort((a, b) => parseFloat(b.cells[8].textContent) - parseFloat(a.cells[8].textContent));
+    <!-- Script para ajustar la tabla y mostrar la última actualización -->
+    <script>
+        const imagenesElo = {
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
+            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Diamond.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const rowsArray = Array.from(document.querySelectorAll('#jugadoresTable tbody tr'));
+            const tableBody = document.querySelector('#jugadoresTable tbody');
+
             rowsArray.forEach((row, index) => {
+                const eloCell = row.querySelector('.elo-image');
+                const tier = row.querySelector('td:nth-child(4)').textContent.trim().split(" ")[0];
+                if (imagenesElo[tier]) eloCell.src = imagenesElo[tier];
+            });
+
+            // Ordenar filas según valor de clasificación y calcular diferencias
+            rowsArray.sort((a, b) => parseFloat(b.querySelector('td.hidden').textContent) - parseFloat(a.querySelector('td.hidden').textContent));
+            rowsArray.forEach((row, index) => {
+                row.cells[0].textContent = index + 1;
                 tableBody.appendChild(row);
-                row.cells[0].textContent = index + 1; // Asigna posición
-                if (index === 0) {
-                    row.cells[9].textContent = "-"; // Sin diferencia para el primero
-                } else {
-                    const valorActual = parseFloat(row.cells[8].textContent);
-                    const valorAnterior = parseFloat(rowsArray[index - 1].cells[8].textContent);
-                    row.cells[9].textContent = (valorAnterior - valorActual).toFixed(2); // Calcula diferencia
-                }
             });
         });
     </script>
 </body>
-
 </html>
