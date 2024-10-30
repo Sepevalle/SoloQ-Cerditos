@@ -116,7 +116,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
     tierValue = tierOrden.get(tier.upper(), 0)
     rankValue = rankOrden.get(rank, 0)
 
-    return tierValue * 10000 + rankValue * 1000 + league_points
+    return (tierValue * 400 + rankValue * 100 + league_points - 100)
 
 def obtener_datos_jugadores():
     global cache
