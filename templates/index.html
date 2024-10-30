@@ -156,6 +156,7 @@
                 <th>Total Games</th>
                 <th>Win Rate</th>
                 <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
+                <th>Diferencia de Elo</th>
                 <th>Estado</th>
                 </tr>
         </thead>
@@ -180,6 +181,7 @@
                     {{ '{:.2f}'.format(win_rate) }}%
                 </td>
                 <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
+                <td class="elo-diferencia"></td>
                 
 <td>
     <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
@@ -281,6 +283,10 @@
             });
         });
 
+        
+
+
+        
         // Ordenar la tabla por valor_clasificacion al cargar la página
         document.addEventListener('DOMContentLoaded', function () {
             const tableBody = document.querySelector('#jugadoresTable tbody');
@@ -299,6 +305,33 @@
                 row.cells[0].textContent = index + 1; // Asignar la posición en la primera celda
             });
         });
+
+        document.addEventListener('DOMContentLoaded', function () {
+    const tableBody = document.querySelector('#jugadoresTable tbody');
+    const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
+
+    // Ordenar filas por valor_clasificacion
+    rowsArray.sort((a, b) => {
+        const valorA = parseFloat(a.cells[8].textContent); // Columna de valor_clasificacion
+        const valorB = parseFloat(b.cells[8].textContent);
+        return valorB - valorA; // Ordenar de mayor a menor
+    });
+
+    rowsArray.forEach((row, index) => {
+        tableBody.appendChild(row);
+        row.cells[0].textContent = index + 1; // Actualiza la posición en la primera celda
+
+        if (index > 0) { // Si no es el primer jugador, calcular la diferencia
+            const valorClasificacionActual = parseFloat(row.cells[8].textContent);
+            const valorClasificacionAnterior = parseFloat(rowsArray[index - 1].cells[8].textContent);
+            const diferencia = valorClasificacionAnterior - valorClasificacionActual;
+            row.querySelector('.elo-diferencia').textContent = diferencia; // Añadir diferencia en la nueva columna
+        } else {
+            row.querySelector('.elo-diferencia').textContent = '—'; // Para el primer jugador no hay diferencia
+        }
+    });
+});
+
     </script>
 </body>
 
