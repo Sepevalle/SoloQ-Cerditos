@@ -148,7 +148,6 @@
         <thead class="table-dark">
             <tr>
                 <th>Posición</th>
-                <th>Diferencia</th>
                 <th>Jugador</th>
                 <th>Game Name</th>
                 <th>Elo</th>
@@ -166,7 +165,6 @@
             {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
             <tr class="queue-type {{ jugador.queue_type }}">
                 <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
-                <td></td> 
                 <td>{{ jugador.jugador }}</td>
                 <td>
                     <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
@@ -283,34 +281,24 @@
             });
         });
 
-// Ordenar la tabla por valor_clasificacion al cargar la página y calcular la diferencia
-document.addEventListener('DOMContentLoaded', function () {
-    const tableBody = document.querySelector('#jugadoresTable tbody');
-    const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
+        // Ordenar la tabla por valor_clasificacion al cargar la página
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBody = document.querySelector('#jugadoresTable tbody');
+            const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
 
-    // Ordenar las filas según el valor de clasificación (de mayor a menor)
-    rowsArray.sort((a, b) => {
-        const valorA = parseFloat(a.cells[8].textContent); // Columna de valor_clasificacion
-        const valorB = parseFloat(b.cells[8].textContent);
-        return valorB - valorA;
-    });
+            rowsArray.sort((a, b) => {
+                const valorA = parseFloat(a.cells[8].textContent); // Accede a la columna de valor_clasificacion
+                const valorB = parseFloat(b.cells[8].textContent);
+                return valorB - valorA; // Ordenar de mayor a menor
+            });
 
-    // Reinserta las filas ordenadas y calcula posición y diferencia
-    rowsArray.forEach((row, index) => {
-        tableBody.appendChild(row); // Reinsertar fila en el DOM
-        row.cells[0].textContent = index + 1; // Asignar la posición en la primera celda
-
-        // Calcular la diferencia respecto al jugador anterior
-        if (index === 0) {
-            row.insertCell(10).textContent = '-'; // Primer jugador no tiene diferencia
-        } else {
-            const valorActual = parseFloat(row.cells[8].textContent); // Valor del jugador actual
-            const valorAnterior = parseFloat(rowsArray[index - 1].cells[8].textContent); // Valor del jugador anterior
-            const diferencia = valorActual - valorAnterior; // Calcular la diferencia
-            row.insertCell(10).textContent = diferencia > 0 ? `+${diferencia}` : diferencia; // Insertar diferencia en la columna
-        }
-    });
-});
+            // Reemplazar el contenido de tbody con las filas ordenadas
+            rowsArray.forEach((row, index) => {
+                tableBody.appendChild(row);
+                // Actualizar la celda de posición
+                row.cells[0].textContent = index + 1; // Asignar la posición en la primera celda
+            });
+        });
     </script>
 </body>
 
