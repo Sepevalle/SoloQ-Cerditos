@@ -134,7 +134,7 @@
 
     <!-- Imagen del banner ajustada al tamaño de la tabla -->
     <div class="container my-4 d-flex justify-content-center">
-        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/IMG_9912.webp" alt="Banner" class="banner-img" id="banner-img">
+        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banner4.jpg" alt="Banner" class="banner-img" id="banner-img">
     </div>
 
     <!-- Tabla con los datos -->
@@ -237,14 +237,14 @@
             let minutes = ('0' + date.getMinutes()).slice(-2);
             let seconds = ('0' + date.getSeconds()).slice(-2);
 
-            return ${day}-${month}-${year} ${hours}:${minutes}:${seconds};
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
         }
 
         // Mostrar la última actualización
         document.addEventListener('DOMContentLoaded', function () {
             const lastUpdatedElement = document.getElementById('lastUpdated');
             const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
-            lastUpdatedElement.textContent = Última actualización: ${ajustarHoraUTC2(timestamp)}; // Actualizar el contenido
+            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualizar el contenido
         });
 
         // Asignar imágenes de Elo
