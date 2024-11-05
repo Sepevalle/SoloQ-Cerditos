@@ -25,7 +25,10 @@
     object-fit: contain; /* Muestra la imagen completa sin recortarla */
 }
   
-        
+    .small-text {
+    font-size: 0.6em; /* Ajusta el tamaño de la fuente, puedes usar valores como 0.8, 0.6, etc. según prefieras */
+    font-weight: normal; /* Para asegurarse de que '42 games' no esté en negrita si se hereda */
+}   
         .win-rate-alto {
     color: #228B22 !important; /* Color para win rates altos */
    
@@ -159,7 +162,7 @@
     <!-- Tabla con los datos -->
 <div class="container">
     <div class="d-flex justify-content-between align-items-center">
-        <h1>Lista de Jugadores 42 games</h1>
+        <h1>Lista de Jugadores <span class="small-text">(42 games)</span></h1>
         <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
     </div>
     <div class="table-responsive">
