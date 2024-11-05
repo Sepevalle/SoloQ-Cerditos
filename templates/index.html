@@ -157,79 +157,76 @@
     </div>
 
     <!-- Tabla con los datos -->
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
-            <h1>Lista de Jugadores 42 games</h1>
-            <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
-        </div>
-<div class="table-responsive">
-    <table class="table table-hover table-striped" id="jugadoresTable">
-        <thead class="table-dark">
-            <tr>
-                <th>Posición</th>
-                <th>Jugador</th>
-                <th>Game Name</th>
-                <th>Elo</th>
-                <th>Wins</th>
-                <th>Losses</th>
-                <th>Total Games</th>
-                <th>Win Rate</th>
-                <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
-                <th>Diferencia de Elo</th>
-                <th>Estado</th>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Lista de Jugadores 42 games</h1>
+        <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover table-striped" id="jugadoresTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Posición</th>
+                    <th>Jugador</th>
+                    <th>Game Name</th>
+                    <th>Elo</th>
+                    <th>Wins</th>
+                    <th>Losses</th>
+                    <th>Total Games</th>
+                    <th>Win Rate</th>
+                    <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
+                    <th>Diferencia de Elo</th>
+                    <th>Estado</th>
                 </tr>
-        </thead>
-        <tbody>
-            {% for jugador in datos_jugadores %}
-            {% set total_games = jugador.wins + jugador.losses %}
-            {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-            <tr class="queue-type {{ jugador.queue_type }}">
-                <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
-              <td class="jugador-columna">
-    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
-         alt="Imagen de {{ jugador.jugador }}"
-         class="imagen-jugador"
-         onerror="this.style.display='none'">
-    {{ jugador.jugador }}
-</td>
-                <td>
-                    <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
-                </td>
-                <td>
-                    <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
-                    {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                </td>
-                <td>{{ jugador.wins }}</td>
-                <td>{{ jugador.losses }}</td>
-                <td>{{ total_games }}</td>
-                <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                    {{ '{:.2f}'.format(win_rate) }}%
-                </td>
-                <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
-                <td class="elo-diferencia"></td>
-                
-<td>
-    <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-        {% if jugador.en_partida %}
-            <span class="estado-en-partida">En Partida</span>
-            <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                 alt="{{ jugador.nombre_campeon }}" 
-                 style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
-        {% else %}
-            Inactivo
-        {% endif %}
-    </a>
-</td>
-        
-                
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for jugador in datos_jugadores %}
+                {% set total_games = jugador.wins + jugador.losses %}
+                {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
+                <tr class="queue-type {{ jugador.queue_type }}">
+                    <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
+                    <td class="jugador-columna">
+                        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
+                             alt="Imagen de {{ jugador.jugador }}"
+                             class="imagen-jugador"
+                             onerror="this.style.display='none'">
+                        {{ jugador.jugador }}
+                    </td>
+                    <td>
+                        <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
+                    </td>
+                    <td>
+                        <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
+                        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+                    </td>
+                    <td>{{ jugador.wins }}</td>
+                    <td>{{ jugador.losses }}</td>
+                    <td>{{ total_games }}</td>
+                    <td class="{% if win_rate > 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                        {{ '{:.2f}'.format(win_rate) }}%
+                    </td>
+                    <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
+                    <td class="elo-diferencia"></td>
+                    <td>
+                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
+                            {% if jugador.en_partida %}
+                                <span class="estado-en-partida">En Partida</span>
+                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
+                                     alt="{{ jugador.nombre_campeon }}" 
+                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            {% else %}
+                                Inactivo
+                            {% endif %}
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 
-    </div>
 
     <!-- Mostrar la última actualización -->
     <div class="text-center my-4"></div>
