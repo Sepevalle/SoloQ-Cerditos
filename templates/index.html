@@ -166,7 +166,13 @@
             {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
             <tr class="queue-type {{ jugador.queue_type }}">
                 <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
-                <td>{{ jugador.jugador }}</td>
+                <td>
+ <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
+         alt="Imagen de {{ jugador.jugador }}" 
+         style="width: 25px; height: 25px; margin-right: 8px; vertical-align: middle;" 
+         onerror="this.style.display='none'">
+    {{ jugador.jugador }}
+                </td>
                 <td>
                     <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
                 </td>
