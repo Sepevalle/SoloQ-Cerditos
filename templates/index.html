@@ -103,6 +103,15 @@
         .hidden {
             display: none; /* Ocultar columna */
         }
+
+
+        .imagen-jugador {
+    width: 35px; /* Tamaño uniforme de la imagen */
+    height: 35px;
+    vertical-align: middle; /* Alineación vertical centrada con el texto */
+    display: inline-block; /* Asegura el comportamiento en línea */
+    margin-right: 8px; /* Espacio entre la imagen y el nombre */
+}
     </style>
 </head>
 
@@ -168,8 +177,8 @@
                 <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
                 <td>
  <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
-         alt="Imagen de {{ jugador.jugador }}" 
-         style="width: 35px; height: 35px; margin-right: 8px; vertical-align: middle;" 
+         alt="Imagen de {{ jugador.jugador }}"
+         class="imagen-jugador"
          onerror="this.style.display='none'">
     {{ jugador.jugador }}
                 </td>
