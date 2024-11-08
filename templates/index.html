@@ -114,10 +114,10 @@
 
 <!-- Banners laterales dinámicos -->
 <div id="bannerLeft">
-    <img id="bannerLeftImage" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerIzq1.jpg" alt="Banner Lateral Izquierdo">
+    <img id="bannerLeftImage" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Banner Lateral Izquierdo">
 </div>
 <div id="bannerRight">
-    <img id="bannerRightImage" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerDer1.jpg" alt="Banner Lateral Derecho">
+    <img id="bannerRightImage" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Banner Lateral Derecho">
 </div>
 
 <!-- Navbar con filtros -->
@@ -202,13 +202,11 @@
                     <td class="hidden">{{ jugador.valor_clasificacion }}</td>
                     <td class="elo-diferencia"></td>
                     <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.en_partida %}
-                                <span class="estado-en-partida">En Partida</span>
-                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" style="width: 30px;">
+                        <a href="{{ jugador.estado_url }}" target="_blank" class="link-estado">
+                            {% if jugador.estado == "in_game" %}
+                            En Partida
                             {% else %}
-                                No en Partida
+                            No en Partida
                             {% endif %}
                         </a>
                     </td>
@@ -252,7 +250,7 @@
         });
     });
 
-    // Ordenar filas de la tabla por clasificación
+    // Ordenar filas de la tabla por clasificación (LP)
     const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
     filas.sort((a, b) => parseInt(b.querySelector(".hidden").textContent) - parseInt(a.querySelector(".hidden").textContent))
         .forEach((row, index) => {
@@ -268,14 +266,16 @@
 
     // Cambiar los banners cada 5 segundos
     const bannersIzq = [
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerIzq1.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerIzq2.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerIzq3.jpg"
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/4.jpg"
     ];
     const bannersDer = [
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerDer1.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerDer2.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerDer3.jpg"
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/4.jpg"
     ];
 
     let indexIzq = 0;
