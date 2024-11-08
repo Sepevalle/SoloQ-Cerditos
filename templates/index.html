@@ -242,17 +242,38 @@
         });
     });
 
-    const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-    filas.sort((a, b) => b.querySelector(".hidden").textContent - a.querySelector(".hidden").textContent)
-        .forEach((row, index) => {
-            row.querySelector("td:first-child").textContent = index + 1;
-            const eloCol = row.querySelector(".elo-diferencia");
-            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-            eloCol.textContent = `${valorClasificacion - filas[0].querySelector(".hidden").textContent} LPs`;
+    // Función para ordenar la tabla por posición (ascendente)
+    function ordenarPorPosicion() {
+        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+        filas.sort((a, b) => {
+            const posA = parseInt(a.querySelector("td:first-child").textContent, 10);
+            const posB = parseInt(b.querySelector("td:first-child").textContent, 10);
+            return posA - posB;  // Orden ascendente
         });
 
+        // Reaplicar el orden a la tabla
+        filas.forEach((row, index) => {
+            row.querySelector("td:first-child").textContent = index + 1;  // Actualizar las posiciones
+            document.querySelector("#jugadoresTable tbody").appendChild(row);  // Reinsertar la fila en el lugar correcto
+        });
+    }
+
+    // Llamamos a la función para ordenar cuando la página carga
+    ordenarPorPosicion();
+
+    // Calcular la diferencia de Elo
+    const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+    filas.forEach((row, index) => {
+        const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
+        const eloCol = row.querySelector(".elo-diferencia");
+        const primerJugadorElo = parseInt(filas[0].querySelector(".hidden").textContent, 10);
+        eloCol.textContent = `${valorClasificacion - primerJugadorElo} LPs`;
+    });
+
+    // Actualización de la hora de última actualización
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 </script>
+
 </body>
 
 </html>
