@@ -255,7 +255,7 @@
             
             if (index > 0) {
                 const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
-                eloCol.textContent = ${ valorClasificacionAnterior - valorClasificacion } LPs;
+                eloCol.textContent = `${valorClasificacion - valorClasificacionAnterior} LPs`;
             } else {
                 eloCol.textContent = "—";
             }
