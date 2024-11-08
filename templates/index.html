@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datos de Jugadores</title>
-     <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Icono.png" type="image/png">
+    <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Icono.png" type="image/png">
     <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
@@ -15,53 +15,49 @@
     <style>
         /* Estilos para el modo oscuro */
         body {
-            transition: background-color 0.3s, color 0.3s; /* Transición suave */
+            transition: background-color 0.3s, color 0.3s;
         }
 
-.banner-img {
-    margin-top: 40px; /* Ajusta este valor para que el banner empiece donde termina la navbar */
-    width: 100%; /* Asegura que el banner se ajuste al ancho del contenedor */
-    max-height: 600px; /* Limita la altura si es necesario para evitar el corte */
-    object-fit: contain; /* Muestra la imagen completa sin recortarla */
-}
-  
-    .small-text {
-    font-size: 0.6em; /* Ajusta el tamaño de la fuente, puedes usar valores como 0.8, 0.6, etc. según prefieras */
-    font-weight: normal; /* Para asegurarse de que '42 games' no esté en negrita si se hereda */
-}   
-        .win-rate-alto {
-    color: #228B22 !important; /* Color para win rates altos */
-   
-}
+        .banner-img {
+            margin-top: 40px;
+            width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+        }
 
-.win-rate-bajo {
-    color: tomato !important; /* Color para win rates bajos */
-    
-}
+        .small-text {
+            font-size: 0.6em;
+            font-weight: normal;
+        }
+
+        .win-rate-alto {
+            color: #228B22 !important;
+        }
+
+        .win-rate-bajo {
+            color: tomato !important;
+        }
 
         .estado-en-partida {
-    color: #007BFF !important ; /* Cambia el color a lo que prefieras */
-    font-weight: bold; /* Establece el texto en negrita */
-}
+            color: #007BFF !important;
+            font-weight: bold;
+        }
 
-.table a {
-    color: inherit; /* Mantener el color del texto */
-    text-decoration: none; /* Quitar el subrayado */
-}
+        .table a {
+            color: inherit;
+            text-decoration: none;
+        }
 
-.link-estado {
-    color: #007BFF; /* Color azul para el estado */
-}
+        .link-estado {
+            color: #007BFF;
+        }
 
-.link-perfil:hover {
-    text-decoration: underline; /* Subrayar al pasar el ratón */
-}
+        .link-perfil:hover,
+        .link-estado:hover {
+            text-decoration: underline;
+            color: #0056b3;
+        }
 
-.link-estado:hover {
-    text-decoration: underline; /* Subrayar al pasar el ratón */
-    color: #0056b3; /* Un tono más oscuro de azul al pasar el ratón */
-}
-        
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
@@ -74,21 +70,21 @@
 
         .dark-mode .navbar-brand,
         .dark-mode .nav-link {
-            color: white; /* Cambia el color del texto de la navbar a blanco */
+            color: white;
         }
 
         .dark-mode .table {
-            background-color: #343a40 !important; /* Fondo de la tabla */
-            color: white; /* Color del texto de la tabla */
+            background-color: #343a40 !important;
+            color: white;
         }
 
         .dark-mode .table-dark {
-            background-color: #343a40 !important; /* Fondo de la tabla oscura */
-            color: white; /* Color del texto de la tabla oscura */
+            background-color: #343a40 !important;
+            color: white;
         }
 
         .dark-mode .table-dark th {
-            background-color: #454d55 !important; /* Fondo de las cabeceras de la tabla */
+            background-color: #454d55 !important;
         }
 
         .dark-mode .btn-secondary {
@@ -96,66 +92,95 @@
             border-color: #6c757d !important;
         }
 
-/* Estilo de tabla */
-.table td,
-.table th {
-    text-align: center; /* Centrar el texto en todas las celdas */
-}
-
-.jugador-columna {
-    text-align: left; /* Alinear solo la columna de jugadores a la izquierda */
-}
-
-
-        /* Ocultar la columna de valor_clasificacion */
-        .hidden {
-            display: none; /* Ocultar columna */
+        /* Estilo de tabla */
+        .table td,
+        .table th {
+            text-align: center;
         }
 
+        .jugador-columna {
+            text-align: left;
+        }
 
-      .imagen-jugador {
-    width: 30px; /* Tamaño uniforme de la imagen */
-    height: 30px;
-    vertical-align: middle; /* Alineación vertical centrada con el texto */
-    display: inline-block; /* Asegura el comportamiento en línea */
-    margin-right: 8px; /* Espacio entre la imagen y el nombre */
-    border-radius: 50%; /* Esto convierte la imagen en un círculo */
-    object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
-}
+        .hidden {
+            display: none;
+        }
 
-    
-    
+        .imagen-jugador {
+            width: 30px;
+            height: 30px;
+            vertical-align: middle;
+            display: inline-block;
+            margin-right: 8px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* Estilos para las imágenes laterales */
+        .image-carousel {
+            width: 100px;
+            height: 100%;
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .image-carousel img {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Posiciones de los carruseles de imagen */
+        .carousel-left {
+            left: 0;
+        }
+
+        .carousel-right {
+            right: 0;
+        }
     </style>
 </head>
 
 <body>
-
     <!-- Navbar con filtros -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">
-            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
-            SoloQ Challenge Cerditos y Valientes
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
-            aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item d-flex align-items-center">
-                    <label for="filtro" class="nav-link mb-0 me-2">COLA:</label>
-                    <select id="filtro" class="form-select me-2">
-                        <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
-                        <option value="RANKED_FLEX_SR">FLEX</option>
-                        <option value="todo">TODO</option>
-                    </select>
-                </li>
-            </ul>
-            <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+                SoloQ Challenge Cerditos y Valientes
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item d-flex align-items-center">
+                        <label for="filtro" class="nav-link mb-0 me-2">COLA:</label>
+                        <select id="filtro" class="form-select me-2">
+                            <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
+                            <option value="RANKED_FLEX_SR">FLEX</option>
+                            <option value="todo">TODO</option>
+                        </select>
+                    </li>
+                </ul>
+                <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
+            </div>
         </div>
+    </nav>
+
+    <!-- Carruseles de imágenes a los lados -->
+    <div class="image-carousel carousel-left">
+        <img id="left-image" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Imagen lateral izquierda">
     </div>
-</nav>
+
+    <div class="image-carousel carousel-right">
+        <img id="right-image" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Imagen lateral derecha">
+    </div>
 
     <!-- Imagen del banner ajustada al tamaño de la tabla -->
     <div class="container my-4 d-flex justify-content-center">
@@ -163,203 +188,27 @@
     </div>
 
     <!-- Tabla con los datos -->
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center">
-        <h1>Lista de Jugadores <span class="small-text">(42 games)</span></h1>
-        <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover table-striped" id="jugadoresTable">
-            <thead class="table-dark">
-                <tr>
-                    <th>Posición</th>
-                    <th>Jugador</th>
-                    <th>Game Name</th>
-                    <th>Elo</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Total Games</th>
-                    <th>Win Rate</th>
-                    <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
-                    <th>Diferencia de Elo</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for jugador in datos_jugadores %}
-                {% set total_games = jugador.wins + jugador.losses %}
-                {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                <tr class="queue-type {{ jugador.queue_type }}">
-                    <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
-                    <td class="jugador-columna">
-                        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
-                             alt="Imagen de {{ jugador.jugador }}"
-                             class="imagen-jugador"
-                             onerror="this.style.display='none'">
-                        {{ jugador.jugador }}
-                    </td>
-                    <td>
-                        <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
-                    </td>
-                    <td>
-                        <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
-                        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                    </td>
-                    <td>{{ jugador.wins }}</td>
-                    <td>{{ jugador.losses }}</td>
-                    <td>{{ total_games }}</td>
-                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                        {{ '{:.2f}'.format(win_rate) }}%
-                    </td>
-                    <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
-                    <td class="elo-diferencia"></td>
-                    <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.en_partida %}
-                                <span class="estado-en-partida">En Partida</span>
-                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" 
-                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
-                            {% else %}
-                                Inactivo
-                            {% endif %}
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-
-
-    <!-- Mostrar la última actualización -->
-    <div class="text-center my-4"></div>
+    <!-- Aquí irá tu tabla de jugadores -->
 
     <!-- Bootstrap 5.3.3 JS y dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script para ajustar y mostrar la hora de la última actualización -->
     <script>
-        const imagenesElo = {
-            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
-            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
-            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
-            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
-            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
-            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
-            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/DIAMOND.png",
-            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
-            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
-            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
-        };
+        const imagenesLateral = [
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/4.jpg"
+        ];
+        let currentImageIndex = 0;
 
-        // Función para ajustar la hora a UTC+2
-        function ajustarHoraUTC2(timestamp) {
-            let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
-            date.setHours(date.getHours() ); // Ajustar la hora a UTC+2
-
-            let day = ('0' + date.getDate()).slice(-2);
-            let month = ('0' + (date.getMonth() + 1)).slice(-2);
-            let year = date.getFullYear();
-            let hours = ('0' + date.getHours()).slice(-2);
-            let minutes = ('0' + date.getMinutes()).slice(-2);
-            let seconds = ('0' + date.getSeconds()).slice(-2);
-
-            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+        function changeImages() {
+            currentImageIndex = (currentImageIndex + 1) % imagenesLateral.length;
+            document.getElementById('left-image').src = imagenesLateral[currentImageIndex];
+            document.getElementById('right-image').src = imagenesLateral[currentImageIndex];
         }
 
-        // Mostrar la última actualización
-        document.addEventListener('DOMContentLoaded', function () {
-            const lastUpdatedElement = document.getElementById('lastUpdated');
-            const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
-            lastUpdatedElement.textContent = `Última actualización: ${ajustarHoraUTC2(timestamp)}`; // Actualizar el contenido
-        });
-
-        // Asignar imágenes de Elo
-        document.addEventListener('DOMContentLoaded', function () {
-            const elos = document.querySelectorAll('.elo-image');
-            elos.forEach(elo => {
-                const tier = elo.alt.toUpperCase();
-                if (imagenesElo[tier]) {
-                    elo.src = imagenesElo[tier];
-                }
-            });
-        });
-
-        // Funcionalidad del modo oscuro
-        const toggleButton = document.getElementById('toggle-mode');
-        toggleButton.addEventListener('click', function () {
-            document.body.classList.toggle('dark-mode');
-            toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
-        });
-
-        // Filtro de jugadores por tipo de cola
-        const filtro = document.getElementById('filtro');
-        filtro.addEventListener('change', function () {
-            const selectedQueue = this.value;
-            const filas = document.querySelectorAll('#jugadoresTable tbody tr');
-
-            filas.forEach(fila => {
-                const tipoCola = fila.classList.contains(selectedQueue);
-                if (selectedQueue === 'todo' || tipoCola) {
-                    fila.style.display = ''; // Mostrar la fila
-                } else {
-                    fila.style.display = 'none'; // Ocultar la fila
-                }
-            });
-        });
-
-        
-
-
-        
-        // Ordenar la tabla por valor_clasificacion al cargar la página
-        document.addEventListener('DOMContentLoaded', function () {
-            const tableBody = document.querySelector('#jugadoresTable tbody');
-            const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
-
-            rowsArray.sort((a, b) => {
-                const valorA = parseFloat(a.cells[8].textContent); // Accede a la columna de valor_clasificacion
-                const valorB = parseFloat(b.cells[8].textContent);
-                return valorB - valorA; // Ordenar de mayor a menor
-            });
-
-            // Reemplazar el contenido de tbody con las filas ordenadas
-            rowsArray.forEach((row, index) => {
-                tableBody.appendChild(row);
-                // Actualizar la celda de posición
-                row.cells[0].textContent = index + 1; // Asignar la posición en la primera celda
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-    const tableBody = document.querySelector('#jugadoresTable tbody');
-    const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
-
-    // Ordenar filas por valor_clasificacion
-    rowsArray.sort((a, b) => {
-        const valorA = parseFloat(a.cells[8].textContent); // Columna de valor_clasificacion
-        const valorB = parseFloat(b.cells[8].textContent);
-        return valorB - valorA; // Ordenar de mayor a menor
-    });
-
-    rowsArray.forEach((row, index) => {
-        tableBody.appendChild(row);
-        row.cells[0].textContent = index + 1; // Actualiza la posición en la primera celda
-
-        if (index > 0) { // Si no es el primer jugador, calcular la diferencia
-            const valorClasificacionActual = parseFloat(row.cells[8].textContent);
-            const valorClasificacionAnterior = parseFloat(rowsArray[index - 1].cells[8].textContent);
-            const diferencia = valorClasificacionAnterior - valorClasificacionActual;
-            row.querySelector('.elo-diferencia').textContent = diferencia; // Añadir diferencia en la nueva columna
-        } else {
-            row.querySelector('.elo-diferencia').textContent = '—'; // Para el primer jugador no hay diferencia
-        }
-    });
-});
-
+        setInterval(changeImages, 8000); // Cambia cada 8 segundos
     </script>
 </body>
 
