@@ -211,6 +211,7 @@
         "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
         "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
     };
+    
     document.querySelectorAll(".elo-image").forEach(el => {
         const elo = el.alt.toUpperCase();
         if (imagenesElo[elo]) el.src = imagenesElo[elo];
@@ -228,13 +229,18 @@
     });
 
     const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-    filas.sort((a, b) => b.querySelector(".hidden").textContent - a.querySelector(".hidden").textContent)
-        .forEach((row, index) => {
-            row.querySelector("td:first-child").textContent = index + 1;
-            const eloCol = row.querySelector(".elo-diferencia");
-            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-            eloCol.textContent = `${valorClasificacion - filas[0].querySelector(".hidden").textContent} LPs`;
-        });
+    
+    // Ordenar las filas por valor de clasificación de forma correcta
+    filas.sort((a, b) => {
+        const valorClasificacionA = parseInt(a.querySelector(".hidden").textContent, 10) || 0;
+        const valorClasificacionB = parseInt(b.querySelector(".hidden").textContent, 10) || 0;
+        return valorClasificacionB - valorClasificacionA; // Orden descendente
+    }).forEach((row, index) => {
+        row.querySelector("td:first-child").textContent = index + 1; // Numeración de las filas
+        const eloCol = row.querySelector(".elo-diferencia");
+        const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10) || 0;
+        eloCol.textContent = `${valorClasificacion - filas[0].querySelector(".hidden").textContent} LPs`; // Diferencia de Elo
+    });
 
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 
@@ -254,6 +260,5 @@
     
     setInterval(changeBanner, 5000); // Cambiar cada 5 segundos
 </script>
-
 </body>
 </html>
