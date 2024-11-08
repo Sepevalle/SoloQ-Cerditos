@@ -228,17 +228,21 @@
         });
     });
 
+    // Ordenación de las filas por clasificación
     const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
 
+    // Aquí mejoramos el orden para que la clasificación se obtenga de forma correcta (ej: el valor que quieres que se utilice está en el campo hidden)
     filas.sort((a, b) => {
         const valorClasificacionA = parseInt(a.querySelector(".hidden").textContent, 10) || 0;
         const valorClasificacionB = parseInt(b.querySelector(".hidden").textContent, 10) || 0;
         return valorClasificacionB - valorClasificacionA; // Orden descendente
     }).forEach((row, index) => {
-        row.querySelector("td:first-child").textContent = index + 1; // Numeración de las filas
+        row.querySelector("td:first-child").textContent = index + 1; // Actualiza el número de posición en cada fila
         const eloCol = row.querySelector(".elo-diferencia");
         const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10) || 0;
-        eloCol.textContent = `${valorClasificacion - filas[0].querySelector(".hidden").textContent} LPs`; // Diferencia de Elo
+
+        // Actualiza la diferencia de LPs en la columna correspondiente
+        eloCol.textContent = `${valorClasificacion - filas[0].querySelector(".hidden").textContent} LPs`;
     });
 
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
@@ -259,6 +263,7 @@
     
     setInterval(changeBanner, 5000); // Cambiar cada 5 segundos
 </script>
+
 
 </body>
 </html>
