@@ -76,7 +76,6 @@
             border-radius: 50%;
             object-fit: cover;
         }
-        /* Estilos para las imágenes laterales */
         .lateral-img {
             position: fixed;
             top: 50%;
@@ -92,7 +91,6 @@
         .right-img {
             right: 10px;
         }
-        /* Ocultar en pantallas pequeñas */
         @media (max-width: 768px) {
             .lateral-img {
                 display: none;
@@ -247,6 +245,11 @@
             row.style.display = selectedQueue === "todo" || row.classList.contains(selectedQueue) ? "" : "none";
         });
     });
+
+    // Mostrar la fecha de última actualización
+    const lastUpdated = document.getElementById("lastUpdated");
+    const now = new Date();
+    lastUpdated.innerHTML = `Última actualización: ${now.toLocaleString()}`;
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -254,4 +257,3 @@
 </body>
 
 </html>
-
