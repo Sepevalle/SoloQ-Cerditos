@@ -187,7 +187,7 @@
                                 <span class="estado-en-partida">En Partida</span>
                                 <img src="http://ddragon.leagueoflegends.com/cdn/14.15.1/img/spell/SummonerTeleport.png" alt="Estado de partida" class="imagen-estado">
                             {% else %}
-                                Inactivo
+                                No En Partida
                             {% endif %}
                         </a>
                     </td>
@@ -198,8 +198,9 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Asignar las imágenes de Elo a cada jugador según su rango
+    // Imágenes del Elo
     const imagenesElo = {
         "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
         "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
@@ -212,16 +213,21 @@
         "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
         "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
     };
+
+    // Actualizamos las imágenes de ELO de cada jugador
     document.querySelectorAll(".elo-image").forEach(el => {
         const elo = el.alt.toUpperCase();
         if (imagenesElo[elo]) el.src = imagenesElo[elo];
     });
 
-    // Toggle de modo oscuro
+    // Activar y desactivar el modo oscuro
     const toggleModeButton = document.getElementById("toggle-mode");
-    toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
+    toggleModeButton.addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+        document.getElementById("banner-img").classList.toggle("d-none"); // Asegura que se vea el banner correctamente en modo oscuro
+    });
 
-    // Filtro de cola
+    // Filtrar las filas por tipo de cola
     const filtro = document.getElementById("filtro");
     filtro.addEventListener("change", () => {
         const selected = filtro.value;
@@ -230,46 +236,23 @@
         });
     });
 
-    // Ordenar jugadores por Valor Clasificación y calcular diferencia de Elo
-    function ordenarYCalcularDiferencias() {
-        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-        // Ordena las filas basándose en el valor de clasificación
-        filas.sort((a, b) => 
-            parseInt(b.querySelector(".hidden").textContent, 10) - 
-            parseInt(a.querySelector(".hidden").textContent, 10)
-        );
-        
-        // Actualiza el DOM con la nueva ordenación y calcula las diferencias
-        const tbody = document.querySelector("#jugadoresTable tbody");
-        tbody.innerHTML = ""; // Limpia el tbody
-        filas.forEach((row, index) => {
-            // Inserta la fila en el tbody en el orden correcto
-            tbody.appendChild(row);
-            
-            // Actualiza la posición
-            row.querySelector("td:first-child").textContent = index + 1;
+    // Reordenar jugadores por clasificación
+    const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+    filas.sort((a, b) => {
+        const valorClasificacionA = parseInt(a.querySelector(".hidden").textContent, 10) || 0;
+        const valorClasificacionB = parseInt(b.querySelector(".hidden").textContent, 10) || 0;
+        return valorClasificacionB - valorClasificacionA;
+    }).forEach((row, index) => {
+        row.querySelector("td:first-child").textContent = index + 1;
+        const eloCol = row.querySelector(".elo-diferencia");
+        const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10) || 0;
+        const mejorClasificacion = parseInt(filas[0].querySelector(".hidden").textContent, 10) || 0;
+        eloCol.textContent = `${valorClasificacion - mejorClasificacion} LPs`;
+    });
 
-            // Calcula y muestra la diferencia de Elo con el jugador anterior
-            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-            const eloCol = row.querySelector(".elo-diferencia");
-            
-            if (index > 0) {
-                const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
-                eloCol.textContent = `${valorClasificacion - valorClasificacionAnterior} LPs`;
-            } else {
-                eloCol.textContent = "—";
-            }
-        });
-    }
-
-    // Llamar a la función para ordenar y calcular las diferencias de Elo
-    ordenarYCalcularDiferencias();
-
-    // Actualización de la fecha de última actualización
+    // Actualización de la fecha
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 </script>
-
-
 
 </body>
 
