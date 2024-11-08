@@ -51,9 +51,6 @@
             background-color: #343a40 !important;
             color: white;
         }
-        .dark-mode .navbar-brand {
-            color: white !important;
-        }
         .dark-mode .table {
             background-color: #343a40 !important;
             color: white;
@@ -76,29 +73,52 @@
             border-radius: 50%;
             object-fit: cover;
         }
-        /* Estilos para las imágenes laterales */
-        .lateral-img {
+        /* Banner lateral izquierdo */
+        #bannerLeft {
             position: fixed;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 200px;
+            left: 0;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background-color: #f8f9fa;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        #bannerLeft img {
+            width: 100%;
             height: auto;
             object-fit: cover;
         }
-        .left-img {
-            left: 0;
-        }
-        .right-img {
+
+        /* Banner lateral derecho */
+        #bannerRight {
+            position: fixed;
             right: 0;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background-color: #f8f9fa;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
+        #bannerRight img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+
     </style>
 </head>
 
 <body>
 
-<!-- Imágenes laterales que cambian cada 5 segundos -->
-<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Lateral izquierda">
-<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Lateral derecha">
+<!-- Banners laterales dinámicos -->
+<div id="bannerLeft">
+    <img id="bannerLeftImage" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerIzq1.jpg" alt="Banner Lateral Izquierdo">
+</div>
+<div id="bannerRight">
+    <img id="bannerRightImage" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerDer1.jpg" alt="Banner Lateral Derecho">
+</div>
 
 <!-- Navbar con filtros -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
@@ -185,9 +205,10 @@
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
                             {% if jugador.en_partida %}
                                 <span class="estado-en-partida">En Partida</span>
-                                <img src="http://ddragon.leagueoflegends.com/cdn/14.15.1/img/spell/SummonerTeleport.png" alt="Estado de partida" class="imagen-estado">
+                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
+                                     alt="{{ jugador.nombre_campeon }}" style="width: 30px;">
                             {% else %}
-                                Inactivo
+                                No en Partida
                             {% endif %}
                         </a>
                     </td>
@@ -199,7 +220,6 @@
 </div>
 
 <script>
-    // Asignar las imágenes de Elo a cada jugador según su rango
     const imagenesElo = {
         "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
         "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
@@ -212,16 +232,18 @@
         "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
         "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
     };
+
+    // Actualización de las imágenes de ELO
     document.querySelectorAll(".elo-image").forEach(el => {
         const elo = el.alt.toUpperCase();
         if (imagenesElo[elo]) el.src = imagenesElo[elo];
     });
 
-    // Toggle de modo oscuro
+    // Alternar entre modo oscuro y claro
     const toggleModeButton = document.getElementById("toggle-mode");
     toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
 
-    // Filtro de cola
+    // Filtro por tipo de cola
     const filtro = document.getElementById("filtro");
     filtro.addEventListener("change", () => {
         const selected = filtro.value;
@@ -230,46 +252,42 @@
         });
     });
 
-    // Ordenar jugadores por Valor Clasificación y calcular diferencia de Elo
-    function ordenarYCalcularDiferencias() {
-        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-        // Ordena las filas basándose en el valor de clasificación
-        filas.sort((a, b) => 
-            parseInt(b.querySelector(".hidden").textContent, 10) - 
-            parseInt(a.querySelector(".hidden").textContent, 10)
-        );
-        
-        // Actualiza el DOM con la nueva ordenación y calcula las diferencias
-        const tbody = document.querySelector("#jugadoresTable tbody");
-        tbody.innerHTML = ""; // Limpia el tbody
-        filas.forEach((row, index) => {
-            // Inserta la fila en el tbody en el orden correcto
-            tbody.appendChild(row);
-            
-            // Actualiza la posición
+    // Ordenar filas de la tabla por clasificación
+    const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+    filas.sort((a, b) => parseInt(b.querySelector(".hidden").textContent) - parseInt(a.querySelector(".hidden").textContent))
+        .forEach((row, index) => {
             row.querySelector("td:first-child").textContent = index + 1;
-
-            // Calcula y muestra la diferencia de Elo con el jugador anterior
-            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
             const eloCol = row.querySelector(".elo-diferencia");
-            
-            if (index > 0) {
-                const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
-                eloCol.textContent = ${ valorClasificacionAnterior - valorClasificacion } LPs;
-            } else {
-                eloCol.textContent = "—";
-            }
+            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
+            const primerValorClasificacion = parseInt(filas[0].querySelector(".hidden").textContent, 10);
+            eloCol.textContent = `${valorClasificacion - primerValorClasificacion} LPs`;
         });
-    }
 
-    // Llamar a la función para ordenar y calcular las diferencias de Elo
-    ordenarYCalcularDiferencias();
-
-    // Actualización de la fecha de última actualización
+    // Actualización de la fecha y hora de la última actualización
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
+
+    // Cambiar los banners cada 5 segundos
+    const bannersIzq = [
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerIzq1.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerIzq2.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerIzq3.jpg"
+    ];
+    const bannersDer = [
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerDer1.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerDer2.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/BannerDer3.jpg"
+    ];
+
+    let indexIzq = 0;
+    let indexDer = 0;
+
+    setInterval(() => {
+        indexIzq = (indexIzq + 1) % bannersIzq.length;
+        indexDer = (indexDer + 1) % bannersDer.length;
+        document.getElementById("bannerLeftImage").src = bannersIzq[indexIzq];
+        document.getElementById("bannerRightImage").src = bannersDer[indexDer];
+    }, 5000);
 </script>
-
-
 
 </body>
 
