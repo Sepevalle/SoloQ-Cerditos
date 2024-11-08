@@ -12,74 +12,58 @@
     <style>
         body {
             transition: background-color 0.3s, color 0.3s;
-            position: relative;
         }
-
         .banner-img {
             margin-top: 40px;
             width: 100%;
             max-height: 600px;
             object-fit: contain;
         }
-
         .small-text {
             font-size: 0.6em;
             font-weight: normal;
         }
-
         .win-rate-alto {
             color: #228B22 !important;
         }
-
         .win-rate-bajo {
             color: tomato !important;
         }
-
         .estado-en-partida {
             color: #007BFF !important;
             font-weight: bold;
         }
-
         .table a {
             color: inherit;
             text-decoration: none;
         }
-
         .link-estado {
             color: #007BFF;
         }
-
         .link-perfil:hover, .link-estado:hover {
             text-decoration: underline;
         }
-
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
-
         .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
-
         .dark-mode .table {
             background-color: #343a40 !important;
             color: white;
         }
-
         .table td, .table th {
             text-align: center;
         }
-
         .jugador-columna {
             text-align: left;
         }
-
         .hidden {
             display: none;
         }
-
         .imagen-jugador {
             width: 30px;
             height: 30px;
@@ -89,62 +73,35 @@
             border-radius: 50%;
             object-fit: cover;
         }
-
-        /* Banner lateral izquierdo */
-        #bannerLeft {
+        /* Estilo para los banners laterales */
+        .sidebar-banner {
             position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 999;
+            width: 250px;
+        }
+        .left-banner {
             left: 0;
-            top: 0;
-            width: 30%;
-            height: 100%;
-            z-index: -1;
-            display: flex;
-            justify-content: center;
         }
-
-        #bannerLeft img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Banner lateral derecho */
-        #bannerRight {
-            position: fixed;
+        .right-banner {
             right: 0;
-            top: 0;
-            width: 30%;
-            height: 100%;
-            z-index: -1;
-            display: flex;
-            justify-content: center;
         }
-
-        #bannerRight img {
+        .sidebar-banner img {
             width: 100%;
-            height: 100%;
+            max-height: 80vh;
             object-fit: cover;
         }
-
-        /* Responsividad */
-        @media screen and (max-width: 768px) {
-            #bannerLeft, #bannerRight {
-                display: none;
-            }
+        .banner-img {
+            margin-top: 40px;
+            width: 100%;
+            max-height: 600px;
+            object-fit: contain;
         }
-
     </style>
 </head>
 
 <body>
-
-<!-- Banners laterales dinámicos -->
-<div id="bannerLeft">
-    <img id="bannerLeftImage" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Banner Lateral Izquierdo">
-</div>
-<div id="bannerRight">
-    <img id="bannerRightImage" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Banner Lateral Derecho">
-</div>
 
 <!-- Navbar con filtros -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
@@ -172,6 +129,15 @@
         </div>
     </div>
 </nav>
+
+<!-- Banners Laterales -->
+<div class="sidebar-banner left-banner">
+    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banner-izq.jpg" alt="Banner Izquierdo">
+</div>
+
+<div class="sidebar-banner right-banner">
+    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banner-der.jpg" alt="Banner Derecho">
+</div>
 
 <div class="container my-4 d-flex justify-content-center">
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/IMG_9912.webp" alt="Banner" class="banner-img" id="banner-img">
@@ -222,17 +188,20 @@
                     <td>{{ jugador.wins }}</td>
                     <td>{{ jugador.losses }}</td>
                     <td>{{ total_games }}</td>
-                    <td class="win-rate {{ 'win-rate-alto' if win_rate >= 50 else 'win-rate-bajo' }}">
-                        {{ win_rate|round(2) }} %
+                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                        {{ '{:.2f}'.format(win_rate) }}%
                     </td>
-                    <td class="hidden">{{ jugador.league_points }}</td>
+                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
                     <td class="elo-diferencia"></td>
                     <td>
-                        <a href="{{ jugador.estado_url }}" target="_blank" class="link-estado">
-                            {% if jugador.estado == "in_game" %}
-                            En Partida
+                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
+                            {% if jugador.en_partida %}
+                                <span class="estado-en-partida">En Partida</span>
+                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
+                                     alt="{{ jugador.nombre_campeon }}" 
+                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
                             {% else %}
-                            No en Partida
+                                Inactivo
                             {% endif %}
                         </a>
                     </td>
@@ -243,6 +212,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const imagenesElo = {
         "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
@@ -256,18 +226,14 @@
         "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
         "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
     };
-
-    // Actualización de las imágenes de ELO
     document.querySelectorAll(".elo-image").forEach(el => {
         const elo = el.alt.toUpperCase();
         if (imagenesElo[elo]) el.src = imagenesElo[elo];
     });
 
-    // Alternar entre modo oscuro y claro
     const toggleModeButton = document.getElementById("toggle-mode");
     toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
 
-    // Filtro por tipo de cola
     const filtro = document.getElementById("filtro");
     filtro.addEventListener("change", () => {
         const selected = filtro.value;
@@ -276,45 +242,17 @@
         });
     });
 
-    // Ordenar filas de la tabla por clasificación (LP)
     const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-    filas.sort((a, b) => parseInt(b.querySelector(".hidden").textContent) - parseInt(a.querySelector(".hidden").textContent))
+    filas.sort((a, b) => b.querySelector(".hidden").textContent - a.querySelector(".hidden").textContent)
         .forEach((row, index) => {
             row.querySelector("td:first-child").textContent = index + 1;
             const eloCol = row.querySelector(".elo-diferencia");
             const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-            const primerValorClasificacion = parseInt(filas[0].querySelector(".hidden").textContent, 10);
-            eloCol.textContent = `${valorClasificacion - primerValorClasificacion} LPs`;
+            eloCol.textContent = `${valorClasificacion - filas[0].querySelector(".hidden").textContent} LPs`;
         });
 
-    // Actualización de la fecha y hora de la última actualización
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
-
-    // Cambiar los banners cada 5 segundos
-    const bannersIzq = [
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/4.jpg"
-    ];
-    const bannersDer = [
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/4.jpg"
-    ];
-
-    let indexIzq = 0;
-    let indexDer = 0;
-
-    setInterval(() => {
-        indexIzq = (indexIzq + 1) % bannersIzq.length;
-        indexDer = (indexDer + 1) % bannersDer.length;
-        document.getElementById("bannerLeftImage").src = bannersIzq[indexIzq];
-        document.getElementById("bannerRightImage").src = bannersDer[indexDer];
-    }, 5000);
 </script>
-
 </body>
 
 </html>
