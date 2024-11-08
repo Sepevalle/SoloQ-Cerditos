@@ -231,7 +231,7 @@
 
     // Cambiar automáticamente las imágenes laterales cada 5 segundos
     let currentImageIndex = 1;
-    const maxImageIndex = 10;
+    const maxImageIndex = 4;
     setInterval(() => {
         currentImageIndex = (currentImageIndex % maxImageIndex) + 1;
         document.getElementById("left-banner").src = `https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/${currentImageIndex}.jpg`;
