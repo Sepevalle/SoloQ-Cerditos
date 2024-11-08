@@ -81,22 +81,15 @@
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            max-width: 150px;
+            width: 200px;
             height: auto;
             object-fit: cover;
-            z-index: -1; /* Asegura que estén detrás del contenido principal */
         }
         .left-img {
-            left: 10px; /* Añadimos un margen de seguridad */
+            left: 0;
         }
         .right-img {
-            right: 10px; /* Añadimos un margen de seguridad */
-        }
-        /* Hacer que desaparezcan en pantallas pequeñas */
-        @media (max-width: 768px) {
-            .lateral-img {
-                display: none;
-            }
+            right: 0;
         }
     </style>
 </head>
@@ -274,30 +267,6 @@
 
     // Actualización de la fecha de última actualización
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
-
-    const imagenesLaterales = [
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
-        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg"
-    ];
-
-    let indiceImagen = 0; // Índice inicial
-
-    function cambiarImagenesLaterales() {
-        // Actualiza las imágenes en ambos lados
-        document.getElementById("left-banner").src = imagenesLaterales[indiceImagen];
-        document.getElementById("right-banner").src = imagenesLaterales[indiceImagen];
-
-        // Avanza al siguiente índice, reiniciando si alcanza el final
-        indiceImagen = (indiceImagen + 1) % imagenesLaterales.length;
-    }
-
-    // Cambia las imágenes cada 5 segundos (5000 ms)
-    setInterval(cambiarImagenesLaterales, 5000);
-
-
-
-
 </script>
 
 
