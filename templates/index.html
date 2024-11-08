@@ -211,7 +211,7 @@
         "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
         "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
     };
-    
+
     document.querySelectorAll(".elo-image").forEach(el => {
         const elo = el.alt.toUpperCase();
         if (imagenesElo[elo]) el.src = imagenesElo[elo];
@@ -229,8 +229,7 @@
     });
 
     const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-    
-    // Ordenar las filas por valor de clasificación de forma correcta
+
     filas.sort((a, b) => {
         const valorClasificacionA = parseInt(a.querySelector(".hidden").textContent, 10) || 0;
         const valorClasificacionB = parseInt(b.querySelector(".hidden").textContent, 10) || 0;
@@ -260,5 +259,6 @@
     
     setInterval(changeBanner, 5000); // Cambiar cada 5 segundos
 </script>
+
 </body>
 </html>
