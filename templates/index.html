@@ -92,12 +92,6 @@
             max-height: 80vh;
             object-fit: cover;
         }
-        .banner-img {
-            margin-top: 40px;
-            width: 100%;
-            max-height: 600px;
-            object-fit: contain;
-        }
     </style>
 </head>
 
@@ -152,17 +146,17 @@
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
-                    <th>Posición</th>
-                    <th>Jugador</th>
-                    <th>Game Name</th>
-                    <th>Elo</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Total Games</th>
-                    <th>Win Rate</th>
+                    <th data-column="posicion" class="sortable">Posición</th>
+                    <th data-column="jugador" class="sortable">Jugador</th>
+                    <th data-column="game_name" class="sortable">Game Name</th>
+                    <th data-column="elo" class="sortable">Elo</th>
+                    <th data-column="wins" class="sortable">Wins</th>
+                    <th data-column="losses" class="sortable">Losses</th>
+                    <th data-column="total_games" class="sortable">Total Games</th>
+                    <th data-column="win_rate" class="sortable">Win Rate</th>
                     <th class="hidden">Valor Clasificación</th>
-                    <th>Diferencia de Elo</th>
-                    <th>Estado</th>
+                    <th data-column="diferencia_elo" class="sortable">Diferencia de Elo</th>
+                    <th data-column="estado" class="sortable">Estado</th>
                 </tr>
             </thead>
             <tbody>
@@ -170,7 +164,7 @@
                 {% set total_games = jugador.wins + jugador.losses %}
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                 <tr class="queue-type {{ jugador.queue_type }}">
-                    <td></td>
+                    <td class="posicion">{{ loop.index }}</td>
                     <td class="jugador-columna">
                         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
                              alt="Imagen de {{ jugador.jugador }}"
@@ -195,13 +189,10 @@
                     <td class="elo-diferencia"></td>
                     <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.en_partida %}
-                                <span class="estado-en-partida">En Partida</span>
-                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" 
-                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            {% if jugador.estado == "ENPARTIDA" %}
+                            {{ jugador.estado }}
                             {% else %}
-                                Inactivo
+                            {{ jugador.estado }}
                             {% endif %}
                         </a>
                     </td>
@@ -212,7 +203,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const imagenesElo = {
         "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
@@ -242,38 +232,48 @@
         });
     });
 
-    // Función para ordenar la tabla por posición (ascendente)
-    function ordenarPorPosicion() {
-        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+    // Función para ordenar por columnas
+    function ordenarTabla(columnaIndex, tipoOrden) {
+        const tabla = document.getElementById("jugadoresTable");
+        const filas = Array.from(tabla.querySelector("tbody").rows);
+
         filas.sort((a, b) => {
-            const posA = parseInt(a.querySelector("td:first-child").textContent, 10);
-            const posB = parseInt(b.querySelector("td:first-child").textContent, 10);
-            return posA - posB;  // Orden ascendente
+            const valorA = a.cells[columnaIndex].textContent.trim();
+            const valorB = b.cells[columnaIndex].textContent.trim();
+
+            const tipo = isNaN(valorA) ? 'string' : 'number';
+            
+            if (tipo === 'string') {
+                return tipoOrden === 'desc' ?
+                    valorB.localeCompare(valorA) : valorA.localeCompare(valorB);
+            }
+            return tipoOrden === 'desc' ?
+                parseInt(valorB) - parseInt(valorA) : parseInt(valorA) - parseInt(valorB);
         });
 
-        // Reaplicar el orden a la tabla
-        filas.forEach((row, index) => {
-            row.querySelector("td:first-child").textContent = index + 1;  // Actualizar las posiciones
-            document.querySelector("#jugadoresTable tbody").appendChild(row);  // Reinsertar la fila en el lugar correcto
-        });
+        filas.forEach(fila => tabla.querySelector("tbody").appendChild(fila));
     }
 
-    // Llamamos a la función para ordenar cuando la página carga
-    ordenarPorPosicion();
-
-    // Calcular la diferencia de Elo
-    const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-    filas.forEach((row, index) => {
-        const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-        const eloCol = row.querySelector(".elo-diferencia");
-        const primerJugadorElo = parseInt(filas[0].querySelector(".hidden").textContent, 10);
-        eloCol.textContent = `${valorClasificacion - primerJugadorElo} LPs`;
+    // Establecer orden por defecto en 'Posición' (descendente)
+    document.querySelector('th[data-column="posicion"]').addEventListener('click', () => {
+        ordenarTabla(0, 'desc');
     });
 
-    // Actualización de la hora de última actualización
+    // Hacer las columnas clickeables para ordenar
+    document.querySelectorAll('.sortable').forEach((th, index) => {
+        th.addEventListener('click', () => {
+            let orden = 'asc';
+            if (th.classList.contains('asc')) {
+                orden = 'desc';
+            }
+            th.classList.toggle('asc', orden === 'asc');
+            th.classList.toggle('desc', orden === 'desc');
+            ordenarTabla(index, orden);
+        });
+    });
+
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 </script>
-
 </body>
 
 </html>
