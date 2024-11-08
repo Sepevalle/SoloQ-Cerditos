@@ -51,6 +51,9 @@
             background-color: #343a40 !important;
             color: white;
         }
+        .dark-mode .navbar-brand {
+            color: white !important;
+        }
         .dark-mode .table {
             background-color: #343a40 !important;
             color: white;
@@ -73,29 +76,29 @@
             border-radius: 50%;
             object-fit: cover;
         }
-        /* Estilo para los banners laterales */
-        .sidebar-banner {
+        /* Estilos para las imágenes laterales */
+        .lateral-img {
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            z-index: 999;
-            width: 250px;
+            width: 200px;
+            height: auto;
+            object-fit: cover;
         }
-        .left-banner {
+        .left-img {
             left: 0;
         }
-        .right-banner {
+        .right-img {
             right: 0;
-        }
-        .sidebar-banner img {
-            width: 100%;
-            max-height: 80vh;
-            object-fit: cover;
         }
     </style>
 </head>
 
 <body>
+
+<!-- Imágenes laterales que cambian cada 5 segundos -->
+<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Lateral izquierda">
+<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Lateral derecha">
 
 <!-- Navbar con filtros -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
@@ -124,15 +127,6 @@
     </div>
 </nav>
 
-<!-- Banners Laterales -->
-<div class="sidebar-banner left-banner">
-    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banner-izq.jpg" alt="Banner Izquierdo">
-</div>
-
-<div class="sidebar-banner right-banner">
-    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banner-der.jpg" alt="Banner Derecho">
-</div>
-
 <div class="container my-4 d-flex justify-content-center">
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/IMG_9912.webp" alt="Banner" class="banner-img" id="banner-img">
 </div>
@@ -146,17 +140,17 @@
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
-                    <th data-column="posicion" class="sortable">Posición</th>
-                    <th data-column="jugador" class="sortable">Jugador</th>
-                    <th data-column="game_name" class="sortable">Game Name</th>
-                    <th data-column="elo" class="sortable">Elo</th>
-                    <th data-column="wins" class="sortable">Wins</th>
-                    <th data-column="losses" class="sortable">Losses</th>
-                    <th data-column="total_games" class="sortable">Total Games</th>
-                    <th data-column="win_rate" class="sortable">Win Rate</th>
+                    <th>Posición</th>
+                    <th>Jugador</th>
+                    <th>Game Name</th>
+                    <th>Elo</th>
+                    <th>Wins</th>
+                    <th>Losses</th>
+                    <th>Total Games</th>
+                    <th>Win Rate</th>
                     <th class="hidden">Valor Clasificación</th>
-                    <th data-column="diferencia_elo" class="sortable">Diferencia de Elo</th>
-                    <th data-column="estado" class="sortable">Estado</th>
+                    <th>Diferencia de Elo</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
@@ -164,7 +158,7 @@
                 {% set total_games = jugador.wins + jugador.losses %}
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                 <tr class="queue-type {{ jugador.queue_type }}">
-                    <td class="posicion">{{ loop.index }}</td>
+                    <td></td>
                     <td class="jugador-columna">
                         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
                              alt="Imagen de {{ jugador.jugador }}"
@@ -189,10 +183,11 @@
                     <td class="elo-diferencia"></td>
                     <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.estado == "ENPARTIDA" %}
-                            {{ jugador.estado }}
+                            {% if jugador.en_partida %}
+                                <span class="estado-en-partida">En Partida</span>
+                                <img src="http://ddragon.leagueoflegends.com/cdn/14.15.1/img/spell/SummonerTeleport.png" alt="Estado de partida" class="imagen-estado">
                             {% else %}
-                            {{ jugador.estado }}
+                                Inactivo
                             {% endif %}
                         </a>
                     </td>
@@ -204,6 +199,7 @@
 </div>
 
 <script>
+    // Asignar las imágenes de Elo a cada jugador según su rango
     const imagenesElo = {
         "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
         "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
@@ -221,9 +217,11 @@
         if (imagenesElo[elo]) el.src = imagenesElo[elo];
     });
 
+    // Toggle de modo oscuro
     const toggleModeButton = document.getElementById("toggle-mode");
     toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
 
+    // Filtro de cola
     const filtro = document.getElementById("filtro");
     filtro.addEventListener("change", () => {
         const selected = filtro.value;
@@ -232,48 +230,47 @@
         });
     });
 
-    // Función para ordenar por columnas
-    function ordenarTabla(columnaIndex, tipoOrden) {
-        const tabla = document.getElementById("jugadoresTable");
-        const filas = Array.from(tabla.querySelector("tbody").rows);
-
-        filas.sort((a, b) => {
-            const valorA = a.cells[columnaIndex].textContent.trim();
-            const valorB = b.cells[columnaIndex].textContent.trim();
-
-            const tipo = isNaN(valorA) ? 'string' : 'number';
+    // Ordenar jugadores por Valor Clasificación y calcular diferencia de Elo
+    function ordenarYCalcularDiferencias() {
+        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+        // Ordena las filas basándose en el valor de clasificación
+        filas.sort((a, b) => 
+            parseInt(b.querySelector(".hidden").textContent, 10) - 
+            parseInt(a.querySelector(".hidden").textContent, 10)
+        );
+        
+        // Actualiza el DOM con la nueva ordenación y calcula las diferencias
+        const tbody = document.querySelector("#jugadoresTable tbody");
+        tbody.innerHTML = ""; // Limpia el tbody
+        filas.forEach((row, index) => {
+            // Inserta la fila en el tbody en el orden correcto
+            tbody.appendChild(row);
             
-            if (tipo === 'string') {
-                return tipoOrden === 'desc' ?
-                    valorB.localeCompare(valorA) : valorA.localeCompare(valorB);
-            }
-            return tipoOrden === 'desc' ?
-                parseInt(valorB) - parseInt(valorA) : parseInt(valorA) - parseInt(valorB);
-        });
+            // Actualiza la posición
+            row.querySelector("td:first-child").textContent = index + 1;
 
-        filas.forEach(fila => tabla.querySelector("tbody").appendChild(fila));
+            // Calcula y muestra la diferencia de Elo con el jugador anterior
+            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
+            const eloCol = row.querySelector(".elo-diferencia");
+            
+            if (index > 0) {
+                const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
+                eloCol.textContent = ${ valorClasificacionAnterior - valorClasificacion } LPs;
+            } else {
+                eloCol.textContent = "—";
+            }
+        });
     }
 
-    // Establecer orden por defecto en 'Posición' (descendente)
-    document.querySelector('th[data-column="posicion"]').addEventListener('click', () => {
-        ordenarTabla(0, 'desc');
-    });
+    // Llamar a la función para ordenar y calcular las diferencias de Elo
+    ordenarYCalcularDiferencias();
 
-    // Hacer las columnas clickeables para ordenar
-    document.querySelectorAll('.sortable').forEach((th, index) => {
-        th.addEventListener('click', () => {
-            let orden = 'asc';
-            if (th.classList.contains('asc')) {
-                orden = 'desc';
-            }
-            th.classList.toggle('asc', orden === 'asc');
-            th.classList.toggle('desc', orden === 'desc');
-            ordenarTabla(index, orden);
-        });
-    });
-
+    // Actualización de la fecha de última actualización
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 </script>
+
+
+
 </body>
 
 </html>
