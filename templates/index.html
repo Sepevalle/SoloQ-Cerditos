@@ -197,7 +197,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const imagenesElo = {
         "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
@@ -231,18 +230,21 @@
     // Ordenación de las filas por clasificación
     const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
 
-    // Aquí mejoramos el orden para que la clasificación se obtenga de forma correcta (ej: el valor que quieres que se utilice está en el campo hidden)
+    // Ordenar filas según el valor de clasificación en el campo "hidden" (aquí usamos parseInt para asegurar que es numérico)
     filas.sort((a, b) => {
         const valorClasificacionA = parseInt(a.querySelector(".hidden").textContent, 10) || 0;
         const valorClasificacionB = parseInt(b.querySelector(".hidden").textContent, 10) || 0;
         return valorClasificacionB - valorClasificacionA; // Orden descendente
     }).forEach((row, index) => {
-        row.querySelector("td:first-child").textContent = index + 1; // Actualiza el número de posición en cada fila
+        // Actualizar la posición de cada fila (número en la primera celda)
+        row.querySelector("td:first-child").textContent = index + 1;
+
         const eloCol = row.querySelector(".elo-diferencia");
         const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10) || 0;
 
         // Actualiza la diferencia de LPs en la columna correspondiente
-        eloCol.textContent = `${valorClasificacion - filas[0].querySelector(".hidden").textContent} LPs`;
+        const mejorClasificacion = parseInt(filas[0].querySelector(".hidden").textContent, 10) || 0;
+        eloCol.textContent = `${valorClasificacion - mejorClasificacion} LPs`; // Diferencia con la clasificación más alta
     });
 
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
