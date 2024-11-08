@@ -6,106 +6,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datos de Jugadores</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Icono.png" type="image/png">
-    <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- Tu CSS personalizado -->
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
     <style>
-        /* Estilos para el modo oscuro */
         body {
             transition: background-color 0.3s, color 0.3s;
         }
-
         .banner-img {
             margin-top: 40px;
             width: 100%;
             max-height: 600px;
             object-fit: contain;
         }
-
         .small-text {
             font-size: 0.6em;
             font-weight: normal;
         }
-
         .win-rate-alto {
             color: #228B22 !important;
         }
-
         .win-rate-bajo {
             color: tomato !important;
         }
-
         .estado-en-partida {
             color: #007BFF !important;
             font-weight: bold;
         }
-
         .table a {
             color: inherit;
             text-decoration: none;
         }
-
         .link-estado {
             color: #007BFF;
         }
-
-        .link-perfil:hover,
-        .link-estado:hover {
+        .link-perfil:hover, .link-estado:hover {
             text-decoration: underline;
-            color: #0056b3;
         }
-
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
-
         .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
-
-        .dark-mode .navbar-brand,
-        .dark-mode .nav-link {
-            color: white;
-        }
-
         .dark-mode .table {
             background-color: #343a40 !important;
             color: white;
         }
-
-        .dark-mode .table-dark {
-            background-color: #343a40 !important;
-            color: white;
-        }
-
-        .dark-mode .table-dark th {
-            background-color: #454d55 !important;
-        }
-
-        .dark-mode .btn-secondary {
-            background-color: #6c757d !important;
-            border-color: #6c757d !important;
-        }
-
-        /* Estilo de tabla */
-        .table td,
-        .table th {
+        .table td, .table th {
             text-align: center;
         }
-
         .jugador-columna {
             text-align: left;
         }
-
         .hidden {
             display: none;
         }
-
         .imagen-jugador {
             width: 30px;
             height: 30px;
@@ -115,83 +73,65 @@
             border-radius: 50%;
             object-fit: cover;
         }
-
         /* Estilos para las imágenes laterales */
-        .image-carousel {
-            width: 100px;
-            height: 100%;
+        .lateral-img {
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-
-        .image-carousel img {
-            width: 100%;
+            width: 200px;
             height: auto;
+            object-fit: cover;
         }
-
-        /* Posiciones de los carruseles de imagen */
-        .carousel-left {
+        .left-img {
             left: 0;
         }
-
-        .carousel-right {
+        .right-img {
             right: 0;
         }
     </style>
 </head>
 
 <body>
-    <!-- Navbar con filtros -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
-                SoloQ Challenge Cerditos y Valientes
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
-                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item d-flex align-items-center">
-                        <label for="filtro" class="nav-link mb-0 me-2">COLA:</label>
-                        <select id="filtro" class="form-select me-2">
-                            <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
-                            <option value="RANKED_FLEX_SR">FLEX</option>
-                            <option value="todo">TODO</option>
-                        </select>
-                    </li>
-                </ul>
-                <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
-            </div>
+
+<!-- Imágenes laterales que cambian cada 5 segundos -->
+<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Lateral izquierda">
+<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Lateral derecha">
+
+<!-- Navbar con filtros -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+            SoloQ Challenge Cerditos y Valientes
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+            aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item d-flex align-items-center">
+                    <label for="filtro" class="nav-link mb-0 me-2">COLA:</label>
+                    <select id="filtro" class="form-select me-2">
+                        <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
+                        <option value="RANKED_FLEX_SR">FLEX</option>
+                        <option value="todo">TODO</option>
+                    </select>
+                </li>
+            </ul>
+            <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
         </div>
-    </nav>
-
-    <!-- Carruseles de imágenes a los lados -->
-    <div class="image-carousel carousel-left">
-        <img id="left-image" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Imagen lateral izquierda">
     </div>
+</nav>
 
-    <div class="image-carousel carousel-right">
-        <img id="right-image" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Imagen lateral derecha">
-    </div>
+<div class="container my-4 d-flex justify-content-center">
+    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/IMG_9912.webp" alt="Banner" class="banner-img" id="banner-img">
+</div>
 
-    <!-- Imagen del banner ajustada al tamaño de la tabla -->
-    <div class="container my-4 d-flex justify-content-center">
-        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/IMG_9912.webp" alt="Banner" class="banner-img" id="banner-img">
-    </div>
-
-    <!-- Tabla con los datos -->
 <div class="container">
     <div class="d-flex justify-content-between align-items-center">
         <h1>Lista de Jugadores <span class="small-text">(42 games)</span></h1>
-        <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la última actualización -->
+        <div id="lastUpdated" class="text-end"></div>
     </div>
     <div class="table-responsive">
         <table class="table table-hover table-striped" id="jugadoresTable">
@@ -205,7 +145,7 @@
                     <th>Losses</th>
                     <th>Total Games</th>
                     <th>Win Rate</th>
-                    <th class="hidden">Valor Clasificación</th> <!-- Ocultar columna -->
+                    <th class="hidden">Valor Clasificación</th>
                     <th>Diferencia de Elo</th>
                     <th>Estado</th>
                 </tr>
@@ -215,7 +155,7 @@
                 {% set total_games = jugador.wins + jugador.losses %}
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                 <tr class="queue-type {{ jugador.queue_type }}">
-                    <td></td> <!-- Dejar esta celda vacía para ser llenada por JavaScript -->
+                    <td></td>
                     <td class="jugador-columna">
                         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
                              alt="Imagen de {{ jugador.jugador }}"
@@ -236,7 +176,7 @@
                     <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                         {{ '{:.2f}'.format(win_rate) }}%
                     </td>
-                    <td class="hidden">{{ jugador.valor_clasificacion }}</td> <!-- Valor Clasificación, oculto pero accesible -->
+                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
                     <td class="elo-diferencia"></td>
                     <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
@@ -257,153 +197,63 @@
     </div>
 </div>
 
-
-
-    <!-- Mostrar la última actualización -->
-    <div class="text-center my-4"></div>
-
-    <!-- Bootstrap 5.3.3 JS y dependencias -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Script para ajustar y mostrar la hora de la última actualización -->
-    <script>
- const imagenesLateral = [
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/4.jpg"
-        ];
-        let currentImageIndex = 0;
-
-        function changeImages() {
-            currentImageIndex = (currentImageIndex + 1) % imagenesLateral.length;
-            document.getElementById('left-image').src = imagenesLateral[currentImageIndex];
-            document.getElementById('right-image').src = imagenesLateral[currentImageIndex];
-        }
-
-        setInterval(changeImages, 8000); // Cambia cada 8 segundos
-
-
-        
-        const imagenesElo = {
-            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
-            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
-            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
-            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
-            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
-            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
-            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/DIAMOND.png",
-            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
-            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
-            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
-        };
-
-        // Función para ajustar la hora a UTC+2
-        function ajustarHoraUTC2(timestamp) {
-            let date = new Date(timestamp * 1000); // Multiplicar por 1000 porque JavaScript maneja milisegundos
-            date.setHours(date.getHours() ); // Ajustar la hora a UTC+2
-
-            let day = ('0' + date.getDate()).slice(-2);
-            let month = ('0' + (date.getMonth() + 1)).slice(-2);
-            let year = date.getFullYear();
-            let hours = ('0' + date.getHours()).slice(-2);
-            let minutes = ('0' + date.getMinutes()).slice(-2);
-            let seconds = ('0' + date.getSeconds()).slice(-2);
-
-            return ${day}-${month}-${year} ${hours}:${minutes}:${seconds};
-        }
-
-        // Mostrar la última actualización
-        document.addEventListener('DOMContentLoaded', function () {
-            const lastUpdatedElement = document.getElementById('lastUpdated');
-            const timestamp = {{ timestamp|tojson }}; // Timestamp desde el backend
-            lastUpdatedElement.textContent = Última actualización: ${ajustarHoraUTC2(timestamp)}; // Actualizar el contenido
-        });
-
-        // Asignar imágenes de Elo
-        document.addEventListener('DOMContentLoaded', function () {
-            const elos = document.querySelectorAll('.elo-image');
-            elos.forEach(elo => {
-                const tier = elo.alt.toUpperCase();
-                if (imagenesElo[tier]) {
-                    elo.src = imagenesElo[tier];
-                }
-            });
-        });
-
-        // Funcionalidad del modo oscuro
-        const toggleButton = document.getElementById('toggle-mode');
-        toggleButton.addEventListener('click', function () {
-            document.body.classList.toggle('dark-mode');
-            toggleButton.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
-        });
-
-        // Filtro de jugadores por tipo de cola
-        const filtro = document.getElementById('filtro');
-        filtro.addEventListener('change', function () {
-            const selectedQueue = this.value;
-            const filas = document.querySelectorAll('#jugadoresTable tbody tr');
-
-            filas.forEach(fila => {
-                const tipoCola = fila.classList.contains(selectedQueue);
-                if (selectedQueue === 'todo' || tipoCola) {
-                    fila.style.display = ''; // Mostrar la fila
-                } else {
-                    fila.style.display = 'none'; // Ocultar la fila
-                }
-            });
-        });
-
-        
-
-
-        
-        // Ordenar la tabla por valor_clasificacion al cargar la página
-        document.addEventListener('DOMContentLoaded', function () {
-            const tableBody = document.querySelector('#jugadoresTable tbody');
-            const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
-
-            rowsArray.sort((a, b) => {
-                const valorA = parseFloat(a.cells[8].textContent); // Accede a la columna de valor_clasificacion
-                const valorB = parseFloat(b.cells[8].textContent);
-                return valorB - valorA; // Ordenar de mayor a menor
-            });
-
-            // Reemplazar el contenido de tbody con las filas ordenadas
-            rowsArray.forEach((row, index) => {
-                tableBody.appendChild(row);
-                // Actualizar la celda de posición
-                row.cells[0].textContent = index + 1; // Asignar la posición en la primera celda
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-    const tableBody = document.querySelector('#jugadoresTable tbody');
-    const rowsArray = Array.from(tableBody.querySelectorAll('tr'));
-
-    // Ordenar filas por valor_clasificacion
-    rowsArray.sort((a, b) => {
-        const valorA = parseFloat(a.cells[8].textContent); // Columna de valor_clasificacion
-        const valorB = parseFloat(b.cells[8].textContent);
-        return valorB - valorA; // Ordenar de mayor a menor
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const imagenesElo = {
+        "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
+        "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
+        "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
+        "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
+        "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Platinum.png",
+        "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
+        "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Diamond.png",
+        "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
+        "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
+        "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
+    };
+    document.querySelectorAll(".elo-image").forEach(el => {
+        const elo = el.alt.toUpperCase();
+        if (imagenesElo[elo]) el.src = imagenesElo[elo];
     });
 
-    rowsArray.forEach((row, index) => {
-        tableBody.appendChild(row);
-        row.cells[0].textContent = index + 1; // Actualiza la posición en la primera celda
+    const toggleModeButton = document.getElementById("toggle-mode");
+    toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
 
-        if (index > 0) { // Si no es el primer jugador, calcular la diferencia
-            const valorClasificacionActual = parseFloat(row.cells[8].textContent);
-            const valorClasificacionAnterior = parseFloat(rowsArray[index - 1].cells[8].textContent);
-            const diferencia = valorClasificacionAnterior - valorClasificacionActual;
-            row.querySelector('.elo-diferencia').textContent = diferencia; // Añadir diferencia en la nueva columna
-        } else {
-            row.querySelector('.elo-diferencia').textContent = '—'; // Para el primer jugador no hay diferencia
-        }
+    const filtro = document.getElementById("filtro");
+    filtro.addEventListener("change", () => {
+        const selected = filtro.value;
+        document.querySelectorAll(".queue-type").forEach(row => {
+            row.classList.toggle("hidden", selected !== "todo" && row.classList.contains(selected) === false);
+        });
     });
-});
 
-    </script>
+    const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+    filas.sort((a, b) => b.querySelector(".hidden").textContent - a.querySelector(".hidden").textContent)
+        .forEach((row, index) => {
+            row.querySelector("td:first-child").textContent = index + 1;
+            const eloCol = row.querySelector(".elo-diferencia");
+            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
+            eloCol.textContent = `${valorClasificacion - filas[0].querySelector(".hidden").textContent} LPs`;
+        });
+
+    document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
+
+    // Función para cambiar las imágenes laterales cada 5 segundos
+    const banners = [
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg"
+    ];
+    let currentIndex = 0;
+    
+    function changeBanner() {
+        currentIndex = (currentIndex + 1) % banners.length;
+        document.getElementById("left-banner").src = banners[currentIndex];
+        document.getElementById("right-banner").src = banners[currentIndex];
+    }
+    
+    setInterval(changeBanner, 5000); // Cambiar cada 5 segundos
+</script>
+
 </body>
-
 </html>
