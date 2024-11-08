@@ -198,7 +198,7 @@
     </div>
 </div>
 
-    <script>
+<script>
     // Asignar las imágenes de Elo a cada jugador según su rango
     const imagenesElo = {
         "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
@@ -230,28 +230,45 @@
         });
     });
 
-    // Ordenar jugadores y calcular la diferencia de Elo con el jugador anterior
-    const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-    filas.sort((a, b) => 
-        parseInt(b.querySelector(".hidden").textContent, 10) - 
-        parseInt(a.querySelector(".hidden").textContent, 10)
-    ).forEach((row, index) => {
-        row.querySelector("td:first-child").textContent = index + 1;
-        const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
+    // Ordenar jugadores por Valor Clasificación y calcular diferencia de Elo
+    function ordenarYCalcularDiferencias() {
+        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+        // Ordena las filas basándose en el valor de clasificación
+        filas.sort((a, b) => 
+            parseInt(b.querySelector(".hidden").textContent, 10) - 
+            parseInt(a.querySelector(".hidden").textContent, 10)
+        );
+        
+        // Actualiza el DOM con la nueva ordenación y calcula las diferencias
+        const tbody = document.querySelector("#jugadoresTable tbody");
+        tbody.innerHTML = ""; // Limpia el tbody
+        filas.forEach((row, index) => {
+            // Inserta la fila en el tbody en el orden correcto
+            tbody.appendChild(row);
+            
+            // Actualiza la posición
+            row.querySelector("td:first-child").textContent = index + 1;
 
-        // Calcular la diferencia de Elo con el jugador anterior si no es el primer jugador
-        if (index > 0) {
-            const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
-            row.querySelector(".elo-diferencia").textContent = `${valorClasificacion - valorClasificacionAnterior} LPs`;
-        } else {
-            // Para el primer jugador, la diferencia se muestra como "—"
-            row.querySelector(".elo-diferencia").textContent = "—";
-        }
-    });
+            // Calcula y muestra la diferencia de Elo con el jugador anterior
+            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
+            const eloCol = row.querySelector(".elo-diferencia");
+            
+            if (index > 0) {
+                const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
+                eloCol.textContent = `${valorClasificacion - valorClasificacionAnterior} LPs`;
+            } else {
+                eloCol.textContent = "—";
+            }
+        });
+    }
+
+    // Llamar a la función para ordenar y calcular las diferencias de Elo
+    ordenarYCalcularDiferencias();
 
     // Actualización de la fecha de última actualización
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 </script>
+
 
 
 </body>
