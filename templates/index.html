@@ -162,7 +162,7 @@
                 {% set total_games = jugador.wins + jugador.losses %}
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                 <tr class="queue-type {{ jugador.queue_type }}">
-                    <td></td>
+                    <td class="posicion"></td>
                     <td class="jugador-columna">
                         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" alt="Imagen de {{ jugador.jugador }}" class="imagen-jugador" onerror="this.style.display='none'">
                         {{ jugador.jugador }}
@@ -213,6 +213,7 @@
         "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
     };
 
+    // Actualizar imágenes de Elo
     document.querySelectorAll(".elo-image").forEach(function (imgElement) {
         const tier = imgElement.alt;
         if (imagenesElo[tier]) {
@@ -220,30 +221,32 @@
         }
     });
 
+    // Ordenar jugadores por Elo y calcular las posiciones
+    const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+    filas.sort((a, b) => {
+        const eloA = parseInt(a.querySelector("td:nth-child(4)").innerText.match(/\d+/)[0]);
+        const eloB = parseInt(b.querySelector("td:nth-child(4)").innerText.match(/\d+/)[0]);
+        return eloB - eloA;
+    });
+    filas.forEach((fila, index) => {
+        const posicion = fila.querySelector(".posicion");
+        posicion.innerText = index + 1;
+        
+        const eloA = parseInt(fila.querySelector("td:nth-child(4)").innerText.match(/\d+/)[0]);
+        const diferenciaElo = eloA - parseInt(filas[0].querySelector("td:nth-child(4)").innerText.match(/\d+/)[0]);
+        fila.querySelector(".elo-diferencia").innerText = `+${diferenciaElo}`;
+    });
+    
+    // Reemplazar el cuerpo de la tabla con las filas ordenadas
+    const cuerpoTabla = document.querySelector("#jugadoresTable tbody");
+    cuerpoTabla.innerHTML = "";
+    filas.forEach(fila => cuerpoTabla.appendChild(fila));
+
     // Cambiar modo oscuro y claro
     const toggleButton = document.getElementById("toggle-mode");
     toggleButton.addEventListener("click", function () {
         document.body.classList.toggle("dark-mode");
         toggleButton.textContent = document.body.classList.contains("dark-mode") ? "Modo Claro" : "Modo Oscuro";
-    });
-
-    // Cambiar automáticamente las imágenes laterales cada 5 segundos
-    let currentImageIndex = 1;
-    const maxImageIndex = 4;
-    setInterval(() => {
-        currentImageIndex = (currentImageIndex % maxImageIndex) + 1;
-        document.getElementById("left-banner").src = `https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/${currentImageIndex}.jpg`;
-        document.getElementById("right-banner").src = `https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/${currentImageIndex}.jpg`;
-    }, 5000);
-
-    // Filtrar por cola seleccionada
-    const filtroSelect = document.getElementById("filtro");
-    filtroSelect.addEventListener("change", function () {
-        const selectedQueue = filtroSelect.value;
-        const rows = document.querySelectorAll("#jugadoresTable tbody tr");
-        rows.forEach(row => {
-            row.style.display = selectedQueue === "todo" || row.classList.contains(selectedQueue) ? "" : "none";
-        });
     });
 
     // Mostrar la fecha de última actualización
