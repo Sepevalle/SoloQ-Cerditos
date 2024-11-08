@@ -78,15 +78,17 @@
             position: fixed;
             left: 0;
             top: 0;
-            width: 300px;
+            width: 100%;
             height: 100%;
             background-color: #f8f9fa;
             box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            z-index: 1000;
+            z-index: -1;
+            display: flex;
+            justify-content: center;
         }
         #bannerLeft img {
             width: 100%;
-            height: auto;
+            height: 100%;
             object-fit: cover;
         }
 
@@ -95,16 +97,25 @@
             position: fixed;
             right: 0;
             top: 0;
-            width: 300px;
+            width: 100%;
             height: 100%;
             background-color: #f8f9fa;
             box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-            z-index: 1000;
+            z-index: -1;
+            display: flex;
+            justify-content: center;
         }
         #bannerRight img {
             width: 100%;
-            height: auto;
+            height: 100%;
             object-fit: cover;
+        }
+
+        /* Responsividad */
+        @media screen and (max-width: 768px) {
+            #bannerLeft, #bannerRight {
+                display: none;
+            }
         }
 
     </style>
@@ -196,10 +207,10 @@
                     <td>{{ jugador.wins }}</td>
                     <td>{{ jugador.losses }}</td>
                     <td>{{ total_games }}</td>
-                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                        {{ '{:.2f}'.format(win_rate) }}%
+                    <td class="win-rate {{ 'win-rate-alto' if win_rate >= 50 else 'win-rate-bajo' }}">
+                        {{ win_rate|round(2) }} %
                     </td>
-                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
+                    <td class="hidden">{{ jugador.league_points }}</td>
                     <td class="elo-diferencia"></td>
                     <td>
                         <a href="{{ jugador.estado_url }}" target="_blank" class="link-estado">
