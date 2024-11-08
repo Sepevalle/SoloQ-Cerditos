@@ -81,15 +81,22 @@
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            width: 200px;
+            max-width: 150px;
             height: auto;
             object-fit: cover;
+            z-index: -1; /* Asegura que estén detrás del contenido principal */
         }
         .left-img {
-            left: 0;
+            left: 10px; /* Añadimos un margen de seguridad */
         }
         .right-img {
-            right: 0;
+            right: 10px; /* Añadimos un margen de seguridad */
+        }
+        /* Hacer que desaparezcan en pantallas pequeñas */
+        @media (max-width: 768px) {
+            .lateral-img {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -137,6 +144,7 @@
         <div id="lastUpdated" class="text-end"></div>
     </div>
     <div class="table-responsive">
+
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
