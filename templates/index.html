@@ -10,6 +10,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/style.css">
     <style>
+        /* Estilos principales */
         body {
             transition: background-color 0.3s, color 0.3s;
         }
@@ -76,12 +77,13 @@
             border-radius: 50%;
             object-fit: cover;
         }
-        /* Estilos para las imágenes laterales */
+
+        /* Estilos para los banners laterales responsivos */
         .lateral-img {
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            width: 200px;
+            width: 150px;
             height: auto;
             object-fit: cover;
         }
@@ -91,6 +93,34 @@
         .right-img {
             right: 0;
         }
+
+        /* Ajustes responsivos */
+        @media (max-width: 1200px) {
+            .lateral-img {
+                width: 120px; /* Reducción de tamaño en pantallas medianas */
+            }
+        }
+
+        @media (max-width: 992px) {
+            .lateral-img {
+                width: 100px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .lateral-img {
+                width: 80px; /* Tamaño más pequeño para pantallas pequeñas */
+                top: auto;  /* Mueve las imágenes hacia abajo */
+                bottom: 10%; /* Alinea al 10% de la parte inferior */
+            }
+        }
+
+        @media (max-width: 576px) {
+            .lateral-img {
+                display: none; /* Ocultar en pantallas extra pequeñas */
+            }
+       }
+
     </style>
 </head>
 
