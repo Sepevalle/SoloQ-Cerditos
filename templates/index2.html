@@ -170,7 +170,6 @@
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
-                    <th>Posición</th>
                     <th>Jugador</th>
                     <th>Game Name</th>
                     <th>Elo</th>
@@ -178,8 +177,7 @@
                     <th>Losses</th>
                     <th>Total Games</th>
                     <th>Win Rate</th>
-                    <th class="hidden">Valor Clasificación</th>
-                    <th>Diferencia de Elo</th>
+                    <th >Valor Clasificación</th>
                     <th>Estado</th>
                 </tr>
             </thead>
@@ -188,7 +186,6 @@
                 {% set total_games = jugador.wins + jugador.losses %}
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                 <tr class="queue-type {{ jugador.queue_type }}">
-                    <td></td>
                     <td class="jugador-columna">
                         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
                              alt="Imagen de {{ jugador.jugador }}"
@@ -209,8 +206,7 @@
                     <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                         {{ '{:.2f}'.format(win_rate) }}%
                     </td>
-                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
-                    <td class="elo-diferencia"></td>
+                    <td>{{ jugador.valor_clasificacion }}</td>
                     <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
                             {% if jugador.en_partida %}
