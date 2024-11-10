@@ -196,7 +196,7 @@
                     <td>
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
                     </td>
-                    <td>
+                    <<td>
                         <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
                         {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                     </td>
@@ -228,10 +228,18 @@
 
 <script>
     // Asignar las imágenes de Elo a cada jugador según su tier
-    document.querySelectorAll('.elo-image').forEach(function(img) {
-        const eloName = img.alt.toLowerCase();
-        img.src = `https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/${eloName}.png`;
-    });
+   const imagenesElo = {
+        "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Iron.png",
+        "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Bronze.png",
+        "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Silver.png",
+        "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Gold.png",
+        "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/PLATINUM.png",
+        "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Emerald.png",
+        "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Diamond.png",
+        "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Master.png",
+        "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Grandmaster.png",
+        "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/logos_elo/Challenger.png"
+    };
 
     // Alternar modo oscuro
     const toggleButton = document.getElementById("toggle-mode");
