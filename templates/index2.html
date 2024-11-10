@@ -170,15 +170,15 @@
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
-                    <th>Jugador</th>
-                    <th>Game Name</th>
-                    <th>Elo</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Total Games</th>
-                    <th>Win Rate</th>
-                    <th >Valor Clasificación</th>
-                    <th>Estado</th>
+                    <th onclick="ordenarTabla(0)">Jugador</th>
+                    <th onclick="ordenarTabla(1)">Game Name</th>
+                    <th onclick="ordenarTabla(2)">Elo</th>
+                    <th onclick="ordenarTabla(3)">Wins</th>
+                    <th onclick="ordenarTabla(4)">Losses</th>
+                    <th onclick="ordenarTabla(5)">Total Games</th>
+                    <th onclick="ordenarTabla(6)">Win Rate</th>
+                    <th onclick="ordenarTabla(7)">Valor Clasificación</th>
+                    <th onclick="ordenarTabla(8)">Estado</th>
                 </tr>
             </thead>
             <tbody>
@@ -212,9 +212,10 @@
                             {% if jugador.en_partida %}
                                 <span class="estado-en-partida">En Partida</span>
                                 <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" class="imagen-jugador">
+                                     alt="{{ jugador.nombre_campeon }}" 
+                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
                             {% else %}
-                                Sin Partida
+                                Inactivo
                             {% endif %}
                         </a>
                     </td>
@@ -225,8 +226,6 @@
     </div>
 </div>
 
-<!-- Script para cambiar imágenes y habilitar modo oscuro -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // Asignar las imágenes de Elo a cada jugador según su rango
     const imagenesElo = {
@@ -259,35 +258,26 @@
         });
     });
 
-    // Ordenar jugadores por Valor Clasificación y calcular diferencia de Elo
-    function ordenarYCalcularDiferencias() {
-        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-        filas.sort((a, b) => 
-            parseInt(b.querySelector(".hidden").textContent, 10) - 
-            parseInt(a.querySelector(".hidden").textContent, 10)
-        );
+    function ordenarTabla(columna, desc = false) {
+        const tabla = document.getElementById("jugadoresTable");
+        const filas = Array.from(tabla.tBodies[0].rows);
+        const tipo = columna === 7 ? "num" : "str";
         
-        const tbody = document.querySelector("#jugadoresTable tbody");
-        tbody.innerHTML = ""; 
-        filas.forEach((row, index) => {
-            tbody.appendChild(row);
-            row.querySelector("td:first-child").textContent = index + 1;
-
-            const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-            const eloCol = row.querySelector(".elo-diferencia");
-            
-            if (index > 0) {
-                const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
-                eloCol.textContent = `${valorClasificacionAnterior - valorClasificacion} LPs`;
-            } else {
-                eloCol.textContent = "—";
-            }
+        filas.sort((a, b) => {
+            let valA = a.cells[columna].textContent.trim();
+            let valB = b.cells[columna].textContent.trim();
+            if (tipo === "num") { valA = parseFloat(valA) || 0; valB = parseFloat(valB) || 0; }
+            return desc ? valB.localeCompare(valA) : valA.localeCompare(valB);
         });
+        
+        filas.forEach(fila => tabla.tBodies[0].appendChild(fila));
     }
 
-    ordenarYCalcularDiferencias();
+    // Ordenar automáticamente por "Valor Clasificación" de manera descendente al cargar la página
+    document.addEventListener("DOMContentLoaded", () => ordenarTabla(7, true));
 
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
+    
 
     // Cambiar imágenes laterales cada 5 segundos
     const leftBanner = document.getElementById("left-banner");
@@ -307,7 +297,6 @@
     }
     setInterval(cambiarImagenes, 5000);
 </script>
-
 
 </body>
 </html>
