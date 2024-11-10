@@ -182,7 +182,7 @@ def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
     # Para depuración, imprime los datos de los jugadores
     print(json.dumps(datos_jugadores, indent=2))  # Para ver los datos que se están enviando a la plantilla
-    return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
+    return render_template('index2.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
 
 # Función que hará peticiones periódicas a la app para evitar hibernación
 def keep_alive():
