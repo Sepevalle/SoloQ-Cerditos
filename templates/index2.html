@@ -13,69 +13,88 @@
         /* Estilos principales */
         body {
             transition: background-color 0.3s, color 0.3s;
+            font-family: 'Arial', sans-serif;
+            padding-top: 100px;
         }
+
         .banner-img {
-            margin-top: 40px;
             width: 100%;
             max-height: 600px;
-            object-fit: contain;
+            object-fit: cover;
         }
+
         .small-text {
-            font-size: 0.6em;
+            font-size: 0.8em;
             font-weight: normal;
         }
+
         .win-rate-alto {
             color: #228B22 !important;
         }
+
         .win-rate-bajo {
             color: tomato !important;
         }
+
         .estado-en-partida {
             color: #007BFF !important;
             font-weight: bold;
         }
+
         .table a {
             color: inherit;
             text-decoration: none;
         }
+
         .link-estado {
             color: #007BFF;
         }
+
         .link-perfil:hover, .link-estado:hover {
             text-decoration: underline;
         }
+
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
+
         .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
+
         .dark-mode .navbar-brand {
             color: white !important;
         }
+
         .dark-mode .table {
             background-color: #343a40 !important;
             color: white;
         }
+
         .table td, .table th {
             text-align: center;
+            vertical-align: middle;
         }
+
         .jugador-columna {
             text-align: left;
         }
-        .hidden {
-            display: none;
-        }
+
         .imagen-jugador {
-            width: 30px;
-            height: 30px;
-            vertical-align: middle;
-            display: inline-block;
-            margin-right: 8px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
             object-fit: cover;
+            margin-right: 10px;
+        }
+
+        .table-container {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #fff;
         }
 
         /* Estilos para los banners laterales responsivos */
@@ -86,10 +105,18 @@
             width: 150px;
             height: auto;
             object-fit: cover;
+            opacity: 0.8;
+            transition: opacity 0.3s;
         }
+
+        .lateral-img:hover {
+            opacity: 1;
+        }
+
         .left-img {
             left: 0;
         }
+
         .right-img {
             right: 0;
         }
@@ -121,28 +148,44 @@
             }
         }
 
+        /* Estilos para el filtro */
+        .filtro-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .filtro-container select {
+            width: 150px;
+        }
+
+        /* Estilos del modo oscuro */
+        .dark-mode .table-hover tr:hover {
+            background-color: #495057;
+        }
+
     </style>
 </head>
 
 <body>
 
-<!-- Imágenes laterales -->
+<!-- Imágenes laterales que cambian cada 5 segundos -->
 <img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Lateral izquierda">
 <img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg" alt="Lateral derecha">
 
-<!-- Navbar -->
+<!-- Navbar con filtros -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">
             <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
             SoloQ Challenge Cerditos y Valientes
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+            aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item d-flex align-items-center">
+                <li class="nav-item d-flex align-items-center filtro-container">
                     <label for="filtro" class="nav-link mb-0 me-2">COLA:</label>
                     <select id="filtro" class="form-select me-2">
                         <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
@@ -156,30 +199,28 @@
     </div>
 </nav>
 
-<!-- Banner central -->
 <div class="container my-4 d-flex justify-content-center">
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/IMG_9912.webp" alt="Banner" class="banner-img" id="banner-img">
 </div>
 
-<!-- Tabla de jugadores -->
-<div class="container">
+<div class="container table-container">
     <div class="d-flex justify-content-between align-items-center">
-        <h1>Lista de Jugadores <span class="small-text"></span></h1>
+        <h1>Lista de Jugadores <span class="small-text">(42 juegos)</span></h1>
         <div id="lastUpdated" class="text-end"></div>
     </div>
     <div class="table-responsive">
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
-                    <th onclick="ordenarTabla(0)">Jugador</th>
-                    <th onclick="ordenarTabla(1)">Game Name</th>
-                    <th onclick="ordenarTabla(2)">Elo</th>
-                    <th onclick="ordenarTabla(3)">Wins</th>
-                    <th onclick="ordenarTabla(4)">Losses</th>
-                    <th onclick="ordenarTabla(5)">Total Games</th>
-                    <th onclick="ordenarTabla(6)">Win Rate</th>
-                    <th onclick="ordenarTabla(7)">Valor Clasificación</th>
-                    <th onclick="ordenarTabla(8)">Estado</th>
+                    <th>Jugador</th>
+                    <th>Game Name</th>
+                    <th>Elo</th>
+                    <th>Wins</th>
+                    <th>Losses</th>
+                    <th>Total Games</th>
+                    <th>Win Rate</th>
+                    <th >Valor Clasificación</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
@@ -188,33 +229,24 @@
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
                 <tr class="queue-type {{ jugador.queue_type }}">
                     <td class="jugador-columna">
-                        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" alt="Imagen de {{ jugador.jugador }}" class="imagen-jugador" onerror="this.style.display='none'">
+                        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/img_perfil/{{ jugador.jugador }}.png" 
+                             alt="Imagen de {{ jugador.jugador }}"
+                             class="imagen-jugador"
+                             onerror="this.style.display='none'">
                         {{ jugador.jugador }}
                     </td>
                     <td>
-                        <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
+                        <a href="#" class="link-perfil">{{ jugador.game_name }}</a>
                     </td>
-                    <td>
-                        <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
-                        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                    </td>
+                    <td>{{ jugador.elo }}</td>
                     <td>{{ jugador.wins }}</td>
                     <td>{{ jugador.losses }}</td>
                     <td>{{ total_games }}</td>
-                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                        {{ '{:.2f}'.format(win_rate) }}%
+                    <td class="{{ 'win-rate-alto' if win_rate > 50 else 'win-rate-bajo' }}">
+                        {{ win_rate | round(1) }}%
                     </td>
                     <td>{{ jugador.valor_clasificacion }}</td>
-                    <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.en_partida %}
-                                <span class="estado-en-partida">En Partida</span>
-                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" alt="{{ jugador.nombre_campeon }}" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
-                            {% else %}
-                                <span class="estado-en-partida">No Disponible</span>
-                            {% endif %}
-                        </a>
-                    </td>
+                    <td><a href="#" class="link-estado">{{ jugador.estado }}</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -222,24 +254,31 @@
     </div>
 </div>
 
-<!-- Footer -->
-<footer class="bg-light py-4">
-    <div class="container text-center">
-        <p class="mb-0">&copy; 2024 SoloQ Challenge</p>
-    </div>
-</footer>
-
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const toggleModeButton = document.getElementById('toggle-mode');
-    const body = document.body;
-
-    toggleModeButton.addEventListener('click', () => {
-        body.classList.toggle('dark-mode');
-        toggleModeButton.textContent = body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
+    // Función de cambio de modo oscuro
+    document.getElementById('toggle-mode').addEventListener('click', function () {
+        document.body.classList.toggle('dark-mode');
+        const modeText = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
+        this.textContent = modeText;
     });
-</script>
 
+    // Actualización dinámica de la fecha
+    document.getElementById('lastUpdated').textContent = "Última actualización: " + new Date().toLocaleString();
+    
+    // Cambio de banners laterales cada 5 segundos
+    let currentBannerIndex = 0;
+    const banners = [
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/1.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/2.jpg",
+        "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/bannerlateral/3.jpg"
+    ];
+    setInterval(() => {
+        currentBannerIndex = (currentBannerIndex + 1) % banners.length;
+        document.getElementById("left-banner").src = banners[currentBannerIndex];
+        document.getElementById("right-banner").src = banners[currentBannerIndex];
+    }, 5000);
+</script>
 </body>
+
 </html>
