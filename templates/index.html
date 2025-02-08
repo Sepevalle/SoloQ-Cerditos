@@ -248,38 +248,39 @@
     toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
 
     const filtro = document.getElementById("filtro");
+    const tbody = document.querySelector("#jugadoresTable tbody");
+
     filtro.addEventListener("change", () => {
         const selected = filtro.value;
-        const allRows = document.querySelectorAll("#jugadoresTable tbody tr"); // Todas las filas, ocultas o no
+        const rows = Array.from(tbody.querySelectorAll("tr"));
 
-        // Primero, aseguramos que todas las filas sean visibles
-        allRows.forEach(row => row.classList.remove("hidden"));
+        // Reset all rows to visible
+        rows.forEach(row => row.style.display = '');
 
-        // Luego, filtramos según la selección
+        // If not 'todo', show only the matching rows
         if (selected !== "todo") {
-            allRows.forEach(row => {
+            rows.forEach(row => {
                 if (!row.classList.contains(selected)) {
-                    row.classList.add("hidden");
+                    row.style.display = 'none';
                 }
             });
         }
 
-        // Recalcular posiciones y diferencias de Elo con las filas filtradas
+        // Recalculate positions and Elo differences with only visible rows
         ordenarYCalcularDiferencias();
     });
 
     function ordenarYCalcularDiferencias() {
-        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr:not(.hidden)")); // Solo filas visibles
+        const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
         
-        filas.sort((a, b) => 
+        visibleRows.sort((a, b) => 
             parseInt(b.querySelector(".hidden").textContent, 10) - 
             parseInt(a.querySelector(".hidden").textContent, 10)
         );
-        
-        const tbody = document.querySelector("#jugadoresTable tbody");
-        tbody.innerHTML = ""; // Limpiar el contenido existente
 
-        filas.forEach((row, index) => {
+        tbody.innerHTML = ""; // Clear existing content
+
+        visibleRows.forEach((row, index) => {
             tbody.appendChild(row);
             row.querySelector("td:first-child").textContent = index + 1;
 
@@ -287,7 +288,7 @@
             const eloCol = row.querySelector(".elo-diferencia");
             
             if (index > 0) {
-                const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
+                const valorClasificacionAnterior = parseInt(visibleRows[index - 1].querySelector(".hidden").textContent, 10);
                 eloCol.textContent = `${valorClasificacionAnterior - valorClasificacion} LPs`;
             } else {
                 eloCol.textContent = "—";
@@ -295,7 +296,7 @@
         });
     }
 
-    ordenarYCalcularDiferencias(); // Inicialmente ordena todas las filas
+    ordenarYCalcularDiferencias(); // Initially sort all rows
 
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 
