@@ -253,17 +253,19 @@
         document.querySelectorAll(".queue-type").forEach(row => {
             row.classList.toggle("hidden", selected !== "todo" && !row.classList.contains(selected));
         });
+        ordenarYCalcularDiferencias(); // Recalcular posiciones después de filtrar
     });
 
     function ordenarYCalcularDiferencias() {
-        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+        const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr:not(.hidden)")); // Solo filas visibles
         filas.sort((a, b) => 
             parseInt(b.querySelector(".hidden").textContent, 10) - 
             parseInt(a.querySelector(".hidden").textContent, 10)
         );
         
         const tbody = document.querySelector("#jugadoresTable tbody");
-        tbody.innerHTML = ""; 
+        tbody.innerHTML = ""; // Limpiar el contenido existente
+
         filas.forEach((row, index) => {
             tbody.appendChild(row);
             row.querySelector("td:first-child").textContent = index + 1;
@@ -273,14 +275,14 @@
             
             if (index > 0) {
                 const valorClasificacionAnterior = parseInt(filas[index - 1].querySelector(".hidden").textContent, 10);
-                eloCol.textContent = `${ valorClasificacionAnterior - valorClasificacion} LPs`;
+                eloCol.textContent = `${valorClasificacionAnterior - valorClasificacion} LPs`;
             } else {
                 eloCol.textContent = "—";
             }
         });
     }
 
-    ordenarYCalcularDiferencias();
+    ordenarYCalcularDiferencias(); // Inicialmente ordena todas las filas
 
     document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 
