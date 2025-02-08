@@ -141,9 +141,9 @@
                 <li class="nav-item d-flex align-items-center">
                     <label for="filtro" class="nav-link mb-0 me-2">COLA:</label>
                     <select id="filtro" class="form-select me-2">
-                        <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
+                        <option value="RANKED_SOLO_5x5">SOLOQ</option>
                         <option value="RANKED_FLEX_SR">FLEX</option>
-                        <option value="todo">TODO</option>
+                        <option value="todo" selected>TODO</option>
                     </select>
                 </li>
             </ul>
@@ -250,14 +250,27 @@
     const filtro = document.getElementById("filtro");
     filtro.addEventListener("change", () => {
         const selected = filtro.value;
-        document.querySelectorAll(".queue-type").forEach(row => {
-            row.classList.toggle("hidden", selected !== "todo" && !row.classList.contains(selected));
-        });
-        ordenarYCalcularDiferencias(); // Recalcular posiciones después de filtrar
+        const allRows = document.querySelectorAll("#jugadoresTable tbody tr"); // Todas las filas, ocultas o no
+
+        // Primero, aseguramos que todas las filas sean visibles
+        allRows.forEach(row => row.classList.remove("hidden"));
+
+        // Luego, filtramos según la selección
+        if (selected !== "todo") {
+            allRows.forEach(row => {
+                if (!row.classList.contains(selected)) {
+                    row.classList.add("hidden");
+                }
+            });
+        }
+
+        // Recalcular posiciones y diferencias de Elo con las filas filtradas
+        ordenarYCalcularDiferencias();
     });
 
     function ordenarYCalcularDiferencias() {
         const filas = Array.from(document.querySelectorAll("#jugadoresTable tbody tr:not(.hidden)")); // Solo filas visibles
+        
         filas.sort((a, b) => 
             parseInt(b.querySelector(".hidden").textContent, 10) - 
             parseInt(a.querySelector(".hidden").textContent, 10)
