@@ -237,20 +237,18 @@
         const audio = document.getElementById('backgroundAudio');
         const toggleAudioButton = document.getElementById('toggleAudio');
 
-        // Inicialmente silenciar el audio para cumplir con políticas de autoplay
+        // Intentar autoplay con mute
         audio.muted = true;
-        audio.play().catch(error => {
-            console.log('Reproducción automática no permitida:', error);
+        audio.play().then(() => {
+            // Desmuteo tras primera interacción
+            document.addEventListener('click', () => {
+                audio.muted = false;
+            }, {once: true});
+        }).catch(error => {
+            console.log('Autoplay no permitido:', error);
         });
 
-        // Desmutear el audio tras la primera interacción del usuario
-        document.addEventListener('click', () => {
-            if (audio.paused) {
-                audio.muted = false;
-                audio.play().catch(error => console.log('Error al desmutear y reproducir:', error));
-            }
-        }, {once: true});
-
+        // Control de audio
         toggleAudioButton.addEventListener('click', () => {
             audio.muted = !audio.muted;
             toggleAudioButton.textContent = audio.muted ? 'Desmutear Música' : 'Silenciar Música';
