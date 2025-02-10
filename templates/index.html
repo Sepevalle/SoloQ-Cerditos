@@ -127,11 +127,7 @@
 <img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
 <img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
 
-<!-- Audio de fondo -->
-<audio id="backgroundAudio" loop>
-    <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
-    Tu navegador no soporta el elemento audio.
-</audio>
+<div id="ytplayer"></div>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
     <div class="container-fluid">
@@ -154,7 +150,6 @@
                 </li>
             </ul>
             <button id="toggle-mode" class="btn btn-secondary ms-auto">Modo Oscuro</button>
-            <!-- Botón para silenciar/desilenciar la música -->
             <button id="toggleAudio" class="btn btn-secondary ms-2">Silenciar Música</button>
         </div>
     </div>
@@ -233,7 +228,42 @@
     </div>
 </div>
 
+<script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
+    let player;
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('ytplayer', {
+            height: '0',  // Para que no se vea el video
+            width: '0',   // Para que no se vea el video
+            videoId: 'Zrly3QMUhoo',
+            playerVars: {
+                'autoplay': 1,
+                'loop': 1,
+                'playlist': 'Zrly3QMUhoo', // Necesario para el bucle
+                'controls': 0,
+                'showinfo': 0,
+                'modestbranding': 1,
+                'rel': 0
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    function onPlayerReady(event) {
+        event.target.mute(); // Silencia al inicio para evitar problemas de autoplay
+    }
+
+    function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.ENDED) {
+            player.playVideo(); // Reinicia el video al finalizar
+        }
+    }
+
     const imagenesElo = {
         "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
         "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
@@ -327,23 +357,15 @@
     }
     setInterval(cambiarImagenes, 5000);
 
-    // Script adicional para el control de audio
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const audio = document.getElementById('backgroundAudio');
+    document.addEventListener('DOMContentLoaded', () => {
         const toggleAudioButton = document.getElementById('toggleAudio');
 
-        // Intentar reproducir automáticamente el audio
-        audio.play().catch(error => {
-            // Manejar el caso donde la reproducción automática no sea posible
-            console.log('Reproducción automática no permitida:', error);
-        });
-
         toggleAudioButton.addEventListener('click', () => {
-            if (audio.muted) {
-                audio.muted = false;
+            if (player.isMuted()) {
+                player.unMute();
                 toggleAudioButton.textContent = 'Silenciar Música';
             } else {
-                audio.muted = true;
+                player.mute();
                 toggleAudioButton.textContent = 'Desmutear Música';
             }
         });
