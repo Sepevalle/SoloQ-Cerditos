@@ -128,13 +128,13 @@
             width: 100px;
             margin-left: 10px;
             vertical-align: middle;
-            height: 20px; /* Ajusta la altura para que coincida con la altura de los botones */
-            padding: 0; /* Elimina el padding por defecto */
+            height: 20px;
+            padding: 0;
         }
 
         /* Personalizar colores para que coincidan más con los botones */
         #volumeSlider::-webkit-slider-runnable-track {
-            background: #6c757d; /* Color de fondo del track similar al color de fondo de los botones en modo oscuro */
+            background: #6c757d;
             height: 0.5em;
             border-radius: 1em;
         }
@@ -144,9 +144,9 @@
             appearance: none;
             width: 15px;
             height: 15px;
-            background: #fff; /* Color blanco para el thumb */
+            background: #333;
             border-radius: 50%;
-            margin-top: -5px; /* Centrar el thumb en el track */
+            margin-top: -5px;
         }
 
         #volumeSlider::-moz-range-track {
@@ -158,7 +158,7 @@
         #volumeSlider::-moz-range-thumb {
             width: 15px;
             height: 15px;
-            background: #fff;
+            background: #333;
             border: none;
             border-radius: 50px;
         }
@@ -166,7 +166,15 @@
         /* Ajustes para modo oscuro */
         .dark-mode #volumeSlider::-webkit-slider-runnable-track,
         .dark-mode #volumeSlider::-moz-range-track {
-            background: #495057; /* Un tono más oscuro en modo oscuro */
+            background: #495057;
+        }
+
+        .dark-mode #volumeSlider::-webkit-slider-thumb {
+            background: #fff;
+        }
+
+        .dark-mode #volumeSlider::-moz-range-thumb {
+            background: #fff;
         }
 
         /* Añadir estilos específicos para el botón de modo oscuro */
