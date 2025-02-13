@@ -125,6 +125,45 @@
             width: 100px;
             margin-left: 10px;
             vertical-align: middle;
+            height: 20px; /* Ajusta la altura para que coincida con la altura de los botones */
+            padding: 0; /* Elimina el padding por defecto */
+        }
+
+        /* Personalizar colores para que coincidan más con los botones */
+        #volumeSlider::-webkit-slider-runnable-track {
+            background: #6c757d; /* Color de fondo del track similar al color de fondo de los botones en modo oscuro */
+            height: 0.5em;
+            border-radius: 1em;
+        }
+
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #fff; /* Color blanco para el thumb */
+            border-radius: 50%;
+            margin-top: -5px; /* Centrar el thumb en el track */
+        }
+
+        #volumeSlider::-moz-range-track {
+            background: #6c757d;
+            height: 0.5em;
+            border-radius: 1em;
+        }
+
+        #volumeSlider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #fff;
+            border: none;
+            border-radius: 50px;
+        }
+
+        /* Ajustes para modo oscuro */
+        .dark-mode #volumeSlider::-webkit-slider-runnable-track,
+        .dark-mode #volumeSlider::-moz-range-track {
+            background: #495057; /* Un tono más oscuro en modo oscuro */
         }
     </style>
 </head>
@@ -164,7 +203,7 @@
             <button id="toggleAudio" class="btn btn-secondary ms-2">
                 <i id="muteIcon" class="fas fa-microphone-alt"></i>
             </button>
-            <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1">
+            <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
         </div>
     </div>
 </nav>
