@@ -119,6 +119,13 @@
                 display: none;
             }
         }
+
+        /* Estilo para el slider de volumen */
+        #volumeSlider {
+            width: 100px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 
@@ -256,6 +263,12 @@
             }
         }, {once: true});
 
+        // Control de volumen
+        volumeSlider.addEventListener('input', function() {
+            audio.volume = this.value;
+        });
+
+        // Actualizar el icono del botón de silenciar/desmutear
         toggleAudioButton.addEventListener('click', () => {
             audio.muted = !audio.muted;
             if (audio.muted) {
@@ -265,10 +278,6 @@
                 muteIcon.className = 'fas fa-microphone-alt';
                 toggleAudioButton.title = 'Silenciar Música';
             }
-        });
-
-        volumeSlider.addEventListener('input', function() {
-            audio.volume = this.value;
         });
 
         const imagenesElo = {
