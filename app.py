@@ -1,5 +1,6 @@
-import os
+from flask import Flask, render_template, request, jsonify
 import requests
+import os
 import time
 import threading
 import json
@@ -18,7 +19,7 @@ cache_lock = threading.Lock()
 
 # Clave API de Hugging Face (obtenida de variable de entorno)
 HUGGINGFACE_API_KEY = os.environ.get('HUGGINGFACE_API_KEY')
-HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
+HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/distilgpt2"
 
 # Cargar campeones
 def cargar_campeones():
@@ -203,18 +204,16 @@ def get_chatbot_response(user_message):
         "Content-Type": "application/json"
     }
     
-    # Formato específico para BlenderBot
     payload = {
-        "past_user_inputs": [context],  # Contexto como entrada previa
-        "generated_responses": [],      # Respuestas previas (vacías por ahora)
-        "text": user_message            # Mensaje actual del usuario
+        "inputs": full_message,
+        "parameters": {"max_length": 100}
     }
     
     try:
         response = requests.post(HUGGINGFACE_API_URL, headers=headers, json=payload, timeout=10)
         response.raise_for_status()
         data = response.json()
-        return data["generated_text"] if "generated_text" in data else "No se recibió respuesta del modelo."
+        return data[0]["generated_text"] if isinstance(data, list) and "generated_text" in data[0] else "No se recibió respuesta del modelo."
     except requests.exceptions.HTTPError as e:
         return f"Error al procesar: {str(e)}"
     except Exception as e:
@@ -223,9 +222,13 @@ def get_chatbot_response(user_message):
 # Ruta principal
 @app.route('/')
 def index():
-    datos_jugadores, timestamp = obtener_datos_jugadores()
-    print(json.dumps(datos_jugadores, indent=2))
-    return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
+    try:
+        datos_jugadores, timestamp = obtener_datos_jugadores()
+        print(json.dumps(datos_jugadores, indent=2))
+        return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
+    except Exception as e:
+        print(f"Error en index: {str(e)}")
+        return "Error al cargar la página", 500
 
 # Ruta para el chatbot
 @app.route('/chat', methods=['GET'])
@@ -253,4 +256,5 @@ if __name__ == "__main__":
     thread.start()
 
     port = int(os.environ.get("PORT", 5000))
+    print(f"Iniciando aplicación en puerto {port}")
     app.run(host='0.0.0.0', port=port)
