@@ -224,12 +224,14 @@ def get_chatbot_response(user_message):
         response = requests.post(HUGGINGFACE_API_URL, headers=headers, json=payload, timeout=10)
         response.raise_for_status()
         data = response.json()
+        print(f"Respuesta cruda de la API: {data}")  # Depuración
         generated_text = data[0]["generated_text"] if isinstance(data, list) and "generated_text" in data[0] else "Lo siento, no sé cómo responder."
-        # Extraer solo la respuesta del assistant
-        assistant_response = generated_text.split("assistant:")[-1].strip()
+        # Extraer solo la respuesta del assistant con mejor manejo
+        lines = generated_text.split("\n")
+        assistant_response = next((line for line in lines if line.startswith("assistant:")), generated_text).replace("assistant:", "").strip()
         # Añadir la respuesta al historial
         conversation_history.append({"role": "assistant", "content": assistant_response})
-        return assistant_response or "¡Hola! ¿En qué puedo ayudarte?"
+        return assistant_response or "¡Hola! ¿En qué puedo ayudarte con los jugadores?"
     except requests.exceptions.HTTPError as e:
         return f"Error al procesar: {str(e)}"
     except Exception as e:
