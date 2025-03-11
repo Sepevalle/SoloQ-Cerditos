@@ -178,17 +178,16 @@ def obtener_datos_jugadores():
 
         return todos_los_datos, cache['timestamp']
 
-# Función para obtener el contexto de los datos de jugadores
+# Función para obtener el contexto de los datos de jugadores (simplificado)
 def get_players_context():
     datos_jugadores, _ = obtener_datos_jugadores()
-    context = "Datos de los jugadores:\n"
+    context = "Lista de jugadores y su estado:\n"
     for jugador in datos_jugadores:
-        context += f"- {jugador['game_name']} ({jugador['jugador']}): {jugador['tier']} {jugador['rank']} {jugador['league_points']} LP, "
-        context += f"Wins: {jugador['wins']}, Losses: {jugador['losses']}, "
+        context += f"- {jugador['jugador']} ({jugador['game_name']}): {jugador['tier']} {jugador['rank']}, "
         if jugador['en_partida']:
-            context += f"En partida jugando con {jugador['nombre_campeon']}\n"
+            context += f"en partida con {jugador['nombre_campeon']}.\n"
         else:
-            context += "No está en partida\n"
+            context += "no en partida.\n"
     return context
 
 # Función para el chatbot con Hugging Face
@@ -197,7 +196,8 @@ def get_chatbot_response(user_message):
         return "Error: La clave API de Hugging Face no está configurada. Por favor, configura la variable de entorno HUGGINGFACE_API_KEY."
     
     context = get_players_context()
-    full_message = f"{context}Mensaje del usuario: {user_message}"
+    # Separar el contexto del mensaje para que el modelo entienda que debe responder al usuario
+    prompt = f"Contexto: {context}\nPregunta: {user_message}\nRespuesta:"
     
     headers = {
         "Authorization": f"Bearer {HUGGINGFACE_API_KEY}",
@@ -205,15 +205,17 @@ def get_chatbot_response(user_message):
     }
     
     payload = {
-        "inputs": full_message,
-        "parameters": {"max_length": 100}
+        "inputs": prompt,
+        "parameters": {"max_length": 50, "temperature": 0.7}
     }
     
     try:
         response = requests.post(HUGGINGFACE_API_URL, headers=headers, json=payload, timeout=10)
         response.raise_for_status()
         data = response.json()
-        return data[0]["generated_text"] if isinstance(data, list) and "generated_text" in data[0] else "No se recibió respuesta del modelo."
+        generated_text = data[0]["generated_text"] if isinstance(data, list) and "generated_text" in data[0] else "No se recibió respuesta del modelo."
+        # Limpiar la respuesta para evitar que repita el prompt
+        return generated_text.replace(prompt, "").strip() or "Lo siento, no entiendo tu mensaje."
     except requests.exceptions.HTTPError as e:
         return f"Error al procesar: {str(e)}"
     except Exception as e:
