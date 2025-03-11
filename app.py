@@ -1,6 +1,5 @@
-from flask import Flask, render_template, request, jsonify
-import requests
 import os
+import requests
 import time
 import threading
 import json
@@ -199,12 +198,25 @@ def get_chatbot_response(user_message):
     context = get_players_context()
     full_message = f"{context}Mensaje del usuario: {user_message}"
     
-    headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
-    payload = {"inputs": full_message}
+    headers = {
+        "Authorization": f"Bearer {HUGGINGFACE_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    # Formato específico para BlenderBot
+    payload = {
+        "past_user_inputs": [context],  # Contexto como entrada previa
+        "generated_responses": [],      # Respuestas previas (vacías por ahora)
+        "text": user_message            # Mensaje actual del usuario
+    }
+    
     try:
         response = requests.post(HUGGINGFACE_API_URL, headers=headers, json=payload, timeout=10)
         response.raise_for_status()
-        return response.json()[0]["generated_text"]
+        data = response.json()
+        return data["generated_text"] if "generated_text" in data else "No se recibió respuesta del modelo."
+    except requests.exceptions.HTTPError as e:
+        return f"Error al procesar: {str(e)}"
     except Exception as e:
         return f"Error al procesar: {str(e)}"
 
