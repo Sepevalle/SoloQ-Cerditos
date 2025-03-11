@@ -96,7 +96,6 @@
             right: 0;
         }
 
-        /* Ajustes responsivos */
         @media (max-width: 1200px) {
             .lateral-img {
                 width: 120px;
@@ -132,10 +131,9 @@
             padding: 0;
         }
 
-        /* Personalizar colores para que coincidan más con los botones */
         #volumeSlider::-webkit-slider-runnable-track {
             background: #6c757d;
-            height: 0.2em; /* Hacemos la barra más fina */
+            height: 0.2em;
             border-radius: 1em;
         }
 
@@ -146,12 +144,12 @@
             height: 15px;
             background: #333;
             border-radius: 50%;
-            margin-top: -6.5px; /* Ajuste para centrar la bolita perfectamente */
+            margin-top: -6.5px;
         }
 
         #volumeSlider::-moz-range-track {
             background: #6c757d;
-            height: 0.2em; /* Hacemos la barra más fina */
+            height: 0.2em;
             border-radius: 1em;
         }
 
@@ -163,7 +161,6 @@
             border-radius: 50px;
         }
 
-        /* Ajustes para modo oscuro */
         .dark-mode #volumeSlider::-webkit-slider-runnable-track,
         .dark-mode #volumeSlider::-moz-range-track {
             background: #495057;
@@ -177,15 +174,63 @@
             background: #fff;
         }
 
-        /* Añadir estilos específicos para el botón de modo oscuro */
         #toggle-mode {
             font-weight: bold;
+        }
+
+        /* Estilos para el chatbot */
+        #chat-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .dark-mode #chat-container {
+            background-color: #2c2c2c;
+            border-color: #444;
+        }
+
+        #chat-input {
+            width: 70%;
+            padding: 5px;
+            margin-right: 10px;
+        }
+
+        #chat-send-btn {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #chat-send-btn:hover {
+            background-color: #45a049;
+        }
+
+        #chat-response {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #fff;
+            min-height: 50px;
+            word-wrap: break-word;
+        }
+
+        .dark-mode #chat-response {
+            background-color: #333;
+            border-color: #555;
+            color: #fff;
         }
     </style>
 </head>
 
 <body>
-
 <img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
 <img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
 
@@ -294,6 +339,16 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Sección del chatbot -->
+    <div id="chat-container" class="mt-4">
+        <h3 class="mb-3">Chatbot - Asistente de SoloQ</h3>
+        <div class="input-group mb-3">
+            <input type="text" id="chat-input" class="form-control" placeholder="Escribe tu mensaje (ej. ¿Quién está jugando ahora?)...">
+            <button id="chat-send-btn" class="btn btn-success" onclick="sendMessage()">Enviar</button>
+        </div>
+        <div id="chat-response" class="p-3 border rounded" style="min-height: 50px; word-wrap: break-word;"></div>
     </div>
 </div>
 
@@ -427,6 +482,22 @@
             rightBanner.src = imagePaths[currentImageIndex];
         }
         setInterval(cambiarImagenes, 5000);
+
+        // Función para el chatbot
+        function sendMessage() {
+            const message = document.getElementById('chat-input').value;
+            fetch(`/chat?message=${encodeURIComponent(message)}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('chat-response').innerHTML = data.reply;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('chat-response').innerHTML = 'Error al procesar el mensaje.';
+                });
+            // Limpia el input después de enviar
+            document.getElementById('chat-input').value = '';
+        }
     });
 </script>
 
