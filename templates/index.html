@@ -483,17 +483,30 @@
         }
         setInterval(cambiarImagenes, 5000);
 
-        // Función para el chatbot
+        // Función para el chatbot con depuración
         function sendMessage() {
             const message = document.getElementById('chat-input').value;
+            if (!message) {
+                document.getElementById('chat-response').innerHTML = 'Por favor, escribe un mensaje.';
+                return;
+            }
+
+            console.log('Enviando mensaje:', message); // Depuración
             fetch(`/chat?message=${encodeURIComponent(message)}`)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Respuesta recibida:', response); // Depuración
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    document.getElementById('chat-response').innerHTML = data.reply;
+                    console.log('Datos recibidos:', data); // Depuración
+                    document.getElementById('chat-response').innerHTML = data.reply || 'No se recibió respuesta.';
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('chat-response').innerHTML = 'Error al procesar el mensaje.';
+                    console.error('Error:', error); // Depuración
+                    document.getElementById('chat-response').innerHTML = 'Error al procesar el mensaje. Revisa la consola para más detalles.';
                 });
             // Limpia el input después de enviar
             document.getElementById('chat-input').value = '';
