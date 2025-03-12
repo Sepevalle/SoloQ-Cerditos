@@ -5,6 +5,7 @@ import time
 import threading
 import json
 from openai import OpenAI
+import httpx  # Necesario para crear un cliente HTTP personalizado
 
 app = Flask(__name__)
 
@@ -20,7 +21,12 @@ cache_lock = threading.Lock()
 
 # Clave API de OpenAI (obtenida de variable de entorno)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+
+# Crear un cliente HTTP sin proxies
+http_client = httpx.Client(proxies=None)
+
+# Inicializar el cliente de OpenAI con el cliente HTTP personalizado
+openai_client = OpenAI(api_key=OPENAI_API_KEY, http_client=http_client) if OPENAI_API_KEY else None
 
 # Historial de conversación por sesión
 conversation_history = []
