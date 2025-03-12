@@ -4,6 +4,7 @@ import os
 import time
 import threading
 import json
+from openai import OpenAI  # Importar el cliente de OpenAI
 
 app = Flask(__name__)
 
@@ -17,9 +18,9 @@ CACHE_TIMEOUT = 300  # 5 minutos
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
 
-# Clave API de Hugging Face (obtenida de variable de entorno)
-HUGGINGFACE_API_KEY = os.environ.get('HUGGINGFACE_API_KEY')
-HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
+# Clave API de OpenAI (obtenida de variable de entorno)
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # Historial de conversación por sesión (simple, sin persistencia)
 conversation_history = []
@@ -193,49 +194,39 @@ def get_players_context():
             context += "no en partida.\n"
     return context
 
-# Función para el chatbot con historial conversacional
+# Función para el chatbot con OpenAI (ChatGPT)
 def get_chatbot_response(user_message):
     global conversation_history
 
-    if not HUGGINGFACE_API_KEY:
-        return "Error: La clave API de Hugging Face no está configurada. Por favor, configura la variable de entorno HUGGINGFACE_API_KEY."
+    if not OPENAI_API_KEY or not openai_client:
+        return "Error: La clave API de OpenAI no está configurada. Por favor, configura la variable de entorno OPENAI_API_KEY."
 
     # Añadir el mensaje del usuario al historial
     conversation_history.append({"role": "user", "content": user_message})
 
     # Construir el contexto inicial
     context = get_players_context()
-    prompt = f"Contexto: {context}\n"
-    for entry in conversation_history[-5:]:  # Limitar a los últimos 5 intercambios
-        prompt += f"{entry['role']}: {entry['content']}\n"
-    prompt += "assistant: "
-
-    headers = {
-        "Authorization": f"Bearer {HUGGINGFACE_API_KEY}",
-        "Content-Type": "application/json"
+    system_message = {
+        "role": "system",
+        "content": f"Eres un asistente útil para jugadores de League of Legends. Usa este contexto para responder:\n{context}"
     }
 
-    payload = {
-        "inputs": prompt,
-        "parameters": {"max_length": 100, "temperature": 0.7}
-    }
+    # Construir el historial de mensajes para la API de OpenAI
+    messages = [system_message] + conversation_history[-5:]  # Limitar a los últimos 5 intercambios
 
     try:
-        response = requests.post(HUGGINGFACE_API_URL, headers=headers, json=payload, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        print(f"Respuesta cruda de la API: {data}")  # Depuración
-        generated_text = data[0]["generated_text"] if isinstance(data, list) and "generated_text" in data[0] else "Lo siento, no sé cómo responder."
-        # Extraer solo la respuesta del assistant con mejor manejo
-        lines = generated_text.split("\n")
-        assistant_response = next((line for line in lines if line.startswith("assistant:")), generated_text).replace("assistant:", "").strip()
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Puedes cambiar a "gpt-4" si tienes acceso
+            messages=messages,
+            max_tokens=150,
+            temperature=0.7
+        )
+        assistant_response = response.choices[0].message.content.strip()
         # Añadir la respuesta al historial
         conversation_history.append({"role": "assistant", "content": assistant_response})
-        return assistant_response or "¡Hola! ¿En qué puedo ayudarte con los jugadores?"
-    except requests.exceptions.HTTPError as e:
-        return f"Error al procesar: {str(e)}"
+        return assistant_response
     except Exception as e:
-        return f"Error al procesar: {str(e)}"
+        return f"Error al procesar con OpenAI: {str(e)}"
 
 # Ruta principal
 @app.route('/')
