@@ -4,7 +4,7 @@ import os
 import time
 import threading
 import json
-from openai import OpenAI  # Importar el cliente de OpenAI
+from openai import OpenAI
 
 app = Flask(__name__)
 
@@ -22,7 +22,7 @@ cache_lock = threading.Lock()
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
-# Historial de conversación por sesión (simple, sin persistencia)
+# Historial de conversación por sesión
 conversation_history = []
 
 # Cargar campeones
@@ -182,7 +182,6 @@ def obtener_datos_jugadores():
 
         return todos_los_datos, cache['timestamp']
 
-# Función para obtener el contexto de los datos de jugadores
 def get_players_context():
     datos_jugadores, _ = obtener_datos_jugadores()
     context = "Lista de jugadores y su estado:\n"
@@ -194,41 +193,35 @@ def get_players_context():
             context += "no en partida.\n"
     return context
 
-# Función para el chatbot con OpenAI (ChatGPT)
 def get_chatbot_response(user_message):
     global conversation_history
 
     if not OPENAI_API_KEY or not openai_client:
         return "Error: La clave API de OpenAI no está configurada. Por favor, configura la variable de entorno OPENAI_API_KEY."
 
-    # Añadir el mensaje del usuario al historial
     conversation_history.append({"role": "user", "content": user_message})
 
-    # Construir el contexto inicial
     context = get_players_context()
     system_message = {
         "role": "system",
         "content": f"Eres un asistente útil para jugadores de League of Legends. Usa este contexto para responder:\n{context}"
     }
 
-    # Construir el historial de mensajes para la API de OpenAI
-    messages = [system_message] + conversation_history[-5:]  # Limitar a los últimos 5 intercambios
+    messages = [system_message] + conversation_history[-5:]
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",  # Puedes cambiar a "gpt-4" si tienes acceso
+            model="gpt-3.5-turbo",
             messages=messages,
             max_tokens=150,
             temperature=0.7
         )
         assistant_response = response.choices[0].message.content.strip()
-        # Añadir la respuesta al historial
         conversation_history.append({"role": "assistant", "content": assistant_response})
         return assistant_response
     except Exception as e:
         return f"Error al procesar con OpenAI: {str(e)}"
 
-# Ruta principal
 @app.route('/')
 def index():
     try:
@@ -239,7 +232,6 @@ def index():
         print(f"Error en index: {str(e)}")
         return "Error al cargar la página", 500
 
-# Ruta para el chatbot
 @app.route('/chat', methods=['GET'])
 def chat():
     user_message = request.args.get('message', '')
@@ -249,21 +241,6 @@ def chat():
     chatbot_response = get_chatbot_response(user_message)
     return jsonify({"reply": chatbot_response})
 
-# Función para evitar hibernación
-def keep_alive():
-    while True:
-        try:
-            requests.get('https://soloq-cerditos.onrender.com/')
-            print("Manteniendo la aplicación activa con una solicitud.")
-        except requests.exceptions.RequestException as e:
-            print(f"Error: {e}")
-        time.sleep(600)
-
 if __name__ == "__main__":
-    thread = threading.Thread(target=keep_alive)
-    thread.daemon = True
-    thread.start()
-
     port = int(os.environ.get("PORT", 5000))
     print(f"Iniciando aplicación en puerto {port}")
-    app.run(host='0.0.0.0', port=port)
