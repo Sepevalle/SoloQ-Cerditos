@@ -4,19 +4,84 @@
     <meta charset="UTF-8">
     <title>SoloQ Cerditos</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        p {
+            text-align: center;
+            color: #666;
+        }
         table {
             border-collapse: collapse;
             width: 100%;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 20px auto;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px;
             text-align: left;
+            font-size: 14px;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .chat-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        .chat-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        #message {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #chatResponse {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+        .error {
+            color: red;
+            text-align: center;
         }
     </style>
 </head>
@@ -50,26 +115,43 @@
                 </tr>
             {% endfor %}
         </table>
-        <h2>Chatbot</h2>
+    {% else %}
+        <p class="error">No hay datos de jugadores disponibles. Puede deberse a un límite de la API de Riot.</p>
+    {% endif %}
+
+    <div class="chat-container">
+        <h2>Chatbot - Pregunta sobre los jugadores</h2>
         <form id="chatForm">
-            <input type="text" id="message" name="message" placeholder="Escribe tu mensaje...">
+            <input type="text" id="message" name="message" placeholder="Escribe tu mensaje (ej. ¿Quién está jugando?)..." required>
             <button type="submit">Enviar</button>
         </form>
         <div id="chatResponse"></div>
-        <script>
-            document.getElementById('chatForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const message = document.getElementById('message').value;
-                const responseDiv = document.getElementById('chatResponse');
-                responseDiv.innerHTML = 'Cargando...';
+    </div>
+
+    <script>
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = document.getElementById('message').value.trim();
+            if (!message) return;
+
+            const responseDiv = document.getElementById('chatResponse');
+            responseDiv.innerHTML = '<p>Cargando...</p>';
+
+            try {
                 const response = await fetch(`/chat?message=${encodeURIComponent(message)}`);
+                if (!response.ok) throw new Error('Error en la solicitud al chatbot');
                 const data = await response.json();
-                responseDiv.innerHTML = data.reply;
-                document.getElementById('message').value = '';
-            });
-        </script>
-    {% else %}
-        <p>No hay datos de jugadores disponibles.</p>
-    {% endif %}
+                responseDiv.innerHTML = `<p><strong>Tú:</strong> ${message}</p><p><strong>Chatbot:</strong> ${data.reply}</p>`;
+            } catch (error) {
+                responseDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+
+            document.getElementById('message').value = '';
+        });
+
+        // Opcional: Auto-scroll al final del chatResponse
+        const chatResponse = document.getElementById('chatResponse');
+        chatResponse.scrollTop = chatResponse.scrollHeight;
+    </script>
 </body>
 </html>
