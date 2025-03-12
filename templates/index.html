@@ -1,518 +1,81 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datos de Jugadores</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
+    <title>SoloQ Cerditos</title>
     <style>
-        body {
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .banner-img {
-            margin-top: 40px;
+        table {
+            border-collapse: collapse;
             width: 100%;
-            max-height: 600px;
-            object-fit: contain;
-        }
-        .small-text {
-            font-size: 0.6em;
-            font-weight: normal;
-        }
-        .win-rate-alto {
-            color: #228B22 !important;
-        }
-        .win-rate-bajo {
-            color: tomato !important;
-        }
-        .estado-en-partida {
-            color: #007BFF !important;
-            font-weight: bold;
-        }
-        .table a {
-            color: inherit;
-            text-decoration: none;
-        }
-        .link-estado {
-            color: #007BFF;
-        }
-        .link-perfil:hover, .link-estado:hover {
-            text-decoration: underline;
-        }
-        .dark-mode {
-            background-color: #121212;
-            color: #ffffff;
-        }
-        .dark-mode .navbar {
-            background-color: #343a40 !important;
-            color: white;
-        }
-        .dark-mode .navbar-brand {
-            color: white !important;
-        }
-        .dark-mode .table {
-            background-color: #343a40 !important;
-            color: white;
-        }
-        .dark-mode .nav-link {
-            color: white !important;
-        }
-        .table td, .table th {
-            text-align: center;
-        }
-        .jugador-columna {
-            text-align: left;
-        }
-        .hidden {
-            display: none;
-        }
-        .imagen-jugador {
-            width: 30px;
-            height: 30px;
-            vertical-align: middle;
-            display: inline-block;
-            margin-right: 8px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        /* Estilos para los banners laterales responsivos */
-        .lateral-img {
-            position: fixed;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 150px;
-            height: auto;
-            object-fit: cover;
-        }
-        .left-img {
-            left: 0;
-        }
-        .right-img {
-            right: 0;
-        }
-
-        @media (max-width: 1200px) {
-            .lateral-img {
-                width: 120px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .lateral-img {
-                width: 100px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .lateral-img {
-                width: 80px;
-                top: auto;
-                bottom: 10%;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .lateral-img {
-                display: none;
-            }
-        }
-
-        /* Estilo para el slider de volumen */
-        #volumeSlider {
-            width: 100px;
-            margin-left: 10px;
-            vertical-align: middle;
-            height: 20px;
-            padding: 0;
-        }
-
-        #volumeSlider::-webkit-slider-runnable-track {
-            background: #6c757d;
-            height: 0.2em;
-            border-radius: 1em;
-        }
-
-        #volumeSlider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 15px;
-            height: 15px;
-            background: #333;
-            border-radius: 50%;
-            margin-top: -6.5px;
-        }
-
-        #volumeSlider::-moz-range-track {
-            background: #6c757d;
-            height: 0.2em;
-            border-radius: 1em;
-        }
-
-        #volumeSlider::-moz-range-thumb {
-            width: 15px;
-            height: 15px;
-            background: #333;
-            border: none;
-            border-radius: 50px;
-        }
-
-        .dark-mode #volumeSlider::-webkit-slider-runnable-track,
-        .dark-mode #volumeSlider::-moz-range-track {
-            background: #495057;
-        }
-
-        .dark-mode #volumeSlider::-webkit-slider-thumb {
-            background: #fff;
-        }
-
-        .dark-mode #volumeSlider::-moz-range-thumb {
-            background: #fff;
-        }
-
-        #toggle-mode {
-            font-weight: bold;
-        }
-
-        /* Estilos para el chatbot */
-        #chat-container {
             max-width: 800px;
             margin: 20px auto;
-            padding: 15px;
+        }
+        th, td {
             border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+            padding: 8px;
+            text-align: left;
         }
-
-        .dark-mode #chat-container {
-            background-color: #2c2c2c;
-            border-color: #444;
-        }
-
-        #chat-input {
-            width: 70%;
-            padding: 5px;
-            margin-right: 10px;
-        }
-
-        #chat-send-btn {
-            padding: 5px 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-
-        #chat-send-btn:hover {
-            background-color: #45a049;
-        }
-
-        #chat-response {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            background-color: #fff;
-            min-height: 50px;
-            word-wrap: break-word;
-        }
-
-        .dark-mode #chat-response {
-            background-color: #333;
-            border-color: #555;
-            color: #fff;
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
-
 <body>
-<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
-<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
-
-<!-- Audio de fondo -->
-<audio id="backgroundAudio" loop>
-    <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
-    Tu navegador no soporta el elemento audio.
-</audio>
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">
-            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
-            Cerditos y Valientes
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item d-flex align-items-center">
-                    <label for="filtro" class="nav-link mb-0 me-2">COLA:</label>
-                    <select id="filtro" class="form-select me-2">
-                        <option value="RANKED_SOLO_5x5">SOLOQ</option>
-                        <option value="RANKED_FLEX_SR">FLEX</option>
-                        <option value="todo" selected>TODO</option>
-                    </select>
-                </li>
-            </ul>
-            <button id="toggle-mode" class="btn btn-secondary">Modo Oscuro</button>
-            <button id="toggleAudio" class="btn btn-secondary ms-2">
-                <i id="muteIcon" class="fas fa-microphone-alt"></i>
-            </button>
-            <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
-        </div>
-    </div>
-</nav>
-
-<div class="container my-4 d-flex justify-content-center">
-    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/IMG_9912.webp" alt="Banner" class="banner-img" id="banner-img">
-</div>
-
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center">
-        <h1>Lista de Jugadores <span class="small-text"></span></h1>
-        <div id="lastUpdated" class="text-end"></div>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover table-striped" id="jugadoresTable">
-            <thead class="table-dark">
+    <h1>SoloQ Cerditos - Estado de los Jugadores</h1>
+    <p>Última actualización: {{ timestamp | timestamp_to_datetime }}</p>
+    {% if datos_jugadores %}
+        <table>
+            <tr>
+                <th>Jugador</th>
+                <th>Game Name</th>
+                <th>Tier</th>
+                <th>Rango</th>
+                <th>Puntos</th>
+                <th>En Partida</th>
+                <th>Campeón</th>
+                <th>Perfil</th>
+                <th>In-Game</th>
+            </tr>
+            {% for jugador in datos_jugadores %}
                 <tr>
-                    <th>Posición</th>
-                    <th>Jugador</th>
-                    <th>Game Name</th>
-                    <th>Elo</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Total Games</th>
-                    <th>Win Rate</th>
-                    <th class="hidden">Valor Clasificación</th>
-                    <th>Diferencia de Elo</th>
-                    <th>Estado</th>
+                    <td>{{ jugador.jugador }}</td>
+                    <td>{{ jugador.game_name }}</td>
+                    <td>{{ jugador.tier }}</td>
+                    <td>{{ jugador.rank }}</td>
+                    <td>{{ jugador.league_points }}</td>
+                    <td>{{ "Sí" if jugador.en_partida else "No" }}</td>
+                    <td>{{ jugador.nombre_campeon }}</td>
+                    <td><a href="{{ jugador.url_perfil }}" target="_blank">Ver</a></td>
+                    <td><a href="{{ jugador.url_ingame }}" target="_blank">Ver</a></td>
                 </tr>
-            </thead>
-            <tbody>
-                {% for jugador in datos_jugadores %}
-                {% set total_games = jugador.wins + jugador.losses %}
-                {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                <tr class="queue-type {{ jugador.queue_type }}">
-                    <td></td>
-                    <td class="jugador-columna">
-                        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png" 
-                             alt="Imagen de {{ jugador.jugador }}"
-                             class="imagen-jugador"
-                             onerror="this.style.display='none'">
-                        {{ jugador.jugador }}
-                    </td>
-                    <td>
-                        <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
-                    </td>
-                    <td>
-                        <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
-                        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                    </td>
-                    <td>{{ jugador.wins }}</td>
-                    <td>{{ jugador.losses }}</td>
-                    <td>{{ total_games }}</td>
-                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                        {{ '{:.2f}'.format(win_rate) }}%
-                    </td>
-                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
-                    <td class="elo-diferencia"></td>
-                    <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.en_partida %}
-                                <span class="estado-en-partida">En Partida</span>
-                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" 
-                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
-                            {% else %}
-                                Inactivo
-                            {% endif %}
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+            {% endfor %}
         </table>
-    </div>
-
-    <!-- Sección del chatbot -->
-    <div id="chat-container" class="mt-4">
-        <h3 class="mb-3">Chatbot - Asistente de SoloQ</h3>
-        <div class="input-group mb-3">
-            <input type="text" id="chat-input" class="form-control" placeholder="Escribe tu mensaje (ej. ¿Quién está jugando ahora?)...">
-            <button id="chat-send-btn" class="btn btn-success" onclick="sendMessage()">Enviar</button>
-        </div>
-        <div id="chat-response" class="p-3 border rounded" style="min-height: 50px; word-wrap: break-word;"></div>
-    </div>
-</div>
-
-<script>
-    // Función del chatbot con depuración
-    function sendMessage() {
-        const message = document.getElementById('chat-input').value;
-        if (!message) {
-            document.getElementById('chat-response').innerHTML = 'Por favor, escribe un mensaje.';
-            return;
-        }
-
-        console.log('Enviando mensaje:', message); // Depuración
-        fetch(`/chat?message=${encodeURIComponent(message)}`)
-            .then(response => {
-                console.log('Respuesta recibida:', response); // Depuración
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Datos recibidos:', data); // Depuración
-                document.getElementById('chat-response').innerHTML = data.reply || 'No se recibió respuesta.';
-            })
-            .catch(error => {
-                console.error('Error:', error); // Depuración
-                document.getElementById('chat-response').innerHTML = 'Error al procesar el mensaje. Revisa la consola para más detalles.';
+        <h2>Chatbot</h2>
+        <form id="chatForm">
+            <input type="text" id="message" name="message" placeholder="Escribe tu mensaje...">
+            <button type="submit">Enviar</button>
+        </form>
+        <div id="chatResponse"></div>
+        <script>
+            document.getElementById('chatForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const message = document.getElementById('message').value;
+                const responseDiv = document.getElementById('chatResponse');
+                responseDiv.innerHTML = 'Cargando...';
+                const response = await fetch(`/chat?message=${encodeURIComponent(message)}`);
+                const data = await response.json();
+                responseDiv.innerHTML = data.reply;
+                document.getElementById('message').value = '';
             });
-        // Limpia el input después de enviar
-        document.getElementById('chat-input').value = '';
-    }
-
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const audio = document.getElementById('backgroundAudio');
-        const toggleAudioButton = document.getElementById('toggleAudio');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const muteIcon = document.getElementById('muteIcon');
-
-        // Inicialmente silenciar el audio para cumplir con políticas de autoplay
-        audio.muted = true;
-        audio.play().catch(error => {
-            console.log('Reproducción automática no permitida:', error);
-        });
-
-        // Desmutear el audio tras la primera interacción del usuario
-        document.addEventListener('click', () => {
-            if (audio.paused) {
-                audio.muted = false;
-                audio.play().catch(error => console.log('Error al desmutear y reproducir:', error));
+            function timestamp_to_datetime(timestamp) {
+                return new Date(timestamp * 1000).toLocaleString();
             }
-        }, {once: true});
-
-        // Control de volumen
-        volumeSlider.addEventListener('input', function() {
-            audio.volume = this.value;
-        });
-
-        // Actualizar el icono del botón de silenciar/desmutear
-        toggleAudioButton.addEventListener('click', () => {
-            audio.muted = !audio.muted;
-            if (audio.muted) {
-                muteIcon.className = 'fas fa-microphone-slash';
-                toggleAudioButton.title = 'Desmutear Música';
-            } else {
-                muteIcon.className = 'fas fa-microphone-alt';
-                toggleAudioButton.title = 'Silenciar Música';
-            }
-        });
-
-        const imagenesElo = {
-            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
-            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
-            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
-            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
-            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/PLATINUM.png",
-            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
-            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Diamond.png",
-            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/MASTER.png",
-            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/GRANDMASTER.png",
-            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/CHALLENGER.png"
-        };
-
-        document.querySelectorAll(".elo-image").forEach(el => {
-            const elo = el.alt.toUpperCase();
-            if (imagenesElo[elo]) el.src = imagenesElo[elo];
-        });
-
-        const toggleModeButton = document.getElementById("toggle-mode");
-        toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
-
-        // Store original table rows
-        const originalRows = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-
-        const filtro = document.getElementById("filtro");
-        filtro.addEventListener("change", () => {
-            const selected = filtro.value;
-            const tbody = document.querySelector("#jugadoresTable tbody");
-
-            // Reset table to original state
-            tbody.innerHTML = '';
-            originalRows.forEach(row => tbody.appendChild(row.cloneNode(true)));
-
-            // Now apply the filter
-            if (selected !== "todo") {
-                Array.from(tbody.querySelectorAll("tr")).forEach(row => {
-                    if (!row.classList.contains(selected)) {
-                        row.style.display = 'none';
-                    }
-                });
-            }
-
-            // Recalculate positions and Elo differences with only visible rows
-            ordenarYCalcularDiferencias();
-        });
-
-        function ordenarYCalcularDiferencias() {
-            const tbody = document.querySelector("#jugadoresTable tbody");
-            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
-
-            visibleRows.sort((a, b) => 
-                parseInt(b.querySelector(".hidden").textContent, 10) - 
-                parseInt(a.querySelector(".hidden").textContent, 10)
-            );
-
-            // Clear and repopulate tbody for correct ordering
-            tbody.innerHTML = '';
-            visibleRows.forEach((row, index) => {
-                row.querySelector("td:first-child").textContent = index + 1;
-                const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-                const eloCol = row.querySelector(".elo-diferencia");
-                
-                if (index > 0) {
-                    const valorClasificacionAnterior = parseInt(visibleRows[index - 1].querySelector(".hidden").textContent, 10);
-                    eloCol.textContent = `${valorClasificacionAnterior - valorClasificacion} LPs`;
-                } else {
-                    eloCol.textContent = "—";
-                }
-                tbody.appendChild(row);
+            document.querySelectorAll('time').forEach(el => {
+                el.textContent = timestamp_to_datetime(parseInt(el.textContent));
             });
-        }
-
-        ordenarYCalcularDiferencias(); // Initially sort all rows
-
-        document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
-
-        const leftBanner = document.getElementById("left-banner");
-        const rightBanner = document.getElementById("right-banner");
-        const imagePaths = [
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/3.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/4.jpg"
-        ];
-        let currentImageIndex = 0;
-
-        function cambiarImagenes() {
-            currentImageIndex = (currentImageIndex + 1) % imagePaths.length;
-            leftBanner.src = imagePaths[currentImageIndex];
-            rightBanner.src = imagePaths[currentImageIndex];
-        }
-        setInterval(cambiarImagenes, 5000);
-    });
-</script>
-
+        </script>
+    {% else %}
+        <p>No hay datos de jugadores disponibles.</p>
+    {% endif %}
 </body>
 </html>
