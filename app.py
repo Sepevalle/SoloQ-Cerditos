@@ -5,7 +5,7 @@ import time
 import threading
 import json
 from openai import OpenAI
-import httpx  # Necesario para crear un cliente HTTP personalizado
+import httpx
 
 app = Flask(__name__)
 
@@ -49,44 +49,60 @@ def obtener_nombre_campeon(champion_id):
 
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error al obtener PUUID: {response.status_code} - {response.text}")
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error al obtener PUUID: {response.status_code} - {response.text}")
+            return None
+    except requests.RequestException as e:
+        print(f"Excepción al obtener PUUID: {str(e)}")
         return None
 
 def obtener_id_invocador(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error al obtener ID del invocador: {response.status_code} - {response.text}")
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error al obtener ID del invocador: {response.status_code} - {response.text}")
+            return None
+    except requests.RequestException as e:
+        print(f"Excepción al obtener ID del invocador: {str(e)}")
         return None
 
 def obtener_elo(api_key, summoner_id):
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error al obtener Elo: {response.status_code} - {response.text}")
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error al obtener Elo: {response.status_code} - {response.text}")
+            return None
+    except requests.RequestException as e:
+        print(f"Excepción al obtener Elo: {str(e)}")
         return None
 
 def esta_en_partida(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        for participant in data.get("participants", []):
-            if participant['puuid'] == puuid:
-                return participant.get('championId', None)
-    return None
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            for participant in data.get("participants", []):
+                if participant['puuid'] == puuid:
+                    return participant.get('championId', None)
+        return None
+    except requests.RequestException as e:
+        print(f"Excepción al verificar partida: {str(e)}")
+        return None
 
 def leer_cuentas(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
             contenido = response.text.strip().split(';')
             cuentas = []
@@ -101,7 +117,7 @@ def leer_cuentas(url):
             print(f"Error al leer el archivo: {response.status_code}")
             return []
     except Exception as e:
-        print(f"Error al leer las cuentas: {e}")
+        print(f"Error al leer las cuentas: {str(e}")
         return []
 
 def calcular_valor_clasificacion(tier, rank, league_points):
@@ -226,17 +242,18 @@ def get_chatbot_response(user_message):
         conversation_history.append({"role": "assistant", "content": assistant_response})
         return assistant_response
     except Exception as e:
+        print(f"Error en get_chatbot_response: {str(e)}")  # Depuración
         return f"Error al procesar con OpenAI: {str(e)}"
 
 @app.route('/')
 def index():
     try:
         datos_jugadores, timestamp = obtener_datos_jugadores()
-        print(json.dumps(datos_jugadores, indent=2))
+        print(json.dumps(datos_jugadores, indent=2))  # Depuración
         return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
     except Exception as e:
-        print(f"Error en index: {str(e)}")
-        return "Error al cargar la página", 500
+        print(f"Error en index: {str(e)}")  # Depuración
+        return f"Error al cargar la página: {str(e)}", 500
 
 @app.route('/chat', methods=['GET'])
 def chat():
