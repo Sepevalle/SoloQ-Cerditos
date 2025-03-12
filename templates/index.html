@@ -67,12 +67,6 @@
                 responseDiv.innerHTML = data.reply;
                 document.getElementById('message').value = '';
             });
-            function timestamp_to_datetime(timestamp) {
-                return new Date(timestamp * 1000).toLocaleString();
-            }
-            document.querySelectorAll('time').forEach(el => {
-                el.textContent = timestamp_to_datetime(parseInt(el.textContent));
-            });
         </script>
     {% else %}
         <p>No hay datos de jugadores disponibles.</p>
