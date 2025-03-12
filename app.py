@@ -9,6 +9,12 @@ import httpx
 
 app = Flask(__name__)
 
+# Registro del filtro personalizado para Jinja2
+def timestamp_to_datetime(timestamp):
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+
+app.jinja_env.filters['timestamp_to_datetime'] = timestamp_to_datetime
+
 # Caché para almacenar los datos de los jugadores
 cache = {
     "datos_jugadores": None,
@@ -57,6 +63,10 @@ def obtener_puuid(api_key, riot_id, region):
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             return response.json()
+        elif response.status_code == 429:
+            print(f"Límite de tasa alcanzado al obtener PUUID: {response.text}")
+            time.sleep(2)  # Espera 2 segundos antes de la siguiente solicitud
+            return None
         else:
             print(f"Error al obtener PUUID: {response.status_code} - {response.text}")
             return None
@@ -70,6 +80,10 @@ def obtener_id_invocador(api_key, puuid):
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             return response.json()
+        elif response.status_code == 429:
+            print(f"Límite de tasa alcanzado al obtener ID del invocador: {response.text}")
+            time.sleep(2)
+            return None
         else:
             print(f"Error al obtener ID del invocador: {response.status_code} - {response.text}")
             return None
@@ -83,6 +97,10 @@ def obtener_elo(api_key, summoner_id):
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             return response.json()
+        elif response.status_code == 429:
+            print(f"Límite de tasa alcanzado al obtener Elo: {response.text}")
+            time.sleep(2)
+            return None
         else:
             print(f"Error al obtener Elo: {response.status_code} - {response.text}")
             return None
