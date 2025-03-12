@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 import requests
 import os
 import time
@@ -20,10 +20,42 @@ cache = {
     "datos_jugadores": None,
     "timestamp": 0
 }
-CACHE_TIMEOUT = 300  # 5 minutos
+CACHE_TIMEOUT = 900  # 15 minutos
 
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
+
+# Archivo para almacenamiento persistente
+CACHE_FILE = "cache.json"
+
+# Cargar caché desde el archivo al iniciar
+def load_cache_from_file():
+    global cache
+    try:
+        if os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE, 'r') as f:
+                cached_data = json.load(f)
+                cache['datos_jugadores'] = cached_data.get('datos_jugadores', None)
+                cache['timestamp'] = cached_data.get('timestamp', 0)
+                print(f"Caché cargado desde {CACHE_FILE}")
+        else:
+            print(f"No se encontró el archivo {CACHE_FILE}, iniciando con caché vacío")
+    except Exception as e:
+        print(f"Error al cargar caché desde archivo: {str(e)}")
+        cache['datos_jugadores'] = None
+        cache['timestamp'] = 0
+
+# Guardar caché en el archivo
+def save_cache_to_file():
+    try:
+        with open(CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+            print(f"Caché guardado en {CACHE_FILE}")
+    except Exception as e:
+        print(f"Error al guardar caché en archivo: {str(e)}")
+
+# Cargar caché al inicio
+load_cache_from_file()
 
 # Clave API de OpenAI (obtenida de variable de entorno)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
@@ -64,8 +96,9 @@ def obtener_puuid(api_key, riot_id, region):
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 429:
-            print(f"Límite de tasa alcanzado al obtener PUUID: {response.text}")
-            time.sleep(2)  # Espera 2 segundos antes de la siguiente solicitud
+            retry_after = int(response.headers.get('Retry-After', 2))
+            print(f"Límite de tasa alcanzado al obtener PUUID. Esperando {retry_after} segundos...")
+            time.sleep(retry_after)
             return None
         else:
             print(f"Error al obtener PUUID: {response.status_code} - {response.text}")
@@ -81,8 +114,9 @@ def obtener_id_invocador(api_key, puuid):
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 429:
-            print(f"Límite de tasa alcanzado al obtener ID del invocador: {response.text}")
-            time.sleep(2)
+            retry_after = int(response.headers.get('Retry-After', 2))
+            print(f"Límite de tasa alcanzado al obtener ID del invocador. Esperando {retry_after} segundos...")
+            time.sleep(retry_after)
             return None
         else:
             print(f"Error al obtener ID del invocador: {response.status_code} - {response.text}")
@@ -98,8 +132,9 @@ def obtener_elo(api_key, summoner_id):
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 429:
-            print(f"Límite de tasa alcanzado al obtener Elo: {response.text}")
-            time.sleep(2)
+            retry_after = int(response.headers.get('Retry-After', 2))
+            print(f"Límite de tasa alcanzado al obtener Elo. Esperando {retry_after} segundos...")
+            time.sleep(retry_after)
             return None
         else:
             print(f"Error al obtener Elo: {response.status_code} - {response.text}")
@@ -171,12 +206,13 @@ def calcular_valor_clasificacion(tier, rank, league_points):
 
     return (tierValue * 400 + rankValue * 100 + league_points - 100) if tierValue or rankValue else 0
 
-def obtener_datos_jugadores():
+def obtener_datos_jugadores(limit_players=5):
     global cache
 
     with cache_lock:
         current_time = time.time()
         if cache['datos_jugadores'] is not None and (current_time - cache['timestamp']) < CACHE_TIMEOUT:
+            print("Devolviendo datos desde caché")
             return cache['datos_jugadores'], cache['timestamp']
 
         api_key = os.environ.get('RIOT_API_KEY', 'RGAPI-68c71be0-a708-4d02-b503-761f6a83e3ae')
@@ -188,7 +224,12 @@ def obtener_datos_jugadores():
             print("No se encontraron cuentas válidas.")
             cache['datos_jugadores'] = todos_los_datos
             cache['timestamp'] = current_time
+            save_cache_to_file()
             return todos_los_datos, current_time
+
+        # Limitar el número de jugadores procesados para no exceder el límite de la API
+        cuentas = cuentas[:limit_players]  # Procesar solo los primeros 'limit_players'
+        print(f"Procesando {len(cuentas)} jugadores para evitar exceder el límite de la API")
 
         for riot_id, jugador in cuentas:
             try:
@@ -231,6 +272,8 @@ def obtener_datos_jugadores():
                                     "champion_id": champion_id if champion_id else "Desconocido"
                                 }
                                 todos_los_datos.append(datos_jugador)
+                    else:
+                        print(f"No se pudo obtener ID del invocador para {riot_id}")
                 else:
                     print(f"No se pudo obtener PUUID para {riot_id}")
             except Exception as e:
@@ -238,6 +281,7 @@ def obtener_datos_jugadores():
 
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = current_time
+        save_cache_to_file()
         return todos_los_datos, current_time
 
 def get_players_context():
@@ -284,10 +328,14 @@ def get_chatbot_response(user_message):
         print(f"Error en get_chatbot_response: {str(e)}")
         return f"Error al procesar con OpenAI: {str(e)}"
 
-@app.route('/')
+@app.route('/', methods=['GET', 'HEAD'])
 def index():
+    if request.method == 'HEAD':
+        # Respuesta rápida para health checks de OnRender
+        return Response(status=200)
+
     try:
-        datos_jugadores, timestamp = obtener_datos_jugadores()
+        datos_jugadores, timestamp = obtener_datos_jugadores(limit_players=5)
         print(f"Datos de jugadores cargados: {json.dumps(datos_jugadores, indent=2)}")
         return render_template('index.html', datos_jugadores=datos_jugadores, timestamp=timestamp)
     except Exception as e:
@@ -306,4 +354,3 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print(f"Iniciando aplicación en puerto {port}")
-    # No usar app.run() en producción; Gunicorn lo manejará
