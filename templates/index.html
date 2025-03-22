@@ -96,6 +96,7 @@
             right: 0;
         }
 
+        /* Ajustes responsivos */
         @media (max-width: 1200px) {
             .lateral-img {
                 width: 120px;
@@ -131,9 +132,10 @@
             padding: 0;
         }
 
+        /* Personalizar colores para que coincidan más con los botones */
         #volumeSlider::-webkit-slider-runnable-track {
             background: #6c757d;
-            height: 0.2em;
+            height: 0.2em; /* Hacemos la barra más fina */
             border-radius: 1em;
         }
 
@@ -144,12 +146,12 @@
             height: 15px;
             background: #333;
             border-radius: 50%;
-            margin-top: -6.5px;
+            margin-top: -6.5px; /* Ajuste para centrar la bolita perfectamente */
         }
 
         #volumeSlider::-moz-range-track {
             background: #6c757d;
-            height: 0.2em;
+            height: 0.2em; /* Hacemos la barra más fina */
             border-radius: 1em;
         }
 
@@ -161,6 +163,7 @@
             border-radius: 50px;
         }
 
+        /* Ajustes para modo oscuro */
         .dark-mode #volumeSlider::-webkit-slider-runnable-track,
         .dark-mode #volumeSlider::-moz-range-track {
             background: #495057;
@@ -174,6 +177,7 @@
             background: #fff;
         }
 
+        /* Añadir estilos específicos para el botón de modo oscuro */
         #toggle-mode {
             font-weight: bold;
         }
@@ -181,6 +185,7 @@
 </head>
 
 <body>
+
 <img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
 <img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
 
@@ -281,7 +286,7 @@
                                      alt="{{ jugador.nombre_campeon }}" 
                                      style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
                             {% else %}
-                                <span class="estado-en-partida">No en Partida</span>
+                                Inactivo
                             {% endif %}
                         </a>
                     </td>
@@ -292,40 +297,138 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 <script>
-    // Código para el toggle de modo oscuro
-    const toggleButton = document.getElementById('toggle-mode');
-    const body = document.body;
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const audio = document.getElementById('backgroundAudio');
+        const toggleAudioButton = document.getElementById('toggleAudio');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const muteIcon = document.getElementById('muteIcon');
 
-    toggleButton.addEventListener('click', () => {
-        body.classList.toggle('dark-mode');
-        toggleButton.textContent = body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
-    });
+        // Inicialmente silenciar el audio para cumplir con políticas de autoplay
+        audio.muted = true;
+        audio.play().catch(error => {
+            console.log('Reproducción automática no permitida:', error);
+        });
 
-    // Código para controlar el audio de fondo
-    const backgroundAudio = document.getElementById('backgroundAudio');
-    const muteIcon = document.getElementById('muteIcon');
-    const volumeSlider = document.getElementById('volumeSlider');
-    const toggleAudio = document.getElementById('toggleAudio');
+        // Desmutear el audio tras la primera interacción del usuario
+        document.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.muted = false;
+                audio.play().catch(error => console.log('Error al desmutear y reproducir:', error));
+            }
+        }, {once: true});
 
-    toggleAudio.addEventListener('click', () => {
-        if (backgroundAudio.paused) {
-            backgroundAudio.play();
-            muteIcon.classList.replace('fa-microphone-alt', 'fa-volume-up');
-        } else {
-            backgroundAudio.pause();
-            muteIcon.classList.replace('fa-volume-up', 'fa-microphone-alt');
+        // Control de volumen
+        volumeSlider.addEventListener('input', function() {
+            audio.volume = this.value;
+        });
+
+        // Actualizar el icono del botón de silenciar/desmutear
+        toggleAudioButton.addEventListener('click', () => {
+            audio.muted = !audio.muted;
+            if (audio.muted) {
+                muteIcon.className = 'fas fa-microphone-slash';
+                toggleAudioButton.title = 'Desmutear Música';
+            } else {
+                muteIcon.className = 'fas fa-microphone-alt';
+                toggleAudioButton.title = 'Silenciar Música';
+            }
+        });
+
+        const imagenesElo = {
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/PLATINUM.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
+            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Diamond.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/MASTER.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/GRANDMASTER.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/CHALLENGER.png"
+        };
+
+        document.querySelectorAll(".elo-image").forEach(el => {
+            const elo = el.alt.toUpperCase();
+            if (imagenesElo[elo]) el.src = imagenesElo[elo];
+        });
+
+        const toggleModeButton = document.getElementById("toggle-mode");
+        toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
+
+        // Store original table rows
+        const originalRows = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
+
+        const filtro = document.getElementById("filtro");
+        filtro.addEventListener("change", () => {
+            const selected = filtro.value;
+            const tbody = document.querySelector("#jugadoresTable tbody");
+
+            // Reset table to original state
+            tbody.innerHTML = '';
+            originalRows.forEach(row => tbody.appendChild(row.cloneNode(true)));
+
+            // Now apply the filter
+            if (selected !== "todo") {
+                Array.from(tbody.querySelectorAll("tr")).forEach(row => {
+                    if (!row.classList.contains(selected)) {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Recalculate positions and Elo differences with only visible rows
+            ordenarYCalcularDiferencias();
+        });
+
+        function ordenarYCalcularDiferencias() {
+            const tbody = document.querySelector("#jugadoresTable tbody");
+            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
+
+            visibleRows.sort((a, b) => 
+                parseInt(b.querySelector(".hidden").textContent, 10) - 
+                parseInt(a.querySelector(".hidden").textContent, 10)
+            );
+
+            // Clear and repopulate tbody for correct ordering
+            tbody.innerHTML = '';
+            visibleRows.forEach((row, index) => {
+                row.querySelector("td:first-child").textContent = index + 1;
+                const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
+                const eloCol = row.querySelector(".elo-diferencia");
+                
+                if (index > 0) {
+                    const valorClasificacionAnterior = parseInt(visibleRows[index - 1].querySelector(".hidden").textContent, 10);
+                    eloCol.textContent = `${valorClasificacionAnterior - valorClasificacion} LPs`;
+                } else {
+                    eloCol.textContent = "—";
+                }
+                tbody.appendChild(row);
+            });
         }
-    });
 
-    volumeSlider.addEventListener('input', () => {
-        backgroundAudio.volume = volumeSlider.value;
-    });
+        ordenarYCalcularDiferencias(); // Initially sort all rows
 
-    // Inicializar volumen y estado
-    volumeSlider.value = backgroundAudio.volume;
+        document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
+
+        const leftBanner = document.getElementById("left-banner");
+        const rightBanner = document.getElementById("right-banner");
+        const imagePaths = [
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/3.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/4.jpg"
+        ];
+        let currentImageIndex = 0;
+
+        function cambiarImagenes() {
+            currentImageIndex = (currentImageIndex + 1) % imagePaths.length;
+            leftBanner.src = imagePaths[currentImageIndex];
+            rightBanner.src = imagePaths[currentImageIndex];
+        }
+        setInterval(cambiarImagenes, 5000);
+    });
 </script>
+
 </body>
 </html>
