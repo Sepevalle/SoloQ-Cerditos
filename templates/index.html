@@ -177,56 +177,6 @@
         #toggle-mode {
             font-weight: bold;
         }
-
-        /* Estilos para el chatbot */
-        #chat-container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-
-        .dark-mode #chat-container {
-            background-color: #2c2c2c;
-            border-color: #444;
-        }
-
-        #chat-input {
-            width: 70%;
-            padding: 5px;
-            margin-right: 10px;
-        }
-
-        #chat-send-btn {
-            padding: 5px 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-
-        #chat-send-btn:hover {
-            background-color: #45a049;
-        }
-
-        #chat-response {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            background-color: #fff;
-            min-height: 50px;
-            word-wrap: break-word;
-        }
-
-        .dark-mode #chat-response {
-            background-color: #333;
-            border-color: #555;
-            color: #fff;
-        }
     </style>
 </head>
 
@@ -331,7 +281,7 @@
                                      alt="{{ jugador.nombre_campeon }}" 
                                      style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
                             {% else %}
-                                Inactivo
+                                <span class="estado-en-partida">No en Partida</span>
                             {% endif %}
                         </a>
                     </td>
@@ -340,166 +290,42 @@
             </tbody>
         </table>
     </div>
-
-    <!-- Sección del chatbot -->
-    <div id="chat-container" class="mt-4">
-        <h3 class="mb-3">Chatbot - Asistente de SoloQ</h3>
-        <div class="input-group mb-3">
-            <input type="text" id="chat-input" class="form-control" placeholder="Escribe tu mensaje (ej. ¿Quién está jugando ahora?)...">
-            <button id="chat-send-btn" class="btn btn-success" onclick="sendMessage()">Enviar</button>
-        </div>
-        <div id="chat-response" class="p-3 border rounded" style="min-height: 50px; word-wrap: break-word;"></div>
-    </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const audio = document.getElementById('backgroundAudio');
-        const toggleAudioButton = document.getElementById('toggleAudio');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const muteIcon = document.getElementById('muteIcon');
+    // Código para el toggle de modo oscuro
+    const toggleButton = document.getElementById('toggle-mode');
+    const body = document.body;
 
-        // Inicialmente silenciar el audio para cumplir con políticas de autoplay
-        audio.muted = true;
-        audio.play().catch(error => {
-            console.log('Reproducción automática no permitida:', error);
-        });
+    toggleButton.addEventListener('click', () => {
+        body.classList.toggle('dark-mode');
+        toggleButton.textContent = body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
+    });
 
-        // Desmutear el audio tras la primera interacción del usuario
-        document.addEventListener('click', () => {
-            if (audio.paused) {
-                audio.muted = false;
-                audio.play().catch(error => console.log('Error al desmutear y reproducir:', error));
-            }
-        }, {once: true});
+    // Código para controlar el audio de fondo
+    const backgroundAudio = document.getElementById('backgroundAudio');
+    const muteIcon = document.getElementById('muteIcon');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const toggleAudio = document.getElementById('toggleAudio');
 
-        // Control de volumen
-        volumeSlider.addEventListener('input', function() {
-            audio.volume = this.value;
-        });
-
-        // Actualizar el icono del botón de silenciar/desmutear
-        toggleAudioButton.addEventListener('click', () => {
-            audio.muted = !audio.muted;
-            if (audio.muted) {
-                muteIcon.className = 'fas fa-microphone-slash';
-                toggleAudioButton.title = 'Desmutear Música';
-            } else {
-                muteIcon.className = 'fas fa-microphone-alt';
-                toggleAudioButton.title = 'Silenciar Música';
-            }
-        });
-
-        const imagenesElo = {
-            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
-            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
-            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
-            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
-            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/PLATINUM.png",
-            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
-            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Diamond.png",
-            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/MASTER.png",
-            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/GRANDMASTER.png",
-            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/CHALLENGER.png"
-        };
-
-        document.querySelectorAll(".elo-image").forEach(el => {
-            const elo = el.alt.toUpperCase();
-            if (imagenesElo[elo]) el.src = imagenesElo[elo];
-        });
-
-        const toggleModeButton = document.getElementById("toggle-mode");
-        toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
-
-        // Store original table rows
-        const originalRows = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-
-        const filtro = document.getElementById("filtro");
-        filtro.addEventListener("change", () => {
-            const selected = filtro.value;
-            const tbody = document.querySelector("#jugadoresTable tbody");
-
-            // Reset table to original state
-            tbody.innerHTML = '';
-            originalRows.forEach(row => tbody.appendChild(row.cloneNode(true)));
-
-            // Now apply the filter
-            if (selected !== "todo") {
-                Array.from(tbody.querySelectorAll("tr")).forEach(row => {
-                    if (!row.classList.contains(selected)) {
-                        row.style.display = 'none';
-                    }
-                });
-            }
-
-            // Recalculate positions and Elo differences with only visible rows
-            ordenarYCalcularDiferencias();
-        });
-
-        function ordenarYCalcularDiferencias() {
-            const tbody = document.querySelector("#jugadoresTable tbody");
-            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
-
-            visibleRows.sort((a, b) => 
-                parseInt(b.querySelector(".hidden").textContent, 10) - 
-                parseInt(a.querySelector(".hidden").textContent, 10)
-            );
-
-            // Clear and repopulate tbody for correct ordering
-            tbody.innerHTML = '';
-            visibleRows.forEach((row, index) => {
-                row.querySelector("td:first-child").textContent = index + 1;
-                const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-                const eloCol = row.querySelector(".elo-diferencia");
-                
-                if (index > 0) {
-                    const valorClasificacionAnterior = parseInt(visibleRows[index - 1].querySelector(".hidden").textContent, 10);
-                    eloCol.textContent = ${valorClasificacionAnterior - valorClasificacion} LPs;
-                } else {
-                    eloCol.textContent = "—";
-                }
-                tbody.appendChild(row);
-            });
-        }
-
-        ordenarYCalcularDiferencias(); // Initially sort all rows
-
-        document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
-
-        const leftBanner = document.getElementById("left-banner");
-        const rightBanner = document.getElementById("right-banner");
-        const imagePaths = [
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/3.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/4.jpg"
-        ];
-        let currentImageIndex = 0;
-
-        function cambiarImagenes() {
-            currentImageIndex = (currentImageIndex + 1) % imagePaths.length;
-            leftBanner.src = imagePaths[currentImageIndex];
-            rightBanner.src = imagePaths[currentImageIndex];
-        }
-        setInterval(cambiarImagenes, 5000);
-
-        // Función para el chatbot
-        function sendMessage() {
-            const message = document.getElementById('chat-input').value;
-            fetch(/chat?message=${encodeURIComponent(message)})
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('chat-response').innerHTML = data.reply;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('chat-response').innerHTML = 'Error al procesar el mensaje.';
-                });
-            // Limpia el input después de enviar
-            document.getElementById('chat-input').value = '';
+    toggleAudio.addEventListener('click', () => {
+        if (backgroundAudio.paused) {
+            backgroundAudio.play();
+            muteIcon.classList.replace('fa-microphone-alt', 'fa-volume-up');
+        } else {
+            backgroundAudio.pause();
+            muteIcon.classList.replace('fa-volume-up', 'fa-microphone-alt');
         }
     });
-</script>
 
+    volumeSlider.addEventListener('input', () => {
+        backgroundAudio.volume = volumeSlider.value;
+    });
+
+    // Inicializar volumen y estado
+    volumeSlider.value = backgroundAudio.volume;
+</script>
 </body>
 </html>
