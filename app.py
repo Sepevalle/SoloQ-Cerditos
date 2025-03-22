@@ -186,8 +186,28 @@ def index():
 @app.route('/chat', methods=['GET'])
 def chat():
     user_message = request.args.get('message', '')
-    chatbot_response = g4f.ChatCompletion.create(model="gpt-4", messages=[{"role": "user", "content": user_message}])
-    return jsonify({"reply": chatbot_response})
+
+    if not user_message:
+        return jsonify({"error": "No message provided"}), 400
+
+    # Agregar el nuevo mensaje al historial
+    conversation_history.append({"role": "user", "content": user_message})
+
+    try:
+        # Llamar a g4f con todo el historial
+        response = g4f.ChatCompletion.create(
+            model="gpt-4",
+            messages=conversation_history
+        )
+        # Obtener la respuesta del chatbot
+        chatbot_reply = response['choices'][0]['message']['content']
+        
+        # Agregar la respuesta del chatbot al historial
+        conversation_history.append({"role": "assistant", "content": chatbot_reply})
+
+        return jsonify({"reply": chatbot_reply})
+    except Exception as e:
+        return jsonify({"error": f"Error en la llamada al chatbot: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
