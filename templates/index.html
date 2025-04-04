@@ -357,8 +357,9 @@
         const originalRows = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
 
         const filtro = document.getElementById("filtro");
-        filtro.addEventListener("change", () => {
-            const selected = filtro.value;
+        
+        // Función para filtrar la tabla
+        const aplicarFiltro = (selected) => {
             const tbody = document.querySelector("#jugadoresTable tbody");
 
             // Reset table to original state
@@ -376,6 +377,15 @@
 
             // Recalculate positions and Elo differences with only visible rows
             ordenarYCalcularDiferencias();
+        }
+
+        // Aplica el filtro de SoloQ por defecto al cargar la página
+        aplicarFiltro("RANKED_SOLO_5x5");
+
+        // Evento del filtro de cola (cuando cambia la selección)
+        filtro.addEventListener("change", () => {
+            const selected = filtro.value;
+            aplicarFiltro(selected);
         });
 
         function ordenarYCalcularDiferencias() {
@@ -404,7 +414,7 @@
             });
         }
 
-        ordenarYCalcularDiferencias(); // Initially sort all rows
+        ordenarYCalcularDiferencias(); // Inicialmente ordena todas las filas
 
         document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 
@@ -426,6 +436,5 @@
         setInterval(cambiarImagenes, 5000);
     });
 </script>
-
 </body>
 </html>
