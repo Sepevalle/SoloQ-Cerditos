@@ -13,63 +13,75 @@
         body {
             transition: background-color 0.3s, color 0.3s;
         }
+
         .banner-img {
             margin-top: 40px;
             width: 100%;
             max-height: 600px;
             object-fit: contain;
         }
+
         .small-text {
             font-size: 0.6em;
             font-weight: normal;
         }
+
         .win-rate-alto {
             color: #228B22 !important;
         }
+
         .win-rate-bajo {
             color: tomato !important;
         }
+
         .estado-en-partida {
             color: #007BFF !important;
             font-weight: bold;
         }
+
         .table a {
             color: inherit;
             text-decoration: none;
         }
+
         .link-estado {
             color: #007BFF;
         }
-        .link-perfil:hover, .link-estado:hover {
+
+        .link-perfil:hover,
+        .link-estado:hover {
             text-decoration: underline;
         }
+
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
+
         .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
-        .dark-mode .navbar-brand {
-            color: white !important;
-        }
+
+        .dark-mode .navbar-brand,
+        .dark-mode .nav-link,
         .dark-mode .table {
-            background-color: #343a40 !important;
-            color: white;
-        }
-        .dark-mode .nav-link {
             color: white !important;
         }
-        .table td, .table th {
+
+        .table td,
+        .table th {
             text-align: center;
         }
+
         .jugador-columna {
             text-align: left;
         }
+
         .hidden {
             display: none;
         }
+
         .imagen-jugador {
             width: 30px;
             height: 30px;
@@ -80,7 +92,6 @@
             object-fit: cover;
         }
 
-        /* Estilos para los banners laterales responsivos */
         .lateral-img {
             position: fixed;
             top: 50%;
@@ -88,15 +99,17 @@
             width: 150px;
             height: auto;
             object-fit: cover;
+            z-index: 1;
         }
+
         .left-img {
             left: 0;
         }
+
         .right-img {
             right: 0;
         }
 
-        /* Ajustes responsivos */
         @media (max-width: 1200px) {
             .lateral-img {
                 width: 120px;
@@ -123,7 +136,6 @@
             }
         }
 
-        /* Estilo para el slider de volumen */
         #volumeSlider {
             width: 100px;
             margin-left: 10px;
@@ -132,10 +144,9 @@
             padding: 0;
         }
 
-        /* Personalizar colores para que coincidan más con los botones */
         #volumeSlider::-webkit-slider-runnable-track {
             background: #6c757d;
-            height: 0.2em; /* Hacemos la barra más fina */
+            height: 0.2em;
             border-radius: 1em;
         }
 
@@ -146,12 +157,12 @@
             height: 15px;
             background: #333;
             border-radius: 50%;
-            margin-top: -6.5px; /* Ajuste para centrar la bolita perfectamente */
+            margin-top: -6.5px;
         }
 
         #volumeSlider::-moz-range-track {
             background: #6c757d;
-            height: 0.2em; /* Hacemos la barra más fina */
+            height: 0.2em;
             border-radius: 1em;
         }
 
@@ -163,21 +174,16 @@
             border-radius: 50px;
         }
 
-        /* Ajustes para modo oscuro */
         .dark-mode #volumeSlider::-webkit-slider-runnable-track,
         .dark-mode #volumeSlider::-moz-range-track {
             background: #495057;
         }
 
-        .dark-mode #volumeSlider::-webkit-slider-thumb {
-            background: #fff;
-        }
-
+        .dark-mode #volumeSlider::-webkit-slider-thumb,
         .dark-mode #volumeSlider::-moz-range-thumb {
             background: #fff;
         }
 
-        /* Añadir estilos específicos para el botón de modo oscuro */
         #toggle-mode {
             font-weight: bold;
         }
