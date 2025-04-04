@@ -80,7 +80,6 @@
             object-fit: cover;
         }
 
-        /* Estilos para los banners laterales responsivos */
         .lateral-img {
             position: fixed;
             top: 50%;
@@ -96,7 +95,6 @@
             right: 0;
         }
 
-        /* Ajustes responsivos */
         @media (max-width: 1200px) {
             .lateral-img {
                 width: 120px;
@@ -123,23 +121,6 @@
             }
         }
 
-        /* Ajustes para el filtro en dispositivos móviles */
-        .filter-container {
-            display: flex;
-            justify-content: flex-start;
-            flex-wrap: wrap;
-        }
-
-        .navbar .filter-container select {
-            width: 100%;
-            margin-top: 10px;
-        }
-        
-        .navbar-toggler-icon {
-            color: #fff;
-        }
-
-        /* Estilo para el slider de volumen */
         #volumeSlider {
             width: 100px;
             margin-left: 10px;
@@ -148,10 +129,9 @@
             padding: 0;
         }
 
-        /* Personalizar colores para que coincidan más con los botones */
         #volumeSlider::-webkit-slider-runnable-track {
             background: #6c757d;
-            height: 0.2em; /* Hacemos la barra más fina */
+            height: 0.2em;
             border-radius: 1em;
         }
 
@@ -162,12 +142,12 @@
             height: 15px;
             background: #333;
             border-radius: 50%;
-            margin-top: -6.5px; /* Ajuste para centrar la bolita perfectamente */
+            margin-top: -6.5px;
         }
 
         #volumeSlider::-moz-range-track {
             background: #6c757d;
-            height: 0.2em; /* Hacemos la barra más fina */
+            height: 0.2em;
             border-radius: 1em;
         }
 
@@ -179,7 +159,6 @@
             border-radius: 50px;
         }
 
-        /* Ajustes para modo oscuro */
         .dark-mode #volumeSlider::-webkit-slider-runnable-track,
         .dark-mode #volumeSlider::-moz-range-track {
             background: #495057;
@@ -193,7 +172,6 @@
             background: #fff;
         }
 
-        /* Añadir estilos específicos para el botón de modo oscuro */
         #toggle-mode {
             font-weight: bold;
         }
@@ -205,7 +183,6 @@
 <img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
 <img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
 
-<!-- Audio de fondo -->
 <audio id="backgroundAudio" loop>
     <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
     Tu navegador no soporta el elemento audio.
@@ -217,27 +194,29 @@
             <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
             Cerditos y Valientes
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item d-flex align-items-center">
-                    <div class="filter-container">
-                        <label for="filtro" class="nav-link mb-0 me-2">COLA:</label>
-                        <select id="filtro" class="form-select me-2">
-                            <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
-                            <option value="RANKED_FLEX_SR">FLEX</option>
-                            <option value="todo">TODO</option>
-                        </select>
-                    </div>
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
+                <li class="nav-item d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
+                    <label for="filtro" class="nav-link mb-1 mb-lg-0 me-lg-2">COLA:</label>
+                    <select id="filtro" class="form-select me-lg-2 w-100 w-lg-auto">
+                        <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
+                        <option value="RANKED_FLEX_SR">FLEX</option>
+                        <option value="todo">TODO</option>
+                    </select>
                 </li>
             </ul>
-            <button id="toggle-mode" class="btn btn-secondary">Modo Oscuro</button>
-            <button id="toggleAudio" class="btn btn-secondary ms-2">
-                <i id="muteIcon" class="fas fa-microphone-alt"></i>
-            </button>
-            <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
+            <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
+                <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
+                <div class="d-flex align-items-center ms-lg-2">
+                    <button id="toggleAudio" class="btn btn-secondary">
+                        <i id="muteIcon" class="fas fa-microphone-alt"></i>
+                    </button>
+                    <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
+                </div>
+            </div>
         </div>
     </div>
 </nav>
