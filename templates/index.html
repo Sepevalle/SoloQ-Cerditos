@@ -230,6 +230,20 @@
         <h1>Lista de Jugadores <span class="small-text"></span></h1>
         <div id="lastUpdated" class="text-end"></div>
     </div>
+    
+    <div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col text-center">
+            <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
+            <select id="filtro" class="form-select d-inline-block w-auto">
+                <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
+                <option value="RANKED_FLEX_SR">FLEX</option>
+                <option value="todo">TODO</option>
+            </select>
+        </div>
+    </div>
+</div>
+    
     <div class="table-responsive">
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
