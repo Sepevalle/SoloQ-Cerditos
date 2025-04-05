@@ -443,6 +443,12 @@
         }
         setInterval(cambiarImagenes, 5000);
     });
+
+     // Mostrar la hora de la última actualización
+        const lastUpdatedElement = document.getElementById("lastUpdated");
+        const updateTime = new Date().toLocaleString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" });
+        lastUpdatedElement.innerHTML = `Última actualización: ${updateTime}`;
+    });
 </script>
 </body>
 </html>
