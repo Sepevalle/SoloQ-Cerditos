@@ -192,7 +192,7 @@ def keep_alive():
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
-        time.sleep(299)
+        time.sleep(200)
 
 if __name__ == "__main__":
     thread = threading.Thread(target=keep_alive)
