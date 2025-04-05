@@ -19,7 +19,7 @@ cache_lock = threading.Lock()  # Crear un lock
 
 def cargar_campeones():
     # Actualizado a la versión 14.20.1
-    url_campeones = "https://ddragon.leagueoflegends.com/cdn/14.20.1/data/es_ES/champion.json"
+    url_campeones = "https://ddragon.leagueoflegends.com/cdn/15.7.1/data/es_ES/champion.json"
     response = requests.get(url_campeones)
     if response.status_code == 200:
         campeones = response.json()["data"]
