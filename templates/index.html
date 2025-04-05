@@ -211,33 +211,31 @@
             </div>
         </div>
     </div>
-</nav> 
+</nav>
 
 <div class="container my-4 d-flex justify-content-center">
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
 </div>
-    
+
 <div class="container">
     <div class="d-flex justify-content-between align-items-center">
         <h3>Lista de Jugadores <span class="small-text"></span></h3>
-        <div id="lastUpdated" class="text-end"></div>
+        <div id="lastUpdated" class="text-end"></div> <!-- Aquí se mostrará la hora de actualización -->
     </div>
-    
+
     <div class="container mt-4">
-    <div class="row mb-3">
-        <div class="col text-start">
-            <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
-            <select id="filtro" class="form-select d-inline-block w-auto">
-                <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
-                <option value="RANKED_FLEX_SR">FLEX</option>
-                <option value="todo">TODO</option>
-            </select>
+        <div class="row mb-3">
+            <div class="col text-start">
+                <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
+                <select id="filtro" class="form-select d-inline-block w-auto">
+                    <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
+                    <option value="RANKED_FLEX_SR">FLEX</option>
+                    <option value="todo">TODO</option>
+                </select>
+            </div>
         </div>
     </div>
-</div>
 
- 
-    
     <div class="table-responsive">
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
@@ -278,22 +276,11 @@
                     <td>{{ jugador.wins }}</td>
                     <td>{{ jugador.losses }}</td>
                     <td>{{ total_games }}</td>
-                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                        {{ '{:.2f}'.format(win_rate) }}%
-                    </td>
-                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
-                    <td class="elo-diferencia"></td>
-                    <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.en_partida %}
-                                <span class="estado-en-partida">En Partida</span>
-                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" 
-                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
-                            {% else %}
-                                Inactivo
-                            {% endif %}
-                        </a>
+                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ win_rate }}%</td>
+                    <td class="hidden">{{ jugador.clasificacion_elo }}</td>
+                    <td>{{ jugador.diferencia_elo }}</td>
+                    <td class="estado-en-partida">
+                        {% if jugador.en_partida %}<span class="text-primary">En partida</span>{% else %}Descanso{% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -443,12 +430,11 @@
         }
         setInterval(cambiarImagenes, 5000);
     });
-
-     // Mostrar la hora de la última actualización
-        const lastUpdatedElement = document.getElementById("lastUpdated");
-        const updateTime = new Date().toLocaleString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" });
-        lastUpdatedElement.innerHTML = `Última actualización: ${updateTime}`;
-    });
-</script>
+  // Establecer la hora de la última actualización (esto debe ser actualizado desde el servidor o script de backend)
+    const updateTime = new Date();
+    document.getElementById('lastUpdated').innerText = `Última actualización: ${updateTime.toLocaleString()}`;
+    
+    </script>
 </body>
 </html>
+
