@@ -52,7 +52,7 @@ def obtener_id_invocador(api_key, puuid):
         return None
 
 def obtener_elo(api_key, summoner_id):
-    url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={api_key}"
+    url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
