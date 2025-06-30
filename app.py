@@ -51,7 +51,7 @@ def obtener_id_invocador(api_key, puuid):
         print(f"Error al obtener ID del invocador: {response.status_code} - {response.text}")
         return None
 
-def obtener_elo(api_key, summoner_id):
+def obtener_elo(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
