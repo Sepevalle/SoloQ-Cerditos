@@ -136,7 +136,7 @@ def obtener_datos_jugadores():
                 summoner_info = obtener_id_invocador(api_key, puuid)
                 if summoner_info:
                     summoner_id = summoner_info['id']
-                    elo_info = obtener_elo(api_key, summoner_id)
+                    elo_info = obtener_elo(api_key, puuid)
 
                     if elo_info:
                         champion_id = esta_en_partida(api_key, puuid)
