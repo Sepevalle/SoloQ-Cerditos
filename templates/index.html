@@ -459,6 +459,40 @@
             });
         };
 
+        // Función para ordenar la tabla al hacer clic en los encabezados
+        const ordenarTabla = (columna) => {
+            const tbody = document.querySelector("#jugadoresTable tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort((a, b) => {
+                const valorA = a.cells[columna].textContent.trim();
+                const valorB = b.cells[columna].textContent.trim();
+
+                if (columna === 0 || columna === 8) { // Ordenar numéricamente
+                    return parseInt(valorB) - parseInt(valorA);
+                } else { // Ordenar alfabéticamente
+                    return valorA.localeCompare(valorB);
+                }
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            ordenarYCalcularDiferencias(); // Recalcular posiciones y diferencias de Elo
+        };
+
+        // Aplica el filtro de SoloQ por defecto al cargar la página
+        aplicarFiltro("RANKED_SOLO_5x5");
+
+        // Evento del filtro de cola
+        filtro.addEventListener("change", () => {
+            const selected = filtro.value;
+            aplicarFiltro(selected);
+        });
+
+        // Vincula la función de ordenación a los encabezados de la tabla
+        document.querySelectorAll("#jugadoresTable th").forEach((th, index) => {
+            th.addEventListener("click", () => ordenarTabla(index));
+        });
+
         ordenarYCalcularDiferencias(); // Inicialmente ordena todas las filas
 
         document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
