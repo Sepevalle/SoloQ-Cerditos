@@ -242,24 +242,24 @@
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
-                    <th>Posición</th>
-                    <th>Jugador</th>
-                    <th>Game Name</th>
-                    <th>Elo</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Total Games</th>
-                    <th>Win Rate</th>
+                    <th onclick="ordenarTabla(0)">Posición</th>
+                    <th onclick="ordenarTabla(1)">Jugador</th>
+                    <th onclick="ordenarTabla(2)">Game Name</th>
+                    <th onclick="ordenarTabla(3)">Elo</th>
+                    <th onclick="ordenarTabla(4)">Wins</th>
+                    <th onclick="ordenarTabla(5)">Losses</th>
+                    <th onclick="ordenarTabla(6)">Total Games</th>
+                    <th onclick="ordenarTabla(7)">Win Rate</th>
                     <th class="hidden">Valor Clasificación</th>
-                    <th>Diferencia de Elo</th>
-                    <th>Estado</th>
+                    <th onclick="ordenarTabla(9)">Diferencia de Elo</th>
+                    <th onclick="ordenarTabla(10)">Estado</th>
                 </tr>
             </thead>
             <tbody>
                 {% for jugador in datos_jugadores %}
                 {% set total_games = jugador.wins + jugador.losses %}
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                <tr class="queue-type {{ jugador.queue_type }}">
+                <tr>
                     <td></td>
                     <td class="jugador-columna">
                         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png" 
@@ -271,30 +271,14 @@
                     <td>
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
                     </td>
-                    <td>
-                        <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
-                        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                    </td>
+                    <td>{{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)</td>
                     <td>{{ jugador.wins }}</td>
                     <td>{{ jugador.losses }}</td>
                     <td>{{ total_games }}</td>
-                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                        {{ '{:.2f}'.format(win_rate) }}%
-                    </td>
+                    <td>{{ '{:.2f}'.format(win_rate) }}%</td>
                     <td class="hidden">{{ jugador.valor_clasificacion }}</td>
-                    <td class="elo-diferencia"></td>
-                    <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.en_partida %}
-                                <span class="estado-en-partida">En Partida</span>
-                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" 
-                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
-                            {% else %}
-                                Inactivo
-                            {% endif %}
-                        </a>
-                    </td>
+                    <td></td>
+                    <td>{{ 'En partida' if jugador.en_partida else 'Inactivo' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -443,6 +427,27 @@
         }
         setInterval(cambiarImagenes, 5000);
     });
+
+    function ordenarTabla(columna) {
+        const tabla = document.getElementById("jugadoresTable");
+        const filas = Array.from(tabla.querySelectorAll("tbody tr"));
+        const esNumerico = columna === 4 || columna === 5 || columna === 6 || columna === 7 || columna === 9;
+
+        filas.sort((a, b) => {
+            const valorA = a.cells[columna].textContent.trim();
+            const valorB = b.cells[columna].textContent.trim();
+
+            if (esNumerico) {
+                return parseFloat(valorA) - parseFloat(valorB);
+            } else {
+                return valorA.localeCompare(valorB);
+            }
+        });
+
+        const tbody = tabla.querySelector("tbody");
+        tbody.innerHTML = "";
+        filas.forEach(fila => tbody.appendChild(fila));
+    }
 </script>
 </body>
 </html>
