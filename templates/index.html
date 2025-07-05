@@ -414,7 +414,7 @@
             tbody.innerHTML = '';
             originalRows.forEach(row => tbody.appendChild(row.cloneNode(true)));
 
-            // Now apply the filter
+            // Apply the filter
             if (selected !== "todo") {
                 Array.from(tbody.querySelectorAll("tr")).forEach(row => {
                     if (!row.classList.contains(selected)) {
@@ -422,15 +422,12 @@
                     }
                 });
             }
-
-            // Recalculate positions and Elo differences with only visible rows
-            ordenarYCalcularDiferencias();
         }
 
         // Aplica el filtro de SoloQ por defecto al cargar la página
         aplicarFiltro("RANKED_SOLO_5x5");
 
-        // Evento del filtro de cola (cuando cambia la selección)
+        // Evento del filtro de cola
         filtro.addEventListener("change", () => {
             const selected = filtro.value;
             aplicarFiltro(selected);
@@ -486,31 +483,23 @@
 </script>
 <script>
     $(document).ready(function() {
-        const originalRows = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-
-        // Inicializa DataTables
         const table = $('#jugadoresTable').DataTable({
-            paging: true,
-            searching: false, // Desactiva la búsqueda global para usar el filtro personalizado
+            paging: false, // Desactiva la paginación
+            searching: false, // Desactiva la búsqueda global
             info: false, // Oculta el texto "Showing X to Y of Z entries"
-            order: [[8, 'desc']], // Ordenar por Valor Clasificación inicialmente
-            columnDefs: [
-                { targets: [8], visible: false }, // Ocultar columna de Valor Clasificación
-                { targets: [9], orderable: false } // Deshabilitar ordenación en Diferencia de Elo
-            ]
+            ordering: false, // Desactiva la ordenación
         });
 
         // Función para aplicar el filtro de cola
         const aplicarFiltro = (selected) => {
-            table.rows().every(function(rowIdx, tableLoop, rowLoop) {
-                const row = this.node();
+            const rows = document.querySelectorAll("#jugadoresTable tbody tr");
+            rows.forEach(row => {
                 if (selected === "todo" || row.classList.contains(selected)) {
-                    $(row).show();
+                    row.style.display = "";
                 } else {
-                    $(row).hide();
+                    row.style.display = "none";
                 }
             });
-            ordenarYCalcularDiferencias();
         };
 
         // Evento del filtro de cola
@@ -518,28 +507,6 @@
             const selected = $(this).val();
             aplicarFiltro(selected);
         });
-
-        // Función para ordenar y calcular diferencias de Elo
-        const ordenarYCalcularDiferencias = () => {
-            const visibleRows = table.rows({ filter: 'applied' }).nodes().toArray();
-            visibleRows.sort((a, b) => 
-                parseInt($(b).find(".hidden").text(), 10) - 
-                parseInt($(a).find(".hidden").text(), 10)
-            );
-
-            visibleRows.forEach((row, index) => {
-                $(row).find("td:first-child").text(index + 1);
-                const valorClasificacion = parseInt($(row).find(".hidden").text(), 10);
-                const eloCol = $(row).find(".elo-diferencia");
-
-                if (index > 0) {
-                    const valorClasificacionAnterior = parseInt($(visibleRows[index - 1]).find(".hidden").text(), 10);
-                    eloCol.text(`${valorClasificacionAnterior - valorClasificacion} LPs`);
-                } else {
-                    eloCol.text("—");
-                }
-            });
-        };
 
         // Aplica el filtro de SoloQ por defecto al cargar la página
         aplicarFiltro("RANKED_SOLO_5x5");
