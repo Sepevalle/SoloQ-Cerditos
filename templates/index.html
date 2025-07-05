@@ -176,6 +176,41 @@
         #toggle-mode {
             font-weight: bold;
         }
+
+        .jugador-columna .d-flex {
+            display: flex;
+            align-items: center;
+        }
+
+        .imagen-jugador {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .jugador-columna span {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #f2f2f2;
+        }
+
+        .table-striped tbody tr:nth-of-type(even) {
+            background-color: #ffffff;
+        }
+
+        .table-dark th {
+            background-color: #343a40;
+            color: #ffffff;
+        }
     </style>
 </head>
 
@@ -263,11 +298,13 @@
                 <tr class="queue-type {{ jugador.queue_type }}">
                     <td></td>
                     <td class="jugador-columna">
-                        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png" 
-                             alt="Imagen de {{ jugador.jugador }}"
-                             class="imagen-jugador"
-                             onerror="this.style.display='none'">
-                        {{ jugador.jugador }}
+                        <div class="d-flex align-items-center">
+                            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png" 
+                                 alt="Imagen de {{ jugador.jugador }}"
+                                 class="imagen-jugador"
+                                 onerror="this.style.display='none'">
+                            <span class="ms-2">{{ jugador.jugador }}</span>
+                        </div>
                     </td>
                     <td>
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
