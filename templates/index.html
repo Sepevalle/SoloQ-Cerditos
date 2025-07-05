@@ -278,7 +278,7 @@
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
-                    <th>Posición</th>
+                    <th onclick="ordenarTabla(0)">Posición</th>
                     <th>Jugador</th>
                     <th>Game Name</th>
                     <th>Elo</th>
@@ -422,6 +422,7 @@
                     }
                 });
             }
+            ordenarYCalcularDiferencias();
         }
 
         // Aplica el filtro de SoloQ por defecto al cargar la página
@@ -433,7 +434,8 @@
             aplicarFiltro(selected);
         });
 
-        function ordenarYCalcularDiferencias() {
+        // Función para ordenar y calcular diferencias de Elo
+        const ordenarYCalcularDiferencias = () => {
             const tbody = document.querySelector("#jugadoresTable tbody");
             const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
 
@@ -442,8 +444,6 @@
                 parseInt(a.querySelector(".hidden").textContent, 10)
             );
 
-            // Clear and repopulate tbody for correct ordering
-            tbody.innerHTML = '';
             visibleRows.forEach((row, index) => {
                 row.querySelector("td:first-child").textContent = index + 1;
                 const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
@@ -457,7 +457,7 @@
                 }
                 tbody.appendChild(row);
             });
-        }
+        };
 
         ordenarYCalcularDiferencias(); // Inicialmente ordena todas las filas
 
