@@ -375,7 +375,7 @@
                 muteIcon.className = 'fas fa-microphone-slash';
                 toggleAudioButton.title = 'Desmutear Música';
             } else {
-                muteIcon.className = 'fas fa-microphone-alt';
+                muteIcon.className = 'fas fa-microfono-alt';
                 toggleAudioButton.title = 'Silenciar Música';
             }
         });
@@ -492,6 +492,7 @@
         const table = $('#jugadoresTable').DataTable({
             paging: true,
             searching: false, // Desactiva la búsqueda global para usar el filtro personalizado
+            info: false, // Oculta el texto "Showing X to Y of Z entries"
             order: [[8, 'desc']], // Ordenar por Valor Clasificación inicialmente
             columnDefs: [
                 { targets: [8], visible: false }, // Ocultar columna de Valor Clasificación
