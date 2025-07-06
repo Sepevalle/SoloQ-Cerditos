@@ -179,10 +179,6 @@
         /* Evita el salto de línea en las celdas de datos */
         .table td {
             white-space: nowrap;
-            /* Opcional para recortar visualmente el contenido largo: */
-            text-overflow: ellipsis;
-            overflow: hidden;
-            max-width: 1px; /* Ajusta si quieres limitar el ancho de las celdas */
         }
     </style>
 </head>
@@ -352,7 +348,7 @@
                 muteIcon.className = 'fas fa-microphone-slash';
                 toggleAudioButton.title = 'Desmutear Música';
             } else {
-                muteIcon.className = 'fas fa-microphone-alt';
+                muteIcon.className = 'fas fa-microfono-alt';
                 toggleAudioButton.title = 'Silenciar Música';
             }
         });
