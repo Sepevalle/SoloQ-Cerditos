@@ -4,6 +4,7 @@ import os
 import time
 import threading
 import json
+import base64
 from datetime import datetime
 
 app = Flask(__name__)
@@ -133,7 +134,7 @@ def guardar_peak_elo_en_github(peak_elo_dict):
         print("Token de GitHub no encontrado")
         return
 
-    # Obtener el contenido actual del archivo
+    # Obtener el contenido actual del archivo para el SHA
     try:
         response = requests.get(url, headers={"Authorization": f"token {token}"})
         if response.status_code == 200:
@@ -146,18 +147,22 @@ def guardar_peak_elo_en_github(peak_elo_dict):
         print(f"Error al obtener el archivo: {e}")
         return
 
-    # Actualizar el archivo en GitHub
+    # Codificar el contenido en base64 como requiere la API de GitHub
     try:
+        contenido_json = json.dumps(peak_elo_dict, ensure_ascii=False, indent=2)
+        contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+
         response = requests.put(
             url,
             headers={"Authorization": f"token {token}"},
             json={
                 "message": "Actualizar peak elo",
-                "content": json.dumps(peak_elo_dict),
-                "sha": sha
+                "content": contenido_b64,
+                "sha": sha,
+                "branch": "main"
             }
         )
-        if response.status_code == 200:
+        if response.status_code in (200, 201):
             print("Archivo actualizado correctamente en GitHub")
         else:
             print(f"Error al actualizar el archivo: {response.status_code} - {response.text}")
@@ -236,13 +241,12 @@ def index():
         valor = jugador["valor_clasificacion"]
         peak = peak_elo_dict.get(key, valor)
         if valor > peak:
-            peak = valor
-            peak_elo_dict[key] = peak
+            peak_elo_dict[key] = valor
             actualizado = True
-        jugador["peak_elo"] = peak
+        jugador["peak_elo"] = peak_elo_dict[key]
 
     if actualizado:
-        guardar_peak_elo_en_github(peak_elo_dict)
+        guardar_peak_elo_en_github(peak_elo_dict)  # Esta función debe sobrescribir el archivo en GitHub
 
     ultima_actualizacion = datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
     return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion)
