@@ -117,7 +117,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
     return (tierValue * 400 + rankValue * 100 + league_points - 100)
 
 def leer_peak_elo():
-    url = "https://raw.githubusercontent.com/USUARIO/REPO/main/peak_elo.json"
+    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
     try:
         resp = requests.get(url)
         if resp.status_code == 200:
@@ -126,9 +126,43 @@ def leer_peak_elo():
         print(f"Error leyendo peak elo: {e}")
     return {}
 
+def guardar_peak_elo_en_github(peak_elo_dict):
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print("Token de GitHub no encontrado")
+        return
 
+    # Obtener el contenido actual del archivo
+    try:
+        response = requests.get(url, headers={"Authorization": f"token {token}"})
+        if response.status_code == 200:
+            contenido_actual = response.json()
+            sha = contenido_actual['sha']
+        else:
+            print(f"Error al obtener el archivo: {response.status_code}")
+            return
+    except Exception as e:
+        print(f"Error al obtener el archivo: {e}")
+        return
 
-
+    # Actualizar el archivo en GitHub
+    try:
+        response = requests.put(
+            url,
+            headers={"Authorization": f"token {token}"},
+            json={
+                "message": "Actualizar peak elo",
+                "content": json.dumps(peak_elo_dict),
+                "sha": sha
+            }
+        )
+        if response.status_code == 200:
+            print("Archivo actualizado correctamente en GitHub")
+        else:
+            print(f"Error al actualizar el archivo: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Error al actualizar el archivo: {e}")
 
 def obtener_datos_jugadores():
     global cache
@@ -188,9 +222,28 @@ def obtener_datos_jugadores():
 
         return todos_los_datos, cache['timestamp']
 
+def get_peak_elo_key(jugador):
+    return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
+
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
+    peak_elo_dict = leer_peak_elo()  # Debe devolver un dict como el ejemplo de arriba
+    actualizado = False
+
+    for jugador in datos_jugadores:
+        key = get_peak_elo_key(jugador)
+        valor = jugador["valor_clasificacion"]
+        peak = peak_elo_dict.get(key, valor)
+        if valor > peak:
+            peak = valor
+            peak_elo_dict[key] = peak
+            actualizado = True
+        jugador["peak_elo"] = peak
+
+    if actualizado:
+        guardar_peak_elo_en_github(peak_elo_dict)
+
     ultima_actualizacion = datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
     return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion)
 
