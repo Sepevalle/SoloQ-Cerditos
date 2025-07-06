@@ -182,7 +182,20 @@
         }
 
         .elo-columna {
-            text-align: left !important;
+            text-align: center !important;
+            position: relative;
+        }
+        .elo-columna .elo-image {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            position: absolute;
+        }
+        .elo-columna .w-100 {
+            margin-left: 40px;
+            display: inline-block;
+            width: calc(100% - 40px);
+            text-align: center;
         }
     </style>
 </head>
@@ -286,9 +299,9 @@
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
                     </td>
                     <td class="elo-columna">
-                        <div class="d-flex align-items-center">
-                            <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px; object-fit: contain; margin-right: 6px;" class="elo-image">
-                            <span>
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="{{ jugador.tier }}" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
                                 {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                             </span>
                         </div>
