@@ -263,11 +263,14 @@
                 <tr class="queue-type {{ jugador.queue_type }}">
                     <td></td>
                     <td class="jugador-columna">
-                        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png" 
-                             alt="Imagen de {{ jugador.jugador }}"
-                             class="imagen-jugador"
-                             onerror="this.style.display='none'">
-                        {{ jugador.jugador }}
+                        <div class="d-flex align-items-center">
+                            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png"
+                                 alt="Imagen de {{ jugador.jugador }}"
+                                 class="imagen-jugador"
+                                 style="width:32px; height:32px; object-fit:cover; border-radius:50%;"
+                                 onerror="this.style.display='none'">
+                            <span class="ms-2">{{ jugador.jugador }}</span>
+                        </div>
                     </td>
                     <td>
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
