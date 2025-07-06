@@ -116,6 +116,20 @@ def calcular_valor_clasificacion(tier, rank, league_points):
 
     return (tierValue * 400 + rankValue * 100 + league_points - 100)
 
+def leer_peak_elo():
+    url = "https://raw.githubusercontent.com/USUARIO/REPO/main/peak_elo.json"
+    try:
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        print(f"Error leyendo peak elo: {e}")
+    return {}
+
+
+
+
+
 def obtener_datos_jugadores():
     global cache
 

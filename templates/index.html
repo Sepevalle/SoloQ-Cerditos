@@ -288,6 +288,9 @@
                         </div>
                     </td>
                     <td class="hidden">{{ jugador.valor_clasificacion }}</td>
+                    <td>
+                        {{ jugador.valor_clasificacion - jugador.peak_elo }} LPs
+                    </td>
                     <td class="elo-diferencia"></td>
                     <td>
                         <span class="estado-en-partida">{{ jugador.estado }}</span>
