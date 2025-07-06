@@ -175,6 +175,15 @@
         #toggle-mode {
             font-weight: bold;
         }
+
+        /* Evita el salto de línea en las celdas de datos */
+        .table td {
+            white-space: nowrap;
+            /* Opcional para recortar visualmente el contenido largo: */
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 1px; /* Ajusta si quieres limitar el ancho de las celdas */
+        }
     </style>
 </head>
 
