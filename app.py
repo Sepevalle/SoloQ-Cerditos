@@ -201,7 +201,7 @@ def obtener_datos_jugadores():
                             nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"
 
                             datos_jugador = {
-                                "game_name": riot_id,
+                                "game_name": summoner_info.get('name', riot_id),
                                 "queue_type": entry.get('queueType', 'Desconocido'),
                                 "tier": entry.get('tier', 'Sin rango'),
                                 "rank": entry.get('rank', ''),
