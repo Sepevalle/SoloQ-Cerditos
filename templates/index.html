@@ -180,6 +180,10 @@
         .table td {
             white-space: nowrap;
         }
+
+        .elo-columna {
+            text-align: left !important;
+        }
     </style>
 </head>
 
@@ -281,8 +285,8 @@
                     <td>
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
                     </td>
-                    <td>
-                        <div class="d-flex align-items-center justify-content-center">
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center">
                             <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px; object-fit: contain; margin-right: 6px;" class="elo-image">
                             <span>
                                 {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
