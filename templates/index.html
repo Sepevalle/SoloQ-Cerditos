@@ -282,8 +282,12 @@
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
                     </td>
                     <td>
-                        <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px;" class="elo-image">
-                        {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+                        <div class="d-flex align-items-center justify-content-center">
+                            <img src="" alt="{{ jugador.tier }}" style="width: 35px; height: 25px; object-fit: contain; margin-right: 6px;" class="elo-image">
+                            <span>
+                                {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+                            </span>
+                        </div>
                     </td>
                     <td>{{ jugador.wins }}</td>
                     <td>{{ jugador.losses }}</td>
