@@ -239,11 +239,12 @@ def index():
     for jugador in datos_jugadores:
         key = get_peak_elo_key(jugador)
         valor = jugador["valor_clasificacion"]
-        peak = peak_elo_dict.get(key, valor)
+        peak = peak_elo_dict.get(key, 0)  # Si no existe, inicializa en 0
         if valor > peak:
             peak_elo_dict[key] = valor
+            peak = valor
             actualizado = True
-        jugador["peak_elo"] = peak_elo_dict[key]
+        jugador["peak_elo"] = peak
 
     if actualizado:
         guardar_peak_elo_en_github(peak_elo_dict)  # Esta función debe sobrescribir el archivo en GitHub
