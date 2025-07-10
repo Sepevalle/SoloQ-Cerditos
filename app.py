@@ -15,7 +15,7 @@ cache = {
     "datos_jugadores": [],
     "timestamp": 0
 }
-CACHE_TIMEOUT = 150  # 2.5 minutos para estar seguros
+CACHE_TIMEOUT = 130  # 2 minutos para estar seguros
 
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
