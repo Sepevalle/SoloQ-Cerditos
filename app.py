@@ -237,6 +237,10 @@ def procesar_jugador(args):
     cuenta, puuid, api_key = args
     riot_id, jugador_nombre = cuenta
 
+    if not puuid:
+        print(f"ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID. Revisa que el Riot ID sea correcto en cuentas.txt.")
+        return []
+
     # Estas son las únicas 2 llamadas necesarias por actualización periódica
     elo_info = obtener_elo(api_key, puuid)
     champion_id = esta_en_partida(api_key, puuid)
@@ -301,7 +305,7 @@ def actualizar_cache():
 
     # Paso 2: Procesar todos los jugadores en paralelo con sus PUUIDs ya conocidos
     todos_los_datos = []
-    tareas = [(cuenta, puuid_dict.get(cuenta[0]), api_key) for cuenta in cuentas if cuenta[0] in puuid_dict]
+    tareas = [(cuenta, puuid_dict.get(cuenta[0]), api_key) for cuenta in cuentas]
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         resultados = executor.map(procesar_jugador, tareas)
