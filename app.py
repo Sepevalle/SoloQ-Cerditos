@@ -138,11 +138,11 @@ def leer_peak_elo():
     url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
     try:
         resp = requests.get(url)
-        if resp.status_code == 200:
-            return resp.json()
+        resp.raise_for_status()  # Lanza una excepción para códigos de error HTTP (4xx o 5xx)
+        return True, resp.json()
     except Exception as e:
         print(f"Error leyendo peak elo: {e}")
-    return {}
+    return False, {}
 
 def leer_puuids():
     """Lee el archivo de PUUIDs desde GitHub."""
@@ -325,21 +325,27 @@ def get_peak_elo_key(jugador):
 @app.route('/')
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
-    peak_elo_dict = leer_peak_elo()  # Debe devolver un dict como el ejemplo de arriba
-    actualizado = False
+    
+    lectura_exitosa, peak_elo_dict = leer_peak_elo()
 
-    for jugador in datos_jugadores:
-        key = get_peak_elo_key(jugador)
-        valor = jugador["valor_clasificacion"]
-        peak = peak_elo_dict.get(key, 0)  # Si no existe, inicializa en 0
-        if valor > peak:
-            peak_elo_dict[key] = valor
-            peak = valor
-            actualizado = True
-        jugador["peak_elo"] = peak
+    if lectura_exitosa:
+        actualizado = False
+        for jugador in datos_jugadores:
+            key = get_peak_elo_key(jugador)
+            valor = jugador["valor_clasificacion"]
+            peak = peak_elo_dict.get(key, 0)
+            if valor > peak:
+                peak_elo_dict[key] = valor
+                peak = valor
+                actualizado = True
+            jugador["peak_elo"] = peak
 
-    if actualizado:
-        guardar_peak_elo_en_github(peak_elo_dict)  # Esta función debe sobrescribir el archivo en GitHub
+        if actualizado:
+            guardar_peak_elo_en_github(peak_elo_dict)
+    else:
+        print("ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
+        for jugador in datos_jugadores:
+            jugador["peak_elo"] = jugador["valor_clasificacion"] # Como fallback, mostramos el valor actual
 
     ultima_actualizacion = datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
     return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion, ddragon_version=DDRAGON_VERSION)
