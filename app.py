@@ -19,8 +19,24 @@ CACHE_TIMEOUT = 300  # 5 minutos
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
 
+DDRAGON_VERSION = "14.9.1"  # Versión de respaldo por si falla la API
+
+def actualizar_version_ddragon():
+    """Obtiene la última versión de Data Dragon y la guarda en una variable global."""
+    global DDRAGON_VERSION
+    try:
+        url = "https://ddragon.leagueoflegends.com/api/versions.json"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            DDRAGON_VERSION = response.json()[0]
+            print(f"Versión de Data Dragon establecida a: {DDRAGON_VERSION}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error al obtener la versión de Data Dragon: {e}. Usando versión de respaldo: {DDRAGON_VERSION}")
+
+actualizar_version_ddragon()
+
 def cargar_campeones():
-    url_campeones = "https://ddragon.leagueoflegends.com/cdn/15.7.1/data/es_ES/champion.json"
+    url_campeones = f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/data/es_ES/champion.json"
     response = requests.get(url_campeones)
     if response.status_code == 200:
         campeones = response.json()["data"]
@@ -253,7 +269,7 @@ def index():
         guardar_peak_elo_en_github(peak_elo_dict)  # Esta función debe sobrescribir el archivo en GitHub
 
     ultima_actualizacion = datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
-    return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion)
+    return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion, ddragon_version=DDRAGON_VERSION)
 
 def keep_alive():
     while True:
