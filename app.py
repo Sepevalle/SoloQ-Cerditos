@@ -253,7 +253,7 @@ def procesar_jugador(args):
     for entry in elo_info:
         nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"
         datos_jugador = {
-            "game_name": riot_id.split('#')[0], # Usamos el game_name del riot_id
+            "game_name": riot_id, # Usamos el riot_id completo para la clave y la visualización
             "queue_type": entry.get('queueType', 'Desconocido'),
             "tier": entry.get('tier', 'Sin rango'),
             "rank": entry.get('rank', ''),
