@@ -29,6 +29,10 @@
         .win-rate-bajo {
             color: tomato !important;
         }
+        .peak-elo {
+            color: gold;
+            font-weight: bold;
+        }
         .estado-en-partida {
             color: #007BFF !important;
             font-weight: bold;
@@ -242,7 +246,7 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center">
         <h3>Lista de Jugadores <span class="small-text"></span></h3>
-        <div id="lastUpdated" class="text-end"></div>
+        <div id="lastUpdated" class="text-end">Actualizado: {{ ultima_actualizacion }}</div>
     </div>
     
     <div class="container mt-4">
@@ -314,7 +318,12 @@
                     </td>
                     <td class="hidden">{{ jugador.valor_clasificacion }}</td>
                     <td>
-                        {{ jugador.valor_clasificacion - jugador.peak_elo }} LPs
+                        {% set diff_peak = jugador.valor_clasificacion - jugador.peak_elo %}
+                        {% if diff_peak == 0 %}
+                            <span class="peak-elo">PEAK</span>
+                        {% else %}
+                            {{ diff_peak }} LPs
+                        {% endif %}
                     </td>
                     <td class="elo-diferencia"></td>
                     <td>
@@ -457,8 +466,6 @@
         }
 
         ordenarYCalcularDiferencias(); // Inicialmente ordena todas las filas
-
-        document.getElementById("lastUpdated").textContent = "Actualizado " + new Date().toLocaleString();
 
         const leftBanner = document.getElementById("left-banner");
         const rightBanner = document.getElementById("right-banner");
