@@ -331,11 +331,22 @@ def index():
     if lectura_exitosa:
         actualizado = False
         for jugador in datos_jugadores:
-            key = get_peak_elo_key(jugador)
+            # --- Lógica de compatibilidad para Peak ELO ---
+            # Clave nueva y correcta (con #tag)
+            key_con_tag = get_peak_elo_key(jugador)
+            
+            # Clave antigua (sin #tag) para buscar datos antiguos
+            game_name_sin_tag = jugador["game_name"].split('#')[0]
+            key_sin_tag = f"{jugador['queue_type']}|{jugador['jugador']}|{game_name_sin_tag}"
+
+            # Se busca en ambas claves y se coge el valor más alto
+            peak_con_tag = peak_elo_dict.get(key_con_tag, 0)
+            peak_sin_tag = peak_elo_dict.get(key_sin_tag, 0)
+            peak = max(peak_con_tag, peak_sin_tag)
+
             valor = jugador["valor_clasificacion"]
-            peak = peak_elo_dict.get(key, 0)
             if valor > peak:
-                peak_elo_dict[key] = valor
+                peak_elo_dict[key_con_tag] = valor # Guardar siempre con la clave nueva
                 peak = valor
                 actualizado = True
             jugador["peak_elo"] = peak
