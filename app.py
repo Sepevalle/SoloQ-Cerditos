@@ -169,63 +169,66 @@ def guardar_peak_elo_en_github(peak_elo_dict):
     except Exception as e:
         print(f"Error al actualizar el archivo: {e}")
 
-def obtener_datos_jugadores():
+def actualizar_cache():
+    """
+    Esta función realiza el trabajo pesado: obtiene todos los datos de la API
+    y actualiza la caché global. Está diseñada para ser ejecutada en segundo plano.
+    """
     global cache
+    print("Iniciando actualización de la caché...")
+    api_key = os.environ.get('RIOT_API_KEY', 'RIOT_API_KEY')
+    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
+    cuentas = leer_cuentas(url_cuentas)
+    todos_los_datos = []
+
+    for riot_id, jugador in cuentas:
+        region = riot_id.split('#')[-1]
+        puuid_info = obtener_puuid(api_key, riot_id.split('#')[0], region)
+        if puuid_info:
+            puuid = puuid_info['puuid']
+            summoner_info = obtener_id_invocador(api_key, puuid)
+            if summoner_info:
+                elo_info = obtener_elo(api_key, puuid)
+
+                if elo_info:
+                    champion_id = esta_en_partida(api_key, puuid)
+                    riot_id_modified = riot_id.replace("#", "-")
+                    url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
+                    url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
+
+                    for entry in elo_info:
+                        nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"
+
+                        datos_jugador = {
+                            "game_name": summoner_info.get('name', riot_id),
+                            "queue_type": entry.get('queueType', 'Desconocido'),
+                            "tier": entry.get('tier', 'Sin rango'),
+                            "rank": entry.get('rank', ''),
+                            "league_points": entry.get('leaguePoints', 0),
+                            "wins": entry.get('wins', 0),
+                            "losses": entry.get('losses', 0),
+                            "jugador": jugador,
+                            "url_perfil": url_perfil,
+                            "url_ingame": url_ingame,
+                            "en_partida": champion_id is not None,
+                            "valor_clasificacion": calcular_valor_clasificacion(
+                                entry.get('tier', 'Sin rango'),
+                                entry.get('rank', ''),
+                                entry.get('leaguePoints', 0)
+                            ),
+                            "nombre_campeon": nombre_campeon,
+                            "champion_id": champion_id if champion_id else "Desconocido"
+                        }
+                        todos_los_datos.append(datos_jugador)
 
     with cache_lock:
-        if cache['datos_jugadores'] is not None and (time.time() - cache['timestamp']) < CACHE_TIMEOUT:
-            return cache['datos_jugadores'], cache['timestamp']
-
-        api_key = os.environ.get('RIOT_API_KEY', 'RIOT_API_KEY')
-        url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
-        cuentas = leer_cuentas(url_cuentas)
-        todos_los_datos = []
-
-        for riot_id, jugador in cuentas:
-            region = riot_id.split('#')[-1]
-            puuid_info = obtener_puuid(api_key, riot_id.split('#')[0], region)
-            if puuid_info:
-                puuid = puuid_info['puuid']
-                summoner_info = obtener_id_invocador(api_key, puuid)
-                if summoner_info:
-                    summoner_id = summoner_info['id']
-                    elo_info = obtener_elo(api_key, puuid)
-
-                    if elo_info:
-                        champion_id = esta_en_partida(api_key, puuid)
-                        riot_id_modified = riot_id.replace("#", "-")
-                        url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
-                        url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
-
-                        for entry in elo_info:
-                            nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"
-
-                            datos_jugador = {
-                                "game_name": summoner_info.get('name', riot_id),
-                                "queue_type": entry.get('queueType', 'Desconocido'),
-                                "tier": entry.get('tier', 'Sin rango'),
-                                "rank": entry.get('rank', ''),
-                                "league_points": entry.get('leaguePoints', 0),
-                                "wins": entry.get('wins', 0),
-                                "losses": entry.get('losses', 0),
-                                "jugador": jugador,
-                                "url_perfil": url_perfil,
-                                "url_ingame": url_ingame,
-                                "en_partida": champion_id is not None,
-                                "valor_clasificacion": calcular_valor_clasificacion(
-                                    entry.get('tier', 'Sin rango'),
-                                    entry.get('rank', ''),
-                                    entry.get('leaguePoints', 0)
-                                ),
-                                "nombre_campeon": nombre_campeon,
-                                "champion_id": champion_id if champion_id else "Desconocido"
-                            }
-                            todos_los_datos.append(datos_jugador)
-
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = time.time()
+    print("Actualización de la caché completada.")
 
-        return todos_los_datos, cache['timestamp']
+def obtener_datos_jugadores():
+    with cache_lock:
+        return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
 
 def get_peak_elo_key(jugador):
     return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
@@ -261,10 +264,21 @@ def keep_alive():
             print(f"Error: {e}")
         time.sleep(200)
 
+def actualizar_cache_periodicamente():
+    while True:
+        actualizar_cache()
+        time.sleep(CACHE_TIMEOUT)
+
 if __name__ == "__main__":
-    thread = threading.Thread(target=keep_alive)
-    thread.daemon = True
-    thread.start()
+    # Hilo para mantener la app activa en Render
+    keep_alive_thread = threading.Thread(target=keep_alive)
+    keep_alive_thread.daemon = True
+    keep_alive_thread.start()
+
+    # Hilo para actualizar la caché en segundo plano
+    cache_thread = threading.Thread(target=actualizar_cache_periodicamente)
+    cache_thread.daemon = True
+    cache_thread.start()
 
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
