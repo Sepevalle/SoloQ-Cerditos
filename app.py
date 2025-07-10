@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # Caché para almacenar los datos de los jugadores
 cache = {
-    "datos_jugadores": None,
+    "datos_jugadores": [],
     "timestamp": 0
 }
 CACHE_TIMEOUT = 300  # 5 minutos
