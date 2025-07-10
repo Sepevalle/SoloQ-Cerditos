@@ -6,6 +6,7 @@ import threading
 import json
 import base64
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
@@ -14,7 +15,7 @@ cache = {
     "datos_jugadores": [],
     "timestamp": 0
 }
-CACHE_TIMEOUT = 300  # 5 minutos
+CACHE_TIMEOUT = 150  # 2.5 minutos para estar seguros
 
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
@@ -143,6 +144,52 @@ def leer_peak_elo():
         print(f"Error leyendo peak elo: {e}")
     return {}
 
+def leer_puuids():
+    """Lee el archivo de PUUIDs desde GitHub."""
+    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/puuids.json"
+    try:
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 404:
+            print("El archivo puuids.json no existe, se creará uno nuevo.")
+            return {}
+    except Exception as e:
+        print(f"Error leyendo puuids.json: {e}")
+    return {}
+
+def guardar_puuids_en_github(puuid_dict):
+    """Guarda o actualiza el archivo puuids.json en GitHub."""
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/puuids.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print("Token de GitHub no encontrado para guardar PUUIDs.")
+        return
+
+    headers = {"Authorization": f"token {token}"}
+    
+    # Intentar obtener el SHA del archivo si existe
+    sha = None
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            sha = response.json().get('sha')
+    except Exception as e:
+        print(f"No se pudo obtener el SHA de puuids.json: {e}")
+
+    contenido_json = json.dumps(puuid_dict, indent=2)
+    contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+    
+    data = {"message": "Actualizar PUUIDs", "content": contenido_b64, "branch": "main"}
+    if sha:
+        data["sha"] = sha
+
+    response = requests.put(url, headers=headers, json=data)
+    if response.status_code in (200, 201):
+        print("Archivo puuids.json actualizado correctamente en GitHub.")
+    else:
+        print(f"Error al actualizar puuids.json: {response.status_code} - {response.text}")
+
 def guardar_peak_elo_en_github(peak_elo_dict):
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
     token = os.environ.get('GITHUB_TOKEN')
@@ -185,57 +232,83 @@ def guardar_peak_elo_en_github(peak_elo_dict):
     except Exception as e:
         print(f"Error al actualizar el archivo: {e}")
 
+def procesar_jugador(args):
+    """Procesa los datos de un solo jugador usando su PUUID."""
+    cuenta, puuid, api_key = args
+    riot_id, jugador_nombre = cuenta
+
+    # Estas son las únicas 2 llamadas necesarias por actualización periódica
+    elo_info = obtener_elo(api_key, puuid)
+    champion_id = esta_en_partida(api_key, puuid)
+
+    if not elo_info:
+        return []
+
+    # La información del invocador se puede construir sin llamadas adicionales
+    riot_id_modified = riot_id.replace("#", "-")
+    url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
+    url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
+    
+    datos_jugador_list = []
+    for entry in elo_info:
+        nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"
+        datos_jugador = {
+            "game_name": riot_id.split('#')[0], # Usamos el game_name del riot_id
+            "queue_type": entry.get('queueType', 'Desconocido'),
+            "tier": entry.get('tier', 'Sin rango'),
+            "rank": entry.get('rank', ''),
+            "league_points": entry.get('leaguePoints', 0),
+            "wins": entry.get('wins', 0),
+            "losses": entry.get('losses', 0),
+            "jugador": jugador_nombre,
+            "url_perfil": url_perfil,
+            "url_ingame": url_ingame,
+            "en_partida": champion_id is not None,
+            "valor_clasificacion": calcular_valor_clasificacion(
+                entry.get('tier', 'Sin rango'),
+                entry.get('rank', ''),
+                entry.get('leaguePoints', 0)
+            ),
+            "nombre_campeon": nombre_campeon,
+            "champion_id": champion_id if champion_id else "Desconocido"
+        }
+        datos_jugador_list.append(datos_jugador)
+    return datos_jugador_list
+
 def actualizar_cache():
     """
     Esta función realiza el trabajo pesado: obtiene todos los datos de la API
     y actualiza la caché global. Está diseñada para ser ejecutada en segundo plano.
     """
-    global cache
     print("Iniciando actualización de la caché...")
     api_key = os.environ.get('RIOT_API_KEY', 'RIOT_API_KEY')
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     cuentas = leer_cuentas(url_cuentas)
+    puuid_dict = leer_puuids()
+    puuids_actualizados = False
+
+    # Paso 1: Asegurarse de que todos los jugadores tienen un PUUID en el diccionario
+    for riot_id, _ in cuentas:
+        if riot_id not in puuid_dict:
+            print(f"No se encontró PUUID para {riot_id}. Obteniéndolo de la API...")
+            puuid_info = obtener_puuid(api_key, riot_id.split('#')[0], riot_id.split('#')[-1])
+            if puuid_info and 'puuid' in puuid_info:
+                puuid_dict[riot_id] = puuid_info['puuid']
+                puuids_actualizados = True
+
+    if puuids_actualizados:
+        guardar_puuids_en_github(puuid_dict)
+
+    # Paso 2: Procesar todos los jugadores en paralelo con sus PUUIDs ya conocidos
     todos_los_datos = []
+    tareas = [(cuenta, puuid_dict.get(cuenta[0]), api_key) for cuenta in cuentas if cuenta[0] in puuid_dict]
 
-    for riot_id, jugador in cuentas:
-        region = riot_id.split('#')[-1]
-        puuid_info = obtener_puuid(api_key, riot_id.split('#')[0], region)
-        if puuid_info:
-            puuid = puuid_info['puuid']
-            summoner_info = obtener_id_invocador(api_key, puuid)
-            if summoner_info:
-                elo_info = obtener_elo(api_key, puuid)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        resultados = executor.map(procesar_jugador, tareas)
 
-                if elo_info:
-                    champion_id = esta_en_partida(api_key, puuid)
-                    riot_id_modified = riot_id.replace("#", "-")
-                    url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
-                    url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
-
-                    for entry in elo_info:
-                        nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"
-
-                        datos_jugador = {
-                            "game_name": summoner_info.get('name', riot_id),
-                            "queue_type": entry.get('queueType', 'Desconocido'),
-                            "tier": entry.get('tier', 'Sin rango'),
-                            "rank": entry.get('rank', ''),
-                            "league_points": entry.get('leaguePoints', 0),
-                            "wins": entry.get('wins', 0),
-                            "losses": entry.get('losses', 0),
-                            "jugador": jugador,
-                            "url_perfil": url_perfil,
-                            "url_ingame": url_ingame,
-                            "en_partida": champion_id is not None,
-                            "valor_clasificacion": calcular_valor_clasificacion(
-                                entry.get('tier', 'Sin rango'),
-                                entry.get('rank', ''),
-                                entry.get('leaguePoints', 0)
-                            ),
-                            "nombre_campeon": nombre_campeon,
-                            "champion_id": champion_id if champion_id else "Desconocido"
-                        }
-                        todos_los_datos.append(datos_jugador)
+    for datos_jugador_list in resultados:
+        if datos_jugador_list:
+            todos_los_datos.extend(datos_jugador_list)
 
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
