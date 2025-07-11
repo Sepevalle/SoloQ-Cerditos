@@ -362,7 +362,7 @@ def index():
         for jugador in datos_jugadores:
             jugador["peak_elo"] = jugador["valor_clasificacion"] # Como fallback, mostramos el valor actual
 
-ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
+ultima_actualizacion = datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
 
     
     
