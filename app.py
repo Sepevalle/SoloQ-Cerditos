@@ -363,7 +363,7 @@ def index():
         for jugador in datos_jugadores:
             jugador["peak_elo"] = jugador["valor_clasificacion"] # Como fallback, mostramos el valor actual
 
-            ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
+    ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
     
     
     return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion, ddragon_version=DDRAGON_VERSION)
