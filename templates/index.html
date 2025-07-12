@@ -229,8 +229,8 @@
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
                 <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
                 <div class="d-flex align-items-center ms-lg-2">
-                    <button id="toggleAudio" class="btn btn-secondary">
-                        <i id="muteIcon" class="fas fa-microphone-alt"></i>
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                        <i id="muteIcon" class="fas fa-microphone-slash"></i>
                     </button>
                     <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
                 </div>
@@ -354,31 +354,32 @@
 
         // Inicialmente silenciar el audio para cumplir con políticas de autoplay
         audio.muted = true;
-        audio.play().catch(error => {
-            console.log('Reproducción automática no permitida:', error);
-        });
+        // El navegador puede bloquear el autoplay, el audio se iniciará con la interacción del usuario.
+        audio.play().catch(error => console.log('La reproducción automática de audio fue bloqueada por el navegador.', error));
 
-        // Desmutear el audio tras la primera interacción del usuario
-        document.addEventListener('click', () => {
+        const playAudio = () => {
+            // Intenta reproducir el audio si está pausado. Esto es necesario para navegadores
+            // que bloquean el autoplay hasta que haya una interacción del usuario.
             if (audio.paused) {
-                audio.muted = false;
-                audio.play().catch(error => console.log('Error al desmutear y reproducir:', error));
+                audio.play().catch(e => console.log("El usuario debe interactuar con la página para reproducir audio.", e));
             }
-        }, {once: true});
+        };
 
         // Control de volumen
         volumeSlider.addEventListener('input', function() {
+            playAudio();
             audio.volume = this.value;
         });
 
         // Actualizar el icono del botón de silenciar/desmutear
         toggleAudioButton.addEventListener('click', () => {
+            playAudio();
             audio.muted = !audio.muted;
             if (audio.muted) {
                 muteIcon.className = 'fas fa-microphone-slash';
                 toggleAudioButton.title = 'Desmutear Música';
             } else {
-                muteIcon.className = 'fas fa-microfono-alt';
+                muteIcon.className = 'fas fa-microphone-alt';
                 toggleAudioButton.title = 'Silenciar Música';
             }
         });
