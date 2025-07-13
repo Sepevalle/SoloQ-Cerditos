@@ -515,41 +515,33 @@
                 return 0;
             });
 
-            sortedRows.forEach(row => tbody.appendChild(row));
+            // Actualizar la tabla y los cálculos en un solo paso
+            sortedRows.forEach((row, index) => {
+                tbody.appendChild(row);
 
+                // Actualizar número de posición
+                row.cells[0].textContent = index + 1;
+                
+                const eloDiffCell = row.querySelector(".elo-diferencia");
+                if (sortBy === 'elo') {
+                    if (index === 0) {
+                        eloDiffCell.textContent = "—";
+                    } else {
+                        const currentElo = parseFloat(row.querySelector(".hidden").textContent);
+                        const prevElo = parseFloat(sortedRows[index - 1].querySelector(".hidden").textContent);
+                        const diff = Math.round(prevElo - currentElo);
+                        eloDiffCell.textContent = `${diff} LPs`;
+                    }
+                } else {
+                    eloDiffCell.textContent = "N/A";
+                }
+            });
+
+            // Actualizar los indicadores de ordenación en los encabezados
             headers.forEach(th => {
                 th.classList.remove('sort-asc', 'sort-desc');
                 if (th.dataset.sortBy === sortBy) {
                     th.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
-                }
-            });
-
-            updateTableCalculations(sortBy, sortedRows);
-        };
-
-        // Función para actualizar la posición y la columna "Dif. Elo"
-        const updateTableCalculations = (sortedBy, visibleRows) => {
-            visibleRows.forEach((row, index) => {
-                // Actualizar número de posición
-                row.cells[0].textContent = index + 1;
-
-                const eloDiffCell = row.querySelector(".elo-diferencia");
-                
-                // Calcular la diferencia de ELO solo si la tabla está ordenada por ELO
-                if (sortedBy === 'elo') {
-                    if (index === 0) {
-                        // El primer jugador no tiene diferencia
-                        eloDiffCell.textContent = "—";
-                    } else {
-                        // Obtener el valor de ELO directamente de la celda oculta
-                        const currentElo = parseFloat(row.querySelector(".hidden").textContent);
-                        const prevElo = parseFloat(visibleRows[index - 1].querySelector(".hidden").textContent);
-                        const diff = Math.round(prevElo - currentElo); // Usar Math.round para evitar decimales
-                        eloDiffCell.textContent = `${diff} LPs`;
-                    }
-                } else {
-                    // Si no está ordenado por ELO, mostrar N/A
-                    eloDiffCell.textContent = "N/A";
                 }
             });
         };
