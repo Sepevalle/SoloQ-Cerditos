@@ -150,7 +150,8 @@ def obtener_stats_partidas_incrementales(api_key, puuid, queue_id, start_timesta
     start_index = 0
     while True:
         # Paginamos de 100 en 100 para obtener todos los IDs de partida de la temporada
-        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={start_timestamp}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
+        # La API devuelve las partidas más recientes primero, lo cual es perfecto para las rachas.
+        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?queue={queue_id}&startTime={start_timestamp}&start={start_index}&count=100&api_key={api_key}"
         response_matches = make_api_request(url_matches)
         
         if not response_matches:
@@ -168,10 +169,11 @@ def obtener_stats_partidas_incrementales(api_key, puuid, queue_id, start_timesta
         time.sleep(1) # Pausa entre llamadas de paginación
 
     if not all_match_ids: 
-        return {}, start_timestamp
+        return {}, start_timestamp, []
 
     stats_por_campeon = {}
     timestamp_partida_mas_reciente = start_timestamp
+    lista_resultados_nuevos = []
 
     for match_id in all_match_ids:
         time.sleep(0.07) # Pausa para no exceder el rate limit por segundo
@@ -196,10 +198,11 @@ def obtener_stats_partidas_incrementales(api_key, puuid, queue_id, start_timesta
                         stats_por_campeon[champ_name]['wins'] += 1
                     else:
                         stats_por_campeon[champ_name]['losses'] += 1
+                    lista_resultados_nuevos.append(p['win'])
                     break
 
     # Añadimos 1 segundo para no volver a procesar la última partida en el siguiente ciclo
-    return stats_por_campeon, timestamp_partida_mas_reciente + 1
+    return stats_por_campeon, timestamp_partida_mas_reciente + 1, lista_resultados_nuevos
 
 
 def leer_cuentas(url):
@@ -438,7 +441,8 @@ def procesar_jugador(args):
             ),
             "nombre_campeon": nombre_campeon,
             "champion_id": champion_id if champion_id else "Desconocido",
-            "top_champion_stats": {} # Placeholder, se rellenará desde el caché
+            "top_champion_stats": {}, # Placeholder, se rellenará desde el caché
+            "streak": None # Placeholder para la racha
         }
         datos_jugador_list.append(datos_jugador)
     return datos_jugador_list
@@ -476,9 +480,8 @@ def actualizar_estadisticas_campeones_en_segundo_plano():
                     if not entrada_cache or (ahora - entrada_cache.get("update_timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
                         # Para entradas nuevas, se busca desde el inicio de la season. Para existentes, desde la última partida conocida.
                         start_timestamp = entrada_cache.get("last_match_timestamp", SEASON_START_TIMESTAMP)
-                        
                         print(f"Buscando nuevas partidas para {riot_id} en {queue_type} desde {datetime.fromtimestamp(start_timestamp).strftime('%Y-%m-%d')}...")
-                        nuevas_stats, nuevo_last_timestamp = obtener_stats_partidas_incrementales(api_key, puuid, queue_id, start_timestamp)
+                        nuevas_stats, nuevo_last_timestamp, nuevos_resultados = obtener_stats_partidas_incrementales(api_key, puuid, queue_id, start_timestamp)
                         
                         if nuevas_stats:
                             print(f"Se encontraron {sum(sum(v.values()) for v in nuevas_stats.values())} partidas nuevas para {riot_id} en {queue_type}.")
@@ -491,9 +494,15 @@ def actualizar_estadisticas_campeones_en_segundo_plano():
                                 for key in data:
                                     stats_combinadas[champ][key] += data[key]
 
+                            # Actualizar la lista de resultados recientes para calcular la racha
+                            resultados_viejos = entrada_cache.get("recent_results", [])
+                            resultados_combinados = nuevos_resultados + resultados_viejos
+                            resultados_actualizados = resultados_combinados[:10] # Guardamos solo los últimos 10
+
                             if puuid not in stats_data:
                                 stats_data[puuid] = {}
-                            stats_data[puuid][queue_id_str] = {"champions": stats_combinadas, "last_match_timestamp": nuevo_last_timestamp, "update_timestamp": ahora}
+                            stats_data[puuid][queue_id_str] = {"champions": stats_combinadas, "last_match_timestamp": nuevo_last_timestamp, 
+                                                               "update_timestamp": ahora, "recent_results": resultados_actualizados}
                             stats_actualizadas = True
                         elif entrada_cache: # Si no hay stats nuevas pero sí una entrada antigua, solo actualizamos el timestamp de revisión
                             stats_data[puuid][queue_id_str]["update_timestamp"] = ahora
@@ -567,7 +576,22 @@ def actualizar_cache():
                         "kda_stats": stats_champ # Pasamos todas las stats para uso futuro
                     }
 
+                # Calcular la racha a partir de los resultados guardados
+                recent_results = stats_data.get(jugador['puuid'], {}).get(queue_id_str, {}).get('recent_results', [])
+                streak = None
+                if len(recent_results) > 1:
+                    streak_type = 'W' if recent_results[0] else 'L'
+                    streak_count = 0
+                    for result in recent_results:
+                        if (streak_type == 'W' and result) or (streak_type == 'L' and not result):
+                            streak_count += 1
+                        else:
+                            break
+                    if streak_count > 1:
+                        streak = {"type": streak_type, "count": streak_count}
+
                 jugador['top_champion_stats'] = stats_campeon
+                jugador['streak'] = streak
 
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
