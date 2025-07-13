@@ -268,6 +268,40 @@ def leer_puuids():
         print(f"Error leyendo puuids.json: {e}")
     return {}
 
+def guardar_archivo_en_github(file_path, content_dict, commit_message):
+    """
+    Función genérica para guardar o actualizar un archivo JSON en un repositorio de GitHub.
+    """
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print(f"Token de GitHub no encontrado. No se puede guardar '{file_path}'.")
+        return
+
+    url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/{file_path}"
+    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+    
+    # Obtener el SHA del archivo si ya existe para poder actualizarlo
+    sha = None
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            sha = response.json().get('sha')
+    except requests.exceptions.RequestException as e:
+        print(f"No se pudo obtener el SHA de {file_path}: {e}")
+
+    contenido_json = json.dumps(content_dict, indent=2, ensure_ascii=False)
+    contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+    
+    data = {"message": commit_message, "content": contenido_b64, "branch": "main"}
+    if sha:
+        data["sha"] = sha
+
+    response = requests.put(url, headers=headers, json=data)
+    if response.status_code in (200, 201):
+        print(f"Archivo '{file_path}' actualizado correctamente en GitHub.")
+    else:
+        print(f"Error al actualizar '{file_path}': {response.status_code} - {response.text}")
+
 def guardar_puuids_en_github(puuid_dict):
     """Guarda o actualiza el archivo puuids.json en GitHub."""
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/puuids.json"
@@ -299,48 +333,11 @@ def guardar_puuids_en_github(puuid_dict):
         print("Archivo puuids.json actualizado correctamente en GitHub.")
     else:
         print(f"Error al actualizar puuids.json: {response.status_code} - {response.text}")
+    # Reemplazado por la función genérica
+    # guardar_archivo_en_github("puuids.json", puuid_dict, "Actualizar PUUIDs")
 
 def guardar_peak_elo_en_github(peak_elo_dict):
-    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
-    token = os.environ.get('GITHUB_TOKEN')
-    if not token:
-        print("Token de GitHub no encontrado")
-        return
-
-    # Obtener el contenido actual del archivo para el SHA
-    try:
-        response = requests.get(url, headers={"Authorization": f"token {token}"})
-        if response.status_code == 200:
-            contenido_actual = response.json()
-            sha = contenido_actual['sha']
-        else:
-            print(f"Error al obtener el archivo: {response.status_code}")
-            return
-    except Exception as e:
-        print(f"Error al obtener el archivo: {e}")
-        return
-
-    # Codificar el contenido en base64 como requiere la API de GitHub
-    try:
-        contenido_json = json.dumps(peak_elo_dict, ensure_ascii=False, indent=2)
-        contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
-
-        response = requests.put(
-            url,
-            headers={"Authorization": f"token {token}"},
-            json={
-                "message": "Actualizar peak elo",
-                "content": contenido_b64,
-                "sha": sha,
-                "branch": "main"
-            }
-        )
-        if response.status_code in (200, 201):
-            print("Archivo actualizado correctamente en GitHub")
-        else:
-            print(f"Error al actualizar el archivo: {response.status_code} - {response.text}")
-    except Exception as e:
-        print(f"Error al actualizar el archivo: {e}")
+    guardar_archivo_en_github("peak_elo.json", peak_elo_dict, "Actualizar peak elo")
 
 def leer_top_champion_stats():
     """Lee el archivo de estadísticas de campeones desde GitHub."""
@@ -358,37 +355,7 @@ def leer_top_champion_stats():
 
 def guardar_top_champion_stats_en_github(stats_dict):
     """Guarda o actualiza el archivo top_champion_stats.json en GitHub."""
-    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/top_champion_stats.json"
-    token = os.environ.get('GITHUB_TOKEN')
-    if not token:
-        print("Token de GitHub no encontrado para guardar top_champion_stats.json.")
-        return
-
-    headers = {"Authorization": f"token {token}"}
-    
-    sha = None
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code == 200:
-            sha = response.json().get('sha')
-    except Exception as e:
-        print(f"No se pudo obtener el SHA de top_champion_stats.json: {e}")
-
-    contenido_json = json.dumps(stats_dict, indent=2)
-    contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
-    
-    data = {"message": "Actualizar estadísticas de campeones", "content": contenido_b64, "branch": "main"}
-    if sha:
-        data["sha"] = sha
-
-    try:
-        response = requests.put(url, headers=headers, json=data, timeout=10)
-        if response.status_code in (200, 201):
-            print("Archivo top_champion_stats.json actualizado correctamente en GitHub.")
-        else:
-            print(f"Error al actualizar top_champion_stats.json: {response.status_code} - {response.text}")
-    except Exception as e:
-        print(f"Error en la petición PUT a GitHub para top_champion_stats.json: {e}")
+    guardar_archivo_en_github("top_champion_stats.json", stats_dict, "Actualizar estadísticas de campeones")
 
 # FUNCIÓN MODIFICADA
 def procesar_jugador(args_tuple):
@@ -570,7 +537,8 @@ def actualizar_cache():
                 puuids_actualizados = True
 
     if puuids_actualizados:
-        guardar_puuids_en_github(puuid_dict)
+        # guardar_puuids_en_github(puuid_dict) # Descomentar cuando la función genérica esté probada
+        guardar_archivo_en_github("puuids.json", puuid_dict, "Actualizar PUUIDs")
 
     # Paso 2: Procesar todos los jugadores en paralelo, pasando sus datos antiguos
     todos_los_datos = []
