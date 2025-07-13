@@ -30,6 +30,9 @@ top_champion_stats_cache = {
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
 
+# Fecha de inicio de la temporada 14 (2024) para el historial de partidas
+SEASON_START_TIMESTAMP = int(datetime(2024, 1, 10).timestamp())
+
 API_SESSION = requests.Session() # Usar una sesión para reutilizar conexiones
 
 def make_api_request(url, retries=3, backoff_factor=0.5):
@@ -122,9 +125,9 @@ def esta_en_partida(api_key, puuid):
                 return participant.get('championId', None)
     return None
 
-def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type, count=20):
+def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type):
     """
-    Analiza las últimas 'count' partidas de una cola para encontrar el campeón más jugado
+    Analiza TODAS las partidas de la temporada actual de una cola para encontrar el campeón más jugado
     y calcular su winrate y número de partidas.
 
     Args:
@@ -132,23 +135,40 @@ def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type
         puuid (str): El PUUID del jugador.
         queue_id (int): ID de la cola (420 para SoloQ, 440 para Flex).
         queue_type (str): Nombre de la cola para los logs.
-        count (int): Número de partidas a analizar.
 
     Returns:
         dict: Estadísticas del campeón más jugado, o un diccionario vacío si no hay datos.
     """
-    url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?queue={queue_id}&start=0&count={count}&api_key={api_key}"
-    response_matches = make_api_request(url_matches)
-    if not response_matches:
-        print(f"No se pudo obtener el historial para {puuid} (cola {queue_type}).")
+    all_match_ids = []
+    start_index = 0
+    while True:
+        # Paginamos de 100 en 100 para obtener todos los IDs de partida de la temporada
+        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
+        response_matches = make_api_request(url_matches)
+        
+        if not response_matches:
+            print(f"Error al obtener la página {start_index // 100} del historial para {puuid} (cola {queue_type}).")
+            break
+        
+        match_ids_page = response_matches.json()
+        if not match_ids_page:
+            break # No hay más partidas
+        
+        all_match_ids.extend(match_ids_page)
+        
+        if len(match_ids_page) < 100:
+            break # Última página
+        
+        start_index += 100
+        time.sleep(1) # Pausa entre llamadas de paginación
+
+    if not all_match_ids:
+        # Es normal no encontrar partidas, no se muestra log para no generar ruido.
         return {}
     
-    match_ids = response_matches.json()
-    if not match_ids:
-        return {}
-
+    print(f"Analizando {len(all_match_ids)} partidas de temporada para {puuid} (cola {queue_type})...")
     partidas_jugador = []
-    for match_id in match_ids:
+    for match_id in all_match_ids:
         time.sleep(0.07) # Pausa para no exceder el rate limit por segundo
         url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
         response_match = make_api_request(url_match)
@@ -164,6 +184,8 @@ def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type
 
     # Encontrar el campeón más jugado
     contador_campeones = Counter(p['champion'] for p in partidas_jugador)
+    if not contador_campeones:
+        return {}
     campeon_mas_jugado, _ = contador_campeones.most_common(1)[0]
 
     # Filtrar partidas solo de ese campeón y calcular stats
