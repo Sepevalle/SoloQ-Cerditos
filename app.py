@@ -517,11 +517,6 @@ def actualizar_estadisticas_campeones_en_segundo_plano():
                                 "total_games_snapshot": partidas_actuales
                             }
                             stats_actualizadas = True
-                        else:
-                            # Aunque no haya partidas nuevas, actualizamos el timestamp si ha pasado el timeout
-                            if (ahora - entrada_cache.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
-                                stats_data[puuid][str(queue_id)]["timestamp"] = ahora
-                                stats_actualizadas = True
             
             if stats_actualizadas:
                 print("Guardando estadísticas de campeones actualizadas en GitHub...")
@@ -620,10 +615,6 @@ def get_peak_elo_key(jugador):
 def index():
     datos_jugadores, timestamp = obtener_datos_jugadores()
     
-    # Si la caché está vacía (primera ejecución), podemos indicar que se está cargando.
-    # Comprobamos también el timestamp para diferenciar una lista vacía de una carga inicial.
-    cargando = not datos_jugadores and timestamp == 0
-    
     lectura_exitosa, peak_elo_dict = leer_peak_elo()
 
     if lectura_exitosa:
@@ -646,16 +637,10 @@ def index():
         for jugador in datos_jugadores:
             jugador["peak_elo"] = jugador["valor_clasificacion"] # Como fallback, mostramos el valor actual
 
-    if timestamp > 0:
-        ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
-    else:
-        ultima_actualizacion = "Calculando..."
-
-    return render_template('index.html', 
-                           datos_jugadores=datos_jugadores, 
-                           ultima_actualizacion=ultima_actualizacion, 
-                           ddragon_version=DDRAGON_VERSION,
-                           cargando=cargando)
+    ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
+    
+    
+    return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion, ddragon_version=DDRAGON_VERSION)
 
 @app.route('/jugador/<nombre_jugador>')
 def perfil_jugador(nombre_jugador):
