@@ -132,36 +132,39 @@ def esta_en_partida(api_key, puuid):
         print(f"Error de red al comprobar si el jugador {puuid} está en partida: {e}")
     return None
 
-def obtener_maestria_campeones(api_key, puuid):
-    """Obtiene la lista de maestrías de campeones para un jugador, ordenadas por puntos."""
-    url = f"https://euw1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key={api_key}"
-    response = make_api_request(url)
-    if response:
-        return response.json()
-    return None
+def obtener_info_partida(args):
+    """
+    Función auxiliar para ThreadPoolExecutor. Obtiene el campeón jugado y el resultado de una partida.
+    """
+    match_id, puuid, api_key = args
+    url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
+    response_match = make_api_request(url_match)
+    if response_match:
+        try:
+            match_data = response_match.json()
+            for p in match_data['info']['participants']:
+                if p['puuid'] == puuid:
+                    # Usamos obtener_nombre_campeon para consistencia, aunque 'championName' está disponible
+                    champion_name = obtener_nombre_campeon(p.get('championId'))
+                    return (champion_name, p.get('win', False))
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"Error procesando los detalles de la partida {match_id}: {e}")
+    return (None, None)
 
 def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type):
     """
-    [OPTIMIZADO] Obtiene las estadísticas del campeón más jugado de forma eficiente.
-    1. Encuentra el campeón con más maestría.
-    2. Pide el historial de partidas de la temporada SOLO para ese campeón.
-    3. Analiza esas partidas para calcular el winrate.
+    [REVISADO] Obtiene las estadísticas del campeón más jugado basándose en el historial real del split.
+    1. Obtiene TODAS las partidas clasificatorias del split para la cola dada.
+    2. Analiza las partidas en paralelo para encontrar el campeón más jugado.
+    3. Calcula las estadísticas para ese campeón.
     """
-    # Paso 1: Obtener el campeón con más maestría como el candidato más probable.
-    maestrias = obtener_maestria_campeones(api_key, puuid)
-    if not maestrias:
-        print(f"No se encontraron maestrías para {puuid}.")
-        return {}
-    
-    campeon_id_mas_maestria = maestrias[0]['championId']
-    campeon_nombre = obtener_nombre_campeon(campeon_id_mas_maestria)
-
-    # Paso 2: Obtener el historial de partidas de la temporada SOLO para ese campeón.
-    print(f"Buscando partidas de temporada para {puuid} con {campeon_nombre} (cola {queue_type})...")
-    match_ids_campeon = []
+    # Paso 1: Obtener el historial de TODAS las partidas de la temporada para la cola.
+    print(f"Buscando todas las partidas de temporada para {puuid} (cola {queue_type})...")
+    all_match_ids = []
     start_index = 0
     while True:
-        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&champion={campeon_id_mas_maestria}&start={start_index}&count=100&api_key={api_key}"
+        # Eliminamos el filtro de 'champion' para obtener todas las partidas
+        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
         response_matches = make_api_request(url_matches)
 
         if not response_matches:
@@ -171,31 +174,42 @@ def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type
         if not match_ids_page:
             break
 
-        match_ids_campeon.extend(match_ids_page)
+        all_match_ids.extend(match_ids_page)
         if len(match_ids_page) < 100:
             break
         start_index += 100
 
-    if not match_ids_campeon:
+    if not all_match_ids:
+        print(f"No se encontraron partidas para {puuid} en la cola {queue_type}.")
         return {}
 
-    # Paso 3: Analizar los detalles de esas partidas para calcular el winrate.
-    wins = 0
-    total_partidas_campeon = len(match_ids_campeon)
-    for match_id in match_ids_campeon:
-        time.sleep(0.07)  # Pausa para no exceder el rate limit por segundo
-        url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
-        response_match = make_api_request(url_match)
-        if response_match:
-            match_data = response_match.json()
-            for p in match_data['info']['participants']:
-                if p['puuid'] == puuid:
-                    if p['win']:
-                        wins += 1
-                    break
+    # Paso 2: Analizar los detalles de las partidas en paralelo para obtener campeón y resultado.
+    tareas = [(match_id, puuid, api_key) for match_id in all_match_ids]
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # Usamos list() para forzar la ejecución completa antes de continuar
+        resultados = list(executor.map(obtener_info_partida, tareas))
+
+    # Filtramos resultados fallidos (donde el campeón es None)
+    partidas_info = [res for res in resultados if res[0] is not None]
+
+    if not partidas_info:
+        print(f"No se pudo obtener información de ninguna partida para {puuid}.")
+        return {}
+
+    # Paso 3: Contar campeones y encontrar el más jugado.
+    contador_campeones = Counter(campeon for campeon, _ in partidas_info)
+    if not contador_campeones:
+        return {}
+    campeon_mas_jugado, _ = contador_campeones.most_common(1)[0]
+
+    # Paso 4: Calcular estadísticas para el campeón más jugado.
+    partidas_del_campeon = [info for info in partidas_info if info[0] == campeon_mas_jugado]
+    total_partidas_campeon = len(partidas_del_campeon)
+    wins = sum(1 for _, victoria in partidas_del_campeon if victoria)
     winrate = (wins / total_partidas_campeon * 100) if total_partidas_campeon > 0 else 0
 
-    return {"champion_name": campeon_nombre, "win_rate": winrate, "games_played": total_partidas_campeon}
+    print(f"Campeón más jugado para {puuid} ({queue_type}): {campeon_mas_jugado} con {total_partidas_campeon} partidas y {winrate:.2f}% WR.")
+    return {"champion_name": campeon_mas_jugado, "win_rate": winrate, "games_played": total_partidas_campeon}
 
 
 def leer_cuentas(url):
