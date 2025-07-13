@@ -65,6 +65,10 @@
         .dark-mode .nav-link {
             color: white !important;
         }
+        .dark-mode .navbar-toggler-icon {
+            /* Invierte el color del icono de hamburguesa para que sea visible en modo oscuro */
+            filter: invert(1) grayscale(100%) brightness(2);
+        }
         .table td, .table th {
             text-align: center;
         }
@@ -83,7 +87,6 @@
             border-radius: 50%;
             object-fit: cover;
         }
-
         .lateral-img {
             position: fixed;
             top: 50%;
@@ -91,38 +94,19 @@
             width: 150px;
             height: auto;
             object-fit: cover;
+            display: none; /* Ocultas por defecto para evitar superposiciones */
+        }
+        /* Mostrar imágenes laterales solo en pantallas muy anchas */
+        @media (min-width: 1500px) {
+            .lateral-img {
+                display: block;
+            }
         }
         .left-img {
-            left: 0;
+            left: 20px;
         }
         .right-img {
-            right: 0;
-        }
-
-        @media (max-width: 1200px) {
-            .lateral-img {
-                width: 120px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .lateral-img {
-                width: 100px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .lateral-img {
-                width: 80px;
-                top: auto;
-                bottom: 10%;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .lateral-img {
-                display: none;
-            }
+            right: 20px;
         }
 
         #volumeSlider {
@@ -242,7 +226,7 @@
             <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
             Cerditos y Valientes
         </a>
-        <button class="navbar-toggler text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarContent">
@@ -366,6 +350,9 @@
         </table>
     </div>
 </div>
+
+<!-- Script de Bootstrap JS (necesario para el menú desplegable y otras funcionalidades) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
@@ -548,5 +535,6 @@
         setInterval(cambiarImagenes, 5000);
     });
 </script>
+
 </body>
 </html>
