@@ -201,6 +201,28 @@
             width: calc(100% - 40px);
             text-align: center;
         }
+
+        /* Estilos para encabezados de tabla ordenables */
+        .table thead th[data-sort-by] {
+            cursor: pointer;
+            position: relative;
+            user-select: none; /* Evita la selección de texto al hacer doble clic */
+        }
+
+        .table thead th[data-sort-by]::after {
+            content: ' \2195'; /* Flecha arriba-abajo por defecto */
+            font-size: 0.8em;
+            color: #aaa;
+            position: absolute;
+            right: 8px;
+        }
+
+        .table thead th.sort-asc::after {
+            content: ' \2191'; /* Flecha arriba */
+        }
+        .table thead th.sort-desc::after {
+            content: ' \2193'; /* Flecha abajo */
+        }
     </style>
 </head>
 
@@ -268,14 +290,14 @@
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
                 <tr>
-                    <th>Posición</th>
-                    <th>Jugador</th>
-                    <th>Game Name</th>
-                    <th>Elo</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Total Games</th>
-                    <th>Win Rate</th>
+                    <th data-sort-by="elo">Posición</th>
+                    <th data-sort-by="jugador">Jugador</th>
+                    <th data-sort-by="game_name">Game Name</th>
+                    <th data-sort-by="elo">Elo</th>
+                    <th data-sort-by="wins">Wins</th>
+                    <th data-sort-by="losses">Losses</th>
+                    <th data-sort-by="total_games">Total Games</th>
+                    <th data-sort-by="win_rate">Win Rate</th>
                     <th class="hidden">Valor Clasificación</th>
                     <th>Dist. Peak Elo</th>
                     <th>Dif. Elo</th>
@@ -405,68 +427,107 @@
         const toggleModeButton = document.getElementById("toggle-mode");
         toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
 
-        // Store original table rows
-        const originalRows = Array.from(document.querySelectorAll("#jugadoresTable tbody tr"));
-
-        const filtro = document.getElementById("filtro");
+        // --- INICIO DE LA NUEVA LÓGICA DE TABLA ---
         
-        // Función para filtrar la tabla
-        const aplicarFiltro = (selected) => {
-            const tbody = document.querySelector("#jugadoresTable tbody");
+        const filtro = document.getElementById("filtro");
+        const table = document.getElementById("jugadoresTable");
+        const tbody = table.querySelector("tbody");
+        const headers = table.querySelectorAll("thead th[data-sort-by]");
 
-            // Reset table to original state
-            tbody.innerHTML = '';
-            originalRows.forEach(row => tbody.appendChild(row.cloneNode(true)));
+        // Estado actual de la ordenación
+        let currentSort = {
+            column: 'elo',
+            direction: 'desc'
+        };
 
-            // Now apply the filter
-            if (selected !== "todo") {
-                Array.from(tbody.querySelectorAll("tr")).forEach(row => {
-                    if (!row.classList.contains(selected)) {
-                        row.style.display = 'none';
-                    }
-                });
+        // Función para obtener el valor de una celda para poder comparar y ordenar
+        const getCellValue = (row, columnIndex, sortBy) => {
+            const cell = row.cells[columnIndex];
+            if (!cell) return null;
+
+            switch (sortBy) {
+                case 'elo':
+                    // Usar el valor de clasificación oculto para ordenar por Elo
+                    return parseFloat(row.querySelector(".hidden").textContent);
+                case 'jugador':
+                case 'game_name':
+                    // Para columnas de texto, usar el contenido en minúsculas
+                    return cell.textContent.trim().toLowerCase();
+                case 'win_rate':
+                    // Para el win rate, quitar el '%' y convertir a número
+                    return parseFloat(cell.textContent);
+                default:
+                    // Para el resto de columnas numéricas (wins, losses, total)
+                    return parseInt(cell.textContent, 10);
             }
+        };
 
-            // Recalculate positions and Elo differences with only visible rows
-            ordenarYCalcularDiferencias();
-        }
+        // Función principal para ordenar la tabla
+        const sortTable = (sortBy, direction) => {
+            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
+            const allHeaders = Array.from(table.querySelectorAll('thead th'));
+            const columnIndex = allHeaders.findIndex(th => th.dataset.sortBy === sortBy);
 
-        // Aplica el filtro de SoloQ por defecto al cargar la página
-        aplicarFiltro("RANKED_SOLO_5x5");
+            if (columnIndex === -1) return;
 
-        // Evento del filtro de cola (cuando cambia la selección)
-        filtro.addEventListener("change", () => {
-            const selected = filtro.value;
-            aplicarFiltro(selected);
+            const dirModifier = direction === 'asc' ? 1 : -1;
+
+            const sortedRows = visibleRows.sort((a, b) => {
+                const aVal = getCellValue(a, columnIndex, sortBy);
+                const bVal = getCellValue(b, columnIndex, sortBy);
+                if (aVal < bVal) return -1 * dirModifier;
+                if (aVal > bVal) return 1 * dirModifier;
+                return 0;
+            });
+
+            sortedRows.forEach(row => tbody.appendChild(row));
+
+            headers.forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sortBy === sortBy) {
+                    th.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            updateTableCalculations(sortBy);
+        };
+
+        // Función para actualizar la posición y la columna "Dif. Elo"
+        const updateTableCalculations = (sortedBy) => {
+            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
+            visibleRows.forEach((row, index) => {
+                row.cells[0].textContent = index + 1;
+                const eloDiffCell = row.querySelector(".elo-diferencia");
+                if (sortedBy === 'elo' && index > 0) {
+                    const currentElo = getCellValue(row, 0, 'elo');
+                    const prevElo = getCellValue(visibleRows[index - 1], 0, 'elo');
+                    eloDiffCell.textContent = `${prevElo - currentElo} LPs`;
+                } else {
+                    eloDiffCell.textContent = sortedBy === 'elo' ? "—" : "N/A";
+                }
+            });
+        };
+
+        // Función para aplicar el filtro de cola
+        const aplicarFiltro = () => {
+            const selectedQueue = filtro.value;
+            tbody.querySelectorAll("tr").forEach(row => {
+                row.style.display = (selectedQueue === 'todo' || row.classList.contains(selectedQueue)) ? '' : 'none';
+            });
+            sortTable(currentSort.column, currentSort.direction);
+        };
+
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const sortBy = header.dataset.sortBy;
+                currentSort.direction = (currentSort.column === sortBy && currentSort.direction === 'desc') ? 'asc' : 'desc';
+                currentSort.column = sortBy;
+                sortTable(currentSort.column, currentSort.direction);
+            });
         });
 
-        function ordenarYCalcularDiferencias() {
-            const tbody = document.querySelector("#jugadoresTable tbody");
-            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
-
-            visibleRows.sort((a, b) => 
-                parseInt(b.querySelector(".hidden").textContent, 10) - 
-                parseInt(a.querySelector(".hidden").textContent, 10)
-            );
-
-            // Clear and repopulate tbody for correct ordering
-            tbody.innerHTML = '';
-            visibleRows.forEach((row, index) => {
-                row.querySelector("td:first-child").textContent = index + 1;
-                const valorClasificacion = parseInt(row.querySelector(".hidden").textContent, 10);
-                const eloCol = row.querySelector(".elo-diferencia");
-                
-                if (index > 0) {
-                    const valorClasificacionAnterior = parseInt(visibleRows[index - 1].querySelector(".hidden").textContent, 10);
-                    eloCol.textContent = `${valorClasificacionAnterior - valorClasificacion} LPs`;
-                } else {
-                    eloCol.textContent = "—";
-                }
-                tbody.appendChild(row);
-            });
-        }
-
-        ordenarYCalcularDiferencias(); // Inicialmente ordena todas las filas
+        filtro.addEventListener("change", aplicarFiltro);
+        aplicarFiltro(); // Carga inicial con filtro y ordenación por defecto
 
         const leftBanner = document.getElementById("left-banner");
         const rightBanner = document.getElementById("right-banner");
