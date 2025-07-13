@@ -497,12 +497,11 @@
                 }
             });
 
-            updateTableCalculations(sortBy);
+            updateTableCalculations(sortBy, sortedRows);
         };
 
         // Función para actualizar la posición y la columna "Dif. Elo"
-        const updateTableCalculations = (sortedBy) => {
-            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
+        const updateTableCalculations = (sortedBy, visibleRows) => {
             visibleRows.forEach((row, index) => {
                 // Actualizar número de posición
                 row.cells[0].textContent = index + 1;
