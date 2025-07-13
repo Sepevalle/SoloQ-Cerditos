@@ -19,9 +19,6 @@ cache = {
 }
 CACHE_TIMEOUT = 130  # 2 minutos para estar seguros
 
-# Directorio para historiales de partidas por jugador
-HISTORIALES_DIR = "historiales"
-
 # Caché para estadísticas de campeones
 CHAMPION_STATS_CACHE_TIMEOUT = 86400 # 24 horas
 
@@ -128,108 +125,77 @@ def esta_en_partida(api_key, puuid):
         if response.status_code == 200:
             data = response.json()
             for participant in data.get("participants", []):
-                # Usamos .get() para evitar errores si la clave 'puuid' no existe
-                if participant.get('puuid') == puuid:
-                    return participant.get('championId') # Devuelve el ID o None si no lo tiene
-        elif response.status_code == 404:
-            # Caso esperado: el jugador no está en partida. No hacemos nada.
-            pass
-        else:
-            # Logueamos otros códigos de estado inesperados para facilitar la depuración
-            print(f"Respuesta inesperada de la API de espectador para {puuid}: {response.status_code} - {response.text}")
+                if participant['puuid'] == puuid:
+                    return participant.get('championId', None)
     except requests.exceptions.RequestException as e:
         # Si hay un error de red, asumimos que no está en partida para no bloquear la actualización.
         print(f"Error de red al comprobar si el jugador {puuid} está en partida: {e}")
     return None
 
-def leer_historial_jugador(puuid):
-    """Lee la lista de match_ids procesados para un jugador desde su archivo local."""
-    historial_path = os.path.join(HISTORIALES_DIR, f"{puuid}.json")
-    if os.path.exists(historial_path):
-        try:
-            with open(historial_path, 'r') as f:
-                return set(json.load(f))
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"Error leyendo el historial para {puuid}: {e}. Se tratará como vacío.")
-    return set()
+def obtener_maestria_campeones(api_key, puuid):
+    """Obtiene la lista de maestrías de campeones para un jugador, ordenadas por puntos."""
+    url = f"https://euw1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key={api_key}"
+    response = make_api_request(url)
+    if response:
+        return response.json()
+    return None
 
-def guardar_historial_jugador(puuid, match_ids):
-    """Guarda la lista completa de match_ids procesados para un jugador."""
-    if not os.path.exists(HISTORIALES_DIR):
-        os.makedirs(HISTORIALES_DIR)
-    historial_path = os.path.join(HISTORIALES_DIR, f"{puuid}.json")
-    try:
-        with open(historial_path, 'w') as f:
-            json.dump(list(match_ids), f)
-    except IOError as e:
-        print(f"Error guardando el historial para {puuid}: {e}")
-
-def actualizar_estadisticas_campeon_incremental(api_key, puuid, queue_id, stats_actuales):
+def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type):
     """
-    [OPTIMIZADO] Actualiza las estadísticas de campeones de forma incremental.
-    1. Carga el historial de partidas ya procesadas.
-    2. Pide a la API el historial de partidas por páginas, parando en cuanto encuentra una partida ya procesada.
-    3. Procesa solo las partidas nuevas y actualiza las estadísticas existentes.
+    [OPTIMIZADO] Obtiene las estadísticas del campeón más jugado de forma eficiente.
+    1. Encuentra el campeón con más maestría.
+    2. Pide el historial de partidas de la temporada SOLO para ese campeón.
+    3. Analiza esas partidas para calcular el winrate.
     """
-    # 1. Cargar historial local
-    historial_guardado = leer_historial_jugador(f"{puuid}_{queue_id}")
+    # Paso 1: Obtener el campeón con más maestría como el candidato más probable.
+    maestrias = obtener_maestria_campeones(api_key, puuid)
+    if not maestrias:
+        print(f"No se encontraron maestrías para {puuid}.")
+        return {}
     
-    # 2. Obtener solo las partidas nuevas de la API de forma eficiente
-    partidas_nuevas = []
+    campeon_id_mas_maestria = maestrias[0]['championId']
+    campeon_nombre = obtener_nombre_campeon(campeon_id_mas_maestria)
+
+    # Paso 2: Obtener el historial de partidas de la temporada SOLO para ese campeón.
+    print(f"Buscando partidas de temporada para {puuid} con {campeon_nombre} (cola {queue_type})...")
+    match_ids_campeon = []
     start_index = 0
-    
     while True:
-        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
+        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&champion={campeon_id_mas_maestria}&start={start_index}&count=100&api_key={api_key}"
         response_matches = make_api_request(url_matches)
-        if not response_matches: break
-        
-        page_match_ids = response_matches.json()
-        if not page_match_ids: break
-        
-        partidas_no_procesadas_en_pagina = []
-        parar_busqueda = False
-        for match_id in page_match_ids:
-            if match_id in historial_guardado:
-                parar_busqueda = True
-                break # Encontramos una partida ya procesada, las siguientes son más antiguas
-            else:
-                partidas_no_procesadas_en_pagina.append(match_id)
-        
-        partidas_nuevas.extend(partidas_no_procesadas_en_pagina)
-        
-        if parar_busqueda or len(page_match_ids) < 100:
-            break # Paramos si encontramos una partida conocida o si es la última página
-            
+
+        if not response_matches:
+            break
+
+        match_ids_page = response_matches.json()
+        if not match_ids_page:
+            break
+
+        match_ids_campeon.extend(match_ids_page)
+        if len(match_ids_page) < 100:
+            break
         start_index += 100
 
-    if not partidas_nuevas:
-        print(f"No hay partidas nuevas que procesar para {puuid} en la cola {queue_id}.")
-        return stats_actuales, False # No hay cambios
+    if not match_ids_campeon:
+        return {}
 
-    print(f"Procesando {len(partidas_nuevas)} partidas nuevas para {puuid} en la cola {queue_id}...")
-    
-    # 3. Procesar solo las partidas nuevas (en orden cronológico inverso: de la más nueva a la más antigua)
-    for match_id in partidas_nuevas:
-        time.sleep(0.07) # Pausa para no exceder el rate limit
+    # Paso 3: Analizar los detalles de esas partidas para calcular el winrate.
+    wins = 0
+    total_partidas_campeon = len(match_ids_campeon)
+    for match_id in match_ids_campeon:
+        time.sleep(0.07)  # Pausa para no exceder el rate limit por segundo
         url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
         response_match = make_api_request(url_match)
         if response_match:
             match_data = response_match.json()
             for p in match_data['info']['participants']:
                 if p['puuid'] == puuid:
-                    champion_id_str = str(p['championId'])
-                    if champion_id_str not in stats_actuales:
-                        stats_actuales[champion_id_str] = {"games": 0, "wins": 0}
-                    stats_actuales[champion_id_str]["games"] += 1
                     if p['win']:
-                        stats_actuales[champion_id_str]["wins"] += 1
-                    break # Siguiente partida
+                        wins += 1
+                    break
+    winrate = (wins / total_partidas_campeon * 100) if total_partidas_campeon > 0 else 0
 
-    # 4. Guardar el nuevo historial completo
-    nuevo_historial_completo = historial_guardado.union(partidas_nuevas)
-    guardar_historial_jugador(f"{puuid}_{queue_id}", nuevo_historial_completo)
-    
-    return stats_actuales, True # Hubo cambios
+    return {"champion_name": campeon_nombre, "win_rate": winrate, "games_played": total_partidas_campeon}
 
 
 def leer_cuentas(url):
@@ -302,40 +268,6 @@ def leer_puuids():
         print(f"Error leyendo puuids.json: {e}")
     return {}
 
-def guardar_archivo_en_github(file_path, content_dict, commit_message):
-    """
-    Función genérica para guardar o actualizar un archivo JSON en un repositorio de GitHub.
-    """
-    token = os.environ.get('GITHUB_TOKEN')
-    if not token:
-        print(f"Token de GitHub no encontrado. No se puede guardar '{file_path}'.")
-        return
-
-    url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/{file_path}"
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-    
-    # Obtener el SHA del archivo si ya existe para poder actualizarlo
-    sha = None
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code == 200:
-            sha = response.json().get('sha')
-    except requests.exceptions.RequestException as e:
-        print(f"No se pudo obtener el SHA de {file_path}: {e}")
-
-    contenido_json = json.dumps(content_dict, indent=2, ensure_ascii=False)
-    contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
-    
-    data = {"message": commit_message, "content": contenido_b64, "branch": "main"}
-    if sha:
-        data["sha"] = sha
-
-    response = requests.put(url, headers=headers, json=data)
-    if response.status_code in (200, 201):
-        print(f"Archivo '{file_path}' actualizado correctamente en GitHub.")
-    else:
-        print(f"Error al actualizar '{file_path}': {response.status_code} - {response.text}")
-
 def guardar_puuids_en_github(puuid_dict):
     """Guarda o actualiza el archivo puuids.json en GitHub."""
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/puuids.json"
@@ -367,11 +299,48 @@ def guardar_puuids_en_github(puuid_dict):
         print("Archivo puuids.json actualizado correctamente en GitHub.")
     else:
         print(f"Error al actualizar puuids.json: {response.status_code} - {response.text}")
-    # Reemplazado por la función genérica
-    # guardar_archivo_en_github("puuids.json", puuid_dict, "Actualizar PUUIDs")
 
 def guardar_peak_elo_en_github(peak_elo_dict):
-    guardar_archivo_en_github("peak_elo.json", peak_elo_dict, "Actualizar peak elo")
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print("Token de GitHub no encontrado")
+        return
+
+    # Obtener el contenido actual del archivo para el SHA
+    try:
+        response = requests.get(url, headers={"Authorization": f"token {token}"})
+        if response.status_code == 200:
+            contenido_actual = response.json()
+            sha = contenido_actual['sha']
+        else:
+            print(f"Error al obtener el archivo: {response.status_code}")
+            return
+    except Exception as e:
+        print(f"Error al obtener el archivo: {e}")
+        return
+
+    # Codificar el contenido en base64 como requiere la API de GitHub
+    try:
+        contenido_json = json.dumps(peak_elo_dict, ensure_ascii=False, indent=2)
+        contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+
+        response = requests.put(
+            url,
+            headers={"Authorization": f"token {token}"},
+            json={
+                "message": "Actualizar peak elo",
+                "content": contenido_b64,
+                "sha": sha,
+                "branch": "main"
+            }
+        )
+        if response.status_code in (200, 201):
+            print("Archivo actualizado correctamente en GitHub")
+        else:
+            print(f"Error al actualizar el archivo: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Error al actualizar el archivo: {e}")
 
 def leer_top_champion_stats():
     """Lee el archivo de estadísticas de campeones desde GitHub."""
@@ -389,7 +358,37 @@ def leer_top_champion_stats():
 
 def guardar_top_champion_stats_en_github(stats_dict):
     """Guarda o actualiza el archivo top_champion_stats.json en GitHub."""
-    guardar_archivo_en_github("top_champion_stats.json", stats_dict, "Actualizar estadísticas de campeones")
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/top_champion_stats.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print("Token de GitHub no encontrado para guardar top_champion_stats.json.")
+        return
+
+    headers = {"Authorization": f"token {token}"}
+    
+    sha = None
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            sha = response.json().get('sha')
+    except Exception as e:
+        print(f"No se pudo obtener el SHA de top_champion_stats.json: {e}")
+
+    contenido_json = json.dumps(stats_dict, indent=2)
+    contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+    
+    data = {"message": "Actualizar estadísticas de campeones", "content": contenido_b64, "branch": "main"}
+    if sha:
+        data["sha"] = sha
+
+    try:
+        response = requests.put(url, headers=headers, json=data, timeout=10)
+        if response.status_code in (200, 201):
+            print("Archivo top_champion_stats.json actualizado correctamente en GitHub.")
+        else:
+            print(f"Error al actualizar top_champion_stats.json: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Error en la petición PUT a GitHub para top_champion_stats.json: {e}")
 
 # FUNCIÓN MODIFICADA
 def procesar_jugador(args_tuple):
@@ -507,20 +506,13 @@ def actualizar_estadisticas_campeones_en_segundo_plano():
 
                     if debe_actualizar:
                         print(f"Actualizando stats para {riot_id} en cola {queue_type}...")
-                        # Obtenemos las stats actuales para este jugador y cola
-                        stats_actuales = entrada_cache.get("stats", {})
+                        nuevas_stats = obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type)
                         
-                        stats_actualizadas_jugador, hubo_cambios = actualizar_estadisticas_campeon_incremental(
-                            api_key, puuid, queue_id, stats_actuales
-                        )
-                        
-                        if hubo_cambios:
+                        if nuevas_stats:
                             if puuid not in stats_data:
                                 stats_data[puuid] = {}
-                            
-                            # Guardamos el diccionario completo de campeones
                             stats_data[puuid][str(queue_id)] = {
-                                "stats": stats_actualizadas_jugador, 
+                                "stats": nuevas_stats, 
                                 "timestamp": ahora, 
                                 "total_games_snapshot": partidas_actuales
                             }
@@ -530,8 +522,6 @@ def actualizar_estadisticas_campeones_en_segundo_plano():
                             if (ahora - entrada_cache.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
                                 stats_data[puuid][str(queue_id)]["timestamp"] = ahora
                                 stats_actualizadas = True
-                
-                print(f"Análisis de estadísticas para {riot_id} completado.")
             
             if stats_actualizadas:
                 print("Guardando estadísticas de campeones actualizadas en GitHub...")
@@ -585,8 +575,7 @@ def actualizar_cache():
                 puuids_actualizados = True
 
     if puuids_actualizados:
-        # guardar_puuids_en_github(puuid_dict) # Descomentar cuando la función genérica esté probada
-        guardar_archivo_en_github("puuids.json", puuid_dict, "Actualizar PUUIDs")
+        guardar_puuids_en_github(puuid_dict)
 
     # Paso 2: Procesar todos los jugadores en paralelo, pasando sus datos antiguos
     todos_los_datos = []
@@ -611,22 +600,8 @@ def actualizar_cache():
         for jugador in todos_los_datos:
             queue_id_str = str(queue_map.get(jugador['queue_type']))
             if queue_id_str:
-                # Leemos el diccionario completo de estadísticas de campeones
-                all_champ_stats = stats_data.get(jugador['puuid'], {}).get(queue_id_str, {}).get('stats', {})
-                
-                # Calculamos el campeón top al vuelo para mostrarlo
-                if all_champ_stats:
-                    top_champ_id = max(all_champ_stats, key=lambda k: all_champ_stats[k]['games'])
-                    top_champ_data = all_champ_stats[top_champ_id]
-                    games = top_champ_data.get('games', 0)
-                    wins = top_champ_data.get('wins', 0)
-                    winrate = (wins / games * 100) if games > 0 else 0
-                    
-                    jugador['top_champion_stats'] = {
-                        "champion_name": obtener_nombre_campeon(int(top_champ_id)),
-                        "win_rate": winrate,
-                        "games_played": games
-                    }
+                stats_campeon = stats_data.get(jugador['puuid'], {}).get(queue_id_str, {}).get('stats', {})
+                jugador['top_champion_stats'] = stats_campeon
 
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
