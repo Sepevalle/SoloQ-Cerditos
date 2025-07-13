@@ -504,14 +504,26 @@
         const updateTableCalculations = (sortedBy) => {
             const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
             visibleRows.forEach((row, index) => {
+                // Actualizar número de posición
                 row.cells[0].textContent = index + 1;
+
                 const eloDiffCell = row.querySelector(".elo-diferencia");
-                if (sortedBy === 'elo' && index > 0) {
-                    const currentElo = getCellValue(row, 0, 'elo');
-                    const prevElo = getCellValue(visibleRows[index - 1], 0, 'elo');
-                    eloDiffCell.textContent = `${prevElo - currentElo} LPs`;
+                
+                // Calcular la diferencia de ELO solo si la tabla está ordenada por ELO
+                if (sortedBy === 'elo') {
+                    if (index === 0) {
+                        // El primer jugador no tiene diferencia
+                        eloDiffCell.textContent = "—";
+                    } else {
+                        // Obtener el valor de ELO directamente de la celda oculta
+                        const currentElo = parseFloat(row.querySelector(".hidden").textContent);
+                        const prevElo = parseFloat(visibleRows[index - 1].querySelector(".hidden").textContent);
+                        const diff = Math.round(prevElo - currentElo); // Usar Math.round para evitar decimales
+                        eloDiffCell.textContent = `${diff} LPs`;
+                    }
                 } else {
-                    eloDiffCell.textContent = sortedBy === 'elo' ? "—" : "N/A";
+                    // Si no está ordenado por ELO, mostrar N/A
+                    eloDiffCell.textContent = "N/A";
                 }
             });
         };

@@ -30,6 +30,30 @@ top_champion_stats_cache = {
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
 
+API_SESSION = requests.Session() # Usar una sesión para reutilizar conexiones
+
+def make_api_request(url, retries=3, backoff_factor=0.5):
+    """
+    Realiza una petición a la API de Riot con reintentos y backoff exponencial.
+    Utiliza una sesión de requests para mejorar el rendimiento.
+    """
+    for i in range(retries):
+        try:
+            response = API_SESSION.get(url, timeout=10)
+            if response.status_code == 429:
+                retry_after = int(response.headers.get('Retry-After', 5))
+                print(f"Rate limit excedido. Esperando {retry_after} segundos...")
+                time.sleep(retry_after)
+                continue
+            
+            response.raise_for_status()
+            return response
+        except requests.exceptions.RequestException as e:
+            print(f"Error en la petición a {url}: {e}. Intento {i + 1}/{retries}")
+            if i < retries - 1:
+                time.sleep(backoff_factor * (2 ** i))
+    return None
+
 DDRAGON_VERSION = "14.9.1"  # Versión de respaldo por si falla la API
 
 def actualizar_version_ddragon():
@@ -63,42 +87,42 @@ def obtener_nombre_campeon(champion_id):
 
 def obtener_puuid(api_key, riot_id, region):
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
+    response = make_api_request(url)
+    if response:
         return response.json()
     else:
-        print(f"Error al obtener PUUID: {response.status_code} - {response.text}")
+        print(f"No se pudo obtener el PUUID para {riot_id} después de varios intentos.")
         return None
 
 def obtener_id_invocador(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
+    response = make_api_request(url)
+    if response:
         return response.json()
     else:
-        print(f"Error al obtener ID del invocador: {response.status_code} - {response.text}")
+        print(f"No se pudo obtener el ID de invocador para {puuid}.")
         return None
 
 def obtener_elo(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
+    response = make_api_request(url)
+    if response:
         return response.json()
     else:
-        print(f"Error al obtener Elo: {response.status_code} - {response.text}")
+        print(f"No se pudo obtener el Elo para {puuid}.")
         return None
 
 def esta_en_partida(api_key, puuid):
     url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
+    response = make_api_request(url)
+    if response:
         data = response.json()
         for participant in data.get("participants", []):
             if participant['puuid'] == puuid:
                 return participant.get('championId', None)
     return None
 
-def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, count=20):
+def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type, count=20):
     """
     Analiza las últimas 'count' partidas de una cola para encontrar el campeón más jugado
     y calcular su winrate y número de partidas.
@@ -107,59 +131,48 @@ def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, count=20):
         api_key (str): Clave de la API de Riot.
         puuid (str): El PUUID del jugador.
         queue_id (int): ID de la cola (420 para SoloQ, 440 para Flex).
+        queue_type (str): Nombre de la cola para los logs.
         count (int): Número de partidas a analizar.
 
     Returns:
         dict: Estadísticas del campeón más jugado, o un diccionario vacío si no hay datos.
     """
     url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?queue={queue_id}&start=0&count={count}&api_key={api_key}"
-    try:
-        response_matches = requests.get(url_matches, timeout=10)
-        if response_matches.status_code != 200:
-            if response_matches.status_code != 404:
-                print(f"Error al obtener historial para {puuid} (cola {queue_id}): {response_matches.status_code}")
-            return {}
-        
-        match_ids = response_matches.json()
-        if not match_ids:
-            return {}
-
-        partidas_jugador = []
-        for match_id in match_ids:
-            time.sleep(0.07) # Pausa para no exceder rate limit
-            url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
-            try:
-                response_match = requests.get(url_match, timeout=5)
-                if response_match.status_code == 200:
-                    match_data = response_match.json()
-                    for p in match_data['info']['participants']:
-                        if p['puuid'] == puuid:
-                            partidas_jugador.append({'champion': p['championName'], 'win': p['win']})
-                            break
-                elif response_match.status_code == 429:
-                    print("Rate limit excedido, esperando...")
-                    time.sleep(5)
-            except requests.exceptions.RequestException:
-                continue
-
-        if not partidas_jugador:
-            return {}
-
-        # Encontrar el campeón más jugado
-        contador_campeones = Counter(p['champion'] for p in partidas_jugador)
-        campeon_mas_jugado, _ = contador_campeones.most_common(1)[0]
-
-        # Filtrar partidas solo de ese campeón y calcular stats
-        partidas_con_campeon = [p for p in partidas_jugador if p['champion'] == campeon_mas_jugado]
-        wins = sum(1 for p in partidas_con_campeon if p['win'])
-        total_partidas = len(partidas_con_campeon)
-        winrate = (wins / total_partidas * 100) if total_partidas > 0 else 0
-
-        return {"champion_name": campeon_mas_jugado, "win_rate": winrate, "games_played": total_partidas}
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error de red obteniendo stats de campeones: {e}")
+    response_matches = make_api_request(url_matches)
+    if not response_matches:
+        print(f"No se pudo obtener el historial para {puuid} (cola {queue_type}).")
         return {}
+    
+    match_ids = response_matches.json()
+    if not match_ids:
+        return {}
+
+    partidas_jugador = []
+    for match_id in match_ids:
+        time.sleep(0.07) # Pausa para no exceder el rate limit por segundo
+        url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
+        response_match = make_api_request(url_match)
+        if response_match:
+            match_data = response_match.json()
+            for p in match_data['info']['participants']:
+                if p['puuid'] == puuid:
+                    partidas_jugador.append({'champion': p['championName'], 'win': p['win']})
+                    break
+
+    if not partidas_jugador:
+        return {}
+
+    # Encontrar el campeón más jugado
+    contador_campeones = Counter(p['champion'] for p in partidas_jugador)
+    campeon_mas_jugado, _ = contador_campeones.most_common(1)[0]
+
+    # Filtrar partidas solo de ese campeón y calcular stats
+    partidas_con_campeon = [p for p in partidas_jugador if p['champion'] == campeon_mas_jugado]
+    wins = sum(1 for p in partidas_con_campeon if p['win'])
+    total_partidas = len(partidas_con_campeon)
+    winrate = (wins / total_partidas * 100) if total_partidas > 0 else 0
+
+    return {"champion_name": campeon_mas_jugado, "win_rate": winrate, "games_played": total_partidas}
 
 
 def leer_cuentas(url):
@@ -441,31 +454,44 @@ def actualizar_cache():
     # Paso 3: Obtener y cachear estadísticas de campeones más jugados
     with top_champion_stats_cache["lock"]:
         stats_data = leer_top_champion_stats()
-        stats_actualizadas = False
         queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
 
+        # Identificar qué jugadores/colas necesitan actualización
+        tareas_stats = []
+        ahora = time.time()
         jugadores_a_revisar = {(jugador['puuid'], jugador['queue_type']) for jugador in todos_los_datos if jugador['queue_type'] in queue_map}
 
         for puuid, queue_type in jugadores_a_revisar:
             queue_id = str(queue_map[queue_type])
-            ahora = time.time()
-            
             entrada_cache = stats_data.get(puuid, {}).get(queue_id, {})
             if not entrada_cache or (ahora - entrada_cache.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
-                print(f"Actualizando stats de campeón para PUUID {puuid[:8]} en cola {queue_type}...")
-                nuevas_stats = obtener_estadisticas_campeon_mas_jugado(api_key, puuid, int(queue_id))
-                
-                if nuevas_stats:
-                    if puuid not in stats_data:
-                        stats_data[puuid] = {}
-                    
-                    stats_data[puuid][queue_id] = {
-                        "stats": nuevas_stats,
+                tareas_stats.append((api_key, puuid, int(queue_id), queue_type))
+
+        nuevas_stats_dict = {}
+        if tareas_stats:
+            print(f"Se actualizarán las estadísticas de campeones para {len(tareas_stats)} entradas...")
+            # Usamos un pool más pequeño para no abusar de la API de Riot
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                # Pasamos los argumentos a la función de obtención de stats
+                resultados_stats = executor.map(lambda p: obtener_estadisticas_campeon_mas_jugado(*p), tareas_stats)
+            
+            for tarea, resultado in zip(tareas_stats, resultados_stats):
+                _, puuid, queue_id, _ = tarea
+                if resultado:
+                    if puuid not in nuevas_stats_dict:
+                        nuevas_stats_dict[puuid] = {}
+                    nuevas_stats_dict[puuid][str(queue_id)] = {
+                        "stats": resultado,
                         "timestamp": ahora
                     }
-                    stats_actualizadas = True
 
-        if stats_actualizadas:
+        if nuevas_stats_dict:
+            # Actualizar el diccionario principal con los nuevos datos
+            for puuid, queues in nuevas_stats_dict.items():
+                if puuid not in stats_data:
+                    stats_data[puuid] = {}
+                stats_data[puuid].update(queues)
+            
             guardar_top_champion_stats_en_github(stats_data)
 
         # Paso 4: Inyectar los datos de campeones en la lista de jugadores
@@ -485,8 +511,8 @@ def obtener_datos_jugadores():
         return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
 
 def get_peak_elo_key(jugador):
-    # Usar PUUID como clave única para evitar problemas con cambios de nombre
-    return f"{jugador['queue_type']}|{jugador['puuid']}"
+    # Clave para el peak ELO usando el nombre del jugador y su Riot ID
+    return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
 
 @app.route('/')
 def index():
