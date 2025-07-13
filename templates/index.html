@@ -33,12 +33,6 @@
         .win-rate-bajo {
             color: tomato !important;
         }
-        .streak-w {
-            color: #ff9800; /* Naranja para racha de victorias */
-        }
-        .streak-l {
-            color: #607d8b; /* Gris azulado para racha de derrotas */
-        }
         .peak-elo {
             color: gold;
             font-weight: bold;
@@ -296,7 +290,6 @@
                     <th class="hidden">Valor Clasificación</th>
                     <th>Dist. Peak Elo</th>
                     <th>Dif. Elo</th>
-                    <th data-sort-by="streak">Racha</th>
                     <th>Estado</th>
                 </tr>
             </thead>
@@ -360,20 +353,6 @@
                         {% endif %}
                     </td>
                     <td class="elo-diferencia"></td>
-                    <td>
-                        {% if jugador.streak %}
-                            <span class="streak-{{ jugador.streak.type | lower }} fw-bold">
-                                {% if jugador.streak.type == 'W' %}
-                                    <i class="fas fa-fire" title="{{ jugador.streak.count }} victorias seguidas"></i>
-                                {% else %}
-                                    <i class="fas fa-skull-crossbones" title="{{ jugador.streak.count }} derrotas seguidas"></i>
-                                {% endif %}
-                                {{ jugador.streak.count }}
-                            </span>
-                        {% else %}
-                            <span>-</span>
-                        {% endif %}
-                    </td>
                     <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
                             {% if jugador.en_partida %}
@@ -485,12 +464,6 @@
                 case 'win_rate':
                     // Para el win rate, quitar el '%' y convertir a número
                     return parseFloat(cell.textContent);
-                case 'streak':
-                    const streakText = cell.textContent.trim();
-                    if (streakText === '-') return 0;
-                    const type = streakText.includes('W') ? 1 : -1; // Victorias son positivas, derrotas negativas para ordenar
-                    const count = parseInt(streakText);
-                    return type * count;
                 default:
                     // Para el resto de columnas numéricas (wins, losses, total)
                     return parseInt(cell.textContent, 10);
@@ -515,33 +488,41 @@
                 return 0;
             });
 
-            // Actualizar la tabla y los cálculos en un solo paso
-            sortedRows.forEach((row, index) => {
-                tbody.appendChild(row);
+            sortedRows.forEach(row => tbody.appendChild(row));
 
-                // Actualizar número de posición
-                row.cells[0].textContent = index + 1;
-                
-                const eloDiffCell = row.querySelector(".elo-diferencia");
-                if (sortBy === 'elo') {
-                    if (index === 0) {
-                        eloDiffCell.textContent = "—";
-                    } else {
-                        const currentElo = parseFloat(row.querySelector(".hidden").textContent);
-                        const prevElo = parseFloat(sortedRows[index - 1].querySelector(".hidden").textContent);
-                        const diff = Math.round(prevElo - currentElo);
-                        eloDiffCell.textContent = `${diff} LPs`;
-                    }
-                } else {
-                    eloDiffCell.textContent = "N/A";
-                }
-            });
-
-            // Actualizar los indicadores de ordenación en los encabezados
             headers.forEach(th => {
                 th.classList.remove('sort-asc', 'sort-desc');
                 if (th.dataset.sortBy === sortBy) {
                     th.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            updateTableCalculations(sortBy, sortedRows);
+        };
+
+        // Función para actualizar la posición y la columna "Dif. Elo"
+        const updateTableCalculations = (sortedBy, visibleRows) => {
+            visibleRows.forEach((row, index) => {
+                // Actualizar número de posición
+                row.cells[0].textContent = index + 1;
+
+                const eloDiffCell = row.querySelector(".elo-diferencia");
+                
+                // Calcular la diferencia de ELO solo si la tabla está ordenada por ELO
+                if (sortedBy === 'elo') {
+                    if (index === 0) {
+                        // El primer jugador no tiene diferencia
+                        eloDiffCell.textContent = "—";
+                    } else {
+                        // Obtener el valor de ELO directamente de la celda oculta
+                        const currentElo = parseFloat(row.querySelector(".hidden").textContent);
+                        const prevElo = parseFloat(visibleRows[index - 1].querySelector(".hidden").textContent);
+                        const diff = Math.round(prevElo - currentElo); // Usar Math.round para evitar decimales
+                        eloDiffCell.textContent = `${diff} LPs`;
+                    }
+                } else {
+                    // Si no está ordenado por ELO, mostrar N/A
+                    eloDiffCell.textContent = "N/A";
                 }
             });
         };
