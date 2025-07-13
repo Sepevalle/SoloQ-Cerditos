@@ -23,6 +23,10 @@
             font-size: 0.6em;
             font-weight: normal;
         }
+        .small-text-stats {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
         .win-rate-alto {
             color: #228B22 !important;
         }
@@ -276,6 +280,7 @@
                 <tr>
                     <th data-sort-by="elo">Posición</th>
                     <th data-sort-by="jugador">Jugador</th>
+                    <th>Campeón Principal</th>
                     <th data-sort-by="game_name">Game Name</th>
                     <th data-sort-by="elo">Elo</th>
                     <th data-sort-by="wins">Wins</th>
@@ -304,6 +309,22 @@
                                 onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
                             <span class="ms-2">{{ jugador.jugador }}</span>
                         </div>
+                    </td>
+                    <td>
+                        {% if jugador.top_champion_stats and jugador.top_champion_stats.champion_name %}
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.top_champion_stats.champion_name }}.png" 
+                                     alt="{{ jugador.top_champion_stats.champion_name }}"
+                                     title="{{ jugador.top_champion_stats.champion_name }}"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold {% if jugador.top_champion_stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(jugador.top_champion_stats.win_rate) }}% WR</div>
+                                    <div class="small-text-stats">({{ jugador.top_champion_stats.games_played }} partidas)</div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <span>N/A</span>
+                        {% endif %}
                     </td>
                     <td>
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
