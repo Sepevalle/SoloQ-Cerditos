@@ -30,8 +30,8 @@ top_champion_stats_cache = {
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
 
-# Fecha de inicio del Split 2 de la temporada 14 (2024)
-SEASON_START_TIMESTAMP = int(datetime(2024, 5, 15).timestamp())
+# Fecha de inicio de la temporada 14 (2024) para el historial de partidas
+SEASON_START_TIMESTAMP = int(datetime(2024, 1, 10).timestamp())
 
 API_SESSION = requests.Session() # Usar una sesión para reutilizar conexiones
 
@@ -132,29 +132,29 @@ def esta_en_partida(api_key, puuid):
         print(f"Error de red al comprobar si el jugador {puuid} está en partida: {e}")
     return None
 
-def obtener_stats_partidas_incrementales(api_key, puuid, queue_id, start_timestamp):
+def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type):
     """
-    Obtiene todas las partidas para un jugador en una cola específica DESDE un timestamp dado.
-    Devuelve un diccionario con las estadísticas por campeón y el timestamp de la partida más reciente.
+    Analiza TODAS las partidas de la temporada actual de una cola para encontrar el campeón más jugado
+    y calcular su winrate y número de partidas.
 
     Args:
         api_key (str): Clave de la API de Riot.
         puuid (str): El PUUID del jugador.
         queue_id (int): ID de la cola (420 para SoloQ, 440 para Flex).
-        start_timestamp (int): Timestamp (en segundos) desde el cual buscar partidas.
+        queue_type (str): Nombre de la cola para los logs.
 
     Returns:
-        tuple: (diccionario de stats, timestamp de la última partida procesada).
+        dict: Estadísticas del campeón más jugado, o un diccionario vacío si no hay datos.
     """
     all_match_ids = []
     start_index = 0
     while True:
         # Paginamos de 100 en 100 para obtener todos los IDs de partida de la temporada
-        # La API devuelve las partidas más recientes primero, lo cual es perfecto para las rachas.
-        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?queue={queue_id}&startTime={start_timestamp}&start={start_index}&count=100&api_key={api_key}"
+        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
         response_matches = make_api_request(url_matches)
         
         if not response_matches:
+            print(f"Error al obtener la página {start_index // 100} del historial para {puuid} (cola {queue_type}).")
             break
         
         match_ids_page = response_matches.json()
@@ -162,47 +162,46 @@ def obtener_stats_partidas_incrementales(api_key, puuid, queue_id, start_timesta
             break # No hay más partidas
         
         all_match_ids.extend(match_ids_page)
+        
         if len(match_ids_page) < 100:
             break # Última página
         
         start_index += 100
         time.sleep(1) # Pausa entre llamadas de paginación
 
-    if not all_match_ids: 
-        return {}, start_timestamp, []
-
-    stats_por_campeon = {}
-    timestamp_partida_mas_reciente = start_timestamp
-    lista_resultados_nuevos = []
-
+    if not all_match_ids:
+        # Es normal no encontrar partidas, no se muestra log para no generar ruido.
+        return {}
+    
+    print(f"Analizando {len(all_match_ids)} partidas de temporada para {puuid} (cola {queue_type})...")
+    partidas_jugador = []
     for match_id in all_match_ids:
         time.sleep(0.07) # Pausa para no exceder el rate limit por segundo
         url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
         response_match = make_api_request(url_match)
         if response_match:
             match_data = response_match.json()
-            game_creation_ts = match_data['info']['gameCreation'] // 1000
-            if game_creation_ts > timestamp_partida_mas_reciente:
-                timestamp_partida_mas_reciente = game_creation_ts
-
             for p in match_data['info']['participants']:
                 if p['puuid'] == puuid:
-                    champ_name = p['championName']
-                    if champ_name not in stats_por_campeon:
-                        stats_por_campeon[champ_name] = {'wins': 0, 'losses': 0, 'kills': 0, 'deaths': 0, 'assists': 0}
-                    
-                    stats_por_campeon[champ_name]['kills'] += p.get('kills', 0)
-                    stats_por_campeon[champ_name]['deaths'] += p.get('deaths', 0)
-                    stats_por_campeon[champ_name]['assists'] += p.get('assists', 0)
-                    if p['win']:
-                        stats_por_campeon[champ_name]['wins'] += 1
-                    else:
-                        stats_por_campeon[champ_name]['losses'] += 1
-                    lista_resultados_nuevos.append(p['win'])
+                    partidas_jugador.append({'champion': p['championName'], 'win': p['win']})
                     break
 
-    # Añadimos 1 segundo para no volver a procesar la última partida en el siguiente ciclo
-    return stats_por_campeon, timestamp_partida_mas_reciente + 1, lista_resultados_nuevos
+    if not partidas_jugador:
+        return {}
+
+    # Encontrar el campeón más jugado
+    contador_campeones = Counter(p['champion'] for p in partidas_jugador)
+    if not contador_campeones:
+        return {}
+    campeon_mas_jugado, _ = contador_campeones.most_common(1)[0]
+
+    # Filtrar partidas solo de ese campeón y calcular stats
+    partidas_con_campeon = [p for p in partidas_jugador if p['champion'] == campeon_mas_jugado]
+    wins = sum(1 for p in partidas_con_campeon if p['win'])
+    total_partidas = len(partidas_con_campeon)
+    winrate = (wins / total_partidas * 100) if total_partidas > 0 else 0
+
+    return {"champion_name": campeon_mas_jugado, "win_rate": winrate, "games_played": total_partidas}
 
 
 def leer_cuentas(url):
@@ -441,8 +440,7 @@ def procesar_jugador(args):
             ),
             "nombre_campeon": nombre_campeon,
             "champion_id": champion_id if champion_id else "Desconocido",
-            "top_champion_stats": {}, # Placeholder, se rellenará desde el caché
-            "streak": None # Placeholder para la racha
+            "top_champion_stats": {} # Placeholder, se rellenará desde el caché
         }
         datos_jugador_list.append(datos_jugador)
     return datos_jugador_list
@@ -450,9 +448,9 @@ def procesar_jugador(args):
 def actualizar_estadisticas_campeones_en_segundo_plano():
     """
     Tarea pesada que se ejecuta en un hilo separado con menos frecuencia.
-    Actualiza las estadísticas de campeones de forma incremental y secuencial.
+    Actualiza las estadísticas de campeones de forma secuencial para no saturar la API.
     """
-    print("Iniciando ciclo de actualización incremental de estadísticas de campeones...")
+    print("Iniciando ciclo de actualización de estadísticas de campeones en segundo plano...")
     api_key = os.environ.get('RIOT_API_KEY', 'RIOT_API_KEY')
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     
@@ -466,46 +464,23 @@ def actualizar_estadisticas_campeones_en_segundo_plano():
             queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
             ahora = time.time()
 
-            # Procesamos secuencialmente para ser amigables con la API de Riot
+            # Procesamos secuencialmente para ser amigables con la API
             for riot_id, _ in cuentas:
                 puuid = puuid_dict.get(riot_id)
                 if not puuid:
                     continue
 
                 for queue_type, queue_id in queue_map.items():
-                    queue_id_str = str(queue_id)
-                    entrada_cache = stats_data.get(puuid, {}).get(queue_id_str, {})
-                    
-                    # Si es una entrada nueva o si ha pasado el timeout, se actualiza
-                    if not entrada_cache or (ahora - entrada_cache.get("update_timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
-                        # Para entradas nuevas, se busca desde el inicio de la season. Para existentes, desde la última partida conocida.
-                        start_timestamp = entrada_cache.get("last_match_timestamp", SEASON_START_TIMESTAMP)
-                        print(f"Buscando nuevas partidas para {riot_id} en {queue_type} desde {datetime.fromtimestamp(start_timestamp).strftime('%Y-%m-%d')}...")
-                        nuevas_stats, nuevo_last_timestamp, nuevos_resultados = obtener_stats_partidas_incrementales(api_key, puuid, queue_id, start_timestamp)
+                    entrada_cache = stats_data.get(puuid, {}).get(str(queue_id), {})
+                    if not entrada_cache or (ahora - entrada_cache.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
+                        print(f"Actualizando stats para {riot_id} en cola {queue_type}...")
+                        nuevas_stats = obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type)
                         
                         if nuevas_stats:
-                            print(f"Se encontraron {sum(sum(v.values()) for v in nuevas_stats.values())} partidas nuevas para {riot_id} en {queue_type}.")
-                            stats_viejas = entrada_cache.get("champions", {})
-                            stats_combinadas = stats_viejas.copy()
-
-                            for champ, data in nuevas_stats.items():
-                                if champ not in stats_combinadas:
-                                    stats_combinadas[champ] = {"wins": 0, "losses": 0, 'kills': 0, 'deaths': 0, 'assists': 0}
-                                for key in data:
-                                    stats_combinadas[champ][key] += data[key]
-
-                            # Actualizar la lista de resultados recientes para calcular la racha
-                            resultados_viejos = entrada_cache.get("recent_results", [])
-                            resultados_combinados = nuevos_resultados + resultados_viejos
-                            resultados_actualizados = resultados_combinados[:10] # Guardamos solo los últimos 10
-
                             if puuid not in stats_data:
                                 stats_data[puuid] = {}
-                            stats_data[puuid][queue_id_str] = {"champions": stats_combinadas, "last_match_timestamp": nuevo_last_timestamp, 
-                                                               "update_timestamp": ahora, "recent_results": resultados_actualizados}
+                            stats_data[puuid][str(queue_id)] = {"stats": nuevas_stats, "timestamp": ahora}
                             stats_actualizadas = True
-                        elif entrada_cache: # Si no hay stats nuevas pero sí una entrada antigua, solo actualizamos el timestamp de revisión
-                            stats_data[puuid][queue_id_str]["update_timestamp"] = ahora
             
             if stats_actualizadas:
                 print("Guardando estadísticas de campeones actualizadas en GitHub...")
@@ -560,38 +535,8 @@ def actualizar_cache():
         for jugador in todos_los_datos:
             queue_id_str = str(queue_map.get(jugador['queue_type']))
             if queue_id_str:
-                champions_data = stats_data.get(jugador['puuid'], {}).get(queue_id_str, {}).get('champions', {})
-                stats_campeon = {}
-                if champions_data:
-                    # Encontrar el campeón más jugado
-                    campeon_mas_jugado = max(champions_data, key=lambda c: champions_data[c]['wins'] + champions_data[c]['losses'])
-                    stats_champ = champions_data[campeon_mas_jugado]
-                    total_partidas = stats_champ['wins'] + stats_champ['losses']
-                    winrate = (stats_champ['wins'] / total_partidas * 100) if total_partidas > 0 else 0
-                    
-                    stats_campeon = {
-                        "champion_name": campeon_mas_jugado,
-                        "win_rate": winrate,
-                        "games_played": total_partidas,
-                        "kda_stats": stats_champ # Pasamos todas las stats para uso futuro
-                    }
-
-                # Calcular la racha a partir de los resultados guardados
-                recent_results = stats_data.get(jugador['puuid'], {}).get(queue_id_str, {}).get('recent_results', [])
-                streak = None
-                if len(recent_results) > 1:
-                    streak_type = 'W' if recent_results[0] else 'L'
-                    streak_count = 0
-                    for result in recent_results:
-                        if (streak_type == 'W' and result) or (streak_type == 'L' and not result):
-                            streak_count += 1
-                        else:
-                            break
-                    if streak_count > 1:
-                        streak = {"type": streak_type, "count": streak_count}
-
+                stats_campeon = stats_data.get(jugador['puuid'], {}).get(queue_id_str, {}).get('stats', {})
                 jugador['top_champion_stats'] = stats_campeon
-                jugador['streak'] = streak
 
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
@@ -648,45 +593,21 @@ def perfil_jugador(nombre_jugador):
     if not datos_del_jugador:
         return render_template('404.html'), 404
 
-    # Primero, separamos los datos en SoloQ y Flex para construir el perfil
+    # Leer el peak elo para mostrarlo en el perfil
+    lectura_exitosa, peak_elo_dict = leer_peak_elo()
+    if lectura_exitosa:
+        for datos_cola in datos_del_jugador:
+            key = get_peak_elo_key(datos_cola)
+            datos_cola['peak_elo'] = peak_elo_dict.get(key, datos_cola['valor_clasificacion'])
+    else: # Fallback si no se puede leer el peak elo
+        for datos_cola in datos_del_jugador:
+            datos_cola['peak_elo'] = datos_cola['valor_clasificacion']
+
     perfil = {
         'nombre': nombre_jugador,
         'soloq': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_SOLO_5x5'), None),
         'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
     }
-
-    # Ahora, enriquecemos los datos del perfil con información adicional
-    lectura_exitosa, peak_elo_dict = leer_peak_elo()
-    stats_data = leer_top_champion_stats() # Leemos el caché completo de estadísticas
-    queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-    
-    # Iteramos sobre los datos de SoloQ y Flex que ya están en el perfil
-    for datos_cola in [perfil['soloq'], perfil['flex']]:
-        if datos_cola:
-            # Añadir Peak ELO
-            if lectura_exitosa:
-                key = get_peak_elo_key(datos_cola)
-                datos_cola['peak_elo'] = peak_elo_dict.get(key, datos_cola['valor_clasificacion'])
-            else:
-                datos_cola['peak_elo'] = datos_cola['valor_clasificacion']
-
-            # Añadir la lista completa de campeones y sus estadísticas
-            queue_id_str = str(queue_map.get(datos_cola['queue_type']))
-            champions_data = stats_data.get(datos_cola['puuid'], {}).get(queue_id_str, {}).get('champions', {})
-            
-            if champions_data:
-                # Ordenar campeones por partidas jugadas
-                sorted_champs = sorted(champions_data.items(), key=lambda item: item[1]['wins'] + item[1]['losses'], reverse=True)
-                
-                # Añadir stats procesadas (winrate, etc.) a cada campeón
-                for champ_name, stats in sorted_champs:
-                    stats['games_played'] = stats['wins'] + stats['losses']
-                    stats['win_rate'] = (stats['wins'] / stats['games_played'] * 100) if stats['games_played'] > 0 else 0
-                
-                datos_cola['all_champion_stats'] = sorted_champs
-            else:
-                datos_cola['all_champion_stats'] = []
-
     return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
 
 def keep_alive():
