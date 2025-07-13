@@ -438,6 +438,54 @@ def procesar_jugador(args):
         datos_jugador_list.append(datos_jugador)
     return datos_jugador_list
 
+def actualizar_estadisticas_campeones_en_segundo_plano():
+    """
+    Tarea pesada que se ejecuta en un hilo separado con menos frecuencia.
+    Actualiza las estadísticas de campeones de forma secuencial para no saturar la API.
+    """
+    print("Iniciando ciclo de actualización de estadísticas de campeones en segundo plano...")
+    api_key = os.environ.get('RIOT_API_KEY', 'RIOT_API_KEY')
+    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
+    
+    while True:
+        try:
+            cuentas = leer_cuentas(url_cuentas)
+            puuid_dict = leer_puuids()
+            stats_data = leer_top_champion_stats()
+            stats_actualizadas = False
+            
+            queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
+            ahora = time.time()
+
+            # Procesamos secuencialmente para ser amigables con la API
+            for riot_id, _ in cuentas:
+                puuid = puuid_dict.get(riot_id)
+                if not puuid:
+                    continue
+
+                for queue_type, queue_id in queue_map.items():
+                    entrada_cache = stats_data.get(puuid, {}).get(str(queue_id), {})
+                    if not entrada_cache or (ahora - entrada_cache.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
+                        print(f"Actualizando stats para {riot_id} en cola {queue_type}...")
+                        nuevas_stats = obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type)
+                        
+                        if nuevas_stats:
+                            if puuid not in stats_data:
+                                stats_data[puuid] = {}
+                            stats_data[puuid][str(queue_id)] = {"stats": nuevas_stats, "timestamp": ahora}
+                            stats_actualizadas = True
+            
+            if stats_actualizadas:
+                print("Guardando estadísticas de campeones actualizadas en GitHub...")
+                guardar_top_champion_stats_en_github(stats_data)
+
+            print("Ciclo de actualización de estadísticas completado. Próxima revisión en 30 minutos.")
+            time.sleep(1800) # Esperar 30 minutos para el siguiente ciclo
+
+        except Exception as e:
+            print(f"Error en el hilo de actualización de estadísticas: {e}. Reintentando en 5 minutos.")
+            time.sleep(300)
+
 def actualizar_cache():
     """
     Esta función realiza el trabajo pesado: obtiene todos los datos de la API
@@ -473,50 +521,10 @@ def actualizar_cache():
         if datos_jugador_list:
             todos_los_datos.extend(datos_jugador_list)
 
-    # Paso 3: Obtener y cachear estadísticas de campeones más jugados
+    # Paso 3: Inyectar los datos de campeones desde el caché (ya no se calculan aquí)
     with top_champion_stats_cache["lock"]:
         stats_data = leer_top_champion_stats()
         queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-
-        # Identificar qué jugadores/colas necesitan actualización
-        tareas_stats = []
-        ahora = time.time()
-        jugadores_a_revisar = {(jugador['puuid'], jugador['queue_type']) for jugador in todos_los_datos if jugador['queue_type'] in queue_map}
-
-        for puuid, queue_type in jugadores_a_revisar:
-            queue_id = str(queue_map[queue_type])
-            entrada_cache = stats_data.get(puuid, {}).get(queue_id, {})
-            if not entrada_cache or (ahora - entrada_cache.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
-                tareas_stats.append((api_key, puuid, int(queue_id), queue_type))
-
-        nuevas_stats_dict = {}
-        if tareas_stats:
-            print(f"Se actualizarán las estadísticas de campeones para {len(tareas_stats)} entradas...")
-            # Usamos un pool más pequeño para no abusar de la API de Riot
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                # Pasamos los argumentos a la función de obtención de stats
-                resultados_stats = executor.map(lambda p: obtener_estadisticas_campeon_mas_jugado(*p), tareas_stats)
-            
-            for tarea, resultado in zip(tareas_stats, resultados_stats):
-                _, puuid, queue_id, _ = tarea
-                if resultado:
-                    if puuid not in nuevas_stats_dict:
-                        nuevas_stats_dict[puuid] = {}
-                    nuevas_stats_dict[puuid][str(queue_id)] = {
-                        "stats": resultado,
-                        "timestamp": ahora
-                    }
-
-        if nuevas_stats_dict:
-            # Actualizar el diccionario principal con los nuevos datos
-            for puuid, queues in nuevas_stats_dict.items():
-                if puuid not in stats_data:
-                    stats_data[puuid] = {}
-                stats_data[puuid].update(queues)
-            
-            guardar_top_champion_stats_en_github(stats_data)
-
-        # Paso 4: Inyectar los datos de campeones en la lista de jugadores
         for jugador in todos_los_datos:
             queue_id_str = str(queue_map.get(jugador['queue_type']))
             if queue_id_str:
@@ -567,6 +575,34 @@ def index():
     
     return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion, ddragon_version=DDRAGON_VERSION)
 
+@app.route('/jugador/<nombre_jugador>')
+def perfil_jugador(nombre_jugador):
+    """Muestra una página de perfil para un jugador específico."""
+    todos_los_datos, _ = obtener_datos_jugadores()
+    
+    # Filtrar los datos para el jugador específico
+    datos_del_jugador = [j for j in todos_los_datos if j['jugador'] == nombre_jugador]
+    
+    if not datos_del_jugador:
+        return render_template('404.html'), 404
+
+    # Leer el peak elo para mostrarlo en el perfil
+    lectura_exitosa, peak_elo_dict = leer_peak_elo()
+    if lectura_exitosa:
+        for datos_cola in datos_del_jugador:
+            key = get_peak_elo_key(datos_cola)
+            datos_cola['peak_elo'] = peak_elo_dict.get(key, datos_cola['valor_clasificacion'])
+    else: # Fallback si no se puede leer el peak elo
+        for datos_cola in datos_del_jugador:
+            datos_cola['peak_elo'] = datos_cola['valor_clasificacion']
+
+    perfil = {
+        'nombre': nombre_jugador,
+        'soloq': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_SOLO_5x5'), None),
+        'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
+    }
+    return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
+
 def keep_alive():
     while True:
         try:
@@ -591,6 +627,11 @@ if __name__ == "__main__":
     cache_thread = threading.Thread(target=actualizar_cache_periodicamente)
     cache_thread.daemon = True
     cache_thread.start()
+
+    # Hilo para la actualización pesada de estadísticas de campeones
+    stats_thread = threading.Thread(target=actualizar_estadisticas_campeones_en_segundo_plano)
+    stats_thread.daemon = True
+    stats_thread.start()
 
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
