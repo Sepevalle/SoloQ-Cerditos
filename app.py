@@ -530,6 +530,8 @@ def actualizar_estadisticas_campeones_en_segundo_plano():
                             if (ahora - entrada_cache.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
                                 stats_data[puuid][str(queue_id)]["timestamp"] = ahora
                                 stats_actualizadas = True
+                
+                print(f"Análisis de estadísticas para {riot_id} completado.")
             
             if stats_actualizadas:
                 print("Guardando estadísticas de campeones actualizadas en GitHub...")
