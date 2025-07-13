@@ -19,6 +19,9 @@ cache = {
 }
 CACHE_TIMEOUT = 130  # 2 minutos para estar seguros
 
+# Directorio para historiales de partidas por jugador
+HISTORIALES_DIR = "historiales"
+
 # Caché para estadísticas de campeones
 CHAMPION_STATS_CACHE_TIMEOUT = 86400 # 24 horas
 
@@ -139,70 +142,94 @@ def esta_en_partida(api_key, puuid):
         print(f"Error de red al comprobar si el jugador {puuid} está en partida: {e}")
     return None
 
-def obtener_maestria_campeones(api_key, puuid):
-    """Obtiene la lista de maestrías de campeones para un jugador, ordenadas por puntos."""
-    url = f"https://euw1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key={api_key}"
-    response = make_api_request(url)
-    if response:
-        return response.json()
-    return None
+def leer_historial_jugador(puuid):
+    """Lee la lista de match_ids procesados para un jugador desde su archivo local."""
+    historial_path = os.path.join(HISTORIALES_DIR, f"{puuid}.json")
+    if os.path.exists(historial_path):
+        try:
+            with open(historial_path, 'r') as f:
+                return set(json.load(f))
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error leyendo el historial para {puuid}: {e}. Se tratará como vacío.")
+    return set()
 
-def obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type):
+def guardar_historial_jugador(puuid, match_ids):
+    """Guarda la lista completa de match_ids procesados para un jugador."""
+    if not os.path.exists(HISTORIALES_DIR):
+        os.makedirs(HISTORIALES_DIR)
+    historial_path = os.path.join(HISTORIALES_DIR, f"{puuid}.json")
+    try:
+        with open(historial_path, 'w') as f:
+            json.dump(list(match_ids), f)
+    except IOError as e:
+        print(f"Error guardando el historial para {puuid}: {e}")
+
+def actualizar_estadisticas_campeon_incremental(api_key, puuid, queue_id, stats_actuales):
     """
-    [OPTIMIZADO] Obtiene las estadísticas del campeón más jugado de forma eficiente.
-    1. Encuentra el campeón con más maestría.
-    2. Pide el historial de partidas de la temporada SOLO para ese campeón.
-    3. Analiza esas partidas para calcular el winrate.
+    [OPTIMIZADO] Actualiza las estadísticas de campeones de forma incremental.
+    1. Carga el historial de partidas ya procesadas.
+    2. Pide a la API el historial de partidas por páginas, parando en cuanto encuentra una partida ya procesada.
+    3. Procesa solo las partidas nuevas y actualiza las estadísticas existentes.
     """
-    # Paso 1: Obtener el campeón con más maestría como el candidato más probable.
-    maestrias = obtener_maestria_campeones(api_key, puuid)
-    if not maestrias:
-        print(f"No se encontraron maestrías para {puuid}.")
-        return {}
+    # 1. Cargar historial local
+    historial_guardado = leer_historial_jugador(f"{puuid}_{queue_id}")
     
-    campeon_id_mas_maestria = maestrias[0]['championId']
-    campeon_nombre = obtener_nombre_campeon(campeon_id_mas_maestria)
-
-    # Paso 2: Obtener el historial de partidas de la temporada SOLO para ese campeón.
-    print(f"Buscando partidas de temporada para {puuid} con {campeon_nombre} (cola {queue_type})...")
-    match_ids_campeon = []
+    # 2. Obtener solo las partidas nuevas de la API de forma eficiente
+    partidas_nuevas = []
     start_index = 0
+    
     while True:
-        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&champion={campeon_id_mas_maestria}&start={start_index}&count=100&api_key={api_key}"
+        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
         response_matches = make_api_request(url_matches)
-
-        if not response_matches:
-            break
-
-        match_ids_page = response_matches.json()
-        if not match_ids_page:
-            break
-
-        match_ids_campeon.extend(match_ids_page)
-        if len(match_ids_page) < 100:
-            break
+        if not response_matches: break
+        
+        page_match_ids = response_matches.json()
+        if not page_match_ids: break
+        
+        partidas_no_procesadas_en_pagina = []
+        parar_busqueda = False
+        for match_id in page_match_ids:
+            if match_id in historial_guardado:
+                parar_busqueda = True
+                break # Encontramos una partida ya procesada, las siguientes son más antiguas
+            else:
+                partidas_no_procesadas_en_pagina.append(match_id)
+        
+        partidas_nuevas.extend(partidas_no_procesadas_en_pagina)
+        
+        if parar_busqueda or len(page_match_ids) < 100:
+            break # Paramos si encontramos una partida conocida o si es la última página
+            
         start_index += 100
 
-    if not match_ids_campeon:
-        return {}
+    if not partidas_nuevas:
+        print(f"No hay partidas nuevas que procesar para {puuid} en la cola {queue_id}.")
+        return stats_actuales, False # No hay cambios
 
-    # Paso 3: Analizar los detalles de esas partidas para calcular el winrate.
-    wins = 0
-    total_partidas_campeon = len(match_ids_campeon)
-    for match_id in match_ids_campeon:
-        time.sleep(0.07)  # Pausa para no exceder el rate limit por segundo
+    print(f"Procesando {len(partidas_nuevas)} partidas nuevas para {puuid} en la cola {queue_id}...")
+    
+    # 3. Procesar solo las partidas nuevas (en orden cronológico inverso: de la más nueva a la más antigua)
+    for match_id in partidas_nuevas:
+        time.sleep(0.07) # Pausa para no exceder el rate limit
         url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
         response_match = make_api_request(url_match)
         if response_match:
             match_data = response_match.json()
             for p in match_data['info']['participants']:
                 if p['puuid'] == puuid:
+                    champion_id_str = str(p['championId'])
+                    if champion_id_str not in stats_actuales:
+                        stats_actuales[champion_id_str] = {"games": 0, "wins": 0}
+                    stats_actuales[champion_id_str]["games"] += 1
                     if p['win']:
-                        wins += 1
-                    break
-    winrate = (wins / total_partidas_campeon * 100) if total_partidas_campeon > 0 else 0
+                        stats_actuales[champion_id_str]["wins"] += 1
+                    break # Siguiente partida
 
-    return {"champion_name": campeon_nombre, "win_rate": winrate, "games_played": total_partidas_campeon}
+    # 4. Guardar el nuevo historial completo
+    nuevo_historial_completo = historial_guardado.union(partidas_nuevas)
+    guardar_historial_jugador(f"{puuid}_{queue_id}", nuevo_historial_completo)
+    
+    return stats_actuales, True # Hubo cambios
 
 
 def leer_cuentas(url):
@@ -480,17 +507,29 @@ def actualizar_estadisticas_campeones_en_segundo_plano():
 
                     if debe_actualizar:
                         print(f"Actualizando stats para {riot_id} en cola {queue_type}...")
-                        nuevas_stats = obtener_estadisticas_campeon_mas_jugado(api_key, puuid, queue_id, queue_type)
+                        # Obtenemos las stats actuales para este jugador y cola
+                        stats_actuales = entrada_cache.get("stats", {})
                         
-                        if nuevas_stats:
+                        stats_actualizadas_jugador, hubo_cambios = actualizar_estadisticas_campeon_incremental(
+                            api_key, puuid, queue_id, stats_actuales
+                        )
+                        
+                        if hubo_cambios:
                             if puuid not in stats_data:
                                 stats_data[puuid] = {}
+                            
+                            # Guardamos el diccionario completo de campeones
                             stats_data[puuid][str(queue_id)] = {
-                                "stats": nuevas_stats, 
+                                "stats": stats_actualizadas_jugador, 
                                 "timestamp": ahora, 
                                 "total_games_snapshot": partidas_actuales
                             }
                             stats_actualizadas = True
+                        else:
+                            # Aunque no haya partidas nuevas, actualizamos el timestamp si ha pasado el timeout
+                            if (ahora - entrada_cache.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT:
+                                stats_data[puuid][str(queue_id)]["timestamp"] = ahora
+                                stats_actualizadas = True
             
             if stats_actualizadas:
                 print("Guardando estadísticas de campeones actualizadas en GitHub...")
@@ -570,8 +609,22 @@ def actualizar_cache():
         for jugador in todos_los_datos:
             queue_id_str = str(queue_map.get(jugador['queue_type']))
             if queue_id_str:
-                stats_campeon = stats_data.get(jugador['puuid'], {}).get(queue_id_str, {}).get('stats', {})
-                jugador['top_champion_stats'] = stats_campeon
+                # Leemos el diccionario completo de estadísticas de campeones
+                all_champ_stats = stats_data.get(jugador['puuid'], {}).get(queue_id_str, {}).get('stats', {})
+                
+                # Calculamos el campeón top al vuelo para mostrarlo
+                if all_champ_stats:
+                    top_champ_id = max(all_champ_stats, key=lambda k: all_champ_stats[k]['games'])
+                    top_champ_data = all_champ_stats[top_champ_id]
+                    games = top_champ_data.get('games', 0)
+                    wins = top_champ_data.get('wins', 0)
+                    winrate = (wins / games * 100) if games > 0 else 0
+                    
+                    jugador['top_champion_stats'] = {
+                        "champion_name": obtener_nombre_campeon(int(top_champ_id)),
+                        "win_rate": winrate,
+                        "games_played": games
+                    }
 
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
