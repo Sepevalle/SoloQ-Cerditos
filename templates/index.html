@@ -287,7 +287,7 @@
                     <th data-sort-by="losses">Losses</th>
                     <th data-sort-by="total_games">Total Games</th>
                     <th data-sort-by="win_rate">Win Rate</th>
-                    <th>Valor Clasificación</th>
+                    <th class="hidden">Valor Clasificación</th>
                     <th>Dist. Peak Elo</th>
                     <th>Dif. Elo</th>
                     <th>Estado</th>
@@ -343,7 +343,7 @@
                     <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                         {{ '{:.2f}'.format(win_rate) }}%
                     </td>
-                    <td>{{ jugador.valor_clasificacion }}</td>
+                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
                     <td>
                         {% set diff_peak = jugador.valor_clasificacion - jugador.peak_elo %}
                         {% if diff_peak == 0 %}

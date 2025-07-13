@@ -225,10 +225,14 @@ def leer_cuentas(url):
         return []
 
 def calcular_valor_clasificacion(tier, rank, league_points):
+    tier_upper = tier.upper()
+    
+    # Para Master, Grandmaster y Challenger, el cálculo es más simple.
+    # La base es 2800 (el valor después de Diamond I 100 LP) y se suman los LPs.
+    if tier_upper in ["MASTER", "GRANDMASTER", "CHALLENGER"]:
+        return 2800 + league_points
+
     tierOrden = {
-        "CHALLENGER": 7,
-        "GRANDMASTER": 7,
-        "MASTER": 7,
         "DIAMOND": 6,
         "EMERALD": 5,
         "PLATINUM": 4,
@@ -238,17 +242,13 @@ def calcular_valor_clasificacion(tier, rank, league_points):
         "IRON": 0
     }
 
-    rankOrden = {
-        "I": 4,
-        "II": 3,
-        "III": 2,
-        "IV": 1
-    }
+    # El valor de la división es un extra sobre el valor base del tier (IV=0, III=100, II=200, I=300)
+    rankOrden = {"I": 3, "II": 2, "III": 1, "IV": 0}
 
-    tierValue = tierOrden.get(tier.upper(), 0)
-    rankValue = rankOrden.get(rank, 0)
+    valor_base_tier = tierOrden.get(tier_upper, 0) * 400
+    valor_division = rankOrden.get(rank, 0) * 100
 
-    return (tierValue * 400 + rankValue * 100 + league_points - 100)
+    return valor_base_tier + valor_division + league_points
 
 def leer_peak_elo():
     url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
@@ -436,7 +436,7 @@ def procesar_jugador(args):
             "valor_clasificacion": calcular_valor_clasificacion(
                 entry.get('tier', 'Sin rango'),
                 entry.get('rank', ''),
-                entry.get('league_points', 0)
+                entry.get('leaguePoints', 0)
             ),
             "nombre_campeon": nombre_campeon,
             "champion_id": champion_id if champion_id else "Desconocido",
