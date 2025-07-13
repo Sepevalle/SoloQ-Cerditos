@@ -30,8 +30,8 @@ top_champion_stats_cache = {
 # Para proteger la caché en un entorno multihilo
 cache_lock = threading.Lock()
 
-# Fecha de inicio de la temporada 14 (2024) para el historial de partidas
-SEASON_START_TIMESTAMP = int(datetime(2024, 1, 10).timestamp())
+# Fecha de inicio del Split 2 de la temporada 14 (2024)
+SEASON_START_TIMESTAMP = int(datetime(2024, 5, 15).timestamp())
 
 API_SESSION = requests.Session() # Usar una sesión para reutilizar conexiones
 
