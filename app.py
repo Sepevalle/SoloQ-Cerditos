@@ -125,8 +125,15 @@ def esta_en_partida(api_key, puuid):
         if response.status_code == 200:
             data = response.json()
             for participant in data.get("participants", []):
-                if participant['puuid'] == puuid:
-                    return participant.get('championId', None)
+                # Usamos .get() para evitar errores si la clave 'puuid' no existe
+                if participant.get('puuid') == puuid:
+                    return participant.get('championId') # Devuelve el ID o None si no lo tiene
+        elif response.status_code == 404:
+            # Caso esperado: el jugador no está en partida. No hacemos nada.
+            pass
+        else:
+            # Logueamos otros códigos de estado inesperados para facilitar la depuración
+            print(f"Respuesta inesperada de la API de espectador para {puuid}: {response.status_code} - {response.text}")
     except requests.exceptions.RequestException as e:
         # Si hay un error de red, asumimos que no está en partida para no bloquear la actualización.
         print(f"Error de red al comprobar si el jugador {puuid} está en partida: {e}")
