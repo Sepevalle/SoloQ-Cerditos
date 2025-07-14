@@ -20,8 +20,31 @@ cache = {
 CACHE_TIMEOUT = 130  # 2 minutos para estar seguros
 cache_lock = threading.Lock()
 
-# Fecha de inicio de la temporada 14 (2024) para el historial de partidas
-SEASON_START_TIMESTAMP = int(datetime(2024, 5, 15).timestamp())
+# --- CONFIGURACIÓN DE SPLITS ---
+# Define aquí los splits de la temporada 2025.
+# Las fechas de los splits 2 y 3 son estimadas y deberán actualizarse
+# cuando Riot Games las anuncie oficialmente.
+SPLITS = {
+    "s15_split1": {
+        "name": "Temporada 2025 - Split 1",
+        "start_date": datetime(2025, 1, 9), # Fecha oficial
+    },
+    "s15_split2": {
+        "name": "Temporada 2025 - Split 2",
+        "start_date": datetime(2025, 5, 15), # Fecha estimada
+    },
+    "s15_split3": {
+        "name": "Temporada 2025 - Split 3",
+        "start_date": datetime(2025, 9, 10), # Fecha estimada
+    }
+}
+
+# Cambia esta variable para seleccionar el split activo.
+ACTIVE_SPLIT_KEY = "s15_split1"
+# ------------------------------------------------
+
+# El timestamp de inicio se calcula automáticamente a partir del split activo
+SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())
 
 API_SESSION = requests.Session() # Usar una sesión para reutilizar conexiones
 
@@ -554,7 +577,8 @@ def actualizar_cache():
         historial = leer_historial_jugador_github(puuid)
         partidas_jugador = [
             p for p in historial.get('matches', []) 
-            if p.get('queue_id') == queue_id and 
+            if p.get('queue_id') == queue_id and
+               # Filtramos para que solo cuenten las partidas del split activo
                p.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
         ]
 
@@ -628,10 +652,15 @@ def index():
         for jugador in datos_jugadores:
             jugador["peak_elo"] = jugador["valor_clasificacion"] # Como fallback, mostramos el valor actual
 
+    # Obtenemos el nombre del split activo para mostrarlo en la web
+    split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
     ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
     
     
-    return render_template('index.html', datos_jugadores=datos_jugadores, ultima_actualizacion=ultima_actualizacion, ddragon_version=DDRAGON_VERSION)
+    return render_template('index.html', datos_jugadores=datos_jugadores, 
+                           ultima_actualizacion=ultima_actualizacion, 
+                           ddragon_version=DDRAGON_VERSION,
+                           split_activo_nombre=split_activo_nombre)
 
 @app.route('/jugador/<nombre_jugador>')
 def perfil_jugador(nombre_jugador):
