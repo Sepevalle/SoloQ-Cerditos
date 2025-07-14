@@ -320,6 +320,9 @@
                                 <div class="ms-2 text-start">
                                     <div class="fw-bold {% if jugador.top_champion_stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(jugador.top_champion_stats.win_rate) }}% WR</div>
                                     <div class="small-text-stats">({{ jugador.top_champion_stats.games_played }} partidas)</div>
+                                    {% if jugador.top_champion_stats.kda is defined %}
+                                    <div class="small-text-stats">{{ '%.2f'|format(jugador.top_champion_stats.kda) }} KDA</div>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% else %}
