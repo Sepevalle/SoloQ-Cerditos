@@ -21,7 +21,7 @@ CACHE_TIMEOUT = 130  # 2 minutos para estar seguros
 cache_lock = threading.Lock()
 
 # Fecha de inicio de la temporada 14 (2024) para el historial de partidas
-SEASON_START_TIMESTAMP = int(datetime(2024, 1, 10).timestamp())
+SEASON_START_TIMESTAMP = int(datetime(2024, 5, 15).timestamp())
 
 API_SESSION = requests.Session() # Usar una sesión para reutilizar conexiones
 
@@ -552,7 +552,11 @@ def actualizar_cache():
             continue
         
         historial = leer_historial_jugador_github(puuid)
-        partidas_jugador = [p for p in historial.get('matches', []) if p.get('queue_id') == queue_id]
+        partidas_jugador = [
+            p for p in historial.get('matches', []) 
+            if p.get('queue_id') == queue_id and 
+               p.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
+        ]
 
         if not partidas_jugador:
             continue
