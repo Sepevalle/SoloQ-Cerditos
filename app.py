@@ -43,8 +43,9 @@ def get_queue_type_filter(queue_id):
 
 @app.template_filter('format_timestamp')
 def format_timestamp_filter(timestamp):
-    # El timestamp de Riot es en milisegundos, Python datetime espera segundos
-    return datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M")
+    # The Riot timestamp is in milliseconds, Python datetime expects seconds
+    # Divide by 1000 to convert milliseconds to seconds
+    return datetime.fromtimestamp(timestamp / 1000).strftime("%d/%m/%Y %H:%M")
 
 
 # Caché para almacenar los datos de los jugadores
@@ -654,15 +655,17 @@ def index():
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
-@app.route('/jugador/<game_name>')
+@app.route('/jugador/<path:game_name>') # Use <path:game_name> to handle '/' in Riot IDs
 def perfil_jugador(game_name):
+    """Muestra una página de perfil para un jugador específico."""
     todos_los_datos, _ = obtener_datos_jugadores()
-
+    
+    # Filter data for the specific player
     datos_del_jugador = [j for j in todos_los_datos if j['game_name'] == game_name]
-
+    
     if not datos_del_jugador:
         return render_template('404.html'), 404
-
+    
     primer_perfil = datos_del_jugador[0]
     puuid = primer_perfil.get('puuid') # Get the PUUID for fetching match history
 
@@ -672,8 +675,15 @@ def perfil_jugador(game_name):
         historial_partidas = leer_historial_jugador_github(puuid)
 
     # Prepare recent matches for SoloQ and Flex
-    soloq_matches = [m for m in historial_partidas.get('matches', []) if m.get('queue_id') == 420]
-    flex_matches = [m for m in historial_partidas.get('matches', []) if m.get('queue_id') == 440]
+    # Filter matches for the current active split
+    soloq_matches = [
+        m for m in historial_partidas.get('matches', [])
+        if m.get('queue_id') == 420 and m.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
+    ]
+    flex_matches = [
+        m for m in historial_partidas.get('matches', [])
+        if m.get('queue_id') == 440 and m.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
+    ]
 
     # Sort matches by timestamp (most recent first)
     soloq_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
@@ -691,7 +701,7 @@ def perfil_jugador(game_name):
         perfil['soloq']['recent_matches'] = soloq_matches[:5] # Pass top 5 matches
     if perfil['flex']:
         perfil['flex']['recent_matches'] = flex_matches[:5] # Pass top 5 matches
-
+  
     return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
 
 
