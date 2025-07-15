@@ -306,6 +306,23 @@
             object-fit: cover;
             background-color: #343a40; /* Dark background for empty slots */
         }
+        /* Styles for filter controls */
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            justify-content: center; /* Center filters */
+            align-items: center;
+        }
+        .filter-controls label {
+            margin-bottom: 0; /* Remove default label margin */
+            font-weight: bold;
+        }
+        .filter-controls select {
+            flex-grow: 1; /* Allow select boxes to grow */
+            max-width: 200px; /* Max width for select boxes */
+        }
     </style>
 </head>
 
@@ -483,7 +500,24 @@
         <div class="card-header">
             Últimas Partidas (SoloQ y Flex)
         </div>
-        <ul class="list-group list-group-flush">
+        <div class="filter-controls p-3">
+            <label for="queueFilter">Filtrar por Cola:</label>
+            <select id="queueFilter" class="form-select w-auto">
+                <option value="all">Todas</option>
+                <option value="420">Clasificatoria Solo/Duo</option>
+                <option value="440">Clasificatoria Flexible</option>
+                <option value="450">ARAM</option>
+                <option value="900">URF</option>
+                <!-- Add more queue types as needed based on your get_queue_type_filter in app.py -->
+            </select>
+
+            <label for="championFilter">Filtrar por Campeón:</label>
+            <select id="championFilter" class="form-select w-auto">
+                <option value="all">Todos</option>
+                <!-- Champion options will be populated by JavaScript -->
+            </select>
+        </div>
+        <ul class="list-group list-group-flush" id="matchHistoryList">
             {% set all_recent_matches = [] %}
             {% if perfil.soloq and perfil.soloq.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.soloq.recent_matches %}{% endif %}
             {% if perfil.flex and perfil.flex.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.flex.recent_matches %}{% endif %}
@@ -491,8 +525,8 @@
             {% set sorted_matches = all_recent_matches | sort(attribute='game_end_timestamp', reverse=true) %}
 
             {% if sorted_matches %}
-                {% for match in sorted_matches[:10] %} {# Displaying up to 10 recent matches #}
-                <li class="list-group-item">
+                {% for match in sorted_matches %} {# Displaying all matches, filtering done by JS #}
+                <li class="list-group-item" data-queue-id="{{ match.queue_id }}" data-champion-name="{{ match.champion_name }}">
                     <div class="match-info">
                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
                              alt="{{ match.champion_name }}">
@@ -501,7 +535,7 @@
                             <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
                             <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
                             <div class="item-images">
-                                {% for item_id in match['items'] %} {# Changed from match.items to match['items'] #}
+                                {% for item_id in match['items'] %}
                                     {% if item_id != 0 %} {# Only display if item_id is not 0 (empty slot) #}
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png"
                                              alt="Item"
@@ -606,6 +640,72 @@
             rightBanner.src = imagePaths[currentImageIndex];
         }
         setInterval(cambiarImagenes, 5000);
+
+        // --- Match History Filtering Logic ---
+        const queueFilter = document.getElementById('queueFilter');
+        const championFilter = document.getElementById('championFilter');
+        const matchHistoryList = document.getElementById('matchHistoryList');
+        const allMatches = Array.from(matchHistoryList.children); // Get all initial match list items
+
+        // Function to populate the champion filter dropdown
+        function populateChampionFilter() {
+            const uniqueChampions = new Set();
+            // Collect champions from both soloq and flex recent matches
+            const allRecentMatchesData = [
+                ...(perfilData.soloq && perfilData.soloq.recent_matches ? perfilData.soloq.recent_matches : []),
+                ...(perfilData.flex && perfilData.flex.recent_matches ? perfilData.flex.recent_matches : [])
+            ];
+
+            allRecentMatchesData.forEach(match => {
+                uniqueChampions.add(match.champion_name);
+            });
+
+            // Clear existing options except "Todos"
+            championFilter.innerHTML = '<option value="all">Todos</option>';
+            
+            // Add unique champions to the dropdown
+            Array.from(uniqueChampions).sort().forEach(championName => {
+                const option = document.createElement('option');
+                option.value = championName;
+                option.textContent = championName;
+                championFilter.appendChild(option);
+            });
+        }
+
+        // Function to apply filters
+        function applyMatchHistoryFilters() {
+            const selectedQueue = queueFilter.value;
+            const selectedChampion = championFilter.value;
+
+            allMatches.forEach(matchItem => {
+                const matchQueueId = matchItem.dataset.queueId;
+                const matchChampionName = matchItem.dataset.championName;
+
+                const isQueueMatch = (selectedQueue === 'all' || matchQueueId === selectedQueue);
+                const isChampionMatch = (selectedChampion === 'all' || matchChampionName === selectedChampion);
+
+                if (isQueueMatch && isChampionMatch) {
+                    matchItem.style.display = 'flex'; // Show the item
+                } else {
+                    matchItem.style.display = 'none'; // Hide the item
+                }
+            });
+        }
+
+        // Attach event listeners to filters
+        queueFilter.addEventListener('change', applyMatchHistoryFilters);
+        championFilter.addEventListener('change', applyMatchHistoryFilters);
+
+        // Access perfil data from the Jinja2 context (assuming it's available globally or passed via data attributes)
+        // For this to work, you need to ensure 'perfil' data is accessible in JS.
+        // One way is to embed it as a JSON string in a script tag, or directly from the template context.
+        // For simplicity, let's assume `perfilData` is made available, e.g., in a hidden div or a script tag.
+        // Since this is a Jinja2 template, we can directly use the `perfil` variable.
+        const perfilData = {{ perfil | tojson }}; // This line assumes `perfil` is a valid JSON object
+
+        // Initial population and application of filters
+        populateChampionFilter();
+        applyMatchHistoryFilters();
     });
 </script>
 
