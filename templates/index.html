@@ -51,6 +51,20 @@
         .link-perfil:hover, .link-estado:hover {
             text-decoration: underline;
         }
+        .opgg-link {
+            display: inline-block;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: white !important;
+            background-color: #0056b3; /* Un azul estándar */
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .opgg-link:hover {
+            background-color: #004494; /* Un azul más oscuro al pasar el ratón */
+        }
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
@@ -283,6 +297,7 @@
                     <th data-sort-by="jugador">Jugador</th>
                     <th>Campeón Principal</th>
                     <th data-sort-by="game_name">Game Name</th>
+                    <th>OP.GG</th>
                     <th data-sort-by="elo">Elo</th>
                     <th data-sort-by="wins">Wins</th>
                     <th data-sort-by="losses">Losses</th>
@@ -331,7 +346,10 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
+                        {{ jugador.game_name }}
+                    </td>
+                    <td>
+                        <a href="{{ jugador.url_perfil }}" target="_blank" class="opgg-link">OP.GG</a>
                     </td>
                     <td class="elo-columna">
                         <div class="d-flex align-items-center" style="position: relative;">
