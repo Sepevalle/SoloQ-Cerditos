@@ -619,35 +619,27 @@ def index():
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
-@app.route('/jugador/<path:game_name>')
+@app.route('/jugador/<game_name>')
 def perfil_jugador(game_name):
     """Muestra una página de perfil para un jugador específico."""
-    # Decodificar la URL para manejar caracteres especiales como #
-    game_name = unquote(game_name)
-    
     todos_los_datos, _ = obtener_datos_jugadores()
-    
-    # Debug: imprimir para verificar qué estamos buscando
-    print(f"Buscando perfil para: '{game_name}'")
-    print(f"Game names disponibles: {[j['game_name'] for j in todos_los_datos]}")
     
     # Filtrar los datos para el jugador específico
     datos_del_jugador = [j for j in todos_los_datos if j['game_name'] == game_name]
     
     if not datos_del_jugador:
-        print(f"No se encontró jugador con game_name: '{game_name}'")
         return render_template('404.html'), 404
-    
-    # Suponiendo que el game_name es único, tomamos el primer elemento
-    primer_perfil = datos_del_jugador[0]
+  # Suponiendo que el game_name es único, tomamos el primer elemento.
+  # Si no es único, podrías querer refinar la lógica.
+    primer_perfil = datos_del_jugador[0]    # Acceder al primer elemento directamente
     
     perfil = {
-        'nombre': primer_perfil['jugador'],
-        'game_name': game_name,
+        'nombre': primer_perfil['jugador'],    # 'nombre' ahora se refiere al nombre real del jugador
+        'game_name': game_name,    # Asignar game_name al perfil
         'soloq': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_SOLO_5x5'), None),
         'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
     }
-    
+  
     return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
 
 
