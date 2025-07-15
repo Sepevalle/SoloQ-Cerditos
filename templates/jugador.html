@@ -1,16 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil de {{ perfil.nombre }} - {{ perfil.game_name }}</title>
+    <title>Perfil de Jugador - {{ perfil.nombre }}</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS from your GitHub repository -->
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
     <style>
         body {
-            padding-top: 70px; /* Para que el contenido no quede debajo de la navbar fija */
             transition: background-color 0.3s, color 0.3s;
+        }
+        .banner-img {
+            margin-top: 40px;
+            width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+        }
+        .small-text {
+            font-size: 0.6em;
+            font-weight: normal;
+        }
+        .small-text-stats {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        .win-rate-alto {
+            color: #228B22 !important;
+        }
+        .win-rate-bajo {
+            color: tomato !important;
+        }
+        .peak-elo {
+            color: gold;
+            font-weight: bold;
+        }
+        .estado-en-partida {
+            color: #007BFF !important;
+            font-weight: bold;
+        }
+        .table a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .link-estado {
+            color: #007BFF;
+        }
+        .link-perfil:hover, .link-estado:hover {
+            text-decoration: underline;
+        }
+        .opgg-link {
+            display: inline-block;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: white !important;
+            background-color: #0056b3; /* Un azul estándar */
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .opgg-link:hover {
+            background-color: #004494; /* Un azul más oscuro al pasar el ratón */
         }
         .dark-mode {
             background-color: #121212;
@@ -18,297 +72,497 @@
         }
         .dark-mode .navbar {
             background-color: #343a40 !important;
+            color: white;
         }
-        .dark-mode .navbar-brand, .dark-mode .nav-link {
+        .dark-mode .navbar-brand {
+            color: white !important;
+        }
+        .dark-mode .table, .dark-mode .card {
+            background-color: #343a40 !important;
+            color: white;
+        }
+        .dark-mode .nav-link {
             color: white !important;
         }
         .dark-mode .navbar-toggler-icon {
-            filter: invert(1); /* Para hacer el icono blanco en modo oscuro */
+            filter: invert(1) grayscale(100%) brightness(2);
         }
-        .dark-mode .card {
-            background-color: #1e1e1e;
-            border-color: #333;
-            color: #ffffff;
-        }
-        .dark-mode .list-group-item {
-            background-color: #2a2a2a;
-            border-color: #333;
-            color: #ffffff;
-        }
-        .dark-mode .list-group-item-success {
-            background-color: #1f422e; /* Verde más oscuro para modo oscuro */
-            border-color: #28a745;
-        }
-        .dark-mode .list-group-item-danger {
-            background-color: #5a2e30; /* Rojo más oscuro para modo oscuro */
-            border-color: #dc3545;
-        }
-        .dark-mode .form-select {
-            background-color: #343a40;
-            color: #ffffff;
-            border-color: #495057;
-        }
-        .dark-mode .form-select option {
-            background-color: #343a40;
-            color: #ffffff;
-        }
-        .item-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 5px;
-            margin: 2px;
-            border: 1px solid #ddd;
-            background-color: #f0f0f0; /* Para los slots vacíos */
-            display: inline-block;
+        .table td, .table th {
+            text-align: center;
             vertical-align: middle;
         }
-        .items-grid {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center; /* Centra los iconos si hay pocos */
-            align-items: center;
+        .jugador-columna {
+            text-align: left;
         }
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 30px;
-            flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
-            justify-content: center; /* Centra los elementos en pantallas pequeñas */
+        .hidden {
+            display: none;
         }
-        .profile-header img {
-            border: 3px solid #007bff;
-            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+        .imagen-jugador {
+            width: 30px;
+            height: 30px;
+            vertical-align: middle;
+            display: inline-block;
+            margin-right: 8px;
+            border-radius: 50%;
+            object-fit: cover;
         }
-        .profile-info h1 {
-            font-size: 2.5rem;
-            margin-bottom: 5px;
+        .lateral-img {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 150px;
+            height: auto;
+            object-fit: cover;
+            display: none; /* Ocultas por defecto para evitar superposiciones */
         }
-        .profile-info p {
-            font-size: 1.1rem;
-            color: #6c757d;
+        @media (min-width: 1500px) {
+            .lateral-img {
+                display: block;
+            }
         }
-        .kda-perfect {
-            color: #28a745; /* Green for perfect KDA */
+        .left-img {
+            left: 20px;
+        }
+        .right-img {
+            right: 20px;
+        }
+
+        #volumeSlider {
+            width: 100px;
+            margin-left: 10px;
+            vertical-align: middle;
+            height: 20px;
+            padding: 0;
+        }
+
+        #volumeSlider::-webkit-slider-runnable-track {
+            background: #6c757d;
+            height: 0.2em;
+            border-radius: 1em;
+        }
+
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #333;
+            border-radius: 50%;
+            margin-top: -6.5px;
+        }
+
+        #volumeSlider::-moz-range-track {
+            background: #6c757d;
+            height: 0.2em;
+            border-radius: 1em;
+        }
+
+        #volumeSlider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #333;
+            border: none;
+            border-radius: 50px;
+        }
+
+        .dark-mode #volumeSlider::-webkit-slider-runnable-track,
+        .dark-mode #volumeSlider::-moz-range-track {
+            background: #495057;
+        }
+
+        .dark-mode #volumeSlider::-webkit-slider-thumb {
+            background: #fff;
+        }
+
+        .dark-mode #volumeSlider::-moz-range-thumb {
+            background: #fff;
+        }
+
+        #toggle-mode {
             font-weight: bold;
         }
-        .match-card-header {
+
+        /* Estilos específicos para la página de jugador */
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .profile-header img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #007bff;
+            margin-bottom: 15px;
+        }
+        .rank-card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .rank-card .card-header {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .rank-card .card-body {
             display: flex;
+            align-items: center;
+            padding: 20px;
+        }
+        .rank-card .elo-image-lg {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-right: 20px;
+        }
+        .rank-details h4 {
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+        .rank-details p {
+            margin-bottom: 3px;
+        }
+        .champion-stats-card {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .champion-stats-card img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+        .match-history-card {
+            margin-top: 40px;
+        }
+        .match-history-card .list-group-item {
+            display: flex;
+            align-items: center;
             justify-content: space-between;
+            padding: 10px 15px;
+        }
+        .match-history-card .match-info {
+            display: flex;
             align-items: center;
         }
-        .match-card-header .badge {
+        .match-history-card .match-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .match-history-card .match-result {
+            font-weight: bold;
+        }
+        .match-history-card .match-result.win {
+            color: #228B22;
+        }
+        .match-history-card .match-result.loss {
+            color: tomato;
+        }
+        .kda-text {
             font-size: 0.9em;
-        }
-        .match-details {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        .match-details > div {
-            flex: 1;
-            min-width: 150px; /* Asegura que no se contraigan demasiado */
-        }
-        @media (max-width: 768px) {
-            .profile-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            .profile-info {
-                text-align: center;
-            }
-            .match-details {
-                flex-direction: column;
-                align-items: center;
-            }
-            .match-details > div {
-                width: 100%;
-                text-align: center;
-            }
-            .items-grid {
-                justify-content: center;
-            }
+            color: #6c757d;
         }
     </style>
 </head>
+
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" alt="Logo" width="30" height="30" class="d-inline-block align-text-top rounded-circle">
-                SoloQ Cerditos
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Inicio</a>
-                    </li>
-                    <li class="nav-item">
-                        <button class="btn btn-dark" id="toggle-mode">
-                            <i class="fas fa-moon"></i> Modo Oscuro
-                        </button>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-12 text-center mb-4">
-                <h1>{{ perfil.nombre }} <small class="text-muted">({{ perfil.game_name }})</small></h1>
-            </div>
-        </div>
+<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
+<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
 
-        <!-- Ranked Solo/Duo Queue -->
-        {% if perfil.soloq %}
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Clasificatoria Solo/Duo</h4>
-            </div>
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-3 text-center">
-                        <!-- Asumiendo que perfil.soloq.profileIconId existe o puedes añadir un placeholder -->
-                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/profileicon/{{ perfil.soloq.profileIconId if perfil.soloq.profileIconId is defined else '29' }}.png" class="rounded-circle mb-2" alt="Icono de Invocador" width="80">
-                        <p class="h5">{{ perfil.soloq.tier }} {{ perfil.soloq.rank }}</p>
-                        <p class="text-muted">{{ perfil.soloq.league_points }} LP</p>
-                    </div>
-                    <div class="col-md-9">
-                        <p>Victorias: <span class="text-success">{{ perfil.soloq.wins }}</span></p>
-                        <p>Derrotas: <span class="text-danger">{{ perfil.soloq.losses }}</span></p>
-                        <p>Win Rate: <strong>{{ "%.2f" | format(perfil.soloq.wins / (perfil.soloq.wins + perfil.soloq.losses) * 100) if (perfil.soloq.wins + perfil.soloq.losses) > 0 else 'N/A' }}%</strong></p>
-                        {% if perfil.soloq.top_champion_stats %}
-                            <p>Campeón más jugado (Split Actual): <strong>{{ perfil.soloq.top_champion_stats.champion_name }}</strong> ({{ "%.1f" | format(perfil.soloq.top_champion_stats.win_rate) }}% WR en {{ perfil.soloq.top_champion_stats.games_played }} partidas)</p>
-                        {% endif %}
-                    </div>
+<audio id="backgroundAudio" loop>
+    <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
+    Tu navegador no soporta el elemento audio.
+</audio>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+            Cerditos y Valientes
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
+                <!-- You can add more navigation links here if needed -->
+            </ul>
+            <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
+                <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
+                <div class="d-flex align-items-center ms-lg-2">
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                        <i id="muteIcon" class="fas fa-microphone-slash"></i>
+                    </button>
+                    <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
                 </div>
             </div>
         </div>
-        {% else %}
-        <div class="alert alert-info text-center" role="alert">
-            No hay datos de clasificatoria Solo/Duo disponibles para este jugador.
-        </div>
-        {% endif %}
+    </div>
+</nav>
 
-        <!-- Ranked Flex Queue -->
-        {% if perfil.flex %}
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <h4 class="mb-0">Clasificatoria Flexible</h4>
-            </div>
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-3 text-center">
-                        <!-- Asumiendo que perfil.flex.profileIconId existe o puedes añadir un placeholder -->
-                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/profileicon/{{ perfil.flex.profileIconId if perfil.flex.profileIconId is defined else '29' }}.png" class="rounded-circle mb-2" alt="Icono de Invocador" width="80">
-                        <p class="h5">{{ perfil.flex.tier }} {{ perfil.flex.rank }}</p>
-                        <p class="text-muted">{{ perfil.flex.league_points }} LP</p>
-                    </div>
-                    <div class="col-md-9">
-                        <p>Victorias: <span class="text-success">{{ perfil.flex.wins }}</span></p>
-                        <p>Derrotas: <span class="text-danger">{{ perfil.flex.losses }}</span></p>
-                        <p>Win Rate: <strong>{{ "%.2f" | format(perfil.flex.wins / (perfil.flex.wins + perfil.flex.losses) * 100) if (perfil.flex.wins + perfil.flex.losses) > 0 else 'N/A' }}%</strong></p>
-                        {% if perfil.flex.top_champion_stats %}
-                            <p>Campeón más jugado (Split Actual): <strong>{{ perfil.flex.top_champion_stats.champion_name }}</strong> ({{ "%.1f" | format(perfil.flex.top_champion_stats.win_rate) }}% WR en {{ perfil.flex.top_champion_stats.games_played }} partidas)</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="alert alert-info text-center" role="alert">
-            No hay datos de clasificatoria Flexible disponibles para este jugador.
-        </div>
-        {% endif %}
+<div class="container my-4 d-flex justify-content-center">
+    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
+</div>
 
-        <h3 class="mb-3">Historial de Partidas</h3>
-
-        <div class="mb-3">
-            <label for="queueFilter" class="form-label">Filtrar por tipo de partida:</label>
-            <select class="form-select" id="queueFilter">
-                <option value="all">Todas las partidas</option>
-                <option value="420">Clasificatoria Solo/Duo</option>
-                <option value="440">Clasificatoria Flexible</option>
-                <option value="400">Normal Blind Pick</option>
-                <option value="430">Normal Draft Pick</option>
-                <option value="450">ARAM</option>
-                <!-- Puedes añadir más opciones aquí según los queueId que manejes en tu app.py -->
-            </select>
-        </div>
-
-        <div class="list-group" id="matchHistoryList">
-            {% if perfil.historial_partidas %}
-                {% for match in perfil.historial_partidas %}
-                <div class="list-group-item mb-2 {% if match.win %}list-group-item-success{% else %}list-group-item-danger{% endif %}"
-                     data-queue-id="{{ match.queue_id }}">
-                    <div class="row align-items-center">
-                        <div class="col-md-2 text-center">
-                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png" alt="{{ match.champion_name }}" class="img-fluid rounded-circle" style="width: 60px; height: 60px;">
-                            <p class="mb-0 mt-1">{{ match.champion_name }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p class="mb-0">Resultado: <strong>{% if match.win %}VICTORIA{% else %}DERROTA{% endif %}</strong></p>
-                            <p class="mb-0">Tipo: <span class="badge bg-secondary">{{ match.queue_id | get_queue_type }}</span></p>
-                            <p class="mb-0">Fecha: {{ (match.game_end_timestamp / 1000) | format_timestamp }}</p>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <p class="mb-0">KDA: {{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</p>
-                            <p class="mb-0">({{ "%.2f" | format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfect' }} KDA)</p>
-                        </div>
-                        <div class="col-md-4 items-grid">
-                            {% for item_id in match.items %}
-                                {% if item_id > 0 %}
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" class="item-icon" alt="item">
-                                {% else %}
-                                    <div class="item-icon"></div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-            <div class="list-group-item">
-                <p class="text-muted">No se ha encontrado historial de partidas para este jugador o está en proceso de carga.</p>
-            </div>
-            {% endif %}
-        </div>
-
+<div class="container mt-5">
+    <div class="profile-header">
+        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png"
+             alt="Imagen de {{ perfil.nombre }}"
+             onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'white\'/></svg>';">
+        <h1>{{ perfil.nombre }} <span class="text-muted small-text">({{ perfil.game_name }})</span></h1>
+        <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            const toggleModeButton = document.getElementById("toggle-mode");
-            toggleModeButton.addEventListener("click", () => {
-                document.body.classList.toggle("dark-mode");
-            });
+    <div class="row">
+        <!-- SoloQ Section -->
+        <div class="col-md-6">
+            <div class="card rank-card">
+                <div class="card-header">
+                    Clasificatoria Solo/Duo
+                </div>
+                <div class="card-body">
+                    {% if perfil.soloq %}
+                        <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.soloq.tier }}">
+                        <div class="rank-details">
+                            <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
+                            <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
+                            {% set soloq_total_games = perfil.soloq.wins + perfil.soloq.losses %}
+                            {% set soloq_win_rate = (perfil.soloq.wins / soloq_total_games * 100) if soloq_total_games > 0 else 0 %}
+                            <p class="{% if soloq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                Win Rate: {{ '%.2f'|format(soloq_win_rate) }}%
+                            </p>
+                            <p>
+                                Peak Elo:
+                                {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - perfil.soloq.peak_elo %}
+                                {% if diff_peak_soloq == 0 %}
+                                    <span class="peak-elo">PEAK</span>
+                                {% else %}
+                                    {{ perfil.soloq.peak_elo }} LPs ({{ diff_peak_soloq }} LPs desde el pico)
+                                {% endif %}
+                            </p>
 
-            // JavaScript para el filtrado del historial de partidas
-            const queueFilter = document.getElementById('queueFilter');
-            const matchHistoryList = document.getElementById('matchHistoryList');
-            // Convertir HTMLCollection a Array para usar forEach
-            const matches = Array.from(matchHistoryList.getElementsByClassName('list-group-item'));
+                            {% if perfil.soloq.top_champion_stats and perfil.soloq.top_champion_stats.champion_name %}
+                            <div class="d-flex align-items-center champion-stats-card">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ perfil.soloq.top_champion_stats.champion_name }}.png"
+                                     alt="{{ perfil.soloq.top_champion_stats.champion_name }}"
+                                     title="{{ perfil.soloq.top_champion_stats.champion_name }}">
+                                <div>
+                                    <h5 class="mb-0">{{ perfil.soloq.top_champion_stats.champion_name }}</h5>
+                                    <p class="mb-0 small-text-stats">Partidas: {{ perfil.soloq.top_champion_stats.games_played }}</p>
+                                    <p class="mb-0 small-text-stats {% if perfil.soloq.top_champion_stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                        WR: {{ '%.0f'|format(perfil.soloq.top_champion_stats.win_rate) }}%
+                                    </p>
+                                    {% if perfil.soloq.top_champion_stats.kda is defined %}
+                                    <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(perfil.soloq.top_champion_stats.kda) }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="small-text-stats">No hay datos de campeón principal para SoloQ en este split.</p>
+                            {% endif %}
 
-            queueFilter.addEventListener('change', function() {
-                const selectedQueueId = queueFilter.value;
+                        </div>
+                    {% else %}
+                        <p>No hay datos de clasificatoria Solo/Duo disponibles para este jugador.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-                matches.forEach(match => {
-                    const matchQueueId = match.dataset.queueId;
+        <!-- Flex Section -->
+        <div class="col-md-6">
+            <div class="card rank-card">
+                <div class="card-header">
+                    Clasificatoria Flexible
+                </div>
+                <div class="card-body">
+                    {% if perfil.flex %}
+                        <img src="" alt="{{ perfil.flex.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.flex.tier }}">
+                        <div class="rank-details">
+                            <h4>{{ perfil.flex.tier }} {{ perfil.flex.rank }} ({{ perfil.flex.league_points }} LPs)</h4>
+                            <p>Wins: {{ perfil.flex.wins }} | Losses: {{ perfil.flex.losses }} | Total: {{ perfil.flex.wins + perfil.flex.losses }}</p>
+                            {% set flex_total_games = perfil.flex.wins + perfil.flex.losses %}
+                            {% set flex_win_rate = (perfil.flex.wins / flex_total_games * 100) if flex_total_games > 0 else 0 %}
+                            <p class="{% if flex_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                Win Rate: {{ '%.2f'|format(flex_win_rate) }}%
+                            </p>
+                            <p>
+                                Peak Elo:
+                                {% set diff_peak_flex = perfil.flex.valor_clasificacion - perfil.flex.peak_elo %}
+                                {% if diff_peak_flex == 0 %}
+                                    <span class="peak-elo">PEAK</span>
+                                {% else %}
+                                    {{ perfil.flex.peak_elo }} LPs ({{ diff_peak_flex }} LPs desde el pico)
+                                {% endif %}
+                            </p>
 
-                    if (selectedQueueId === 'all' || matchQueueId === selectedQueueId) {
-                        match.style.display = ''; // Show the match
-                    } else {
-                        match.style.display = 'none'; // Hide the match
-                    }
-                });
-            });
+                            {% if perfil.flex.top_champion_stats and perfil.flex.top_champion_stats.champion_name %}
+                            <div class="d-flex align-items-center champion-stats-card">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ perfil.flex.top_champion_stats.champion_name }}.png"
+                                     alt="{{ perfil.flex.top_champion_stats.champion_name }}"
+                                     title="{{ perfil.flex.top_champion_stats.champion_name }}">
+                                <div>
+                                    <h5 class="mb-0">{{ perfil.flex.top_champion_stats.champion_name }}</h5>
+                                    <p class="mb-0 small-text-stats">Partidas: {{ perfil.flex.top_champion_stats.games_played }}</p>
+                                    <p class="mb-0 small-text-stats {% if perfil.flex.top_champion_stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                        WR: {{ '%.0f'|format(perfil.flex.top_champion_stats.win_rate) }}%
+                                    </p>
+                                    {% if perfil.flex.top_champion_stats.kda is defined %}
+                                    <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(perfil.flex.top_champion_stats.kda) }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="small-text-stats">No hay datos de campeón principal para Flex en este split.</p>
+                            {% endif %}
+
+                        </div>
+                    {% else %}
+                        <p>No hay datos de clasificatoria Flexible disponibles para este jugador.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match History Section (Placeholder for now, can be expanded) -->
+    <div class="card match-history-card">
+        <div class="card-header">
+            Últimas Partidas (SoloQ y Flex)
+        </div>
+        <ul class="list-group list-group-flush">
+            <!-- Example of how a match could be displayed. You would need to pass match history data from app.py -->
+            {% if perfil.soloq and perfil.soloq.recent_matches %}
+                {% for match in perfil.soloq.recent_matches[:5] %} {# Displaying up to 5 recent matches #}
+                <li class="list-group-item">
+                    <div class="match-info">
+                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
+                             alt="{{ match.champion_name }}">
+                        <div>
+                            <strong>{{ match.champion_name }}</strong> ({{ match.queue_id | get_queue_type }})<br>
+                            <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
+                            <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                        </div>
+                    </div>
+                    <span class="match-result {% if match.win %}win{% else %}loss{% endif %}">
+                        {% if match.win %}Victoria{% else %}Derrota{% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            {% elif perfil.flex and perfil.flex.recent_matches %}
+                 {% for match in perfil.flex.recent_matches[:5] %} {# Displaying up to 5 recent matches #}
+                <li class="list-group-item">
+                    <div class="match-info">
+                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
+                             alt="{{ match.champion_name }}">
+                        <div>
+                            <strong>{{ match.champion_name }}</strong> ({{ match.queue_id | get_queue_type }})<br>
+                            <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
+                            <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                        </div>
+                    </div>
+                    <span class="match-result {% if match.win %}win{% else %}loss{% endif %}">
+                        {% if match.win %}Victoria{% else %}Derrota{% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            {% else %}
+                <li class="list-group-item text-center text-muted">
+                    No hay datos de partidas recientes disponibles para este jugador en este momento.
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+
+</div>
+
+<!-- Script de Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const audio = document.getElementById('backgroundAudio');
+        const toggleAudioButton = document.getElementById('toggleAudio');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const muteIcon = document.getElementById('muteIcon');
+
+        // Inicialmente silenciar el audio para cumplir con políticas de autoplay
+        audio.muted = true;
+        // El navegador puede bloquear el autoplay, el audio se iniciará con la interacción del usuario.
+        audio.play().catch(error => console.log('La reproducción automática de audio fue bloqueada por el navegador.', error));
+
+        const playAudio = () => {
+            if (audio.paused) {
+                audio.play().catch(e => console.log("El usuario debe interactuar con la página para reproducir audio.", e));
+            }
+        };
+
+        volumeSlider.addEventListener('input', function() {
+            playAudio();
+            audio.volume = this.value;
         });
-    </script>
+
+        toggleAudioButton.addEventListener('click', () => {
+            playAudio();
+            audio.muted = !audio.muted;
+            if (audio.muted) {
+                muteIcon.className = 'fas fa-microphone-slash';
+                toggleAudioButton.title = 'Desmutear Música';
+            } else {
+                muteIcon.className = 'fas fa-microphone-alt';
+                toggleAudioButton.title = 'Silenciar Música';
+            }
+        });
+
+        const imagenesElo = {
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/PLATINUM.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
+            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/DIAMOND.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/MASTER.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/GRANDMASTER.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/CHALLENGER.png"
+        };
+
+        // Set Elo images for the large profile cards
+        document.querySelectorAll(".elo-image-lg").forEach(el => {
+            const elo = el.dataset.eloTier.toUpperCase();
+            if (imagenesElo[elo]) el.src = imagenesElo[elo];
+        });
+
+        const toggleModeButton = document.getElementById("toggle-mode");
+        toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
+
+        const leftBanner = document.getElementById("left-banner");
+        const rightBanner = document.getElementById("right-banner");
+        const imagePaths = [
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/3.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/4.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/5.jpg"
+        ];
+        let currentImageIndex = 0;
+
+        function cambiarImagenes() {
+            currentImageIndex = (currentImageIndex + 1) % imagePaths.length;
+            leftBanner.src = imagePaths[currentImageIndex];
+            rightBanner.src = imagePaths[currentImageIndex];
+        }
+        setInterval(cambiarImagenes, 5000);
+    });
+</script>
+
 </body>
 </html>
