@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datos de Jugadores</title>
+    <title>Perfil de Jugador - {{ perfil.nombre }}</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS from your GitHub repository -->
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
     <style>
         body {
@@ -76,7 +77,7 @@
         .dark-mode .navbar-brand {
             color: white !important;
         }
-        .dark-mode .table {
+        .dark-mode .table, .dark-mode .card {
             background-color: #343a40 !important;
             color: white;
         }
@@ -84,7 +85,6 @@
             color: white !important;
         }
         .dark-mode .navbar-toggler-icon {
-            /* Invierte el color del icono de hamburguesa para que sea visible en modo oscuro */
             filter: invert(1) grayscale(100%) brightness(2);
         }
         .table td, .table th {
@@ -115,7 +115,6 @@
             object-fit: cover;
             display: none; /* Ocultas por defecto para evitar superposiciones */
         }
-        /* Mostrar imágenes laterales solo en pantallas muy anchas */
         @media (min-width: 1500px) {
             .lateral-img {
                 display: block;
@@ -183,48 +182,206 @@
             font-weight: bold;
         }
 
-        /* Evita el salto de línea en las celdas de datos */
-        .table td {
-            white-space: nowrap;
-        }
-
-        .elo-columna {
-            text-align: center !important;
-            position: relative;
-        }
-        .elo-columna .elo-image {
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            position: absolute;
-        }
-        .elo-columna .w-100 {
-            margin-left: 40px;
-            display: inline-block;
-            width: calc(100% - 40px);
+        /* Estilos específicos para la página de jugador */
+        .profile-header {
             text-align: center;
+            margin-bottom: 30px;
+        }
+        .profile-header img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #007bff;
+            margin-bottom: 15px;
+        }
+        .rank-card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .rank-card .card-header {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .rank-card .card-body {
+            display: flex;
+            flex-direction: column; /* Changed to column for better stacking of champion stats */
+            align-items: center; /* Center content horizontally */
+            padding: 20px;
+        }
+        .rank-card .elo-image-lg {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-right: 0; /* Remove margin as it's now a column layout */
+            margin-bottom: 15px; /* Add bottom margin for spacing */
+        }
+        .rank-details {
+            text-align: center; /* Center rank details */
+            width: 100%; /* Take full width */
+        }
+        .rank-details h4 {
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+        .rank-details p {
+            margin-bottom: 3px;
+        }
+        .champion-stats-container {
+            margin-top: 20px;
+            width: 100%; /* Take full width */
+        }
+        .champion-stats-item {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Added for horizontal centering */
+            margin-bottom: 10px; /* Spacing between champion items */
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee; /* Separator */
+        }
+        .champion-stats-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .champion-stats-item img {
+            width: 50px; /* Slightly smaller for multiple champions */
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+        .champion-stats-info {
+            text-align: center; /* Changed from left to center */
+        }
+        .champion-stats-info h5 {
+            margin-bottom: 0;
+            font-size: 1.1em;
+        }
+        .kda-text {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .match-history-card {
+            margin-top: 40px;
+        }
+        .match-history-card .list-group-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+        }
+        .match-history-card .match-info {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Spacing between champion/level, spells/runes, and KDA */
+        }
+        .match-history-card .match-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 0; /* Removed default margin */
+        }
+        .match-history-card .match-result {
+            font-weight: bold;
+        }
+        .match-history-card .match-result.win {
+            color: #228B22;
+        }
+        .match-history-card .match-result.loss {
+            color: tomato;
+        }
+        /* New styles for items in match history */
+        .item-images {
+            display: flex;
+            gap: 5px; /* Space between item images */
+            margin-top: 5px;
+        }
+        .item-images img {
+            width: 30px; /* Size of item images */
+            height: 30px;
+            border-radius: 5px; /* Slightly rounded corners for items */
+            object-fit: cover;
+            background-color: #343a40; /* Dark background for empty slots */
+        }
+        /* Styles for filter controls */
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            justify-content: center; /* Center filters */
+            align-items: center;
+        }
+        .filter-controls label {
+            margin-bottom: 0; /* Remove default label margin */
+            font-weight: bold;
+        }
+        .filter-controls select {
+            flex-grow: 1; /* Allow select boxes to grow */
+            max-width: 200px; /* Max width for select boxes */
         }
 
-        /* Estilos para encabezados de tabla ordenables */
-        .table thead th[data-sort-by] {
-            cursor: pointer;
+        /* Styles for champion level overlay */
+        .champion-level-container {
             position: relative;
-            user-select: none; /* Evita la selección de texto al hacer doble clic */
+            display: inline-block; /* To make sure width/height apply */
+            width: 40px; /* Same as champion image */
+            height: 40px; /* Same as champion image */
         }
-
-        .table thead th[data-sort-by]::after {
-            content: ' \2195'; /* Flecha arriba-abajo por defecto */
-            font-size: 0.8em;
-            color: #aaa;
+        .champion-level-container img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        .champion-level {
             position: absolute;
-            right: 8px;
+            bottom: -5px; /* Adjust as needed */
+            right: -5px; /* Adjust as needed */
+            background-color: #343a40; /* Dark background for level */
+            color: white;
+            font-size: 0.7em;
+            font-weight: bold;
+            border-radius: 50%;
+            padding: 2px 5px;
+            min-width: 20px; /* Ensure it's a circle */
+            text-align: center;
+            border: 1px solid #6c757d;
         }
 
-        .table thead th.sort-asc::after {
-            content: ' \2191'; /* Flecha arriba */
+        /* Styles for summoner spells */
+        .summoner-spells {
+            display: flex;
+            flex-direction: column;
+            gap: 2px; /* Small gap between spells */
         }
-        .table thead th.sort-desc::after {
-            content: ' \2193'; /* Flecha abajo */
+        .summoner-spells img {
+            width: 20px; /* Smaller size for spells */
+            height: 20px;
+            border-radius: 3px; /* Slightly rounded corners */
+        }
+
+        /* Styles for runes */
+        .runes {
+            display: flex;
+            flex-direction: column;
+            gap: 2px; /* Small gap between runes */
+        }
+        .runes img {
+            width: 20px; /* Smaller size for runes */
+            height: 20px;
+            border-radius: 50%; /* Runes are often circular */
+        }
+        .runes img.keystone {
+            border: 1px solid gold; /* Highlight keystone rune */
+        }
+        .runes img.sub-rune {
+            border: 1px solid #6c757d; /* Subtle border for secondary rune */
         }
     </style>
 </head>
@@ -241,7 +398,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="/">
             <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
             Cerditos y Valientes
         </a>
@@ -250,6 +407,7 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
+                <!-- You can add more navigation links here if needed -->
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
                 <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
@@ -262,141 +420,238 @@
             </div>
         </div>
     </div>
-</nav> 
+</nav>
 
 <div class="container my-4 d-flex justify-content-center">
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
 </div>
-    
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center">
-        <h3>Lista de Jugadores <span class="small-text"></span></h3>
-        <div id="lastUpdated" class="text-end">Actualizado: {{ ultima_actualizacion }}</div>
+
+<div class="container mt-5">
+    <div class="profile-header">
+        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png"
+             alt="Imagen de {{ perfil.nombre }}"
+             onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'white\'/></svg>';">
+        <h1>{{ perfil.nombre }} <span class="text-muted small-text">({{ perfil.game_name }})</span></h1>
+        <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
     </div>
-    
-    <div class="container mt-4">
-    <div class="row mb-3">
-        <div class="col text-start">
-            <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
-            <select id="filtro" class="form-select d-inline-block w-auto">
-                <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
-                <option value="RANKED_FLEX_SR">FLEX</option>
-                <option value="todo">TODO</option>
-            </select>
+
+    <div class="row">
+        <!-- SoloQ Section -->
+        <div class="col-md-6">
+            <div class="card rank-card">
+                <div class="card-header">
+                    Clasificatoria Solo/Duo
+                </div>
+                <div class="card-body">
+                    {% if perfil.soloq %}
+                        <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.soloq.tier }}">
+                        <div class="rank-details">
+                            <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
+                            <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
+                            {% set soloq_total_games = perfil.soloq.wins + perfil.soloq.losses %}
+                            {% set soloq_win_rate = (perfil.soloq.wins / soloq_total_games * 100) if soloq_total_games > 0 else 0 %}
+                            <p class="{% if soloq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                Win Rate: {{ '%.2f'|format(soloq_win_rate) }}%
+                            </p>
+                            <p>
+                                Peak Elo:
+                                {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - perfil.soloq.get('peak_elo', 0) %} {# Safely access peak_elo #}
+                                {% if diff_peak_soloq == 0 %}
+                                    <span class="peak-elo">PEAK</span>
+                                {% else %}
+                                    {{ perfil.soloq.get('peak_elo', 0) }} LPs ({{ diff_peak_soloq }} LPs desde el pico)
+                                {% endif %}
+                            </p>
+
+                            <div class="champion-stats-container">
+                                {% if perfil.soloq.top_champion_stats %}
+                                    {% for champion_stat in perfil.soloq.top_champion_stats %}
+                                    <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png"
+                                             alt="{{ champion_stat.champion_name }}"
+                                             title="{{ champion_stat.champion_name }}">
+                                        <div class="champion-stats-info">
+                                            <h5 class="mb-0">{{ champion_stat.champion_name }}</h5>
+                                            <p class="mb-0 small-text-stats">Partidas: {{ champion_stat.games_played }}</p>
+                                            <p class="mb-0 small-text-stats {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                                WR: {{ '%.0f'|format(champion_stat.win_rate) }}%
+                                            </p>
+                                            {% if champion_stat.kda is defined %}
+                                            <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(champion_stat.kda) }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="small-text-stats">No hay datos de campeones principales para SoloQ en este split.</p>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    {% else %}
+                        <p>No hay datos de clasificatoria Solo/Duo disponibles para este jugador.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Flex Section -->
+        <div class="col-md-6">
+            <div class="card rank-card">
+                <div class="card-header">
+                    Clasificatoria Flexible
+                </div>
+                <div class="card-body">
+                    {% if perfil.flex %}
+                        <img src="" alt="{{ perfil.flex.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.flex.tier }}">
+                        <div class="rank-details">
+                            <h4>{{ perfil.flex.tier }} {{ perfil.flex.rank }} ({{ perfil.flex.league_points }} LPs)</h4>
+                            <p>Wins: {{ perfil.flex.wins }} | Losses: {{ perfil.flex.losses }} | Total: {{ perfil.flex.wins + perfil.flex.losses }}</p>
+                            {% set flex_total_games = perfil.flex.wins + perfil.flex.losses %} {# Define flex_total_games here #}
+                            {% set flex_win_rate = (perfil.flex.wins / flex_total_games * 100) if flex_total_games > 0 else 0 %}
+                            <p class="{% if flex_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                Win Rate: {{ '%.2f'|format(flex_win_rate) }}%
+                            </p>
+                            <p>
+                                Peak Elo:
+                                {% set diff_peak_flex = perfil.flex.valor_clasificacion - perfil.flex.get('peak_elo', 0) %} {# Safely access peak_elo #}
+                                {% if diff_peak_flex == 0 %}
+                                    <span class="peak-elo">PEAK</span>
+                                {% else %}
+                                    {{ perfil.flex.get('peak_elo', 0) }} LPs ({{ diff_peak_flex }} LPs desde el pico)
+                                {% endif %}
+                            </p>
+
+                            <div class="champion-stats-container">
+                                {% if perfil.flex.top_champion_stats %}
+                                    {% for champion_stat in perfil.flex.top_champion_stats %}
+                                    <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png"
+                                             alt="{{ champion_stat.champion_name }}"
+                                             title="{{ champion_stat.champion_name }}">
+                                        <div class="champion-stats-info">
+                                            <h5 class="mb-0">{{ champion_stat.champion_name }}</h5>
+                                            <p class="mb-0 small-text-stats">Partidas: {{ champion_stat.games_played }}</p>
+                                            <p class="mb-0 small-text-stats {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                                WR: {{ '%.0f'|format(champion_stat.win_rate) }}%
+                                            </p>
+                                            {% if champion_stat.kda is defined %}
+                                            <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(champion_stat.kda) }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="small-text-stats">No hay datos de campeones principales para Flex en este split.</p>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    {% else %}
+                        <p>No hay datos de clasificatoria Flexible disponibles para este jugador.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
- 
-    
-    <div class="table-responsive">
-        <table class="table table-hover table-striped" id="jugadoresTable">
-            <thead class="table-dark">
-                <tr>
-                    <th data-sort-by="elo">Posición</th>
-                    <th data-sort-by="jugador">Jugador</th>
-                    <th>Campeón Principal</th>
-                    <th data-sort-by="game_name">Game Name</th>
-                    <th>OP.GG</th>
-                    <th data-sort-by="elo">Elo</th>
-                    <th data-sort-by="wins">Wins</th>
-                    <th data-sort-by="losses">Losses</th>
-                    <th data-sort-by="total_games">Total Games</th>
-                    <th data-sort-by="win_rate">Win Rate</th>
-                    <th class="hidden">Valor Clasificación</th>
-                    <th>Dist. Peak Elo</th>
-                    <th>Dif. Elo</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for jugador in datos_jugadores %}
-                {% set total_games = jugador.wins + jugador.losses %}
-                {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                <tr class="queue-type {{ jugador.queue_type }}">
-                    <td></td>
-                    <td class="jugador-columna">
-                        <div class="d-flex align-items-center">
-                            <img
-                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png"
-                                alt="Imagen de {{ jugador.jugador }}"
-                                class="imagen-jugador"
-                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
-                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
-                            <span class="ms-2">{{ jugador.jugador }}</span>
-                        </a>
-                    </td>
-                    <td>
-                        {# Access the first champion in the list if it exists #}
-                        {% if jugador.top_champion_stats and jugador.top_champion_stats[0] is defined %}
-                            {% set top_champion = jugador.top_champion_stats[0] %}
-                            <div class="d-flex align-items-center justify-content-center">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ top_champion.champion_name }}.png" 
-                                     alt="{{ top_champion.champion_name }}"
-                                     title="{{ top_champion.champion_name }}"
-                                     style="width: 32px; height: 32px; border-radius: 50%;" />
-                                <div class="ms-2 text-start">
-                                    <div class="fw-bold {% if top_champion.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(top_champion.win_rate) }}% WR</div>
-                                    <div class="small-text-stats">({{ top_champion.games_played }} partidas)</div>
-                                    {% if top_champion.kda is defined %}
-                                    <div class="small-text-stats">{{ '%.2f'|format(top_champion.kda) }} KDA</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% else %}
-                            <span>N/A</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="/jugador/{{ jugador.game_name | urlencode }}">{{ jugador.game_name }}</a>
-                    </td>
-                    <td>
-                        <a href="{{ jugador.url_perfil }}" target="_blank" class="opgg-link">OP.GG</a>
-                    </td>
-                    <td class="elo-columna">
-                        <div class="d-flex align-items-center" style="position: relative;">
-                            <img src="" alt="{{ jugador.tier }}" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
-                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
-                                {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                            </span>
-                        </div>
-                    </td>
-                    <td>{{ jugador.wins }}</td>
-                    <td>{{ jugador.losses }}</td>
-                    <td>{{ total_games }}</td>
-                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                        {{ '{:.2f}'.format(win_rate) }}%
-                    </td>
-                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
-                    <td>
-                        {% set diff_peak = jugador.valor_clasificacion - jugador.peak_elo %}
-                        {% if diff_peak == 0 %}
-                            <span class="peak-elo">PEAK</span>
-                        {% else %}
-                            {{ diff_peak }} LPs
-                        {% endif %}
-                    </td>
-                    <td class="elo-diferencia"></td>
-                    <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                            {% if jugador.en_partida %}
-                                <span class="estado-en-partida">En Partida</span>
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" 
-                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
-                            {% else %}
-                                Inactivo
+    <!-- Match History Section -->
+    <div class="card match-history-card">
+        <div class="card-header">
+            Últimas Partidas (SoloQ y Flex)
+        </div>
+        <div class="filter-controls p-3">
+            <label for="queueFilter">Filtrar por Cola:</label>
+            <select id="queueFilter" class="form-select w-auto">
+                <option value="all">Todas</option>
+                <option value="420">Clasificatoria Solo/Duo</option>
+                <option value="440">Clasificatoria Flexible</option>
+                <option value="450">ARAM</option>
+                <option value="900">URF</option>
+                <!-- Add more queue types as needed based on your get_queue_type_filter in app.py -->
+            </select>
+
+            <label for="championFilter">Filtrar por Campeón:</label>
+            <select id="championFilter" class="form-select w-auto">
+                <option value="all">Todos</option>
+                <!-- Champion options will be populated by JavaScript -->
+            </select>
+        </div>
+        <ul class="list-group list-group-flush" id="matchHistoryList">
+            {% set all_recent_matches = [] %}
+            {% if perfil.soloq and perfil.soloq.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.soloq.recent_matches %}{% endif %}
+            {% if perfil.flex and perfil.flex.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.flex.recent_matches %}{% endif %}
+            
+            {% set sorted_matches = all_recent_matches | sort(attribute='game_end_timestamp', reverse=true) %}
+
+            {% if sorted_matches %}
+                {% for match in sorted_matches %} {# Displaying all matches, filtering done by JS #}
+                <li class="list-group-item" data-queue-id="{{ match.queue_id }}" data-champion-name="{{ match.champion_name }}">
+                    <div class="match-info">
+                        <div class="champion-level-container">
+                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
+                                 alt="{{ match.champion_name }}">
+                            {% if match.champion_level is defined %}
+                            <span class="champion-level">{{ match.champion_level }}</span>
                             {% endif %}
-                        </a>
-                    </td>
-                </tr>
+                        </div>
+
+                        <div class="summoner-spells">
+                            {% if match.summoner_spell_1_id is defined %}
+                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_1_id }}.png"
+                                 alt="Hechizo 1" title="Hechizo 1">
+                            {% endif %}
+                            {% if match.summoner_spell_2_id is defined %}
+                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_2_id }}.png"
+                                 alt="Hechizo 2" title="Hechizo 2">
+                            {% endif %}
+                        </div>
+
+                        <div class="runes">
+                            {% if match.perk_main_id is defined %}
+                            <img src="https://ddragon.leagueoflegends.com/cdn/img/perk/{{ match.perk_main_id }}.png"
+                                 alt="Runa Principal" title="Runa Principal" class="keystone">
+                            {% endif %}
+                            {% if match.perk_sub_id is defined %}
+                            <img src="https://ddragon.leagueoflegends.com/cdn/img/perkStyle/{{ match.perk_sub_id }}.png"
+                                 alt="Runa Secundaria" title="Runa Secundaria" class="sub-rune">
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <strong>{{ match.champion_name }}</strong> ({{ match.queue_id | get_queue_type }})<br>
+                            <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
+                            <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                            <div class="item-images">
+                                {% for item_id in match['items'] %}
+                                    {% if item_id != 0 %} {# Only display if item_id is not 0 (empty slot) #}
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png"
+                                             alt="Item"
+                                             onerror="this.style.display='none';"> {# Hide if image fails to load #}
+                                    {% else %}
+                                        {# Use a div with CSS for a consistent gray square placeholder #}
+                                        <div style="width:30px; height:30px; border-radius:5px; background-color:#343a40;"></div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="match-result {% if match.win %}win{% else %}loss{% endif %}">
+                        {% if match.win %}Victoria{% else %}Derrota{% endif %}
+                    </span>
+                </li>
                 {% endfor %}
-            </tbody>
-        </table>
+            {% else %}
+                <li class="list-group-item text-center text-muted">
+                    No hay datos de partidas recientes disponibles para este jugador en este momento.
+                </li>
+            {% endif %}
+        </ul>
     </div>
+
 </div>
 
-<!-- Script de Bootstrap JS (necesario para el menú desplegable y otras funcionalidades) -->
+<!-- Script de Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
 <script>
@@ -412,20 +667,16 @@
         audio.play().catch(error => console.log('La reproducción automática de audio fue bloqueada por el navegador.', error));
 
         const playAudio = () => {
-            // Intenta reproducir el audio si está pausado. Esto es necesario para navegadores
-            // que bloquean el autoplay hasta que haya una interacción del usuario.
             if (audio.paused) {
                 audio.play().catch(e => console.log("El usuario debe interactuar con la página para reproducir audio.", e));
             }
         };
 
-        // Control de volumen
         volumeSlider.addEventListener('input', function() {
             playAudio();
             audio.volume = this.value;
         });
 
-        // Actualizar el icono del botón de silenciar/desmutear
         toggleAudioButton.addEventListener('click', () => {
             playAudio();
             audio.muted = !audio.muted;
@@ -451,126 +702,14 @@
             "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/CHALLENGER.png"
         };
 
-        document.querySelectorAll(".elo-image").forEach(el => {
-            const elo = el.alt.toUpperCase();
+        // Set Elo images for the large profile cards
+        document.querySelectorAll(".elo-image-lg").forEach(el => {
+            const elo = el.dataset.eloTier.toUpperCase();
             if (imagenesElo[elo]) el.src = imagenesElo[elo];
         });
 
         const toggleModeButton = document.getElementById("toggle-mode");
         toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
-
-        // --- INICIO DE LA NUEVA LÓGICA DE TABLA ---
-        
-        const filtro = document.getElementById("filtro");
-        const table = document.getElementById("jugadoresTable");
-        const tbody = table.querySelector("tbody");
-        const headers = table.querySelectorAll("thead th[data-sort-by]");
-
-        // Estado actual de la ordenación
-        let currentSort = {
-            column: 'elo',
-            direction: 'desc'
-        };
-
-        // Función para obtener el valor de una celda para poder comparar y ordenar
-        const getCellValue = (row, columnIndex, sortBy) => {
-            const cell = row.cells[columnIndex];
-            if (!cell) return null;
-
-            switch (sortBy) {
-                case 'elo':
-                    // Usar el valor de clasificación oculto para ordenar por Elo
-                    return parseFloat(row.querySelector(".hidden").textContent);
-                case 'jugador':
-                case 'game_name':
-                    // Para columnas de texto, usar el contenido en minúsculas
-                    return cell.textContent.trim().toLowerCase();
-                case 'win_rate':
-                    // Para el win rate, quitar el '%' y convertir a número
-                    return parseFloat(cell.textContent);
-                default:
-                    // Para el resto de columnas numéricas (wins, losses, total)
-                    return parseInt(cell.textContent, 10);
-            }
-        };
-
-        // Función principal para ordenar la tabla
-        const sortTable = (sortBy, direction) => {
-            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
-            const allHeaders = Array.from(table.querySelectorAll('thead th'));
-            const columnIndex = allHeaders.findIndex(th => th.dataset.sortBy === sortBy);
-
-            if (columnIndex === -1) return;
-
-            const dirModifier = direction === 'asc' ? 1 : -1;
-
-            const sortedRows = visibleRows.sort((a, b) => {
-                const aVal = getCellValue(a, columnIndex, sortBy);
-                const bVal = getCellValue(b, columnIndex, sortBy);
-                if (aVal < bVal) return -1 * dirModifier;
-                if (aVal > bVal) return 1 * dirModifier;
-                return 0;
-            });
-
-            sortedRows.forEach(row => tbody.appendChild(row));
-
-            headers.forEach(th => {
-                th.classList.remove('sort-asc', 'sort-desc');
-                if (th.dataset.sortBy === sortBy) {
-                    th.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
-                }
-            });
-
-            updateTableCalculations(sortBy, sortedRows);
-        };
-
-        // Función para actualizar la posición y la columna "Dif. Elo"
-        const updateTableCalculations = (sortedBy, visibleRows) => {
-            visibleRows.forEach((row, index) => {
-                // Actualizar número de posición
-                row.cells[0].textContent = index + 1;
-
-                const eloDiffCell = row.querySelector(".elo-diferencia");
-                
-                // Calcular la diferencia de ELO solo si la tabla está ordenada por ELO
-                if (sortedBy === 'elo') {
-                    if (index === 0) {
-                        // El primer jugador no tiene diferencia
-                        eloDiffCell.textContent = "—";
-                    } else {
-                        // Obtener el valor de ELO directamente de la celda oculta
-                        const currentElo = parseFloat(row.querySelector(".hidden").textContent);
-                        const prevElo = parseFloat(visibleRows[index - 1].querySelector(".hidden").textContent);
-                        const diff = Math.round(prevElo - currentElo); // Usar Math.round para evitar decimales
-                        eloDiffCell.textContent = `${diff} LPs`;
-                    }
-                } else {
-                    // Si no está ordenado por ELO, mostrar N/A
-                    eloDiffCell.textContent = "N/A";
-                }
-            });
-        };
-
-        // Función para aplicar el filtro de cola
-        const aplicarFiltro = () => {
-            const selectedQueue = filtro.value;
-            tbody.querySelectorAll("tr").forEach(row => {
-                row.style.display = (selectedQueue === 'todo' || row.classList.contains(selectedQueue)) ? '' : 'none';
-            });
-            sortTable(currentSort.column, currentSort.direction);
-        };
-
-        headers.forEach(header => {
-            header.addEventListener('click', () => {
-                const sortBy = header.dataset.sortBy;
-                currentSort.direction = (currentSort.column === sortBy && currentSort.direction === 'desc') ? 'asc' : 'desc';
-                currentSort.column = sortBy;
-                sortTable(currentSort.column, currentSort.direction);
-            });
-        });
-
-        filtro.addEventListener("change", aplicarFiltro);
-        aplicarFiltro(); // Carga inicial con filtro y ordenación por defecto
 
         const leftBanner = document.getElementById("left-banner");
         const rightBanner = document.getElementById("right-banner");
@@ -589,6 +728,72 @@
             rightBanner.src = imagePaths[currentImageIndex];
         }
         setInterval(cambiarImagenes, 5000);
+
+        // --- Match History Filtering Logic ---
+        const queueFilter = document.getElementById('queueFilter');
+        const championFilter = document.getElementById('championFilter');
+        const matchHistoryList = document.getElementById('matchHistoryList');
+        const allMatches = Array.from(matchHistoryList.children); // Get all initial match list items
+
+        // Function to populate the champion filter dropdown
+        function populateChampionFilter() {
+            const uniqueChampions = new Set();
+            // Collect champions from both soloq and flex recent matches
+            const allRecentMatchesData = [
+                ...(perfilData.soloq && perfilData.soloq.recent_matches ? perfilData.soloq.recent_matches : []),
+                ...(perfilData.flex && perfilData.flex.recent_matches ? perfilData.flex.recent_matches : [])
+            ];
+
+            allRecentMatchesData.forEach(match => {
+                uniqueChampions.add(match.champion_name);
+            });
+
+            // Clear existing options except "Todos"
+            championFilter.innerHTML = '<option value="all">Todos</option>';
+            
+            // Add unique champions to the dropdown
+            Array.from(uniqueChampions).sort().forEach(championName => {
+                const option = document.createElement('option');
+                option.value = championName;
+                option.textContent = championName;
+                championFilter.appendChild(option);
+            });
+        }
+
+        // Function to apply filters
+        function applyMatchHistoryFilters() {
+            const selectedQueue = queueFilter.value;
+            const selectedChampion = championFilter.value;
+
+            allMatches.forEach(matchItem => {
+                const matchQueueId = matchItem.dataset.queueId;
+                const matchChampionName = matchItem.dataset.championName;
+
+                const isQueueMatch = (selectedQueue === 'all' || matchQueueId === selectedQueue);
+                const isChampionMatch = (selectedChampion === 'all' || matchChampionName === selectedChampion);
+
+                if (isQueueMatch && isChampionMatch) {
+                    matchItem.style.display = 'flex'; // Show the item
+                } else {
+                    matchItem.style.display = 'none'; // Hide the item
+                }
+            });
+        }
+
+        // Attach event listeners to filters
+        queueFilter.addEventListener('change', applyMatchHistoryFilters);
+        championFilter.addEventListener('change', applyMatchHistoryFilters);
+
+        // Access perfil data from the Jinja2 context (assuming it's available globally or passed via data attributes)
+        // For this to work, you need to ensure 'perfil' data is accessible in JS.
+        // One way to embed it is as a JSON string in a script tag, or directly from the template context.
+        // For simplicity, let's assume `perfilData` is made available, e.g., in a hidden div or a script tag.
+        // Since this is a Jinja2 template, we can directly use the `perfil` variable.
+        const perfilData = {{ perfil | tojson }}; // This line assumes `perfil` is a valid JSON object
+
+        // Initial population and application of filters
+        populateChampionFilter();
+        applyMatchHistoryFilters();
     });
 </script>
 
