@@ -209,14 +209,20 @@
         }
         .rank-card .card-body {
             display: flex;
-            align-items: center;
+            flex-direction: column; /* Changed to column for better stacking of champion stats */
+            align-items: center; /* Center content horizontally */
             padding: 20px;
         }
         .rank-card .elo-image-lg {
             width: 80px;
             height: 80px;
             object-fit: contain;
-            margin-right: 20px;
+            margin-right: 0; /* Remove margin as it's now a column layout */
+            margin-bottom: 15px; /* Add bottom margin for spacing */
+        }
+        .rank-details {
+            text-align: center; /* Center rank details */
+            width: 100%; /* Take full width */
         }
         .rank-details h4 {
             margin-bottom: 5px;
@@ -225,17 +231,39 @@
         .rank-details p {
             margin-bottom: 3px;
         }
-        .champion-stats-card {
+        .champion-stats-container {
             margin-top: 20px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
+            width: 100%; /* Take full width */
         }
-        .champion-stats-card img {
-            width: 60px;
-            height: 60px;
+        .champion-stats-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px; /* Spacing between champion items */
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee; /* Separator */
+        }
+        .champion-stats-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .champion-stats-item img {
+            width: 50px; /* Slightly smaller for multiple champions */
+            height: 50px;
             border-radius: 50%;
             margin-right: 15px;
             object-fit: cover;
+        }
+        .champion-stats-info {
+            text-align: left;
+        }
+        .champion-stats-info h5 {
+            margin-bottom: 0;
+            font-size: 1.1em;
+        }
+        .kda-text {
+            font-size: 0.9em;
+            color: #6c757d;
         }
         .match-history-card {
             margin-top: 40px;
@@ -265,9 +293,18 @@
         .match-history-card .match-result.loss {
             color: tomato;
         }
-        .kda-text {
-            font-size: 0.9em;
-            color: #6c757d;
+        /* New styles for items in match history */
+        .item-images {
+            display: flex;
+            gap: 5px; /* Space between item images */
+            margin-top: 5px;
+        }
+        .item-images img {
+            width: 30px; /* Size of item images */
+            height: 30px;
+            border-radius: 5px; /* Slightly rounded corners for items */
+            object-fit: cover;
+            background-color: #343a40; /* Dark background for empty slots */
         }
     </style>
 </head>
@@ -349,25 +386,29 @@
                                 {% endif %}
                             </p>
 
-                            {% if perfil.soloq.top_champion_stats and perfil.soloq.top_champion_stats.champion_name %}
-                            <div class="d-flex align-items-center champion-stats-card">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ perfil.soloq.top_champion_stats.champion_name }}.png"
-                                     alt="{{ perfil.soloq.top_champion_stats.champion_name }}"
-                                     title="{{ perfil.soloq.top_champion_stats.champion_name }}">
-                                <div>
-                                    <h5 class="mb-0">{{ perfil.soloq.top_champion_stats.champion_name }}</h5>
-                                    <p class="mb-0 small-text-stats">Partidas: {{ perfil.soloq.top_champion_stats.games_played }}</p>
-                                    <p class="mb-0 small-text-stats {% if perfil.soloq.top_champion_stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                                        WR: {{ '%.0f'|format(perfil.soloq.top_champion_stats.win_rate) }}%
-                                    </p>
-                                    {% if perfil.soloq.top_champion_stats.kda is defined %}
-                                    <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(perfil.soloq.top_champion_stats.kda) }}</p>
-                                    {% endif %}
-                                </div>
+                            <div class="champion-stats-container">
+                                {% if perfil.soloq.top_champion_stats %}
+                                    {% for champion_stat in perfil.soloq.top_champion_stats %}
+                                    <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png"
+                                             alt="{{ champion_stat.champion_name }}"
+                                             title="{{ champion_stat.champion_name }}">
+                                        <div class="champion-stats-info">
+                                            <h5 class="mb-0">{{ champion_stat.champion_name }}</h5>
+                                            <p class="mb-0 small-text-stats">Partidas: {{ champion_stat.games_played }}</p>
+                                            <p class="mb-0 small-text-stats {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                                WR: {{ '%.0f'|format(champion_stat.win_rate) }}%
+                                            </p>
+                                            {% if champion_stat.kda is defined %}
+                                            <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(champion_stat.kda) }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="small-text-stats">No hay datos de campeones principales para SoloQ en este split.</p>
+                                {% endif %}
                             </div>
-                            {% else %}
-                            <p class="small-text-stats">No hay datos de campeón principal para SoloQ en este split.</p>
-                            {% endif %}
 
                         </div>
                     {% else %}
@@ -404,25 +445,29 @@
                                 {% endif %}
                             </p>
 
-                            {% if perfil.flex.top_champion_stats and perfil.flex.top_champion_stats.champion_name %}
-                            <div class="d-flex align-items-center champion-stats-card">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ perfil.flex.top_champion_stats.champion_name }}.png"
-                                     alt="{{ perfil.flex.top_champion_stats.champion_name }}"
-                                     title="{{ perfil.flex.top_champion_stats.champion_name }}">
-                                <div>
-                                    <h5 class="mb-0">{{ perfil.flex.top_champion_stats.champion_name }}</h5>
-                                    <p class="mb-0 small-text-stats">Partidas: {{ perfil.flex.top_champion_stats.games_played }}</p>
-                                    <p class="mb-0 small-text-stats {% if perfil.flex.top_champion_stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                                        WR: {{ '%.0f'|format(perfil.flex.top_champion_stats.win_rate) }}%
-                                    </p>
-                                    {% if perfil.flex.top_champion_stats.kda is defined %}
-                                    <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(perfil.flex.top_champion_stats.kda) }}</p>
-                                    {% endif %}
-                                </div>
+                            <div class="champion-stats-container">
+                                {% if perfil.flex.top_champion_stats %}
+                                    {% for champion_stat in perfil.flex.top_champion_stats %}
+                                    <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png"
+                                             alt="{{ champion_stat.champion_name }}"
+                                             title="{{ champion_stat.champion_name }}">
+                                        <div class="champion-stats-info">
+                                            <h5 class="mb-0">{{ champion_stat.champion_name }}</h5>
+                                            <p class="mb-0 small-text-stats">Partidas: {{ champion_stat.games_played }}</p>
+                                            <p class="mb-0 small-text-stats {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                                WR: {{ '%.0f'|format(champion_stat.win_rate) }}%
+                                            </p>
+                                            {% if champion_stat.kda is defined %}
+                                            <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(champion_stat.kda) }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="small-text-stats">No hay datos de campeones principales para Flex en este split.</p>
+                                {% endif %}
                             </div>
-                            {% else %}
-                            <p class="small-text-stats">No hay datos de campeón principal para Flex en este split.</p>
-                            {% endif %}
 
                         </div>
                     {% else %}
@@ -433,15 +478,20 @@
         </div>
     </div>
 
-    <!-- Match History Section (Placeholder for now, can be expanded) -->
+    <!-- Match History Section -->
     <div class="card match-history-card">
         <div class="card-header">
             Últimas Partidas (SoloQ y Flex)
         </div>
         <ul class="list-group list-group-flush">
-            <!-- Example of how a match could be displayed. You would need to pass match history data from app.py -->
-            {% if perfil.soloq and perfil.soloq.recent_matches %}
-                {% for match in perfil.soloq.recent_matches[:5] %} {# Displaying up to 5 recent matches #}
+            {% set all_recent_matches = [] %}
+            {% if perfil.soloq and perfil.soloq.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.soloq.recent_matches %}{% endif %}
+            {% if perfil.flex and perfil.flex.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.flex.recent_matches %}{% endif %}
+            
+            {% set sorted_matches = all_recent_matches | sort(attribute='game_end_timestamp', reverse=true) %}
+
+            {% if sorted_matches %}
+                {% for match in sorted_matches[:10] %} {# Displaying up to 10 recent matches #}
                 <li class="list-group-item">
                     <div class="match-info">
                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
@@ -450,23 +500,18 @@
                             <strong>{{ match.champion_name }}</strong> ({{ match.queue_id | get_queue_type }})<br>
                             <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
                             <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
-                        </div>
-                    </div>
-                    <span class="match-result {% if match.win %}win{% else %}loss{% endif %}">
-                        {% if match.win %}Victoria{% else %}Derrota{% endif %}
-                    </span>
-                </li>
-                {% endfor %}
-            {% elif perfil.flex and perfil.flex.recent_matches %}
-                 {% for match in perfil.flex.recent_matches[:5] %} {# Displaying up to 5 recent matches #}
-                <li class="list-group-item">
-                    <div class="match-info">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
-                             alt="{{ match.champion_name }}">
-                        <div>
-                            <strong>{{ match.champion_name }}</strong> ({{ match.queue_id | get_queue_type }})<br>
-                            <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
-                            <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                            <div class="item-images">
+                                {% for item_id in match.items %}
+                                    {% if item_id != 0 %} {# Only display if item_id is not 0 (empty slot) #}
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png"
+                                             alt="Item"
+                                             onerror="this.style.display='none';"> {# Hide if image fails to load #}
+                                    {% else %}
+                                        <img src="data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'30\' height=\'30\'><rect width=\'30\' height=\'30\' fill=\'#343a40\' rx=\'5\' ry=\'5\'/></svg>"
+                                             alt="Empty Slot">
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                     <span class="match-result {% if match.win %}win{% else %}loss{% endif %}">

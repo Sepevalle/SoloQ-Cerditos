@@ -551,15 +551,15 @@ def actualizar_cache():
         if datos_jugador_list:
             todos_los_datos.extend(datos_jugador_list)
 
-    # Paso 3: Calcular y añadir estadísticas del campeón más jugado desde el historial
+    # Paso 3: Calcular y añadir estadísticas del top 3 campeones más jugados desde el historial
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
     for jugador in todos_los_datos:
-        """Calcula las estadísticas del campeón más jugado para un jugador."""
+        """Calcula las estadísticas del top 3 campeones más jugados para un jugador."""
         puuid = jugador.get('puuid')
         queue_type = jugador.get('queue_type')
         queue_id = queue_map.get(queue_type)
 
-        jugador['top_champion_stats'] = {} # Inicializar por si no hay datos
+        jugador['top_champion_stats'] = [] # Ahora será una lista para los top 3
 
         if not puuid or not queue_id:
             continue
@@ -575,33 +575,34 @@ def actualizar_cache():
         if not partidas_jugador:
             continue
 
-        # Contar campeones para encontrar el más jugado
+        # Contar campeones para encontrar el top 3
         contador_campeones = Counter(p['champion_name'] for p in partidas_jugador)
         if not contador_campeones:
             continue
         
-        campeon_mas_jugado, _ = contador_campeones.most_common(1)[0]
+        top_3_campeones = contador_campeones.most_common(3)
 
-        # Calcular stats para ese campeón
-        partidas_del_campeon = [p for p in partidas_jugador if p['champion_name'] == campeon_mas_jugado]
-        
-        total_partidas = len(partidas_del_campeon)
-        wins = sum(1 for p in partidas_del_campeon if p.get('win'))
-        win_rate = (wins / total_partidas * 100) if total_partidas > 0 else 0
+        for campeon_nombre, _ in top_3_campeones:
+            # Calcular stats para cada campeón en el top 3
+            partidas_del_campeon = [p for p in partidas_jugador if p['champion_name'] == campeon_nombre]
+            
+            total_partidas = len(partidas_del_campeon)
+            wins = sum(1 for p in partidas_del_campeon if p.get('win'))
+            win_rate = (wins / total_partidas * 100) if total_partidas > 0 else 0
 
-        total_kills = sum(p.get('kills', 0) for p in partidas_del_campeon)
-        total_deaths = sum(p.get('deaths', 0) for p in partidas_del_campeon)
-        total_assists = sum(p.get('assists', 0) for p in partidas_del_campeon)
-        
-        # Evitar división por cero para el KDA
-        kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
+            total_kills = sum(p.get('kills', 0) for p in partidas_del_campeon)
+            total_deaths = sum(p.get('deaths', 0) for p in partidas_del_campeon)
+            total_assists = sum(p.get('assists', 0) for p in partidas_del_campeon)
+            
+            # Evitar división por cero para el KDA
+            kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
 
-        jugador['top_champion_stats'] = {
-            "champion_name": campeon_mas_jugado,
-            "win_rate": win_rate,
-            "games_played": total_partidas,
-            "kda": kda
-        }
+            jugador['top_champion_stats'].append({
+                "champion_name": campeon_nombre,
+                "win_rate": win_rate,
+                "games_played": total_partidas,
+                "kda": kda
+            })
 
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
