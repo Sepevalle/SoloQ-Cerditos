@@ -87,6 +87,7 @@ def actualizar_version_ddragon():
 actualizar_version_ddragon()
 
 def cargar_campeones():
+    """Carga los datos de los campeones desde Data Dragon."""
     url_campeones = f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/data/es_ES/champion.json"
     response = requests.get(url_campeones)
     if response.status_code == 200:
@@ -99,9 +100,11 @@ def cargar_campeones():
 campeones = cargar_campeones()
 
 def obtener_nombre_campeon(champion_id):
+    """Obtiene el nombre de un campeón dado su ID."""
     return campeones.get(champion_id, "Desconocido")
 
 def obtener_puuid(api_key, riot_id, region):
+    """Obtiene el PUUID de un jugador dado su Riot ID y región."""
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
     response = make_api_request(url)
     if response:
@@ -111,6 +114,7 @@ def obtener_puuid(api_key, riot_id, region):
         return None
 
 def obtener_id_invocador(api_key, puuid):
+    """Obtiene el ID de invocador de un jugador dado su PUUID."""
     url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
@@ -120,6 +124,7 @@ def obtener_id_invocador(api_key, puuid):
         return None
 
 def obtener_elo(api_key, puuid):
+    """Obtiene la información de Elo de un jugador dado su PUUID."""
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
@@ -186,6 +191,7 @@ def obtener_info_partida(args):
     return None
 
 def leer_cuentas(url):
+    """Lee las cuentas de jugadores desde un archivo de texto alojado en GitHub."""
     try:
         response = requests.get(url)
         if response.status_code == 200:
@@ -206,6 +212,10 @@ def leer_cuentas(url):
         return []
 
 def calcular_valor_clasificacion(tier, rank, league_points):
+    """
+    Calcula un valor numérico para la clasificación de un jugador,
+    permitiendo ordenar y comparar Elo de forma más sencilla.
+    """
     tier_upper = tier.upper()
     
     # Para Master, Grandmaster y Challenger, el cálculo es más simple.
@@ -232,6 +242,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
     return valor_base_tier + valor_division + league_points
 
 def leer_peak_elo():
+    """Lee los datos de peak Elo desde un archivo JSON en GitHub."""
     url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
     try:
         resp = requests.get(url)
@@ -288,6 +299,7 @@ def guardar_puuids_en_github(puuid_dict):
         print(f"Error al actualizar puuids.json: {response.status_code} - {response.text}")
 
 def guardar_peak_elo_en_github(peak_elo_dict):
+    """Guarda o actualiza el archivo peak_elo.json en GitHub."""
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
@@ -295,16 +307,16 @@ def guardar_peak_elo_en_github(peak_elo_dict):
         return
 
     # Obtener el contenido actual del archivo para el SHA
+    sha = None
     try:
         response = requests.get(url, headers={"Authorization": f"token {token}"})
         if response.status_code == 200:
             contenido_actual = response.json()
             sha = contenido_actual['sha']
         else:
-            print(f"Error al obtener el archivo: {response.status_code}")
-            return
+            print(f"Error al obtener el archivo peak_elo.json para SHA: {response.status_code}")
     except Exception as e:
-        print(f"Error al obtener el archivo: {e}")
+        print(f"Error al obtener el SHA de peak_elo.json: {e}")
         return
 
     # Codificar el contenido en base64 como requiere la API de GitHub
@@ -323,11 +335,11 @@ def guardar_peak_elo_en_github(peak_elo_dict):
             }
         )
         if response.status_code in (200, 201):
-            print("Archivo actualizado correctamente en GitHub")
+            print("Archivo peak_elo.json actualizado correctamente en GitHub.")
         else:
-            print(f"Error al actualizar el archivo: {response.status_code} - {response.text}")
+            print(f"Error al actualizar peak_elo.json: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"Error al actualizar el archivo: {e}")
+        print(f"Error al actualizar el archivo peak_elo.json: {e}")
 
 def leer_historial_jugador_github(puuid):
     """Lee el historial de partidas de un jugador desde GitHub."""
@@ -368,13 +380,12 @@ def guardar_historial_jugador_github(puuid, historial_data):
     try:
         response = requests.put(url, headers=headers, json=data, timeout=10)
         if response.status_code in (200, 201):
-            print("Archivo top_champion_stats.json actualizado correctamente en GitHub.")
+            print(f"Historial de {puuid}.json actualizado correctamente en GitHub.")
         else:
-            print(f"Error al actualizar top_champion_stats.json: {response.status_code} - {response.text}")
+            print(f"Error al actualizar historial de {puuid}.json: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Error en la petición PUT a GitHub para el historial de {puuid}: {e}")
 
-# FUNCIÓN MODIFICADA
 def procesar_jugador(args_tuple):
     """
     Procesa los datos de un solo jugador.
@@ -444,73 +455,7 @@ def procesar_jugador(args_tuple):
         datos_jugador_list.append(datos_jugador)
     return datos_jugador_list
 
-def obtener_historial_partidas(puuid, queue_map, api_key):
-    """Obtiene el historial de partidas completo para un jugador y colas específicas."""
-    historial_completo = []
-    for queue_id in queue_map.values():
-        start_index = 0
-        while True:
-            url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
-            response_matches = make_api_request(url_matches)
-            if not response_matches:
-                break
-            match_ids = response_matches.json()
-            if not match_ids:
-                break
-            historial_completo.extend(match_ids)
-            if len(match_ids) < 100:
-                break
-            start_index += 100
-    return historial_completo
-
-historial_existente = leer_historial_jugador_github(puuid)
-        ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
-
-                # 2. Obtener TODOS los IDs de partidas de la temporada (SoloQ y Flex)
-                all_match_ids_season = []
-                for queue_id in queue_map.values():
-                    start_index = 0
-                    while True:
-                        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
-                        response_matches = make_api_request(url_matches)
-                        if not response_matches: break
-                        match_ids_page = response_matches.json()
-                        if not match_ids_page: break
-                        all_match_ids_season.extend(match_ids_page)
-                        if len(match_ids_page) < 100: break
-                        start_index += 100
-                
-                # 3. Filtrar para obtener solo los IDs de partidas nuevas
-                nuevos_match_ids = [mid for mid in all_match_ids_season if mid not in ids_partidas_guardadas]
-
-                if not nuevos_match_ids:
-                    print(f"No hay partidas nuevas para {riot_id}. Omitiendo.")
-                    continue
-
-                print(f"Se encontraron {len(nuevos_match_ids)} partidas nuevas para {riot_id}. Procesando...")
-
-                # 4. Procesar solo las partidas nuevas en paralelo
-                tareas = [(match_id, puuid, api_key) for match_id in nuevos_match_ids]
-                with ThreadPoolExecutor(max_workers=10) as executor:
-                    nuevas_partidas_info = list(executor.map(obtener_info_partida, tareas))
-
-                # 5. Añadir las nuevas partidas al historial y guardar
-                nuevas_partidas_validas = [p for p in nuevas_partidas_info if p is not None]
-                if nuevas_partidas_validas:
-                    historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
-                    # Opcional: ordenar por fecha
-                    historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
-                    guardar_historial_jugador_github(puuid, historial_existente)
-                    print(f"Historial de {riot_id} actualizado con {len(nuevas_partidas_validas)} partidas.")
-
-            print("Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
-            time.sleep(300) # Esperar 5 minutos para el siguiente ciclo
-
-        except Exception as e:
-            print(f"Error en el hilo de actualización de estadísticas: {e}. Reintentando en 5 minutos.")
-            time.sleep(300)
-
-def actualizar_cache(): # docstring aquí
+def actualizar_cache():
     """
     Esta función realiza el trabajo pesado: obtiene todos los datos de la API
     y actualiza la caché global. Está diseñada para ser ejecutada en segundo plano.
@@ -545,7 +490,8 @@ def actualizar_cache(): # docstring aquí
     for riot_id, _ in cuentas:
         if riot_id not in puuid_dict:
             print(f"No se encontró PUUID para {riot_id}. Obteniéndolo de la API...")
-            puuid_info = obtener_puuid(api_key_main, riot_id.split('#')[0], riot_id.split('#')[-1])
+            game_name, tag_line = riot_id.split('#')[0], riot_id.split('#')[1]
+            puuid_info = obtener_puuid(api_key_main, game_name, tag_line)
             if puuid_info and 'puuid' in puuid_info:
                 puuid_dict[riot_id] = puuid_info['puuid']
                 puuids_actualizados = True
@@ -571,7 +517,8 @@ def actualizar_cache(): # docstring aquí
 
     # Paso 3: Calcular y añadir estadísticas del campeón más jugado desde el historial
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-    for jugador in todos_los_datos: # docstring
+    for jugador in todos_los_datos:
+        """Calcula las estadísticas del campeón más jugado para un jugador."""
         puuid = jugador.get('puuid')
         queue_type = jugador.get('queue_type')
         queue_id = queue_map.get(queue_type)
@@ -625,17 +572,17 @@ def actualizar_cache(): # docstring aquí
         cache['timestamp'] = time.time()
     print("Actualización de la caché completada.")
 
-def obtener_datos_jugadores(): # docstring
+def obtener_datos_jugadores():
     """Obtiene los datos cacheados de los jugadores."""
     with cache_lock:
         return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
 
-def get_peak_elo_key(jugador): # docstring
+def get_peak_elo_key(jugador):
     """Genera una clave para el peak ELO usando el nombre del jugador y su Riot ID."""
     return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
 
 @app.route('/')
-def index(): # docstring
+def index():
     """Renderiza la página principal con la lista de jugadores."""
 
     datos_jugadores, timestamp = obtener_datos_jugadores()
@@ -672,14 +619,6 @@ def index(): # docstring
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
-def obtener_datos_jugadores():
-    with cache_lock:
-        return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
-
-def get_peak_elo_key(jugador):
-    # Clave para el peak ELO usando el nombre del jugador y su Riot ID
-    return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
-
 @app.route('/jugador/<game_name>')
 def perfil_jugador(game_name):
     """Muestra una página de perfil para un jugador específico."""
@@ -704,8 +643,80 @@ def perfil_jugador(game_name):
     return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
 
 
+def actualizar_historial_partidas_en_segundo_plano():
+    """
+    Función que se ejecuta en un hilo separado para actualizar el historial de partidas
+    de todos los jugadores de forma periódica.
+    """
+    print("Iniciando hilo de actualización de historial de partidas.")
+    api_key = os.environ.get('RIOT_API_KEY')
+    if not api_key:
+        print("ERROR: RIOT_API_KEY no configurada. No se puede actualizar el historial de partidas.")
+        return
+
+    queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
+    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
+
+    while True:
+        try:
+            cuentas = leer_cuentas(url_cuentas)
+            puuid_dict = leer_puuids()
+
+            for riot_id, jugador_nombre in cuentas:
+                puuid = puuid_dict.get(riot_id)
+                if not puuid:
+                    print(f"Saltando actualización de historial para {riot_id}: PUUID no encontrado.")
+                    continue
+
+                historial_existente = leer_historial_jugador_github(puuid)
+                ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
+
+                # 2. Obtener TODOS los IDs de partidas de la temporada (SoloQ y Flex)
+                all_match_ids_season = []
+                for queue_id in queue_map.values():
+                    start_index = 0
+                    while True:
+                        url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
+                        response_matches = make_api_request(url_matches)
+                        if not response_matches: break
+                        match_ids_page = response_matches.json()
+                        if not match_ids_page: break
+                        all_match_ids_season.extend(match_ids_page)
+                        if len(match_ids_page) < 100: break
+                        start_index += 100
+                
+                # 3. Filtrar para obtener solo los IDs de partidas nuevas
+                nuevos_match_ids = [mid for mid in all_match_ids_season if mid not in ids_partidas_guardadas]
+
+                if not nuevos_match_ids:
+                    print(f"No hay partidas nuevas para {riot_id}. Omitiendo.")
+                    continue
+
+                print(f"Se encontraron {len(nuevos_match_ids)} partidas nuevas para {riot_id}. Procesando...")
+
+                # 4. Procesar solo las partidas nuevas en paralelo
+                tareas = [(match_id, puuid, api_key) for match_id in nuevos_match_ids]
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    nuevas_partidas_info = list(executor.map(obtener_info_partida, tareas))
+
+                # 5. Añadir las nuevas partidas al historial y guardar
+                nuevas_partidas_validas = [p for p in nuevas_partidas_info if p is not None]
+                if nuevas_partidas_validas:
+                    historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
+                    # Opcional: ordenar por fecha
+                    historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
+                    guardar_historial_jugador_github(puuid, historial_existente)
+                    print(f"Historial de {riot_id} actualizado con {len(nuevas_partidas_validas)} partidas.")
+
+            print("Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
+            time.sleep(300) # Esperar 5 minutos para el siguiente ciclo
+
+        except Exception as e:
+            print(f"Error en el hilo de actualización de estadísticas: {e}. Reintentando en 5 minutos.")
+            time.sleep(300)
 
 def keep_alive():
+    """Envía una solicitud periódica a la propia aplicación para mantenerla activa en servicios como Render."""
     while True:
         try:
             requests.get('https://soloq-cerditos.onrender.com/')
@@ -715,6 +726,7 @@ def keep_alive():
         time.sleep(200)
 
 def actualizar_cache_periodicamente():
+    """Actualiza la caché de datos de los jugadores de forma periódica."""
     while True:
         actualizar_cache()
         time.sleep(CACHE_TIMEOUT)
