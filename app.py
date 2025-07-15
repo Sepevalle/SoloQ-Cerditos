@@ -462,7 +462,7 @@ def obtener_historial_partidas(puuid, queue_map, api_key):
                 break
             start_index += 100
     return historial_completo
-                historial_existente = leer_historial_jugador_github(puuid)
+        historial_existente = leer_historial_jugador_github(puuid)
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
 
                 # 2. Obtener TODOS los IDs de partidas de la temporada (SoloQ y Flex)
