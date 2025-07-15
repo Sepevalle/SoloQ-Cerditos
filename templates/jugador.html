@@ -501,7 +501,7 @@
                             <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
                             <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
                             <div class="item-images">
-                                {% for item_id in match.items %}
+                                {% for item_id in match['items'] %} {# Changed from match.items to match['items'] #}
                                     {% if item_id != 0 %} {# Only display if item_id is not 0 (empty slot) #}
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png"
                                              alt="Item"
