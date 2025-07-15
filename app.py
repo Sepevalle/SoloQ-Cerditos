@@ -444,28 +444,24 @@ def procesar_jugador(args_tuple):
         datos_jugador_list.append(datos_jugador)
     return datos_jugador_list
 
-def actualizar_historial_partidas_en_segundo_plano():
-    """
-    Tarea que se ejecuta en un hilo separado.
-    Actualiza el historial de partidas de cada jugador de forma eficiente,
-    obteniendo solo las partidas nuevas desde la última actualización.
-    """
-    print("Iniciando ciclo de actualización de historial de partidas...")
-    api_key = os.environ.get('RIOT_API_KEY', 'RIOT_API_KEY')
-    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
-    
-    while True:
-        try:
-            cuentas = leer_cuentas(url_cuentas)
-            puuid_dict = leer_puuids()
-            queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-
-            for riot_id, _ in cuentas:
-                puuid = puuid_dict.get(riot_id)
-                if not puuid:
-                    continue
-
-                # 1. Cargar el historial existente del jugador
+def obtener_historial_partidas(puuid, queue_map, api_key):
+    """Obtiene el historial de partidas completo para un jugador y colas específicas."""
+    historial_completo = []
+    for queue_id in queue_map.values():
+        start_index = 0
+        while True:
+            url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
+            response_matches = make_api_request(url_matches)
+            if not response_matches:
+                break
+            match_ids = response_matches.json()
+            if not match_ids:
+                break
+            historial_completo.extend(match_ids)
+            if len(match_ids) < 100:
+                break
+            start_index += 100
+    return historial_completo
                 historial_existente = leer_historial_jugador_github(puuid)
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
 
@@ -667,38 +663,43 @@ def index():
     ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
     
     
-    return render_template('index.html', datos_jugadores=datos_jugadores, 
+    return render_template('index.html', datos_jugadores=datos_jugadores,
                            ultima_actualizacion=ultima_actualizacion, 
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
-@app.route('/jugador/<nombre_jugador>')
-def perfil_jugador(nombre_jugador):
+def obtener_datos_jugadores():
+    with cache_lock:
+        return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
+
+def get_peak_elo_key(jugador):
+    # Clave para el peak ELO usando el nombre del jugador y su Riot ID
+    return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
+
+@app.route('/jugador/<game_name>')
+def perfil_jugador(game_name):
     """Muestra una página de perfil para un jugador específico."""
     todos_los_datos, _ = obtener_datos_jugadores()
     
     # Filtrar los datos para el jugador específico
-    datos_del_jugador = [j for j in todos_los_datos if j['jugador'] == nombre_jugador]
+    datos_del_jugador = [j for j in todos_los_datos if j['game_name'] == game_name]
     
     if not datos_del_jugador:
         return render_template('404.html'), 404
 
-    # Leer el peak elo para mostrarlo en el perfil
-    lectura_exitosa, peak_elo_dict = leer_peak_elo()
-    if lectura_exitosa:
-        for datos_cola in datos_del_jugador:
-            key = get_peak_elo_key(datos_cola)
-            datos_cola['peak_elo'] = peak_elo_dict.get(key, datos_cola['valor_clasificacion'])
-    else: # Fallback si no se puede leer el peak elo
-        for datos_cola in datos_del_jugador:
-            datos_cola['peak_elo'] = datos_cola['valor_clasificacion']
-
+    # Suponiendo que el game_name es único, tomamos el primer elemento.
+    # Si no es único, podrías querer refinar la lógica.
+    primer_perfil = datos_del_jugador[0]  # Acceder al primer elemento directamente
+    
     perfil = {
-        'nombre': nombre_jugador,
+        'nombre': primer_perfil['jugador'],  # 'nombre' ahora se refiere al nombre real del jugador
+        'game_name': game_name,  # Asignar game_name al perfil
         'soloq': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_SOLO_5x5'), None),
         'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
     }
+    
     return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
+
 
 def keep_alive():
     while True:
