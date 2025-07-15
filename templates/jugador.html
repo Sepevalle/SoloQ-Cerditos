@@ -300,13 +300,21 @@
             font-weight: bold;
         }
         .match-history-table .item-images {
+            display: flex; /* Ensure items are in a row */
+            flex-wrap: wrap; /* Allow items to wrap if screen is too small */
             justify-content: center; /* Center items */
             gap: 3px;
         }
         .match-history-table .item-images img,
-        .match-history-table .item-images div { /* For placeholder */
+        .match-history-table .item-images .item-placeholder { /* For placeholder */
             width: 25px; /* Slightly smaller items for compactness */
             height: 25px;
+            border-radius: 5px;
+            background-color: transparent; /* Make placeholder transparent by default */
+            border: 1px solid rgba(108, 117, 125, 0.3); /* Subtle border for placeholder */
+        }
+        .dark-mode .match-history-table .item-images .item-placeholder {
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border in dark mode */
         }
         .match-history-table .match-result {
             font-size: 1.1em; /* Larger result text */
@@ -373,6 +381,14 @@
         }
         .runes img.sub-rune {
             border: 1px solid #6c757d;
+        }
+
+        /* Dark mode specific text color for small-text-stats */
+        .small-text-stats {
+            color: #6c757d; /* Default light mode color */
+        }
+        .dark-mode .small-text-stats {
+            color: #adb5bd; /* Lighter gray for better contrast in dark mode */
         }
     </style>
 </head>
@@ -569,7 +585,7 @@
             </select>
         </div>
         <div class="table-responsive">
-            <table class="table table-dark table-striped table-hover match-history-table">
+            <table class="table table-light table-striped table-hover rounded match-history-table">
                 <thead>
                     <tr>
                         <th>Campeón</th>
@@ -636,7 +652,7 @@
                                                  onerror="this.style.display='none';"> {# Hide if image fails to load #}
                                         {% else %}
                                             {# Use a div with CSS for a consistent gray square placeholder #}
-                                            <div style="width:25px; height:25px; border-radius:5px; background-color:#343a40;"></div>
+                                            <div class="item-placeholder"></div>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
