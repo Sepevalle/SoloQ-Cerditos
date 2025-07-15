@@ -12,6 +12,41 @@ from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
+# Custom Jinja2 filters
+@app.template_filter('get_queue_type')
+def get_queue_type_filter(queue_id):
+    queue_names = {
+        400: "Normal (Blind Pick)",
+        420: "Clasificatoria Solo/Duo",
+        430: "Normal (Draft Pick)",
+        440: "Clasificatoria Flexible",
+        450: "ARAM",
+        700: "Clash",
+        800: "Co-op vs. AI (Beginner)",
+        810: "Co-op vs. AI (Intermediate)",
+        820: "Co-op vs. AI (Intro)",
+        830: "Co-op vs. AI (Twisted Treeline)",
+        840: "Co-op vs. AI (Summoner's Rift)",
+        850: "Co-op vs. AI (ARAM)",
+        900: "URF",
+        1020: "One For All",
+        1090: "Arena", # Ocasional, por ejemplo para eventos
+        1100: "Arena", # Ocasional, por ejemplo para eventos
+        1300: "Nexus Blitz",
+        1400: "Ultimate Spellbook",
+        1700: "Arena", # Más Queue IDs para Arena, depende de la temporada
+        2000: "Tutorial (Summoner's Rift)",
+        2010: "Tutorial (Howling Abyss)",
+        2020: "Tutorial (Proving Grounds)",
+    }
+    return queue_names.get(int(queue_id), "Desconocido")
+
+@app.template_filter('format_timestamp')
+def format_timestamp_filter(timestamp):
+    # El timestamp de Riot es en milisegundos, Python datetime espera segundos
+    return datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M")
+
+
 # Caché para almacenar los datos de los jugadores
 cache = {
     "datos_jugadores": [],
