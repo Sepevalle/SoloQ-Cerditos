@@ -573,7 +573,7 @@ def actualizar_cache():
             todos_los_datos.extend(datos_jugador_list)
 
     # Paso 3: Calcular y añadir estadísticas del campeón más jugado desde el historial
-    queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
+   queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
     for jugador in todos_los_datos:
         puuid = jugador.get('puuid')
         queue_type = jugador.get('queue_type')
@@ -669,7 +669,7 @@ def index():
     
     return render_template('index.html', datos_jugadores=datos_jugadores, 
                            ultima_actualizacion=ultima_actualizacion, 
-                           ddragon_version=DDRAGON_VERSION,
+                           ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
 @app.route('/jugador/<nombre_jugador>')
