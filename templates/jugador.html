@@ -447,7 +447,6 @@
                         <div class="rank-details">
                             <h4>{{ perfil.flex.tier }} {{ perfil.flex.rank }} ({{ perfil.flex.league_points }} LPs)</h4>
                             <p>Wins: {{ perfil.flex.wins }} | Losses: {{ perfil.flex.losses }} | Total: {{ perfil.flex.wins + perfil.flex.losses }}</p>
-                            {% set flex_total_games = perfil.flex.wins + perfil.flex.losses %}
                             {% set flex_win_rate = (perfil.flex.wins / flex_total_games * 100) if flex_total_games > 0 else 0 %}
                             <p class="{% if flex_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                                 Win Rate: {{ '%.2f'|format(flex_win_rate) }}%
@@ -541,8 +540,8 @@
                                              alt="Item"
                                              onerror="this.style.display='none';"> {# Hide if image fails to load #}
                                     {% else %}
-                                        <img src="data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'30\' height=\'30\'><rect width=\'30\' height=\'30\' fill=\'#343a40\' rx=\'5\' ry=\'5\'/></svg>"
-                                             alt="Objeto no comprado"> {# Changed alt text here #}
+                                        <img src="data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'30\' height=\'30\'><circle cx=\'15\' cy=\'15\' r=\'15\' fill=\'#cccccc\'/></svg>"
+                                             alt="Espacio de objeto vacío"> {# Changed to a gray circle SVG and updated alt text #}
                                     {% endif %}
                                 {% endfor %}
                             </div>
