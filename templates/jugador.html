@@ -278,12 +278,13 @@
         .match-history-card .match-info {
             display: flex;
             align-items: center;
+            gap: 15px; /* Spacing between champion/level, spells/runes, and KDA */
         }
         .match-history-card .match-info img {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            margin-right: 10px;
+            margin-right: 0; /* Removed default margin */
         }
         .match-history-card .match-result {
             font-weight: bold;
@@ -323,6 +324,64 @@
         .filter-controls select {
             flex-grow: 1; /* Allow select boxes to grow */
             max-width: 200px; /* Max width for select boxes */
+        }
+
+        /* Styles for champion level overlay */
+        .champion-level-container {
+            position: relative;
+            display: inline-block; /* To make sure width/height apply */
+            width: 40px; /* Same as champion image */
+            height: 40px; /* Same as champion image */
+        }
+        .champion-level-container img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        .champion-level {
+            position: absolute;
+            bottom: -5px; /* Adjust as needed */
+            right: -5px; /* Adjust as needed */
+            background-color: #343a40; /* Dark background for level */
+            color: white;
+            font-size: 0.7em;
+            font-weight: bold;
+            border-radius: 50%;
+            padding: 2px 5px;
+            min-width: 20px; /* Ensure it's a circle */
+            text-align: center;
+            border: 1px solid #6c757d;
+        }
+
+        /* Styles for summoner spells */
+        .summoner-spells {
+            display: flex;
+            flex-direction: column;
+            gap: 2px; /* Small gap between spells */
+        }
+        .summoner-spells img {
+            width: 20px; /* Smaller size for spells */
+            height: 20px;
+            border-radius: 3px; /* Slightly rounded corners */
+        }
+
+        /* Styles for runes */
+        .runes {
+            display: flex;
+            flex-direction: column;
+            gap: 2px; /* Small gap between runes */
+        }
+        .runes img {
+            width: 20px; /* Smaller size for runes */
+            height: 20px;
+            border-radius: 50%; /* Runes are often circular */
+        }
+        .runes img.keystone {
+            border: 1px solid gold; /* Highlight keystone rune */
+        }
+        .runes img.sub-rune {
+            border: 1px solid #6c757d; /* Subtle border for secondary rune */
         }
     </style>
 </head>
@@ -529,8 +588,36 @@
                 {% for match in sorted_matches %} {# Displaying all matches, filtering done by JS #}
                 <li class="list-group-item" data-queue-id="{{ match.queue_id }}" data-champion-name="{{ match.champion_name }}">
                     <div class="match-info">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
-                             alt="{{ match.champion_name }}">
+                        <div class="champion-level-container">
+                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
+                                 alt="{{ match.champion_name }}">
+                            {% if match.champion_level is defined %}
+                            <span class="champion-level">{{ match.champion_level }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="summoner-spells">
+                            {% if match.summoner_spell_1_id is defined and match.summoner_spell_1_id != None %}
+                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_1_id }}.png"
+                                 alt="Hechizo 1" title="Hechizo 1" onerror="this.style.display='none';">
+                            {% endif %}
+                            {% if match.summoner_spell_2_id is defined and match.summoner_spell_2_id != None %}
+                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_2_id }}.png"
+                                 alt="Hechizo 2" title="Hechizo 2" onerror="this.style.display='none';">
+                            {% endif %}
+                        </div>
+
+                        <div class="runes">
+                            {% if match.perk_main_id is defined and match.perk_main_id != None %}
+                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_main_id }}"
+                                 alt="Runa Principal" title="Runa Principal" class="keystone" onerror="this.style.display='none';">
+                            {% endif %}
+                            {% if match.perk_sub_id is defined and match.perk_sub_id != None %}
+                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_sub_id }}"
+                                 alt="Runa Secundaria" title="Runa Secundaria" class="sub-rune" onerror="this.style.display='none';">
+                            {% endif %}
+                        </div>
+
                         <div>
                             <strong>{{ match.champion_name }}</strong> ({{ match.queue_id | get_queue_type }})<br>
                             <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
@@ -646,12 +733,13 @@
         const queueFilter = document.getElementById('queueFilter');
         const championFilter = document.getElementById('championFilter');
         const matchHistoryList = document.getElementById('matchHistoryList');
-        const allMatches = Array.from(matchHistoryList.children); // Get all initial match list items
+        // Make a copy of the initial list items to filter from
+        const allMatches = Array.from(matchHistoryList.children); 
 
         // Function to populate the champion filter dropdown
         function populateChampionFilter() {
             const uniqueChampions = new Set();
-            // Collect champions from both soloq and flex recent matches
+            // Access perfilData which is passed from Flask
             const allRecentMatchesData = [
                 ...(perfilData.soloq && perfilData.soloq.recent_matches ? perfilData.soloq.recent_matches : []),
                 ...(perfilData.flex && perfilData.flex.recent_matches ? perfilData.flex.recent_matches : [])
@@ -682,7 +770,7 @@
                 const matchQueueId = matchItem.dataset.queueId;
                 const matchChampionName = matchItem.dataset.championName;
 
-                const isQueueMatch = (selectedQueue === 'all' || matchQueueId === selectedQueue);
+                const isQueueMatch = (selectedQueue === 'all' || matchQueueId == selectedQueue); // Use == for type coercion
                 const isChampionMatch = (selectedChampion === 'all' || matchChampionName === selectedChampion);
 
                 if (isQueueMatch && isChampionMatch) {
@@ -697,11 +785,9 @@
         queueFilter.addEventListener('change', applyMatchHistoryFilters);
         championFilter.addEventListener('change', applyMatchHistoryFilters);
 
-        // Access perfil data from the Jinja2 context (assuming it's available globally or passed via data attributes)
-        // For this to work, you need to ensure 'perfil' data is accessible in JS.
-        // One way to embed it is as a JSON string in a script tag, or directly from the template context.
-        // Since this is a Jinja2 template, we can directly use the `perfil` variable.
-        const perfilData = {{ perfil | tojson }}; // This line assumes `perfil` is a valid JSON object
+        // Access perfil data from the Jinja2 context by embedding it as a JSON object
+        // This is crucial for JavaScript to access the data passed from Flask
+        const perfilData = {{ perfil | tojson }};
 
         // Initial population and application of filters
         populateChampionFilter();
