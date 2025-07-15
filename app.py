@@ -656,25 +656,42 @@ def index():
 
 @app.route('/jugador/<game_name>')
 def perfil_jugador(game_name):
-    """Muestra una página de perfil para un jugador específico."""
     todos_los_datos, _ = obtener_datos_jugadores()
-    
-    # Filtrar los datos para el jugador específico
+
     datos_del_jugador = [j for j in todos_los_datos if j['game_name'] == game_name]
-    
+
     if not datos_del_jugador:
         return render_template('404.html'), 404
-  # Suponiendo que el game_name es único, tomamos el primer elemento.
-  # Si no es único, podrías querer refinar la lógica.
-    primer_perfil = datos_del_jugador[0]    # Acceder al primer elemento directamente
-    
+
+    primer_perfil = datos_del_jugador[0]
+    puuid = primer_perfil.get('puuid') # Get the PUUID for fetching match history
+
+    # Fetch match history
+    historial_partidas = {}
+    if puuid:
+        historial_partidas = leer_historial_jugador_github(puuid)
+
+    # Prepare recent matches for SoloQ and Flex
+    soloq_matches = [m for m in historial_partidas.get('matches', []) if m.get('queue_id') == 420]
+    flex_matches = [m for m in historial_partidas.get('matches', []) if m.get('queue_id') == 440]
+
+    # Sort matches by timestamp (most recent first)
+    soloq_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+    flex_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+
     perfil = {
-        'nombre': primer_perfil['jugador'],    # 'nombre' ahora se refiere al nombre real del jugador
-        'game_name': game_name,    # Asignar game_name al perfil
+        'nombre': primer_perfil['jugador'],
+        'game_name': game_name,
         'soloq': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_SOLO_5x5'), None),
         'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
     }
-  
+
+    # Add recent matches to the profile data if they exist
+    if perfil['soloq']:
+        perfil['soloq']['recent_matches'] = soloq_matches[:5] # Pass top 5 matches
+    if perfil['flex']:
+        perfil['flex']['recent_matches'] = flex_matches[:5] # Pass top 5 matches
+
     return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
 
 
