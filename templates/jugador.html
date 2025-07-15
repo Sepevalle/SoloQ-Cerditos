@@ -542,7 +542,8 @@
                                              alt="Item"
                                              onerror="this.style.display='none';"> {# Hide if image fails to load #}
                                     {% else %}
-                                        <div style="width:30px; height:30px; border-radius:5px; background-color:#cccccc;"></div> {# Changed to a gray div #}
+                                        {# Use a div with CSS for a consistent gray square placeholder #}
+                                        <div style="width:30px; height:30px; border-radius:5px; background-color:#343a40;"></div>
                                     {% endif %}
                                 {% endfor %}
                             </div>
@@ -698,8 +699,7 @@
 
         // Access perfil data from the Jinja2 context (assuming it's available globally or passed via data attributes)
         // For this to work, you need to ensure 'perfil' data is accessible in JS.
-        // One way is to embed it as a JSON string in a script tag, or directly from the template context.
-        // For simplicity, let's assume `perfilData` is made available, e.g., in a hidden div or a script tag.
+        // One way to embed it is as a JSON string in a script tag, or directly from the template context.
         // Since this is a Jinja2 template, we can directly use the `perfil` variable.
         const perfilData = {{ perfil | tojson }}; // This line assumes `perfil` is a valid JSON object
 
