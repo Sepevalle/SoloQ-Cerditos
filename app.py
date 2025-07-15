@@ -462,8 +462,9 @@ def obtener_historial_partidas(puuid, queue_map, api_key):
                 break
             start_index += 100
     return historial_completo
-        historial_existente = leer_historial_jugador_github(puuid)
-                ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
+
+historial_existente = leer_historial_jugador_github(puuid)
+        ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
 
                 # 2. Obtener TODOS los IDs de partidas de la temporada (SoloQ y Flex)
                 all_match_ids_season = []
@@ -509,7 +510,7 @@ def obtener_historial_partidas(puuid, queue_map, api_key):
             print(f"Error en el hilo de actualización de estadísticas: {e}. Reintentando en 5 minutos.")
             time.sleep(300)
 
-def actualizar_cache():
+def actualizar_cache(): # docstring aquí
     """
     Esta función realiza el trabajo pesado: obtiene todos los datos de la API
     y actualiza la caché global. Está diseñada para ser ejecutada en segundo plano.
@@ -570,7 +571,7 @@ def actualizar_cache():
 
     # Paso 3: Calcular y añadir estadísticas del campeón más jugado desde el historial
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-    for jugador in todos_los_datos:
+    for jugador in todos_los_datos: # docstring
         puuid = jugador.get('puuid')
         queue_type = jugador.get('queue_type')
         queue_id = queue_map.get(queue_type)
@@ -624,16 +625,19 @@ def actualizar_cache():
         cache['timestamp'] = time.time()
     print("Actualización de la caché completada.")
 
-def obtener_datos_jugadores():
+def obtener_datos_jugadores(): # docstring
+    """Obtiene los datos cacheados de los jugadores."""
     with cache_lock:
         return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
 
-def get_peak_elo_key(jugador):
-    # Clave para el peak ELO usando el nombre del jugador y su Riot ID
+def get_peak_elo_key(jugador): # docstring
+    """Genera una clave para el peak ELO usando el nombre del jugador y su Riot ID."""
     return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
 
 @app.route('/')
-def index():
+def index(): # docstring
+    """Renderiza la página principal con la lista de jugadores."""
+
     datos_jugadores, timestamp = obtener_datos_jugadores()
     
     lectura_exitosa, peak_elo_dict = leer_peak_elo()
@@ -664,7 +668,7 @@ def index():
     
     
     return render_template('index.html', datos_jugadores=datos_jugadores,
-                           ultima_actualizacion=ultima_actualizacion, 
+                           ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
@@ -686,19 +690,19 @@ def perfil_jugador(game_name):
     
     if not datos_del_jugador:
         return render_template('404.html'), 404
-
-    # Suponiendo que el game_name es único, tomamos el primer elemento.
-    # Si no es único, podrías querer refinar la lógica.
-    primer_perfil = datos_del_jugador[0]  # Acceder al primer elemento directamente
+  # Suponiendo que el game_name es único, tomamos el primer elemento.
+  # Si no es único, podrías querer refinar la lógica.
+    primer_perfil = datos_del_jugador[0]    # Acceder al primer elemento directamente
     
     perfil = {
-        'nombre': primer_perfil['jugador'],  # 'nombre' ahora se refiere al nombre real del jugador
-        'game_name': game_name,  # Asignar game_name al perfil
+        'nombre': primer_perfil['jugador'],    # 'nombre' ahora se refiere al nombre real del jugador
+        'game_name': game_name,    # Asignar game_name al perfil
         'soloq': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_SOLO_5x5'), None),
         'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
     }
-    
+  
     return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
+
 
 
 def keep_alive():
