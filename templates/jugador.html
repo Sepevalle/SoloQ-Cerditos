@@ -395,11 +395,11 @@
                             </p>
                             <p>
                                 Peak Elo:
-                                {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - perfil.soloq.peak_elo %}
+                                {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - perfil.soloq.get('peak_elo', 0) %} {# Safely access peak_elo #}
                                 {% if diff_peak_soloq == 0 %}
                                     <span class="peak-elo">PEAK</span>
                                 {% else %}
-                                    {{ perfil.soloq.peak_elo }} LPs ({{ diff_peak_soloq }} LPs desde el pico)
+                                    {{ perfil.soloq.get('peak_elo', 0) }} LPs ({{ diff_peak_soloq }} LPs desde el pico)
                                 {% endif %}
                             </p>
 
@@ -454,11 +454,11 @@
                             </p>
                             <p>
                                 Peak Elo:
-                                {% set diff_peak_flex = perfil.flex.valor_clasificacion - perfil.flex.peak_elo %}
+                                {% set diff_peak_flex = perfil.flex.valor_clasificacion - perfil.flex.get('peak_elo', 0) %} {# Safely access peak_elo #}
                                 {% if diff_peak_flex == 0 %}
                                     <span class="peak-elo">PEAK</span>
                                 {% else %}
-                                    {{ perfil.flex.peak_elo }} LPs ({{ diff_peak_flex }} LPs desde el pico)
+                                    {{ perfil.flex.get('peak_elo', 0) }} LPs ({{ diff_peak_flex }} LPs desde el pico)
                                 {% endif %}
                             </p>
 
@@ -542,7 +542,7 @@
                                              onerror="this.style.display='none';"> {# Hide if image fails to load #}
                                     {% else %}
                                         <img src="data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'30\' height=\'30\'><rect width=\'30\' height=\'30\' fill=\'#343a40\' rx=\'5\' ry=\'5\'/></svg>"
-                                             alt="Empty Slot">
+                                             alt="Objeto no comprado"> {# Changed alt text here #}
                                     {% endif %}
                                 {% endfor %}
                             </div>
