@@ -238,6 +238,7 @@
         .champion-stats-item {
             display: flex;
             align-items: center;
+            justify-content: center; /* Added for horizontal centering */
             margin-bottom: 10px; /* Spacing between champion items */
             padding-bottom: 10px;
             border-bottom: 1px solid #eee; /* Separator */
@@ -255,7 +256,7 @@
             object-fit: cover;
         }
         .champion-stats-info {
-            text-align: left;
+            text-align: center; /* Changed from left to center */
         }
         .champion-stats-info h5 {
             margin-bottom: 0;
@@ -447,6 +448,7 @@
                         <div class="rank-details">
                             <h4>{{ perfil.flex.tier }} {{ perfil.flex.rank }} ({{ perfil.flex.league_points }} LPs)</h4>
                             <p>Wins: {{ perfil.flex.wins }} | Losses: {{ perfil.flex.losses }} | Total: {{ perfil.flex.wins + perfil.flex.losses }}</p>
+                            {% set flex_total_games = perfil.flex.wins + perfil.flex.losses %} {# Define flex_total_games here #}
                             {% set flex_win_rate = (perfil.flex.wins / flex_total_games * 100) if flex_total_games > 0 else 0 %}
                             <p class="{% if flex_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                                 Win Rate: {{ '%.2f'|format(flex_win_rate) }}%
