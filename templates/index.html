@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="es">
 
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datos de Jugadores</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
-    <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Datos de Jugadores</title>
+<link href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" rel="icon" type="image/png"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+<link href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css" rel="stylesheet"/>
+<style>
         body {
             transition: background-color 0.3s, color 0.3s;
         }
@@ -214,141 +214,123 @@
         }
     </style>
 </head>
-
 <body>
-
-<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
-<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
-
-<audio id="backgroundAudio" loop>
-    <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
+<img alt="Lateral izquierda" class="lateral-img left-img" id="left-banner" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg"/>
+<img alt="Lateral derecha" class="lateral-img right-img" id="right-banner" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg"/>
+<audio id="backgroundAudio" loop="">
+<source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg"/>
     Tu navegador no soporta el elemento audio.
 </audio>
-
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">
-            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+<div class="container-fluid">
+<a class="navbar-brand" href="#">
+<img alt="Logo" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;"/>
             Cerditos y Valientes
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
-            </ul>
-            <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
-                <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
-                <div class="d-flex align-items-center ms-lg-2">
-                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
-                        <i id="muteIcon" class="fas fa-microphone-slash"></i>
-                    </button>
-                    <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
-                </div>
-            </div>
-        </div>
-    </div>
-</nav> 
-
+<button aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-bs-target="#navbarContent" data-bs-toggle="collapse" type="button">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="navbarContent">
+<ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
+</ul>
+<div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
+<button class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0" id="toggle-mode">Modo Oscuro</button>
+<div class="d-flex align-items-center ms-lg-2">
+<button class="btn btn-secondary" id="toggleAudio" title="Desmutear Música">
+<i class="fas fa-microphone-slash" id="muteIcon"></i>
+</button>
+<input class="form-range" id="volumeSlider" max="1" min="0" step="0.01" type="range" value="1"/>
+</div>
+</div>
+</div>
+</div>
+</nav>
 <div class="container my-4 d-flex justify-content-center">
-    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
+<img alt="Banner" class="banner-img" id="banner-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"/>
 </div>
-    
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center">
-        <h3>Lista de Jugadores <span class="small-text"></span></h3>
-        <div id="lastUpdated" class="text-end">Actualizado: {{ ultima_actualizacion }}</div>
-    </div>
-    
-    <div class="container mt-4">
-    <div class="row mb-3">
-        <div class="col text-start">
-            <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
-            <select id="filtro" class="form-select d-inline-block w-auto">
-                <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
-                <option value="RANKED_FLEX_SR">FLEX</option>
-                <option value="todo">TODO</option>
-            </select>
-        </div>
-    </div>
+<div class="d-flex justify-content-between align-items-center">
+<h3>Lista de Jugadores <span class="small-text"></span></h3>
+<div class="text-end" id="lastUpdated">Actualizado: {{ ultima_actualizacion }}</div>
 </div>
-
- 
-    
-    <div class="table-responsive">
-        <table class="table table-hover table-striped" id="jugadoresTable">
-            <thead class="table-dark">
-                <tr>
-                    <th data-sort-by="elo">Posición</th>
-                    <th data-sort-by="jugador">Jugador</th>
-                    <th>Campeón Principal</th>
-                    <th data-sort-by="game_name">Game Name</th>
-                    <th data-sort-by="elo">Elo</th>
-                    <th data-sort-by="wins">Wins</th>
-                    <th data-sort-by="losses">Losses</th>
-                    <th data-sort-by="total_games">Total Games</th>
-                    <th data-sort-by="win_rate">Win Rate</th>
-                    <th class="hidden">Valor Clasificación</th>
-                    <th>Dist. Peak Elo</th>
-                    <th>Dif. Elo</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
+<div class="container mt-4">
+<div class="row mb-3">
+<div class="col text-start">
+<label class="me-2 fw-bold" for="filtro">Filtrar por cola:</label>
+<select class="form-select d-inline-block w-auto" id="filtro">
+<option selected="" value="RANKED_SOLO_5x5">SOLOQ</option>
+<option value="RANKED_FLEX_SR">FLEX</option>
+<option value="todo">TODO</option>
+</select>
+</div>
+</div>
+</div>
+<div class="table-responsive">
+<table class="table table-hover table-striped" id="jugadoresTable">
+<thead class="table-dark">
+<tr>
+<th data-sort-by="elo">Posición</th>
+<th data-sort-by="jugador">Jugador</th>
+<th>Campeón Principal</th>
+<th data-sort-by="game_name">Game Name</th>
+<th data-sort-by="elo">Elo</th>
+<th data-sort-by="wins">Wins</th>
+<th data-sort-by="losses">Losses</th>
+<th data-sort-by="total_games">Total Games</th>
+<th data-sort-by="win_rate">Win Rate</th>
+<th class="hidden">Valor Clasificación</th>
+<th>Dist. Peak Elo</th>
+<th>Dif. Elo</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
                 {% for jugador in datos_jugadores %}
                 {% set total_games = jugador.wins + jugador.losses %}
-                {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
+                {% set win_rate = (jugador.wins / total_games * 100) if total_games &gt; 0 else 0 %}
                 <tr class="queue-type {{ jugador.queue_type }}">
-                    <td></td>
-                    <td class="jugador-columna">
-                        <div class="d-flex align-items-center">
-                            <img
-                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png"
-                                alt="Imagen de {{ jugador.jugador }}"
-                                class="imagen-jugador"
-                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
-                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
-                            <span class="ms-2">{{ jugador.jugador }}</span>
-                        </a>
-                    </td>
-                    <td>
+<td></td>
+<td class="jugador-columna">
+<div class="d-flex align-items-center">
+<img alt="Imagen de {{ jugador.jugador }}" class="imagen-jugador" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,&lt;svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'&gt;&lt;circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/&gt;&lt;/svg&gt;';" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png" style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"/>
+<a class="link-perfil ms-2" href="/jugador/{{ jugador.jugador }}" title="Ver perfil de {{ jugador.jugador }}">{{ jugador.jugador }}</a>
+
+</div></td>
+<td>
                         {% if jugador.top_champion_stats and jugador.top_champion_stats.champion_name %}
                             <div class="d-flex align-items-center justify-content-center">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.top_champion_stats.champion_name }}.png" 
-                                     alt="{{ jugador.top_champion_stats.champion_name }}"
-                                     title="{{ jugador.top_champion_stats.champion_name }}"
-                                     style="width: 32px; height: 32px; border-radius: 50%;" />
-                                <div class="ms-2 text-start">
-                                    <div class="fw-bold {% if jugador.top_champion_stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(jugador.top_champion_stats.win_rate) }}% WR</div>
-                                    <div class="small-text-stats">({{ jugador.top_champion_stats.games_played }} partidas)</div>
+<img alt="{{ jugador.top_champion_stats.champion_name }}" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.top_champion_stats.champion_name }}.png" style="width: 32px; height: 32px; border-radius: 50%;" title="{{ jugador.top_champion_stats.champion_name }}">
+<div class="ms-2 text-start">
+<div class="fw-bold {% if jugador.top_champion_stats.win_rate &gt;= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(jugador.top_champion_stats.win_rate) }}% WR</div>
+<div class="small-text-stats">({{ jugador.top_champion_stats.games_played }} partidas)</div>
                                     {% if jugador.top_champion_stats.kda is defined %}
                                     <div class="small-text-stats">{{ '%.2f'|format(jugador.top_champion_stats.kda) }} KDA</div>
                                     {% endif %}
                                 </div>
-                            </div>
+</img></div>
                         {% else %}
                             <span>N/A</span>
                         {% endif %}
                     </td>
-                    <td>
-                        <a href="{{ jugador.url_perfil }}" target="_blank" class="link-perfil">{{ jugador.game_name }}</a>
-                    </td>
-                    <td class="elo-columna">
-                        <div class="d-flex align-items-center" style="position: relative;">
-                            <img src="" alt="{{ jugador.tier }}" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
-                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+<td>
+<a class="link-perfil" href="{{ jugador.url_perfil }}" target="_blank">{{ jugador.game_name }}</a>
+</td>
+<td class="elo-columna">
+<div class="d-flex align-items-center" style="position: relative;">
+<img alt="{{ jugador.tier }}" class="elo-image" src="" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;"/>
+<span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
                                 {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
                             </span>
-                        </div>
-                    </td>
-                    <td>{{ jugador.wins }}</td>
-                    <td>{{ jugador.losses }}</td>
-                    <td>{{ total_games }}</td>
-                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+</div>
+</td>
+<td>{{ jugador.wins }}</td>
+<td>{{ jugador.losses }}</td>
+<td>{{ total_games }}</td>
+<td class="{% if win_rate &gt;= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                         {{ '{:.2f}'.format(win_rate) }}%
                     </td>
-                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
-                    <td>
+<td class="hidden">{{ jugador.valor_clasificacion }}</td>
+<td>
                         {% set diff_peak = jugador.valor_clasificacion - jugador.peak_elo %}
                         {% if diff_peak == 0 %}
                             <span class="peak-elo">PEAK</span>
@@ -356,29 +338,25 @@
                             {{ diff_peak }} LPs
                         {% endif %}
                     </td>
-                    <td class="elo-diferencia"></td>
-                    <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
+<td class="elo-diferencia"></td>
+<td>
+<a class="link-estado" href="{{ jugador.url_ingame }}" target="_blank">
                             {% if jugador.en_partida %}
                                 <span class="estado-en-partida">En Partida</span>
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                     alt="{{ jugador.nombre_campeon }}" 
-                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+<img alt="{{ jugador.nombre_campeon }}" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;">
                             {% else %}
                                 Inactivo
                             {% endif %}
-                        </a>
-                    </td>
-                </tr>
+                        </img></a>
+</td>
+</tr>
                 {% endfor %}
             </tbody>
-        </table>
-    </div>
+</table>
 </div>
-
+</div>
 <!-- Script de Bootstrap JS (necesario para el menú desplegable y otras funcionalidades) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
+<script crossorigin="anonymous" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
         const audio = document.getElementById('backgroundAudio');
@@ -571,6 +549,5 @@
         setInterval(cambiarImagenes, 5000);
     });
 </script>
-
 </body>
 </html>
