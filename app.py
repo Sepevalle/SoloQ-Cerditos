@@ -49,6 +49,17 @@ def format_timestamp_filter(timestamp):
     # Divide by 1000 to convert milliseconds to seconds
     return datetime.fromtimestamp(timestamp / 1000).strftime("%d/%m/%Y %H:%M")
 
+# Configuración de la API de Riot Games
+RIOT_API_KEY = os.environ.get("RIOT_API_KEY")
+if not RIOT_API_KEY:
+    print("Error: RIOT_API_KEY no está configurada en las variables de entorno.")
+    exit(1)
+
+# URLs base de la API de Riot (MOVIDAS AL PRINCIPIO)
+BASE_URL_ASIA = "https://asia.api.riotgames.com"
+BASE_URL_EUW = "https://euw1.api.riotgames.com"
+BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
+
 
 # Caché para almacenar los datos de los jugadores
 cache = {
@@ -114,7 +125,7 @@ def actualizar_version_ddragon():
     """Obtiene la última versión de Data Dragon y la guarda en una variable global."""
     global DDRAGON_VERSION
     try:
-        url = "https://ddragon.leagueoflegends.com/api/versions.json"
+        url = f"{BASE_URL_DDRAGON}/api/versions.json" # Usar BASE_URL_DDRAGON
         response = requests.get(url, timeout=5)
         if response.status_code == 200:
             DDRAGON_VERSION = response.json()[0]
@@ -132,7 +143,7 @@ ALL_SUMMONER_SPELLS = {}
 
 def obtener_todos_los_campeones():
     """Carga los datos de los campeones desde Data Dragon."""
-    url_campeones = f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/data/es_ES/champion.json"
+    url_campeones = f"{BASE_URL_DDRAGON}/cdn/{DDRAGON_VERSION}/data/es_ES/champion.json"
     response = make_api_request(url_campeones)
     if response:
         # DDragon champion data has "key" as numerical ID (string) and "id" as champion name (string)
