@@ -703,9 +703,6 @@ def perfil_jugador(nombre_jugador):
         'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
     }
     return render_template('jugador.html', perfil=perfil, historial=historial, ddragon_version=DDRAGON_VERSION)
-    else: # Fallback si no se puede leer el peak elo
-        for datos_cola in datos_del_jugador:
-            datos_cola['peak_elo'] = datos_cola['valor_clasificacion']
 
 
 def keep_alive():
