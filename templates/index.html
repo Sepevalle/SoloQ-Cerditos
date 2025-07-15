@@ -346,7 +346,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="/jugador/{{ jugador.game_name | url_encode }}">{{ jugador.game_name }}</a>
+                        <a href="/jugador/{{ jugador.game_name | urlencode }}">{{ jugador.game_name }}</a>
                     </td>
                     <td>
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="opgg-link">OP.GG</a>
