@@ -327,17 +327,19 @@
                         </a>
                     </td>
                     <td>
-                        {% if jugador.top_champion_stats and jugador.top_champion_stats.champion_name %}
+                        {# Access the first champion in the list if it exists #}
+                        {% if jugador.top_champion_stats and jugador.top_champion_stats[0] is defined %}
+                            {% set top_champion = jugador.top_champion_stats[0] %}
                             <div class="d-flex align-items-center justify-content-center">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.top_champion_stats.champion_name }}.png" 
-                                     alt="{{ jugador.top_champion_stats.champion_name }}"
-                                     title="{{ jugador.top_champion_stats.champion_name }}"
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ top_champion.champion_name }}.png" 
+                                     alt="{{ top_champion.champion_name }}"
+                                     title="{{ top_champion.champion_name }}"
                                      style="width: 32px; height: 32px; border-radius: 50%;" />
                                 <div class="ms-2 text-start">
-                                    <div class="fw-bold {% if jugador.top_champion_stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(jugador.top_champion_stats.win_rate) }}% WR</div>
-                                    <div class="small-text-stats">({{ jugador.top_champion_stats.games_played }} partidas)</div>
-                                    {% if jugador.top_champion_stats.kda is defined %}
-                                    <div class="small-text-stats">{{ '%.2f'|format(jugador.top_champion_stats.kda) }} KDA</div>
+                                    <div class="fw-bold {% if top_champion.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(top_champion.win_rate) }}% WR</div>
+                                    <div class="small-text-stats">({{ top_champion.games_played }} partidas)</div>
+                                    {% if top_champion.kda is defined %}
+                                    <div class="small-text-stats">{{ '%.2f'|format(top_champion.kda) }} KDA</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -395,7 +397,7 @@
 </div>
 
 <!-- Script de Bootstrap JS (necesario para el menú desplegable y otras funcionalidades) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
