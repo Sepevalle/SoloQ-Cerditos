@@ -59,7 +59,7 @@
             font-weight: bold;
             color: white !important;
             background-color: #0056b3; /* Un azul estándar */
-            border-radius: 5px;
+            border-radius: 50px; /* Changed to 50px for pill shape */
             text-decoration: none;
             transition: background-color 0.2s ease-in-out;
         }
@@ -209,20 +209,19 @@
         }
         .rank-card .card-body {
             display: flex;
-            flex-direction: column; /* Changed to column for better stacking of champion stats */
-            align-items: center; /* Center content horizontally */
+            flex-direction: column;
+            align-items: center;
             padding: 20px;
         }
         .rank-card .elo-image-lg {
             width: 80px;
             height: 80px;
             object-fit: contain;
-            margin-right: 0; /* Remove margin as it's now a column layout */
-            margin-bottom: 15px; /* Add bottom margin for spacing */
+            margin-bottom: 15px;
         }
         .rank-details {
-            text-align: center; /* Center rank details */
-            width: 100%; /* Take full width */
+            text-align: center;
+            width: 100%;
         }
         .rank-details h4 {
             margin-bottom: 5px;
@@ -233,15 +232,15 @@
         }
         .champion-stats-container {
             margin-top: 20px;
-            width: 100%; /* Take full width */
+            width: 100%;
         }
         .champion-stats-item {
             display: flex;
             align-items: center;
-            justify-content: center; /* Added for horizontal centering */
-            margin-bottom: 10px; /* Spacing between champion items */
+            justify-content: center;
+            margin-bottom: 10px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #eee; /* Separator */
+            border-bottom: 1px solid #eee;
         }
         .champion-stats-item:last-child {
             margin-bottom: 0;
@@ -249,14 +248,14 @@
             border-bottom: none;
         }
         .champion-stats-item img {
-            width: 50px; /* Slightly smaller for multiple champions */
+            width: 50px;
             height: 50px;
             border-radius: 50%;
             margin-right: 15px;
             object-fit: cover;
         }
         .champion-stats-info {
-            text-align: center; /* Changed from left to center */
+            text-align: center;
         }
         .champion-stats-info h5 {
             margin-bottom: 0;
@@ -269,45 +268,50 @@
         .match-history-card {
             margin-top: 40px;
         }
-        .match-history-card .list-group-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 15px;
+        /* Styles for the new table structure */
+        .match-history-table th, .match-history-table td {
+            vertical-align: middle;
+            padding: 8px; /* Adjust padding for table cells */
         }
-        .match-history-card .match-info {
-            display: flex;
-            align-items: center;
-            gap: 15px; /* Spacing between champion/level, spells/runes, and KDA */
+        .match-history-table .champion-level-container {
+            width: 60px; /* Larger champion image */
+            height: 60px;
+            margin: 0 auto; /* Center the champion image */
         }
-        .match-history-card .match-info img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 0; /* Removed default margin */
+        .match-history-table .champion-level {
+            font-size: 0.8em; /* Slightly larger level text */
+            bottom: -8px;
+            right: -8px;
+            padding: 3px 6px;
+            min-width: 24px;
         }
-        .match-history-card .match-result {
+        .match-history-table .summoner-spells,
+        .match-history-table .runes {
+            gap: 4px; /* Larger gap for spells/runes */
+            margin: 0 auto; /* Center spells/runes */
+        }
+        .match-history-table .summoner-spells img,
+        .match-history-table .runes img {
+            width: 25px; /* Larger spells/runes images */
+            height: 25px;
+        }
+        .match-history-table .kda-text {
+            font-size: 1.1em; /* Larger KDA text */
             font-weight: bold;
         }
-        .match-history-card .match-result.win {
-            color: #228B22;
+        .match-history-table .item-images {
+            justify-content: center; /* Center items */
+            gap: 3px;
         }
-        .match-history-card .match-result.loss {
-            color: tomato;
+        .match-history-table .item-images img,
+        .match-history-table .item-images div { /* For placeholder */
+            width: 25px; /* Slightly smaller items for compactness */
+            height: 25px;
         }
-        /* New styles for items in match history */
-        .item-images {
-            display: flex;
-            gap: 5px; /* Space between item images */
-            margin-top: 5px;
+        .match-history-table .match-result {
+            font-size: 1.1em; /* Larger result text */
         }
-        .item-images img {
-            width: 30px; /* Size of item images */
-            height: 30px;
-            border-radius: 5px; /* Slightly rounded corners for items */
-            object-fit: cover;
-            background-color: #343a40; /* Dark background for empty slots */
-        }
+
         /* Styles for filter controls */
         .filter-controls {
             display: flex;
@@ -329,9 +333,7 @@
         /* Styles for champion level overlay */
         .champion-level-container {
             position: relative;
-            display: inline-block; /* To make sure width/height apply */
-            width: 40px; /* Same as champion image */
-            height: 40px; /* Same as champion image */
+            display: inline-block;
         }
         .champion-level-container img {
             display: block;
@@ -341,15 +343,10 @@
         }
         .champion-level {
             position: absolute;
-            bottom: -5px; /* Adjust as needed */
-            right: -5px; /* Adjust as needed */
-            background-color: #343a40; /* Dark background for level */
+            background-color: #343a40;
             color: white;
-            font-size: 0.7em;
             font-weight: bold;
             border-radius: 50%;
-            padding: 2px 5px;
-            min-width: 20px; /* Ensure it's a circle */
             text-align: center;
             border: 1px solid #6c757d;
         }
@@ -358,30 +355,24 @@
         .summoner-spells {
             display: flex;
             flex-direction: column;
-            gap: 2px; /* Small gap between spells */
         }
         .summoner-spells img {
-            width: 20px; /* Smaller size for spells */
-            height: 20px;
-            border-radius: 3px; /* Slightly rounded corners */
+            border-radius: 3px;
         }
 
         /* Styles for runes */
         .runes {
             display: flex;
             flex-direction: column;
-            gap: 2px; /* Small gap between runes */
         }
         .runes img {
-            width: 20px; /* Smaller size for runes */
-            height: 20px;
-            border-radius: 50%; /* Runes are often circular */
+            border-radius: 50%;
         }
         .runes img.keystone {
-            border: 1px solid gold; /* Highlight keystone rune */
+            border: 1px solid gold;
         }
         .runes img.sub-rune {
-            border: 1px solid #6c757d; /* Subtle border for secondary rune */
+            border: 1px solid #6c757d;
         }
     </style>
 </head>
@@ -577,76 +568,98 @@
                 <!-- Champion options will be populated by JavaScript -->
             </select>
         </div>
-        <ul class="list-group list-group-flush" id="matchHistoryList">
-            {% set all_recent_matches = [] %}
-            {% if perfil.soloq and perfil.soloq.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.soloq.recent_matches %}{% endif %}
-            {% if perfil.flex and perfil.flex.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.flex.recent_matches %}{% endif %}
-            
-            {% set sorted_matches = all_recent_matches | sort(attribute='game_end_timestamp', reverse=true) %}
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover match-history-table">
+                <thead>
+                    <tr>
+                        <th>Campeón</th>
+                        <th>Hechizos</th>
+                        <th>Runas</th>
+                        <th>KDA</th>
+                        <th>Items</th>
+                        <th>Resultado / Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="matchHistoryTableBody">
+                    {% set all_recent_matches = [] %}
+                    {% if perfil.soloq and perfil.soloq.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.soloq.recent_matches %}{% endif %}
+                    {% if perfil.flex and perfil.flex.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.flex.recent_matches %}{% endif %}
+                    
+                    {% set sorted_matches = all_recent_matches | sort(attribute='game_end_timestamp', reverse=true) %}
 
-            {% if sorted_matches %}
-                {% for match in sorted_matches %} {# Displaying all matches, filtering done by JS #}
-                <li class="list-group-item" data-queue-id="{{ match.queue_id }}" data-champion-name="{{ match.champion_name }}">
-                    <div class="match-info">
-                        <div class="champion-level-container">
-                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
-                                 alt="{{ match.champion_name }}">
-                            {% if match.champion_level is defined %}
-                            <span class="champion-level">{{ match.champion_level }}</span>
-                            {% endif %}
-                        </div>
-
-                        <div class="summoner-spells">
-                            {% if match.summoner_spell_1_id is defined and match.summoner_spell_1_id != None %}
-                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_1_id }}.png"
-                                 alt="Hechizo 1" title="Hechizo 1" onerror="this.style.display='none';">
-                            {% endif %}
-                            {% if match.summoner_spell_2_id is defined and match.summoner_spell_2_id != None %}
-                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_2_id }}.png"
-                                 alt="Hechizo 2" title="Hechizo 2" onerror="this.style.display='none';">
-                            {% endif %}
-                        </div>
-
-                        <div class="runes">
-                            {% if match.perk_main_id is defined and match.perk_main_id != None %}
-                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_main_id }}"
-                                 alt="Runa Principal" title="Runa Principal" class="keystone" onerror="this.style.display='none';">
-                            {% endif %}
-                            {% if match.perk_sub_id is defined and match.perk_sub_id != None %}
-                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_sub_id }}"
-                                 alt="Runa Secundaria" title="Runa Secundaria" class="sub-rune" onerror="this.style.display='none';">
-                            {% endif %}
-                        </div>
-
-                        <div>
-                            <strong>{{ match.champion_name }}</strong> ({{ match.queue_id | get_queue_type }})<br>
-                            <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
-                            <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
-                            <div class="item-images">
-                                {% for item_id in match['items'] %}
-                                    {% if item_id != 0 %} {# Only display if item_id is not 0 (empty slot) #}
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png"
-                                             alt="Item"
-                                             onerror="this.style.display='none';"> {# Hide if image fails to load #}
-                                    {% else %}
-                                        {# Use a div with CSS for a consistent gray square placeholder #}
-                                        <div style="width:30px; height:30px; border-radius:5px; background-color:#343a40;"></div>
+                    {% if sorted_matches %}
+                        {% for match in sorted_matches %}
+                        <tr data-queue-id="{{ match.queue_id }}" data-champion-name="{{ match.champion_name }}">
+                            <td>
+                                <div class="champion-level-container">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
+                                         alt="{{ match.champion_name }}">
+                                    {% if match.champion_level is defined %}
+                                    <span class="champion-level">{{ match.champion_level }}</span>
                                     {% endif %}
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    <span class="match-result {% if match.win %}win{% else %}loss{% endif %}">
-                        {% if match.win %}Victoria{% else %}Derrota{% endif %}
-                    </span>
-                </li>
-                {% endfor %}
-            {% else %}
-                <li class="list-group-item text-center text-muted">
-                    No hay datos de partidas recientes disponibles para este jugador en este momento.
-                </li>
-            {% endif %}
-        </ul>
+                                </div>
+                                <div class="small-text-stats">{{ match.champion_name }}</div>
+                            </td>
+                            <td>
+                                <div class="summoner-spells">
+                                    {% if match.summoner_spell_1_id is defined and match.summoner_spell_1_id != None %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_1_id }}.png"
+                                         alt="Hechizo 1" title="Hechizo 1" onerror="this.style.display='none';">
+                                    {% endif %}
+                                    {% if match.summoner_spell_2_id is defined and match.summoner_spell_2_id != None %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_2_id }}.png"
+                                         alt="Hechizo 2" title="Hechizo 2" onerror="this.style.display='none';">
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="runes">
+                                    {% if match.perk_main_id is defined and match.perk_main_id != None %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_main_id }}"
+                                         alt="Runa Principal" title="Runa Principal" class="keystone" onerror="this.style.display='none';">
+                                    {% endif %}
+                                    {% if match.perk_sub_id is defined and match.perk_sub_id != None %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_sub_id }}"
+                                         alt="Runa Secundaria" title="Runa Secundaria" class="sub-rune" onerror="this.style.display='none';">
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span>
+                            </td>
+                            <td>
+                                <div class="item-images">
+                                    {% for item_id in match['items'] %}
+                                        {% if item_id != 0 %} {# Only display if item_id is not 0 (empty slot) #}
+                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png"
+                                                 alt="Item"
+                                                 onerror="this.style.display='none';"> {# Hide if image fails to load #}
+                                        {% else %}
+                                            {# Use a div with CSS for a consistent gray square placeholder #}
+                                            <div style="width:25px; height:25px; border-radius:5px; background-color:#343a40;"></div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="match-result {% if match.win %}win{% else %}loss{% endif %}">
+                                    {% if match.win %}Victoria{% else %}Derrota{% endif %}
+                                </span><br>
+                                <span class="small-text-stats">{{ match.queue_id | get_queue_type }}</span><br>
+                                <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No hay datos de partidas recientes disponibles para este jugador en este momento.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </div>
@@ -732,9 +745,9 @@
         // --- Match History Filtering Logic ---
         const queueFilter = document.getElementById('queueFilter');
         const championFilter = document.getElementById('championFilter');
-        const matchHistoryList = document.getElementById('matchHistoryList');
-        // Make a copy of the initial list items to filter from
-        const allMatches = Array.from(matchHistoryList.children); 
+        const matchHistoryTableBody = document.getElementById('matchHistoryTableBody');
+        // Make a copy of the initial list items (table rows) to filter from
+        const allMatchRows = Array.from(matchHistoryTableBody.children); 
 
         // Function to populate the champion filter dropdown
         function populateChampionFilter() {
@@ -766,17 +779,17 @@
             const selectedQueue = queueFilter.value;
             const selectedChampion = championFilter.value;
 
-            allMatches.forEach(matchItem => {
-                const matchQueueId = matchItem.dataset.queueId;
-                const matchChampionName = matchItem.dataset.championName;
+            allMatchRows.forEach(matchRow => {
+                const matchQueueId = matchRow.dataset.queueId;
+                const matchChampionName = matchRow.dataset.championName;
 
                 const isQueueMatch = (selectedQueue === 'all' || matchQueueId == selectedQueue); // Use == for type coercion
                 const isChampionMatch = (selectedChampion === 'all' || matchChampionName === selectedChampion);
 
                 if (isQueueMatch && isChampionMatch) {
-                    matchItem.style.display = 'flex'; // Show the item
+                    matchRow.style.display = ''; // Show the row
                 } else {
-                    matchItem.style.display = 'none'; // Hide the item
+                    matchRow.style.display = 'none'; // Hide the row
                 }
             });
         }
