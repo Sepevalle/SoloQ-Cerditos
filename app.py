@@ -689,21 +689,16 @@ def perfil_jugador(nombre_jugador):
         for datos_cola in datos_del_jugador:
             key = get_peak_elo_key(datos_cola)
             datos_cola['peak_elo'] = peak_elo_dict.get(key, datos_cola['valor_clasificacion'])
-
-    # Leer el historial del jugador
-    historial = leer_historial_jugador_github(datos_del_jugador[0]['puuid']) # Asumimos que todos tienen el mismo puuid
-    
-    
-    
-    
+    else: # Fallback si no se puede leer el peak elo
+        for datos_cola in datos_del_jugador:
+            datos_cola['peak_elo'] = datos_cola['valor_clasificacion']
 
     perfil = {
         'nombre': nombre_jugador,
         'soloq': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_SOLO_5x5'), None),
         'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
     }
-    return render_template('jugador.html', perfil=perfil, historial=historial, ddragon_version=DDRAGON_VERSION)
-
+    return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
 
 def keep_alive():
     while True:
