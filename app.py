@@ -157,9 +157,18 @@ def obtener_info_partida(args):
     try:
         match_data = response_match.json()
         info = match_data.get('info', {})
+        participants = info.get('participants', [])
+
+        # La API de Riot marca las partidas 'remake' con el flag 'gameEndedInEarlySurrender'.
+        # Si este flag es 'true' para cualquier participante, la partida es un remake.
+        # Ignoramos estas partidas para que no cuenten como derrotas y afecten al winrate.
+        if any(p.get('gameEndedInEarlySurrender', False) for p in participants):
+            print(f"Partida {match_id} ignorada por ser un remake.")
+            return None
+
         game_end_timestamp = info.get('gameEndTimestamp', 0)
         
-        for p in info.get('participants', []):
+        for p in participants:
             if p.get('puuid') == puuid:
                 return {
                     "match_id": match_id,
@@ -168,6 +177,7 @@ def obtener_info_partida(args):
                     "kills": p.get('kills', 0),
                     "deaths": p.get('deaths', 0),
                     "assists": p.get('assists', 0),
+                    "items": [p.get(f'item{i}', 0) for i in range(7)],  # Obtener items
                     "game_end_timestamp": game_end_timestamp,
                     "queue_id": info.get('queueId')
                 }
