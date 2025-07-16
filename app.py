@@ -60,10 +60,14 @@ def format_timestamp_filter(timestamp):
 # Configuración de las API Keys de Riot Games
 # Prioriza las variables de entorno, si no existen, usa un valor de respaldo
 # Es CRÍTICO que RIOT_API_KEY y RIOT_API_KEY_2 (si se usa) estén configuradas en tu entorno de despliegue.
-RIOT_API_KEY = os.environ.get("RIOT_API_KEY",)
-RIOT_API_KEY_2 = os.environ.get("RIOT_API_KEY_2")
+RIOT_API_KEY = os.environ.get("RIOT_API_KEY", "TU_API_KEY_PRINCIPAL_AQUI")
+RIOT_API_KEY_2 = os.environ.get("RIOT_API_KEY_2", RIOT_API_KEY) # Usa la principal como fallback
+
+if RIOT_API_KEY == "TU_API_KEY_PRINCIPAL_AQUI":
+    print("ADVERTENCIA: RIOT_API_KEY no está configurada en las variables de entorno. La aplicación podría no funcionar correctamente.")
 
 # URLs base de la API de Riot
+BASE_URL_ASIA = "https://asia.api.riotgames.com"
 BASE_URL_EUW = "https://euw1.api.riotgames.com"
 BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 
@@ -105,6 +109,28 @@ API_SESSION = requests.Session()
 
 # Variable global para la versión de Data Dragon
 DDRAGON_VERSION = "14.10.1"  # Versión de respaldo por si falla la API
+
+def make_api_request(url, retries=3, backoff_factor=0.5):
+    """
+    Realiza una petición a la API de Riot con reintentos y backoff exponencial.
+    Utiliza una sesión de requests para reutilizar conexiones.
+    """
+    for i in range(retries):
+        try:
+            response = API_SESSION.get(url, timeout=10)
+            if response.status_code == 429:
+                retry_after = int(response.headers.get('Retry-After', 5))
+                print(f"Rate limit excedido. Esperando {retry_after} segundos...")
+                time.sleep(retry_after)
+                continue
+            
+            response.raise_for_status() # Lanza una excepción para errores HTTP (4xx o 5xx)
+            return response
+        except requests.exceptions.RequestException as e:
+            print(f"Error en la petición a {url}: {e}. Intento {i + 1}/{retries}")
+            if i < retries - 1:
+                time.sleep(backoff_factor * (2 ** i))
+    return None
 
 def actualizar_version_ddragon():
     """Obtiene la última versión de Data Dragon y la guarda en una variable global."""
@@ -187,28 +213,6 @@ def actualizar_ddragon_data():
 
 # Cargar los datos de DDragon al inicio
 actualizar_ddragon_data()
-
-def make_api_request(url, retries=3, backoff_factor=0.5):
-    """
-    Realiza una petición a la API de Riot con reintentos y backoff exponencial.
-    Utiliza una sesión de requests para reutilizar conexiones.
-    """
-    for i in range(retries):
-        try:
-            response = API_SESSION.get(url, timeout=10)
-            if response.status_code == 429:
-                retry_after = int(response.headers.get('Retry-After', 5))
-                print(f"Rate limit excedido. Esperando {retry_after} segundos...")
-                time.sleep(retry_after)
-                continue
-            
-            response.raise_for_status() # Lanza una excepción para errores HTTP (4xx o 5xx)
-            return response
-        except requests.exceptions.RequestException as e:
-            print(f"Error en la petición a {url}: {e}. Intento {i + 1}/{retries}")
-            if i < retries - 1:
-                time.sleep(backoff_factor * (2 ** i))
-    return None
 
 def obtener_nombre_campeon(champion_id):
     """Obtiene el nombre de un campeón dado su ID numérico."""
@@ -912,4 +916,3 @@ if __name__ == "__main__":
     # Iniciar la aplicación Flask
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-
