@@ -88,13 +88,9 @@
             filter: invert(1) grayscale(100%) brightness(2);
         }
         .table td, .table th {
-             text-align: center;
-             vertical-align: middle;
-            /* Ensure no wrapping and hide overflow if necessary for very narrow columns */
-            white-space: nowrap; /* Keep text on a single line */
-            overflow: hidden; /* Hide overflowing content */
-            text-overflow: ellipsis; /* Add ellipsis for hidden overflow */
-}
+            text-align: center;
+            vertical-align: middle;
+        }
         .jugador-columna {
             text-align: left;
         }
@@ -301,7 +297,7 @@
                     <th data-sort-by="jugador">Jugador</th>
                     <th>Campeón Principal</th>
                     <th data-sort-by="game_name">Game Name</th>
-                    <th>OP.GG</th>
+                    <th class="hidden">OP.GG</th>
                     <th data-sort-by="elo">Elo</th>
                     <th data-sort-by="wins">Wins</th>
                     <th data-sort-by="losses">Losses</th>
@@ -354,7 +350,7 @@
                     <td>
                         <a href="/jugador/{{ jugador.game_name | urlencode }}">{{ jugador.game_name }}</a>
                     </td>
-                    <td>
+                    <td class="hidden">
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="opgg-link">OP.GG</a>
                     </td>
                     <td class="elo-columna">
