@@ -273,7 +273,8 @@ def obtener_info_partida(args):
             print(f"Partida {match_id} marcada como remake.")
             return None
 
-        game_end_timestamp = info.get('gameEndTimestamp', 0)
+        # Se suman 2 horas (7,200,000 milisegundos) para ajustar la zona horaria.
+        game_end_timestamp = info.get('gameEndTimestamp', 0) + 7200000
         
         for p in participants:
             if p.get('puuid') == puuid:
