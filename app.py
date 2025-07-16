@@ -270,7 +270,7 @@ def obtener_info_partida(args):
         # Si este flag es 'true' para cualquier participante, la partida es un remake.
         # Ignoramos estas partidas para que no cuenten como derrotas y afecten al winrate.
         if any(p.get('gameEndedInEarlySurrender', False) for p in participants):
-            print(f"Partida {match_id} ignorada por ser un remake.")
+            print(f"Partida {match_id} marcada como remake.")
             return None
 
         game_end_timestamp = info.get('gameEndTimestamp', 0)
@@ -611,6 +611,12 @@ def actualizar_cache():
             old_data_map_by_puuid[puuid].append(d)
 
     cuentas = leer_cuentas(url_cuentas)
+
+    # --- NUEVO: Controlar la frecuencia de 'esta_en_partida' ---
+    with cache_lock:
+        cache['update_count'] = cache.get('update_count', 0) + 1
+    check_in_game_this_update = cache['update_count'] % 2 == 1
+
     puuid_dict = leer_puuids()
     puuids_actualizados = False
 
@@ -634,7 +640,8 @@ def actualizar_cache():
         riot_id = cuenta[0]
         puuid = puuid_dict.get(riot_id)
         old_data_for_player = old_data_map_by_puuid.get(puuid)
-        tareas.append((cuenta, puuid, api_key_main, api_key_spectator, old_data_for_player))
+        tareas.append((cuenta, puuid, api_key_main, api_key_spectator, 
+                      old_data_for_player, check_in_game_this_update))
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         resultados = executor.map(procesar_jugador, tareas)
@@ -832,7 +839,10 @@ def actualizar_historial_partidas_en_segundo_plano():
 
                 historial_existente = leer_historial_jugador_github(puuid)
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
-
+                # Mantenemos un conjunto separado de IDs de remakes para evitar re-consultarlos.
+                remakes_guardados = set(historial_existente.get('remakes', []))
+                
+                
                 # 2. Obtener TODOS los IDs de partidas de la temporada (SoloQ y Flex)
                 all_match_ids_season = []
                 for queue_id in queue_map.values():
@@ -847,10 +857,13 @@ def actualizar_historial_partidas_en_segundo_plano():
                         if len(match_ids_page) < 100: break
                         start_index += 100
                 
-                # 3. Filtrar para obtener solo los IDs de partidas nuevas
-                nuevos_match_ids = [mid for mid in all_match_ids_season if mid not in ids_partidas_guardadas]
+                # 3. Filtrar para obtener solo los IDs de partidas nuevas y no remakes
+                nuevos_match_ids = [
+                    mid for mid in all_match_ids_season 
+                    if mid not in ids_partidas_guardadas and mid not in remakes_guardados
+                ]
 
-                if not nuevos_match_ids:
+                if not nuevos_match_ids: # No hay nuevas partidas
                     print(f"No hay partidas nuevas para {riot_id}. Omitiendo.")
                     continue
 
@@ -862,13 +875,28 @@ def actualizar_historial_partidas_en_segundo_plano():
                     nuevas_partidas_info = list(executor.map(obtener_info_partida, tareas))
 
                 # 5. Añadir las nuevas partidas al historial y guardar
-                nuevas_partidas_validas = [p for p in nuevas_partidas_info if p is not None]
+                # Separar las partidas válidas de los remakes basándonos en el valor de retorno de obtener_info_partida.
+                nuevas_partidas_validas = [p for p in nuevas_partidas_info if p is not None]  # No es remake
+                nuevos_remakes = [
+                    match_id for i, match_id in enumerate(nuevos_match_ids) # Enumerate para obtener índice
+                    if nuevas_partidas_info[i] is None # None indica que fue marcado como remake
+                ]
+
+                
                 if nuevas_partidas_validas:
                     historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
                     # Opcional: ordenar por fecha
                     historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
-                    guardar_historial_jugador_github(puuid, historial_existente)
-                    print(f"Historial de {riot_id} actualizado con {len(nuevas_partidas_validas)} partidas.")
+
+                if nuevos_remakes:
+                    # Añadir los IDs de los nuevos remakes al conjunto existente
+                    remakes_guardados.update(nuevos_remakes)
+                    # Actualizar la lista de remakes en el historial
+                    historial_existente['remakes'] = list(remakes_guardados)
+                
+                if nuevas_partidas_validas or nuevos_remakes:
+                    guardar_historial_jugador_github(puuid, historial_existente) # Guardar todo el historial, incluso si solo hay remakes
+                    print(f"Historial de {riot_id} actualizado con {len(nuevas_partidas_validas)} partidas nuevas y {len(nuevos_remakes)} remakes.")
 
             print("Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
             time.sleep(300) # Esperar 5 minutos para el siguiente ciclo
