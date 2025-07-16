@@ -377,15 +377,15 @@
                         {% endif %}
                     </td>
                     <td class="elo-diferencia"></td>
-                    <td>
+                     <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
                             {% if jugador.en_partida %}
                                 <span class="estado-en-partida">En Partida</span>
-                                {% if jugador.champion_id %}
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/14.10.1/img/champion/{{ jugador.champion_id }}.png" alt="{{ jugador.champion_id }}" title="{{ jugador.champion_id }}" style="width: 30px; height: 30px; vertical-align: middle; margin-left: 5px;">
-                                {% endif %}
+                                <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
+                                     alt="{{ jugador.nombre_campeon }}" 
+                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
                             {% else %}
-                                <span class="estado-fuera-partida">Inactivo</span>
+                                Inactivo
                             {% endif %}
                         </a>
                     </td>

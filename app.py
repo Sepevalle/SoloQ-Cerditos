@@ -228,20 +228,13 @@ def obtener_elo(api_key, puuid):
         return None
 
 def esta_en_partida(api_key, puuid):
-    """Comprueba si un jugador está en una partida activa. Realiza un único intento."""
     url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
-    try:
-        # Hacemos una única petición directa, sin reintentos.
-        # Un 404 es el resultado esperado si el jugador no está en partida.
-        response = API_SESSION.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            for participant in data.get("participants", []):
-                if participant['puuid'] == puuid:
-                    return participant.get('championId', None)
-    except requests.exceptions.RequestException as e:
-        # Si hay un error de red, asumimos que no está en partida para no bloquear la actualización.
-        print(f"Error de red al comprobar si el jugador {puuid} está en partida: {e}")
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        for participant in data.get("participants", []):
+            if participant['puuid'] == puuid:
+                return participant.get('championId', None)
     return None
 
 def obtener_info_partida(args):
