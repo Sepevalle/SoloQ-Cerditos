@@ -67,8 +67,8 @@ if RIOT_API_KEY == "TU_API_KEY_PRINCIPAL_AQUI":
     print("ADVERTENCIA: RIOT_API_KEY no está configurada en las variables de entorno. La aplicación podría no funcionar correctamente.")
 
 # URLs base de la API de Riot
-BASE_URL_ASIA = "https://asia.api.riotgames.com"
-BASE_URL_EUW = "https://euw1.api.riotgames.com"
+# Todas las llamadas a la API de Riot (excepto DDragon) usarán esta URL base.
+BASE_URL_RIOT = "https://euw1.api.riotgames.com"
 BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 
 # Caché para almacenar los datos de los jugadores en la página principal
@@ -101,8 +101,8 @@ SPLITS = {
 ACTIVE_SPLIT_KEY = "s15_split1" # Cambia esta variable para seleccionar el split activo.
 
 # El timestamp de inicio se calcula automáticamente a partir del split activo
-# Se convierte a segundos para la API de Riot
-SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp()) * 1000 # Convertir a milisegundos
+# Se convierte a milisegundos para la API de Riot
+SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp()) * 1000
 
 # Usar una sesión para reutilizar conexiones HTTP y mejorar el rendimiento
 API_SESSION = requests.Session() 
@@ -137,7 +137,7 @@ def actualizar_version_ddragon():
     global DDRAGON_VERSION
     try:
         url = f"{BASE_URL_DDRAGON}/api/versions.json"
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=5) # Usamos requests.get directamente para DDragon versions
         response.raise_for_status()
         DDRAGON_VERSION = response.json()[0]
         print(f"Versión de Data Dragon establecida a: {DDRAGON_VERSION}")
@@ -221,7 +221,11 @@ def obtener_nombre_campeon(champion_id):
 
 def obtener_puuid(api_key, game_name, tag_line):
     """Obtiene el PUUID de un jugador dado su Riot ID (gameName y tagLine)."""
-    url = f"{BASE_URL_EUW}/riot/account/v1/accounts/by-riot-id/{game_name}/{tag_line}?api_key={api_key}"
+    # La API de cuentas (account-v1) es global, no regional.
+    # El endpoint es https://<region>.api.riotgames.com/riot/account/v1/accounts/by-riot-id/<gameName>/<tagLine>
+    # La región para esta API debe ser una de las regiones "maestras" (AMERICAS, ASIA, EUROPE).
+    # Como estamos en EUW, usamos "europe" para la API de cuentas.
+    url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{game_name}/{tag_line}?api_key={api_key}"
     response = make_api_request(url)
     if response:
         return response.json()
@@ -231,7 +235,7 @@ def obtener_puuid(api_key, game_name, tag_line):
 
 def obtener_id_invocador(api_key, puuid):
     """Obtiene el ID de invocador de un jugador dado su PUUID."""
-    url = f"{BASE_URL_EUW}/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
+    url = f"{BASE_URL_RIOT}/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
         return response.json()
@@ -241,7 +245,7 @@ def obtener_id_invocador(api_key, puuid):
 
 def obtener_elo(api_key, puuid):
     """Obtiene la información de Elo de un jugador dado su PUUID."""
-    url = f"{BASE_URL_EUW}/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
+    url = f"{BASE_URL_RIOT}/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
         return response.json()
@@ -255,18 +259,19 @@ def esta_en_partida(api_key, puuid):
     Realiza un único intento sin reintentos adicionales para no bloquear.
     Devuelve el championId si está en partida, None en caso contrario.
     """
-    url = f"{BASE_URL_EUW}/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
+    url = f"{BASE_URL_RIOT}/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
     try:
-        # Hacemos una única petición directa, sin reintentos.
-        # Un 404 es el resultado esperado si el jugador no está en partida.
-        response = requests.get(url, timeout=5)
+        # Usamos API_SESSION.get directamente para esta API específica
+        # ya que un 404 es una respuesta esperada (jugador no en partida)
+        # y no queremos que make_api_request haga reintentos en ese caso.
+        response = API_SESSION.get(url, timeout=5)
         if response.status_code == 200:
             data = response.json()
             for participant in data.get("participants", []):
                 if participant['puuid'] == puuid:
                     return participant.get('championId', None)
         elif response.status_code == 404:
-            # Jugador no en partida, es un comportamiento esperado
+            # Jugador no en partida, es un comportamiento esperado.
             return None
         else:
             print(f"Error al comprobar estado de partida para {puuid}: {response.status_code} - {response.text}")
@@ -281,7 +286,10 @@ def obtener_info_partida(args):
     además del nivel, hechizos y runas.
     """
     match_id, puuid, api_key = args
-    url_match = f"{BASE_URL_EUW}/lol/match/v5/matches/{match_id}?api_key={api_key}"
+    # La API de Match V5 es global (europe, americas, asia), no regional (euw1).
+    # Por lo tanto, usamos la URL base de Match API que es diferente.
+    # Para EUW, la API de Match V5 usa el routing value 'europe'.
+    url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
     response_match = make_api_request(url_match)
     if not response_match:
         return None
@@ -294,7 +302,6 @@ def obtener_info_partida(args):
         # Si este flag es 'true' para cualquier participante, la partida es un remake.
         # Ignoramos estas partidas para que no cuenten como derrotas y afecten al winrate.
         if any(p.get('gameEndedInEarlySurrender', False) for p in participants):
-            # print(f"Partida {match_id} ignorada por ser un remake.")
             return None
 
         game_end_timestamp = info.get('gameEndTimestamp', 0)
@@ -474,7 +481,6 @@ def leer_historial_jugador_github(puuid):
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 404:
-            # print(f"No se encontró historial para {puuid}. Se considerará vacío.")
             return {"matches": []} # Devolver un diccionario con una lista vacía para 'matches'
         else:
             print(f"Error al leer el historial para {puuid}: {resp.status_code} - {resp.text}")
@@ -485,6 +491,32 @@ def leer_historial_jugador_github(puuid):
 def guardar_historial_jugador_github(puuid, historial_data):
     """Guarda o actualiza el historial de partidas de un jugador en GitHub."""
     guardar_archivo_github(f"match_history/{puuid}.json", historial_data, f"Actualizar historial de partidas para {puuid}")
+
+# Caché para estadísticas de campeones
+CHAMPION_STATS_CACHE_TIMEOUT = 86400 # 24 horas (en segundos)
+
+top_champion_stats_cache = {
+    "data": {}, # {puuid: {queue_id: {stats: {}, timestamp: ..., total_games_snapshot: ...}}}
+    "lock": threading.Lock()
+}
+
+def leer_top_champion_stats():
+    """Lee el archivo de estadísticas de campeones desde GitHub."""
+    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/top_champion_stats.json"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error leyendo top_champion_stats.json desde {url}: {e}")
+    except json.JSONDecodeError as e:
+        print(f"Error decodificando JSON de top_champion_stats.json: {e}")
+    return {}
+
+def guardar_top_champion_stats_en_github(stats_dict):
+    """Guarda o actualiza el archivo top_champion_stats.json en GitHub."""
+    guardar_archivo_github("top_champion_stats.json", stats_dict, "Actualizar estadísticas de campeones")
+
 
 def procesar_jugador(args_tuple):
     """
@@ -514,18 +546,14 @@ def procesar_jugador(args_tuple):
 
     if not needs_full_update:
         # Jugador inactivo, reutilizamos los datos antiguos y solo actualizamos su estado.
-        # print(f"Jugador {riot_id_full} inactivo. Reutilizando datos antiguos.")
         for data in old_data_list:
             data['en_partida'] = False
             data['nombre_campeon'] = "N/A"
             data['champion_id'] = None
         return old_data_list
 
-    # print(f"Actualizando datos completos para {riot_id_full} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
-    # Usar la clave principal para obtener los datos de Elo, que es una operación menos frecuente pero más crítica.
     elo_info = obtener_elo(api_key_main, puuid)
     if not elo_info: # Si falla la obtención de Elo, devolvemos los datos antiguos si existen
-        # print(f"Fallo al obtener ELO para {riot_id_full}. Reutilizando datos antiguos si existen.")
         return old_data_list if old_data_list else []
 
     riot_id_modified = riot_id_full.replace("#", "-")
@@ -554,7 +582,8 @@ def procesar_jugador(args_tuple):
                 entry.get('leaguePoints', 0)
             ),
             "nombre_campeon": nombre_campeon_en_partida,
-            "champion_id": champion_id if champion_id else None # Guardar el ID numérico
+            "champion_id": champion_id if champion_id else None, # Guardar el ID numérico
+            "top_champion_stats": [] # Se rellenará después de la obtención de datos principales
         }
         datos_jugador_list.append(datos_jugador)
     return datos_jugador_list
@@ -635,57 +664,49 @@ def actualizar_cache():
         if datos_jugador_list:
             todos_los_datos.extend(datos_jugador_list)
 
-    # Paso 3: Calcular y añadir estadísticas del top 3 campeones más jugados desde el historial
-    queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-    for jugador in todos_los_datos:
-        puuid = jugador.get('puuid')
-        queue_type = jugador.get('queue_type')
-        queue_id = queue_map.get(queue_type)
-
-        jugador['top_champion_stats'] = [] # Ahora será una lista para los top 3
-
-        if not puuid or not queue_id:
-            continue
+    # Paso 3: Inyectar los datos de campeones desde el caché (ya no se calculan aquí)
+    with top_champion_stats_cache["lock"]:
+        stats_data = top_champion_stats_cache["data"] # Leer directamente del caché en memoria
+        queue_map_reverse = {420: "RANKED_SOLO_5x5", 440: "RANKED_FLEX_SR"} # Mapeo inverso
         
-        historial = leer_historial_jugador_github(puuid)
-        partidas_jugador = [
-            p for p in historial.get('matches', []) 
-            if p.get('queue_id') == queue_id and
-               # Filtramos para que solo cuenten las partidas del split activo
-               p.get('game_end_timestamp', 0) >= SEASON_START_TIMESTAMP
-        ]
-
-        if not partidas_jugador:
-            continue
-
-        # Contar campeones para encontrar el top 3
-        contador_campeones = Counter(p['champion_name'] for p in partidas_jugador)
-        if not contador_campeones:
-            continue
-        
-        top_3_campeones = contador_campeones.most_common(3)
-
-        for campeon_nombre, _ in top_3_campeones:
-            # Calcular stats para cada campeón en el top 3
-            partidas_del_campeon = [p for p in partidas_jugador if p['champion_name'] == campeon_nombre]
+        for jugador in todos_los_datos:
+            puuid = jugador.get('puuid')
+            queue_type_str = jugador.get('queue_type')
             
-            total_partidas = len(partidas_del_campeon)
-            wins = sum(1 for p in partidas_del_campeon if p.get('win'))
-            win_rate = (wins / total_partidas * 100) if total_partidas > 0 else 0
+            # Obtener el queue_id numérico para acceder al caché
+            queue_id_num = next((qid for qid, qtype in queue_map_reverse.items() if qtype == queue_type_str), None)
 
-            total_kills = sum(p.get('kills', 0) for p in partidas_del_campeon)
-            total_deaths = sum(p.get('deaths', 0) for p in partidas_del_campeon)
-            total_assists = sum(p.get('assists', 0) for p in partidas_del_campeon)
-            
-            # Evitar división por cero para el KDA
-            kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
+            if puuid and queue_id_num:
+                # Leemos el diccionario completo de estadísticas de campeones para este jugador y cola
+                all_champ_stats = stats_data.get(puuid, {}).get(str(queue_id_num), {}).get('stats', {})
+                
+                # Calculamos el campeón top al vuelo para mostrarlo
+                if all_champ_stats:
+                    # Convertir claves a int para el max() y luego de vuelta a str si es necesario
+                    # max() con key para encontrar el campeón con más partidas
+                    top_champ_id_str = max(all_champ_stats, key=lambda k: all_champ_stats[k]['games'])
+                    top_champ_data = all_champ_stats[top_champ_id_str]
+                    
+                    games = top_champ_data.get('games', 0)
+                    wins = top_champ_data.get('wins', 0)
+                    win_rate = (wins / games * 100) if games > 0 else 0
+                    
+                    # Calcular KDA para el top campeón
+                    total_kills = top_champ_data.get('kills', 0)
+                    total_deaths = top_champ_data.get('deaths', 0)
+                    total_assists = top_champ_data.get('assists', 0)
+                    kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else (total_kills + total_assists) # Si deaths es 0, KDA es Kills+Assists
 
-            jugador['top_champion_stats'].append({
-                "champion_name": campeon_nombre,
-                "win_rate": win_rate,
-                "games_played": total_partidas,
-                "kda": kda
-            })
+                    jugador['top_champion_stats'] = {
+                        "champion_name": obtener_nombre_campeon(int(top_champ_id_str)),
+                        "win_rate": win_rate,
+                        "games_played": games,
+                        "kda": kda
+                    }
+                else:
+                    jugador['top_champion_stats'] = {} # No hay estadísticas de campeón disponibles
+            else:
+                jugador['top_champion_stats'] = {} # No hay PUUID o Queue ID válido
 
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
@@ -706,6 +727,9 @@ def index():
     """Renderiza la página principal con la lista de jugadores."""
 
     datos_jugadores, timestamp = obtener_datos_jugadores()
+    
+    # Si la caché está vacía (primera ejecución), indicamos que se está cargando.
+    cargando = not datos_jugadores and timestamp == 0
     
     lectura_exitosa, peak_elo_dict = leer_peak_elo()
 
@@ -734,12 +758,17 @@ def index():
     
     # Formatear la última actualización, sumando 2 horas para CEST (horario de verano de Europa Central)
     # Riot API timestamps son UTC. Si tu servidor está en UTC, esto lo ajusta a CEST.
-    ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
-    
-    return render_template('index.html', datos_jugadores=datos_jugadores,
+    if timestamp > 0:
+        ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
+    else:
+        ultima_actualizacion = "Calculando..." # Mensaje si aún no hay datos en caché
+
+    return render_template('index.html', 
+                           datos_jugadores=datos_jugadores, 
                            ultima_actualizacion=ultima_actualizacion,
-                           ddragon_version=DDRAGON_VERSION, 
-                           split_activo_nombre=split_activo_nombre)
+                           ddragon_version=DDRAGON_VERSION,
+                           split_activo_nombre=split_activo_nombre,
+                           cargando=cargando)
 
 @app.route('/jugador/<path:game_name>') # Use <path:game_name> to handle '/' in Riot IDs
 def perfil_jugador(game_name):
@@ -800,8 +829,9 @@ def actualizar_historial_partidas_en_segundo_plano():
     """
     Función que se ejecuta en un hilo separado para actualizar el historial de partidas
     de todos los jugadores de forma periódica.
+    También calcula y actualiza las estadísticas de campeones por cola.
     """
-    print("Iniciando hilo de actualización de historial de partidas.")
+    print("Iniciando hilo de actualización de historial de partidas y estadísticas de campeones.")
     
     if RIOT_API_KEY == "TU_API_KEY_PRINCIPAL_AQUI":
         print("ERROR: RIOT_API_KEY no configurada. No se puede actualizar el historial de partidas.")
@@ -823,6 +853,12 @@ def actualizar_historial_partidas_en_segundo_plano():
 
             cuentas = leer_cuentas(url_cuentas)
             puuid_dict = leer_puuids()
+            
+            # Leer las estadísticas de campeones existentes para actualización incremental
+            with top_champion_stats_cache["lock"]:
+                current_top_champion_stats = top_champion_stats_cache["data"].copy()
+
+            stats_actualizadas_en_ciclo = False
 
             for riot_id_full, jugador_nombre in cuentas:
                 puuid = puuid_dict.get(riot_id_full)
@@ -831,52 +867,103 @@ def actualizar_historial_partidas_en_segundo_plano():
                     continue
 
                 historial_existente = leer_historial_jugador_github(puuid)
-                # Crear un set de IDs de partidas existentes para una búsqueda eficiente
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
 
-                # 2. Obtener TODOS los IDs de partidas de la temporada (SoloQ y Flex)
-                all_match_ids_season = []
+                # Para cada jugador, obtener todos los IDs de partidas del split actual para ambas colas
+                all_match_ids_for_player_in_split = []
                 for queue_id in queue_map.values():
                     start_index = 0
                     while True:
-                        # Asegurarse de que startTime esté en milisegundos
-                        url_matches = f"{BASE_URL_EUW}/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={RIOT_API_KEY}"
+                        url_matches = f"{BASE_URL_RIOT}/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={RIOT_API_KEY}"
                         response_matches = make_api_request(url_matches)
                         if not response_matches: break
                         match_ids_page = response_matches.json()
                         if not match_ids_page: break
-                        all_match_ids_season.extend(match_ids_page)
-                        if len(match_ids_page) < 100: break # Si la página tiene menos de 100, es la última
+                        all_match_ids_for_player_in_split.extend(match_ids_page)
+                        if len(match_ids_page) < 100: break
                         start_index += 100
                 
-                # 3. Filtrar para obtener solo los IDs de partidas nuevas
-                nuevos_match_ids = [mid for mid in all_match_ids_season if mid not in ids_partidas_guardadas]
+                # Filtrar para obtener solo los IDs de partidas nuevas
+                nuevos_match_ids = [mid for mid in all_match_ids_for_player_in_split if mid not in ids_partidas_guardadas]
 
-                if not nuevos_match_ids:
-                    # print(f"No hay partidas nuevas para {riot_id_full}. Omitiendo.")
-                    continue
+                if nuevos_match_ids:
+                    print(f"Se encontraron {len(nuevos_match_ids)} partidas nuevas para {riot_id_full}. Procesando...")
+                    tareas = [(match_id, puuid, RIOT_API_KEY) for match_id in nuevos_match_ids]
+                    with ThreadPoolExecutor(max_workers=10) as executor:
+                        nuevas_partidas_info = list(executor.map(obtener_info_partida, tareas))
 
-                print(f"Se encontraron {len(nuevos_match_ids)} partidas nuevas para {riot_id_full}. Procesando...")
+                    nuevas_partidas_validas = [p for p in nuevas_partidas_info if p is not None]
+                    if nuevas_partidas_validas:
+                        historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
+                        historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
+                        guardar_historial_jugador_github(puuid, historial_existente)
+                        print(f"Historial de {riot_id_full} actualizado con {len(nuevas_partidas_validas)} partidas.")
+                        stats_actualizadas_en_ciclo = True # Hubo cambios en el historial, potencialmente en stats
 
-                # 4. Procesar solo las partidas nuevas en paralelo
-                tareas = [(match_id, puuid, RIOT_API_KEY) for match_id in nuevos_match_ids]
-                with ThreadPoolExecutor(max_workers=10) as executor:
-                    nuevas_partidas_info = list(executor.map(obtener_info_partida, tareas))
+                # Ahora, recalcular las estadísticas de campeones para este jugador desde el historial completo del split
+                # Esto se hace cada ciclo para asegurar precisión, o si el caché de stats ha expirado
+                ahora = time.time()
+                for q_type_str, q_id_num in queue_map.items():
+                    # Comprobar si el caché de stats para esta cola ha expirado o si el número de partidas ha cambiado
+                    entrada_cache_stats = current_top_champion_stats.get(puuid, {}).get(str(q_id_num), {})
+                    total_games_cached = entrada_cache_stats.get("total_games_snapshot", 0)
+                    
+                    # Contar partidas actuales para esta cola y split
+                    current_games_in_queue_split = sum(1 for p in historial_existente.get('matches', []) 
+                                                       if p.get('queue_id') == q_id_num and 
+                                                          p.get('game_end_timestamp', 0) >= SEASON_START_TIMESTAMP)
 
-                # 5. Añadir las nuevas partidas al historial y guardar
-                nuevas_partidas_validas = [p for p in nuevas_partidas_info if p is not None]
-                if nuevas_partidas_validas:
-                    historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
-                    # Opcional: ordenar por fecha
-                    historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
-                    guardar_historial_jugador_github(puuid, historial_existente)
-                    print(f"Historial de {riot_id_full} actualizado con {len(nuevas_partidas_validas)} partidas.")
+                    needs_stats_update = (
+                        not entrada_cache_stats or
+                        (ahora - entrada_cache_stats.get("timestamp", 0)) > CHAMPION_STATS_CACHE_TIMEOUT or
+                        (current_games_in_queue_split > total_games_cached)
+                    )
 
-            print("Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
+                    if needs_stats_update and current_games_in_queue_split > 0:
+                        print(f"Recalculando estadísticas de campeón para {riot_id_full} en cola {q_type_str} (partidas: {current_games_in_queue_split}).")
+                        
+                        partidas_para_stats = [
+                            p for p in historial_existente.get('matches', []) 
+                            if p.get('queue_id') == q_id_num and
+                               p.get('game_end_timestamp', 0) >= SEASON_START_TIMESTAMP
+                        ]
+
+                        champion_stats_for_queue = {}
+                        for p in partidas_para_stats:
+                            champ_name = p['champion_name']
+                            champ_id_str = str(next((k for k, v in ALL_CHAMPIONS.items() if v == champ_name), None)) # Obtener ID numérico del campeón
+                            
+                            if champ_id_str not in champion_stats_for_queue:
+                                champion_stats_for_queue[champ_id_str] = {"games": 0, "wins": 0, "kills": 0, "deaths": 0, "assists": 0}
+                            
+                            champion_stats_for_queue[champ_id_str]["games"] += 1
+                            if p['win']:
+                                champion_stats_for_queue[champ_id_str]["wins"] += 1
+                            champion_stats_for_queue[champ_id_str]["kills"] += p.get('kills', 0)
+                            champion_stats_for_queue[champ_id_str]["deaths"] += p.get('deaths', 0)
+                            champion_stats_for_queue[champ_id_str]["assists"] += p.get('assists', 0)
+                        
+                        if puuid not in current_top_champion_stats:
+                            current_top_champion_stats[puuid] = {}
+                        
+                        current_top_champion_stats[puuid][str(q_id_num)] = {
+                            "stats": champion_stats_for_queue,
+                            "timestamp": ahora,
+                            "total_games_snapshot": current_games_in_queue_split
+                        }
+                        stats_actualizadas_en_ciclo = True
+            
+            if stats_actualizadas_en_ciclo:
+                with top_champion_stats_cache["lock"]:
+                    top_champion_stats_cache["data"] = current_top_champion_stats
+                guardar_top_champion_stats_en_github(current_top_champion_stats)
+                print("Estadísticas de campeones actualizadas y guardadas en GitHub.")
+
+            print("Ciclo de actualización de historial de partidas y estadísticas completado. Próxima revisión en 5 minutos.")
             time.sleep(300) # Esperar 5 minutos para el siguiente ciclo
 
         except Exception as e:
-            print(f"Error en el hilo de actualización de historial de partidas: {e}. Reintentando en 5 minutos.")
+            print(f"Error en el hilo de actualización de historial de partidas y estadísticas: {e}. Reintentando en 5 minutos.")
             time.sleep(300)
 
 def keep_alive():
@@ -908,7 +995,7 @@ if __name__ == "__main__":
     cache_thread.daemon = True
     cache_thread.start()
 
-    # Hilo para la actualización del historial de partidas (puede ser intensivo en API calls)
+    # Hilo para la actualización del historial de partidas y estadísticas de campeones (puede ser intensivo en API calls)
     stats_thread = threading.Thread(target=actualizar_historial_partidas_en_segundo_plano)
     stats_thread.daemon = True
     stats_thread.start()

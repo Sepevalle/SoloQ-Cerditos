@@ -377,8 +377,25 @@
                         {% endif %}
                     </td>
                     <td class="elo-diferencia"></td>
-                     <td>
+                    <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
+
+                                    {% if jugador.en_partida %}
+                                        <a href="{{ jugador.url_ingame }}" target="_blank" class="text-success text-decoration-none">
+                                            <i class="fas fa-circle-play"></i> En Partida
+                                            {% if jugador.champion_id %}
+                                                <br><img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" alt="{{ jugador.nombre_campeon }}" class="champion-icon">
+                                                <span class="small-text-stats">{{ jugador.nombre_campeon }}</span>
+                                            {% endif %}
+                                        </a>
+                                    {% else %}
+                                        No
+                                    {% endif %}
+                    </td>
+
+
+
+                     <td>
                             {% if jugador.en_partida %}
                                 <span class="estado-en-partida">En Partida</span>
                                 <img src="http://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/{{ jugador.nombre_campeon }}.png" 
@@ -389,6 +406,7 @@
                             {% endif %}
                         </a>
                     </td>
+
                 </tr>
                 {% endfor %}
             </tbody>
