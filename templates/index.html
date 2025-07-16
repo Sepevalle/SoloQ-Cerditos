@@ -88,9 +88,13 @@
             filter: invert(1) grayscale(100%) brightness(2);
         }
         .table td, .table th {
-            text-align: center;
-            vertical-align: middle;
-        }
+             text-align: center;
+             vertical-align: middle;
+            /* Ensure no wrapping and hide overflow if necessary for very narrow columns */
+            white-space: nowrap; /* Keep text on a single line */
+            overflow: hidden; /* Hide overflowing content */
+            text-overflow: ellipsis; /* Add ellipsis for hidden overflow */
+}
         .jugador-columna {
             text-align: left;
         }
