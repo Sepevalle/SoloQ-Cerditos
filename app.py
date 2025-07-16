@@ -229,20 +229,27 @@ def obtener_elo(api_key, puuid):
 
 def esta_en_partida(api_key, puuid):
     """Comprueba si un jugador está en una partida activa. Realiza un único intento."""
-    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
     try:
-        # Hacemos una única petición directa, sin reintentos.
-        # Un 404 es el resultado esperado si el jugador no está en partida.
-        response = API_SESSION.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            for participant in data.get("participants", []):
-                if participant['puuid'] == puuid:
-                    return participant.get('championId', None)
-    except requests.exceptions.RequestException as e:
-        # Si hay un error de red, asumimos que no está en partida para no bloquear la actualización.
-        print(f"Error de red al comprobar si el jugador {puuid} está en partida: {e}")
-    return None
+        url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
+
+        response = API_SESSION.get(url, timeout=5)  # Direct request, no retries
+
+        if response.status_code == 200:  # Player is in game
+            game_data = response.json()
+            # Check participants for the target puuid and return champion ID
+            for participant in game_data.get("participants", []):
+                if participant["puuid"] == puuid:
+                    return participant.get("championId")
+            # This should ideally not happen if the API returns consistent data, but handle it
+            print(f"Warning: Player {puuid} is in game but not found in participants list.")
+            return None  
+        elif response.status_code == 404:  # Player not in game (expected response)
+            return None
+        else:  # Unexpected error
+            response.raise_for_status()  # Raises an exception for bad responses (4xx or 5xx)
+    except requests.exceptions.RequestException as e:  # Handle potential request errors
+        print(f"Error checking if player {puuid} is in game: {e}")  # Log the error
+        return None  # Assume player is not in game in case of errors
 
 def obtener_info_partida(args):
     """
