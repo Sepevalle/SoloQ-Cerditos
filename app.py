@@ -520,7 +520,7 @@ def procesar_jugador(args_tuple):
     Implementa una lógica de actualización inteligente para reducir llamadas a la API.
     Solo actualiza el Elo si el jugador está o ha estado en partida recientemente.
     """
-    cuenta, puuid, api_key_main, api_key_spectator, old_data_list = args_tuple
+    cuenta, puuid, api_key_main, api_key_spectator, old_data_list, check_in_game_this_update = args_tuple
     riot_id, jugador_nombre = cuenta
 
     if not puuid:
