@@ -641,7 +641,7 @@ def actualizar_cache():
         puuid = puuid_dict.get(riot_id)
         old_data_for_player = old_data_map_by_puuid.get(puuid)
         tareas.append((cuenta, puuid, api_key_main, api_key_spectator, 
-                      old_data_for_player, check_in_game_this_update))
+                      old_data_for_player, check_in_game_this_update)) # Pass the value here
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         resultados = executor.map(procesar_jugador, tareas)
@@ -899,11 +899,11 @@ def actualizar_historial_partidas_en_segundo_plano():
                     print(f"Historial de {riot_id} actualizado con {len(nuevas_partidas_validas)} partidas nuevas y {len(nuevos_remakes)} remakes.")
 
             print("Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
-            time.sleep(300) # Esperar 5 minutos para el siguiente ciclo
+            time.sleep(600) # Esperar 5 minutos para el siguiente ciclo
 
         except Exception as e:
             print(f"Error en el hilo de actualización de estadísticas: {e}. Reintentando en 5 minutos.")
-            time.sleep(300)
+            time.sleep(600)
 
 def keep_alive():
     """Envía una solicitud periódica a la propia aplicación para mantenerla activa en servicios como Render."""
