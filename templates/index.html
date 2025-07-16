@@ -297,7 +297,7 @@
                     <th data-sort-by="jugador">Jugador</th>
                     <th>Campeón Principal</th>
                     <th data-sort-by="game_name">Game Name</th>
-                    <th class="hidden">OP.GG</th>
+                    <th>OP.GG</th>
                     <th data-sort-by="elo">Elo</th>
                     <th data-sort-by="wins">Wins</th>
                     <th data-sort-by="losses">Losses</th>
@@ -350,7 +350,7 @@
                     <td>
                         <a href="/jugador/{{ jugador.game_name | urlencode }}">{{ jugador.game_name }}</a>
                     </td>
-                    <td class="hidden">
+                    <td>
                         <a href="{{ jugador.url_perfil }}" target="_blank" class="opgg-link">OP.GG</a>
                     </td>
                     <td class="elo-columna">
