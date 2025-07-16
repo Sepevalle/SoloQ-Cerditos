@@ -55,6 +55,11 @@ if not RIOT_API_KEY:
     print("Error: RIOT_API_KEY no está configurada en las variables de entorno.")
     exit(1)
 
+RIOT_API_KEY_2 = os.environ.get("RIOT_API_KEY_2")
+if not RIOT_API_KEY_2:
+    print("Error: RIOT_API_KEY_2 no está configurada en las variables de entorno.")
+    exit(1)
+
 # URLs base de la API de Riot (MOVIDAS AL PRINCIPIO)
 BASE_URL_ASIA = "https://asia.api.riotgames.com"
 BASE_URL_EUW = "https://euw1.api.riotgames.com"
@@ -226,16 +231,6 @@ def obtener_elo(api_key, puuid):
     else:
         print(f"No se pudo obtener el Elo para {puuid}.")
         return None
-
-def esta_en_partida(api_key, puuid):
-    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        for participant in data.get("participants", []):
-            if participant['puuid'] == puuid:
-                return participant.get('championId', None)
-    return None
 
 def obtener_info_partida(args):
     """
@@ -862,6 +857,17 @@ def actualizar_historial_partidas_en_segundo_plano():
         except Exception as e:
             print(f"Error en el hilo de actualización de estadísticas: {e}. Reintentando en 5 minutos.")
             time.sleep(300)
+
+
+def esta_en_partida(RIOT_API_KEY_2, puuid):
+    url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={RIOT_API_KEY_2}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        for participant in data.get("participants", []):
+            if participant['puuid'] == puuid:
+                return participant.get('championId', None)
+    return None
 
 def keep_alive():
     """Envía una solicitud periódica a la propia aplicación para mantenerla activa en servicios como Render."""
