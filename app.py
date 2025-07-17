@@ -910,7 +910,7 @@ def keep_alive():
     """Envía una solicitud periódica a la propia aplicación para mantenerla activa en servicios como Render."""
     while True:
         try:
-            requests.get('https://soloq-cerditos.onrender.com/')
+            requests.get('https://soloq-cerditos-34kd.onrender.com/')
             print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
