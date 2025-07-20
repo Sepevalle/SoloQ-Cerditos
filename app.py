@@ -254,7 +254,7 @@ def esta_en_partida(api_key, puuid):
 def obtener_info_partida(args):
     """
     Función auxiliar para ThreadPoolExecutor. Obtiene el campeón jugado y el resultado de una partida,
-    además del nivel, hechizos y runas.
+    además del nivel, hechizos, runas y AHORA MUCHAS MÁS ESTADÍSTICAS DETALLADAS.
     """
     match_id, puuid, api_key = args
     url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
@@ -268,37 +268,33 @@ def obtener_info_partida(args):
 
         # La API de Riot marca las partidas 'remake' con el flag 'gameEndedInEarlySurrender'.
         # Si este flag es 'true' para cualquier participante, la partida es un remake.
-        # Ignoramos estas partidas para que no cuenten como derrotas y afecten al winrate.
         if any(p.get('gameEndedInEarlySurrender', False) for p in participants):
             print(f"Partida {match_id} marcada como remake.")
             return None
 
         # Se suman 2 horas (7,200,000 milisegundos) para ajustar la zona horaria.
         game_end_timestamp = info.get('gameEndTimestamp', 0) + 7200000
-        
+        game_duration = info.get('gameDuration', 0) # Duración de la partida en segundos
+
         for p in participants:
             if p.get('puuid') == puuid:
                 # Extraer IDs de ítems, reemplazando None con 0
                 items = [p.get(f'item{i}', 0) for i in range(0, 7)]
 
-                # Obtener IDs de hechizos y runas
                 spell1_id = p.get('summoner1Id')
                 spell2_id = p.get('summoner2Id')
                 
-                # Obtener runas (perks)
                 perks = p.get('perks', {})
                 perk_main_id = None
                 perk_sub_id = None
 
                 if 'styles' in perks and len(perks['styles']) > 0:
-                    # La primera entrada en 'styles' es la rama principal
                     if len(perks['styles'][0]['selections']) > 0:
-                        # La primera selección en la rama principal es la runa clave (keystone)
                         perk_main_id = perks['styles'][0]['selections'][0]['perk']
-                    # La segunda entrada en 'styles' es la rama secundaria
                     if len(perks['styles']) > 1:
                         perk_sub_id = perks['styles'][1]['style']
 
+                # Extracción de las nuevas estadísticas
                 return {
                     "match_id": match_id,
                     "champion_name": obtener_nombre_campeon(p.get('championId')),
@@ -309,11 +305,51 @@ def obtener_info_partida(args):
                     "items": items,
                     "game_end_timestamp": game_end_timestamp,
                     "queue_id": info.get('queueId'),
-                    "champion_level": p.get('champLevel'), # Nuevo: Nivel del campeón
-                    "summoner_spell_1_id": ALL_SUMMONER_SPELLS.get(spell1_id), # Nuevo: Hechizo 1 (DDragon ID)
-                    "summoner_spell_2_id": ALL_SUMMONER_SPELLS.get(spell2_id), # Nuevo: Hechizo 2 (DDragon ID)
-                    "perk_main_id": ALL_RUNES.get(perk_main_id), # Nuevo: Runa principal (DDragon icon path)
-                    "perk_sub_id": ALL_RUNES.get(perk_sub_id) # Nuevo: Runa secundaria (DDragon icon path)
+                    "champion_level": p.get('champLevel'),
+                    "summoner_spell_1_id": ALL_SUMMONER_SPELLS.get(spell1_id),
+                    "summoner_spell_2_id": ALL_SUMMONER_SPELLS.get(spell2_id),
+                    "perk_main_id": ALL_RUNES.get(perk_main_id),
+                    "perk_sub_id": ALL_RUNES.get(perk_sub_id),
+
+                    # --- NUEVAS ESTADÍSTICAS AÑADIDAS ---
+                    "total_minions_killed": p.get('totalMinionsKilled', 0),
+                    "neutral_minions_killed": p.get('neutralMinionsKilled', 0),
+                    "gold_earned": p.get('goldEarned', 0),
+                    "gold_spent": p.get('goldSpent', 0),
+                    "game_duration": game_duration, # En segundos
+
+                    "total_damage_dealt": p.get('totalDamageDealt', 0),
+                    "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
+                    "physical_damage_dealt_to_champions": p.get('physicalDamageDealtToChampions', 0),
+                    "magic_damage_dealt_to_champions": p.get('magicDamageDealtToChampions', 0),
+                    "true_damage_dealt_to_champions": p.get('trueDamageDealtToChampions', 0),
+                    "damage_self_mitigated": p.get('damageSelfMitigated', 0),
+                    "damage_dealt_to_buildings": p.get('damageDealtToBuildings', 0),
+                    "damage_dealt_to_objectives": p.get('damageDealtToObjectives', 0),
+                    
+                    "total_heal": p.get('totalHeal', 0),
+                    "total_heals_on_teammates": p.get('totalHealsOnTeammates', 0),
+                    "total_damage_shielded_on_teammates": p.get('totalDamageShieldedOnTeammates', 0),
+                    
+                    "vision_score": p.get('visionScore', 0),
+                    "wards_placed": p.get('wardsPlaced', 0),
+                    "wards_killed": p.get('wardsKilled', 0),
+                    "detector_wards_placed": p.get('detectorWardsPlaced', 0),
+
+                    "time_ccing_others": p.get('timeCCingOthers', 0),
+
+                    "turret_kills": p.get('turretKills', 0),
+                    "inhibitor_kills": p.get('inhibitorKills', 0),
+                    "baron_kills": p.get('baronKills', 0),
+                    "dragon_kills": p.get('dragonKills', 0),
+
+                    "total_time_spent_dead": p.get('totalTimeSpentDead', 0),
+                    "killing_sprees": p.get('killingSprees', 0),
+                    "largest_killing_spree": p.get('largestKillingSpree', 0),
+                    "penta_kills": p.get('pentaKills', 0),
+                    "quadra_kills": p.get('quadraKills', 0),
+                    "triple_kills": p.get('tripleKills', 0),
+                    "double_kills": p.get('doubleKills', 0)
                 }
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error procesando los detalles de la partida {match_id}: {e}")
