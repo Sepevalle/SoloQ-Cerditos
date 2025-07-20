@@ -792,42 +792,47 @@ def index():
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
-@app.route('/jugador/<path:game_name>')
+@app.route('/jugador/<path:game_name>') # Use <path:game_name> to handle '/' in Riot IDs
 def perfil_jugador(game_name):
     """Muestra una página de perfil para un jugador específico."""
     todos_los_datos, _ = obtener_datos_jugadores()
     
-    datos_del_jugador = [j for j in todos_los_datos if j['game_name'] == game_name]
+    # Filter data for the specific player
+    datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name] # Usar .get para evitar KeyError si 'game_name' falta
     
     if not datos_del_jugador:
         return render_template('404.html'), 404
     
     primer_perfil = datos_del_jugador[0]
-    puuid = primer_perfil.get('puuid')
+    puuid = primer_perfil.get('puuid') # Get the PUUID for fetching match history
 
+    # Fetch match history
     historial_partidas_completo = {}
     if puuid:
         historial_partidas_completo = leer_historial_jugador_github(puuid)
 
+    # Preparar el objeto 'perfil' para la plantilla
     perfil = {
-        'nombre': primer_perfil['jugador'],
+        'nombre': primer_perfil.get('jugador', 'N/A'), # Usar .get con valor por defecto
         'game_name': game_name,
-        'tagline': primer_perfil.get('tagline'),
-        'perfil_icon_url': primer_perfil.get('perfil_icon_url'),
-        'banner_champion_splash': primer_perfil.get('banner_champion_splash'),
+        'tagline': primer_perfil.get('tagline', 'N/A'),
+        'perfil_icon_url': primer_perfil.get('perfil_icon_url', 'https://ddragon.leagueoflegends.com/cdn/img/profileicon/29.png'), # Icono por defecto
+        'banner_champion_splash': primer_perfil.get('banner_champion_splash', 'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img/default_banner.jpg'), # Banner por defecto
 
+        # Añadir las estadísticas de clasificatoria directamente al perfil si existen
         'ranked_solo_tier': None, 'ranked_solo_rank': None, 'ranked_solo_lp': 0, 'ranked_solo_wins': 0, 'ranked_solo_losses': 0,
         'ranked_flex_tier': None, 'ranked_flex_rank': None, 'ranked_flex_lp': 0, 'ranked_flex_wins': 0, 'ranked_flex_losses': 0,
     }
 
+    # Asignar datos de clasificatoria
     for item in datos_del_jugador:
-        if item['queue_type'] == 'RANKED_SOLO_5x5':
+        if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['ranked_solo_tier'] = item.get('tier')
             perfil['ranked_solo_rank'] = item.get('rank')
             perfil['ranked_solo_lp'] = item.get('league_points')
             perfil['ranked_solo_wins'] = item.get('wins')
             perfil['ranked_solo_losses'] = item.get('losses')
-        elif item['queue_type'] == 'RANKED_FLEX_SR':
+        elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['ranked_flex_tier'] = item.get('tier')
             perfil['ranked_flex_rank'] = item.get('rank')
             perfil['ranked_flex_lp'] = item.get('league_points')
@@ -838,31 +843,23 @@ def perfil_jugador(game_name):
     
     processed_matches = []
     for match in raw_matches:
-        # **START OF MODIFICATION FOR 'items' FIELD**
         # Aseguramos que 'items' sea siempre una lista de enteros
-        raw_items = match.get('items', []) # Obtiene el valor de 'items', o una lista vacía por defecto
+        raw_items = match.get('items', []) 
 
-        # Aseguramos que raw_items es una lista antes de procesarla
         if not isinstance(raw_items, list):
-            # Si no es una lista, intentamos convertirla. Para este error particular,
-            # si fuera un método, esto lo convertiría a una lista vacía.
-            if callable(raw_items): # Si es una función/método, no podemos iterar sobre ella
+            if callable(raw_items): 
                 raw_items = []
-            elif isinstance(raw_items, dict): # Si es un diccionario, quizás queremos sus valores
+            elif isinstance(raw_items, dict): 
                 raw_items = list(raw_items.values())
-            else: # Para cualquier otro tipo inesperado, lo convertimos a lista vacía
+            else: 
                 raw_items = []
 
         # Convertimos cada elemento a int, default a 0 si no es convertible
         processed_items = [int(item_id) if isinstance(item_id, (int, float)) or (isinstance(item_id, str) and item_id.isdigit()) else 0 for item_id in raw_items]
         
-        # Opcional: Asegurar que siempre hay 7 ítems (slot 0-6). Ajusta según tu necesidad.
-        # Mientras más robusto sea el procesamiento aquí, menos errores en la plantilla.
         while len(processed_items) < 7:
             processed_items.append(0)
-        processed_items = processed_items[:7] # Limitar a 7 si hay más
-
-        # **END OF MODIFICATION FOR 'items' FIELD**
+        processed_items = processed_items[:7] 
 
         processed_match = {
             'game_end_timestamp': match.get('game_end_timestamp', 0),
@@ -889,22 +886,23 @@ def perfil_jugador(game_name):
             'triple_kills': match.get('triple_kills', 0),
             'double_kills': match.get('double_kills', 0),
             'items': processed_items, # Usa la lista de ítems procesada
-            'summoner_spell_1_id': match.get('summoner_spell_1_id', 'SummonerFlash'),
-            'summoner_spell_2_id': match.get('summoner_spell_2_id', 'SummonerHeal'),
-            'perk_main_id': match.get('perk_main_id', 'perk/8000/Conqueror/Conqueror.png'),
-            'perk_sub_id': match.get('perk_sub_id', 8100),
+            'summoner_spell_1_id': match.get('summoner_spell_1_id', 'SummonerFlash'), # Asegúrate que estos son nombres de archivos de DDragon
+            'summoner_spell_2_id': match.get('summoner_spell_2_id', 'SummonerHeal'), # Asegúrate que estos son nombres de archivos de DDragon
+            'perk_main_id': match.get('perk_main_id', 'perk/8000/Conqueror/Conqueror.png'), # Ruta de imagen por defecto
+            'perk_sub_id': match.get('perk_sub_id', 8100), # ID numérico por defecto (ej. Dominación)
         }
         processed_matches.append(processed_match)
 
     perfil['historial_partidas'] = processed_matches
     
+    # Sort the full history by timestamp (most recent first) for consistent display
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
 
     return render_template('jugador.html', 
                            perfil=perfil, 
                            now=datetime.now(), 
                            ddragon_version=DDRAGON_VERSION,
-                           datetime=datetime)
+                           datetime=datetime) # ¡Esta es la línea clave para Jinja2!
 
 
 def actualizar_historial_partidas_en_segundo_plano():
