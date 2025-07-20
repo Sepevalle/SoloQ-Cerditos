@@ -5,9 +5,8 @@ import time
 import threading
 import json
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta # Import datetime and timedelta
 from collections import Counter
-from datetime import timedelta
 from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
@@ -260,7 +259,7 @@ def obtener_info_partida(args):
         for p in participants:
             if p.get('puuid') == puuid:
                 # Extraer IDs de ítems, reemplazando None con 0
-                items = [p.get(f'item{i}', 0) for i in range(0, 7)]
+                player_items = [p.get(f'item{i}', 0) for i in range(0, 7)] # Changed from 'items'
 
                 spell1_id = p.get('summoner1Id')
                 spell2_id = p.get('summoner2Id')
@@ -283,7 +282,7 @@ def obtener_info_partida(args):
                     "kills": p.get('kills', 0),
                     "deaths": p.get('deaths', 0),
                     "assists": p.get('assists', 0),
-                    "items": items,
+                    "player_items": player_items, # Changed from 'items'
                     "game_end_timestamp": game_end_timestamp,
                     "queue_id": info.get('queueId'),
                     "champion_level": p.get('champLevel'),
@@ -777,45 +776,56 @@ def index():
 def perfil_jugador(game_name):
     """
     Muestra una página de perfil para un jugador específico.
+    Esta es la versión CORREGIDA Y MEJORADA de tu función original.
     """
+    # 1. Obtener los datos de todos los jugadores de la caché
     todos_los_datos, _ = obtener_datos_jugadores()
     
+    # 2. Filtrar para encontrar los datos del jugador específico por su `game_name`
     datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
     
+    # 3. Si no se encuentra al jugador, mostrar la página de error 404
     if not datos_del_jugador:
         return render_template('404.html'), 404
     
+    # 4. Obtener el PUUID para poder buscar su historial de partidas
     primer_perfil = datos_del_jugador[0]
     puuid = primer_perfil.get('puuid')
 
+    # 5. Leer el historial de partidas desde GitHub usando el PUUID
     historial_partidas_completo = {}
     if puuid:
         historial_partidas_completo = leer_historial_jugador_github(puuid)
 
+    # 6. Preparar un objeto `perfil` limpio y completo para enviar a la plantilla
+    #    Esto asegura que la plantilla siempre reciba todas las variables que espera.
     perfil = {
         'nombre': primer_perfil.get('jugador', 'N/A'),
         'game_name': game_name,
-        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''),
+        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''), # Usar la URL de la caché
         'historial_partidas': historial_partidas_completo.get('matches', [])
+        # Aquí puedes añadir más datos del `primer_perfil` si los necesitas en la plantilla
     }
     
+    # Añadimos los datos de SoloQ y Flex al perfil
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['ranked_solo_tier'] = item.get('tier')
             perfil['ranked_solo_rank'] = item.get('rank')
             perfil['ranked_solo_lp'] = item.get('league_points')
-            perfil['ranked_solo_wins'] = item.get('wins')
-            perfil['ranked_solo_losses'] = item.get('losses')
+            perfil['ranked_solo_wins'] = item.get('wins') # Added these two lines back in
+            perfil['ranked_solo_losses'] = item.get('losses') # Added these two lines back in
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['ranked_flex_tier'] = item.get('tier')
             perfil['ranked_flex_rank'] = item.get('rank')
             perfil['ranked_flex_lp'] = item.get('league_points')
-            perfil['ranked_flex_wins'] = item.get('wins')
-            perfil['ranked_flex_losses'] = item.get('losses')
+            perfil['ranked_flex_wins'] = item.get('wins') # Added these two lines back in
+            perfil['ranked_flex_losses'] = item.get('losses') # Added these two lines back in
 
+    # 7. Ordenar el historial por fecha (más reciente primero)
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
 
-    # Pass datetime to the template
+    # 8. Renderizar la plantilla `jugador.html`, pasándole el objeto `perfil`
     return render_template('jugador.html', 
                            perfil=perfil, 
                            ddragon_version=DDRAGON_VERSION,

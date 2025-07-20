@@ -297,7 +297,7 @@
                     <hr>
                     <h6>Objetos:</h6>
                     <div class="d-flex flex-wrap gap-2 mb-3">
-                        {% for item_id in match.items %}
+                        {% for item_id in match.player_items %} {# Changed from match.items #}
                             {% if item_id != 0 %}
                                 <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item" width="30" height="30" class="rounded">
                             {% endif %}
