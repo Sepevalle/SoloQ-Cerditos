@@ -792,6 +792,42 @@ def index():
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
+El app.route('/jugador/<path:game_name>') quedaría de la siguiente manera, ya preparado para enviar el historial de partidas completo (ordenado y con los datos necesarios para DDragon) y la variable now a tu plantilla jugador.html para la paginación y la visualización de imágenes.
+
+Python
+
+from flask import Flask, render_template, redirect, url_for, request, jsonify
+import requests
+import os
+import time
+import threading
+import json
+import base64
+from datetime import datetime
+from collections import Counter
+from datetime import timedelta
+from concurrent.futures import ThreadPoolExecutor
+
+# ... (tus importaciones y configuraciones existentes, como app = Flask(__name__),
+# make_api_request, obtener_nombre_campeon, ALL_SUMMONER_SPELLS, ALL_RUNES, etc.) ...
+
+# Asegúrate de que esta función exista en tu app.py y obtenga la versión más reciente de DDragon
+# Es crucial para que las URLs de las imágenes de DDragon en el HTML sean correctas.
+def get_ddragon_version():
+    try:
+        response = requests.get('https://ddragon.leagueoflegends.com/api/versions.json')
+        response.raise_for_status() # Lanza un error para códigos de estado HTTP erróneos
+        versions = response.json()
+        if versions:
+            return versions[0] # La última versión es la primera en la lista
+    except requests.exceptions.RequestException as e:
+        print(f"Error al obtener la versión de DDragon: {e}")
+    return "14.13.1" # Versión por defecto en caso de fallo o si falla la API
+
+DDRAGON_VERSION = get_ddragon_version() # Define DDRAGON_VERSION globalmente o pásala donde la necesites
+
+# ... (resto de tus funciones como obtener_datos_jugadores, leer_historial_jugador_github, etc.) ...
+
 @app.route('/jugador/<path:game_name>') # Use <path:game_name> to handle '/' in Riot IDs
 def perfil_jugador(game_name):
     """Muestra una página de perfil para un jugador específico."""
@@ -807,42 +843,48 @@ def perfil_jugador(game_name):
     puuid = primer_perfil.get('puuid') # Get the PUUID for fetching match history
 
     # Fetch match history
-    historial_partidas = {}
+    historial_partidas_completo = {} # Renombrado para mayor claridad
     if puuid:
-        historial_partidas = leer_historial_jugador_github(puuid)
+        historial_partidas_completo = leer_historial_jugador_github(puuid)
 
-    # Prepare recent matches for SoloQ and Flex
-    # Filter matches for the current active split
-    soloq_matches = [
-        m for m in historial_partidas.get('matches', [])
-        if m.get('queue_id') == 420 and m.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
-    ]
-    flex_matches = [
-        m for m in historial_partidas.get('matches', [])
-        if m.get('queue_id') == 440 and m.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
-    ]
-
-    # Sort matches by timestamp (most recent first)
-    soloq_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-    flex_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-
+    # Preparar el objeto 'perfil' para la plantilla
     perfil = {
         'nombre': primer_perfil['jugador'],
         'game_name': game_name,
-        'soloq': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_SOLO_5x5'), None),
-        'flex': next((item for item in datos_del_jugador if item['queue_type'] == 'RANKED_FLEX_SR'), None)
+        'tagline': primer_perfil.get('tagline'), # Asegúrate de que 'tagline' se obtenga si existe
+        'perfil_icon_url': primer_perfil.get('perfil_icon_url'), # Asegúrate de que esta URL esté en tus datos
+        'banner_champion_splash': primer_perfil.get('banner_champion_splash'), # Asegúrate de que esta URL esté en tus datos
+
+        # Añadir las estadísticas de clasificatoria directamente al perfil si existen
+        'ranked_solo_tier': None, 'ranked_solo_rank': None, 'ranked_solo_lp': 0, 'ranked_solo_wins': 0, 'ranked_solo_losses': 0,
+        'ranked_flex_tier': None, 'ranked_flex_rank': None, 'ranked_flex_lp': 0, 'ranked_flex_wins': 0, 'ranked_flex_losses': 0,
     }
 
-    # Add recent matches to the profile data if they exist
-    if perfil['soloq']:
-        # Ensure 'recent_matches' is a list of dictionaries, each containing the new fields
-        perfil['soloq']['recent_matches'] = soloq_matches[:5] # Pass top 5 matches
-    if perfil['flex']:
-        # Ensure 'recent_matches' is a list of dictionaries, each containing the new fields
-        perfil['flex']['recent_matches'] = flex_matches[:5] # Pass top 5 matches
-  
-    return render_template('jugador.html', perfil=perfil, ddragon_version=DDRAGON_VERSION)
+    # Asignar datos de clasificatoria
+    for item in datos_del_jugador:
+        if item['queue_type'] == 'RANKED_SOLO_5x5':
+            perfil['ranked_solo_tier'] = item.get('tier')
+            perfil['ranked_solo_rank'] = item.get('rank')
+            perfil['ranked_solo_lp'] = item.get('league_points')
+            perfil['ranked_solo_wins'] = item.get('wins')
+            perfil['ranked_solo_losses'] = item.get('losses')
+        elif item['queue_type'] == 'RANKED_FLEX_SR':
+            perfil['ranked_flex_tier'] = item.get('tier')
+            perfil['ranked_flex_rank'] = item.get('rank')
+            perfil['ranked_flex_lp'] = item.get('league_points')
+            perfil['ranked_flex_wins'] = item.get('wins')
+            perfil['ranked_flex_losses'] = item.get('losses')
 
+    # IMPORTANTE: Pasar el historial de partidas completo para que la plantilla lo filtre y pagine
+    perfil['historial_partidas'] = historial_partidas_completo.get('matches', [])
+    
+    # Sort the full history by timestamp (most recent first) for consistent display
+    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+
+    return render_template('jugador.html', 
+                           perfil=perfil, 
+                           now=datetime.now(), # <--- Aquí se pasa la hora actual para el cálculo de "hace X días"
+                           ddragon_version=DDRAGON_VERSION) # <--- Aquí se pasa la versión de DDragon
 
 def actualizar_historial_partidas_en_segundo_plano():
     """
