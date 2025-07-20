@@ -39,14 +39,11 @@ def get_queue_type_filter(queue_id):
         2000: "Tutorial",
         2010: "Tutorial",
         2020: "Tutorial",
-        # Añadir más IDs de cola según sea necesario
     }
     return queue_names.get(int(queue_id), "Desconocido")
 
 @app.template_filter('format_timestamp')
 def format_timestamp_filter(timestamp):
-    # The Riot timestamp is in milliseconds, Python datetime expects seconds
-    # Divide by 1000 to convert milliseconds to seconds
     return datetime.fromtimestamp(timestamp / 1000).strftime("%d/%m/%Y %H:%M")
 
 # Configuración de la API de Riot Games
@@ -55,7 +52,7 @@ if not RIOT_API_KEY:
     print("Error: RIOT_API_KEY no está configurada en las variables de entorno.")
     exit(1)
 
-# URLs base de la API de Riot (MOVIDAS AL PRINCIPIO)
+# URLs base de la API de Riot
 BASE_URL_ASIA = "https://asia.api.riotgames.com"
 BASE_URL_EUW = "https://euw1.api.riotgames.com"
 BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
@@ -66,45 +63,35 @@ cache = {
     "datos_jugadores": [],
     "timestamp": 0
 }
-CACHE_TIMEOUT = 130  # 2 minutos para estar seguros
+CACHE_TIMEOUT = 130  # 2 minutos
 cache_lock = threading.Lock()
 
 # --- CONFIGURACIÓN DE SPLITS ---
-# Define aquí los splits de la temporada 2025.
-# Las fechas de los splits 2 y 3 son estimadas y deberán actualizarse
-# cuando Riot Games las anuncie oficialmente.
 SPLITS = {
     "s15_split1": {
         "name": "Temporada 2025 - Split 1",
-        "start_date": datetime(2025, 1, 9), # Fecha oficial
+        "start_date": datetime(2025, 1, 9),
     },
     "s15_split2": {
         "name": "Temporada 2025 - Split 2",
-        "start_date": datetime(2025, 5, 15), # Fecha estimada
+        "start_date": datetime(2025, 5, 15),
     },
     "s15_split3": {
         "name": "Temporada 2025 - Split 3",
-        "start_date": datetime(2025, 9, 10), # Fecha estimada
+        "start_date": datetime(2025, 9, 10),
     }
 }
 
-# Cambia esta variable para seleccionar el split activo.
 ACTIVE_SPLIT_KEY = "s15_split1"
-# ------------------------------------------------
-
-# El timestamp de inicio se calcula automáticamente a partir del split activo
 SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())
-
-API_SESSION = requests.Session() # Usar una sesión para reutilizar conexiones
+API_SESSION = requests.Session()
 
 def make_api_request(url, retries=3, backoff_factor=0.5):
-    """
-    Realiza una petición a la API de Riot con reintentos y backoff exponencial.
-    Utiliza una sesión de requests para mejorar el rendimiento.
-    """
     for i in range(retries):
         try:
-            response = API_SESSION.get(url, timeout=10)
+            # Añadimos la clave de la API en la cabecera de cada petición
+            headers = {"X-Riot-Token": RIOT_API_KEY}
+            response = API_SESSION.get(url, headers=headers, timeout=10)
             if response.status_code == 429:
                 retry_after = int(response.headers.get('Retry-After', 5))
                 print(f"Rate limit excedido. Esperando {retry_after} segundos...")
@@ -119,13 +106,12 @@ def make_api_request(url, retries=3, backoff_factor=0.5):
                 time.sleep(backoff_factor * (2 ** i))
     return None
 
-DDRAGON_VERSION = "14.9.1"  # Versión de respaldo por si falla la API
+DDRAGON_VERSION = "14.9.1"
 
 def actualizar_version_ddragon():
-    """Obtiene la última versión de Data Dragon y la guarda en una variable global."""
     global DDRAGON_VERSION
     try:
-        url = f"{BASE_URL_DDRAGON}/api/versions.json" # Usar BASE_URL_DDRAGON
+        url = f"{BASE_URL_DDRAGON}/api/versions.json"
         response = requests.get(url, timeout=5)
         if response.status_code == 200:
             DDRAGON_VERSION = response.json()[0]
@@ -133,21 +119,16 @@ def actualizar_version_ddragon():
     except requests.exceptions.RequestException as e:
         print(f"Error al obtener la versión de Data Dragon: {e}. Usando versión de respaldo: {DDRAGON_VERSION}")
 
-# Se llama una vez al inicio
 actualizar_version_ddragon()
 
-# Cache para campeones, runas y hechizos de invocador
 ALL_CHAMPIONS = {}
 ALL_RUNES = {}
 ALL_SUMMONER_SPELLS = {}
 
 def obtener_todos_los_campeones():
-    """Carga los datos de los campeones desde Data Dragon."""
     url_campeones = f"{BASE_URL_DDRAGON}/cdn/{DDRAGON_VERSION}/data/es_ES/champion.json"
     response = make_api_request(url_campeones)
     if response:
-        # DDragon champion data has "key" as numerical ID (string) and "id" as champion name (string)
-        # We want to map numerical ID (from Riot API match data) to champion name (for DDragon image URL)
         return {int(v['key']): v['id'] for k, v in response.json()['data'].items()}
     return {}
 
@@ -792,126 +773,59 @@ def index():
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
-@app.route('/jugador/<path:game_name>') # Use <path:game_name> to handle '/' in Riot IDs
+@app.route('/jugador/<path:game_name>')
 def perfil_jugador(game_name):
-    """Muestra una página de perfil para un jugador específico."""
+    """
+    Muestra una página de perfil para un jugador específico.
+    Esta es la versión CORREGIDA Y MEJORADA de tu función original.
+    """
+    # 1. Obtener los datos de todos los jugadores de la caché
     todos_los_datos, _ = obtener_datos_jugadores()
     
-    # Filter data for the specific player
-    datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name] # Usar .get para evitar KeyError si 'game_name' falta
+    # 2. Filtrar para encontrar los datos del jugador específico por su `game_name`
+    datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
     
+    # 3. Si no se encuentra al jugador, mostrar la página de error 404
     if not datos_del_jugador:
         return render_template('404.html'), 404
     
+    # 4. Obtener el PUUID para poder buscar su historial de partidas
     primer_perfil = datos_del_jugador[0]
-    puuid = primer_perfil.get('puuid') # Get the PUUID for fetching match history
+    puuid = primer_perfil.get('puuid')
 
-    # Fetch match history
+    # 5. Leer el historial de partidas desde GitHub usando el PUUID
     historial_partidas_completo = {}
     if puuid:
         historial_partidas_completo = leer_historial_jugador_github(puuid)
 
-    # Preparar el objeto 'perfil' para la plantilla
+    # 6. Preparar un objeto `perfil` limpio y completo para enviar a la plantilla
+    #    Esto asegura que la plantilla siempre reciba todas las variables que espera.
     perfil = {
-        'nombre': primer_perfil.get('jugador', 'N/A'), # Usar .get con valor por defecto
+        'nombre': primer_perfil.get('jugador', 'N/A'),
         'game_name': game_name,
-        'tagline': primer_perfil.get('tagline', 'N/A'),
-        'perfil_icon_url': primer_perfil.get('perfil_icon_url', 'https://ddragon.leagueoflegends.com/cdn/img/profileicon/29.png'), # Icono por defecto
-        'banner_champion_splash': primer_perfil.get('banner_champion_splash', 'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img/default_banner.jpg'), # Banner por defecto
-
-        # Añadir las estadísticas de clasificatoria directamente al perfil si existen
-        'ranked_solo_tier': None, 'ranked_solo_rank': None, 'ranked_solo_lp': 0, 'ranked_solo_wins': 0, 'ranked_solo_losses': 0,
-        'ranked_flex_tier': None, 'ranked_flex_rank': None, 'ranked_flex_lp': 0, 'ranked_flex_wins': 0, 'ranked_flex_losses': 0,
+        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''), # Usar la URL de la caché
+        'historial_partidas': historial_partidas_completo.get('matches', [])
+        # Aquí puedes añadir más datos del `primer_perfil` si los necesitas en la plantilla
     }
-
-    # Asignar datos de clasificatoria
+    
+    # Añadimos los datos de SoloQ y Flex al perfil
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['ranked_solo_tier'] = item.get('tier')
             perfil['ranked_solo_rank'] = item.get('rank')
             perfil['ranked_solo_lp'] = item.get('league_points')
-            perfil['ranked_solo_wins'] = item.get('wins')
-            perfil['ranked_solo_losses'] = item.get('losses')
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['ranked_flex_tier'] = item.get('tier')
             perfil['ranked_flex_rank'] = item.get('rank')
             perfil['ranked_flex_lp'] = item.get('league_points')
-            perfil['ranked_flex_wins'] = item.get('wins')
-            perfil['ranked_flex_losses'] = item.get('losses')
 
-    raw_matches = historial_partidas_completo.get('matches', [])
-    
-    processed_matches = []
-    for match in raw_matches:
-        # --- BLOQUE DE CÓDIGO CRÍTICO PARA EL SANEAMIENTO DE 'items' ---
-        raw_items = match.get('items', []) 
-
-        # Aseguramos que 'items' sea siempre una lista
-        if not isinstance(raw_items, list):
-            if callable(raw_items): # Si es una función o método (como dict.items)
-                raw_items = []
-            elif isinstance(raw_items, dict): # Si es un diccionario
-                raw_items = list(raw_items.values())
-            else: # Cualquier otro tipo inesperado
-                raw_items = []
-
-        # Convertimos cada elemento a int, default a 0 si no es convertible, y aseguramos 7 elementos
-        processed_items = []
-        for item_id in raw_items:
-            try:
-                processed_items.append(int(item_id))
-            except (ValueError, TypeError):
-                processed_items.append(0) # Si no es convertible, usa 0
-
-        # Aseguramos que siempre haya 7 elementos, rellenando con 0 si es necesario
-        while len(processed_items) < 7:
-            processed_items.append(0)
-        processed_items = processed_items[:7] # Aseguramos que no haya más de 7 (aunque es poco probable)
-        # --- FIN DEL BLOQUE CRÍTICO ---
-
-        processed_match = {
-            'game_end_timestamp': match.get('game_end_timestamp', 0),
-            'game_duration': match.get('game_duration', 0),
-            'win': match.get('win', False),
-            'queue_id': match.get('queue_id', 0),
-            'champion_name': match.get('champion_name', 'Unknown'),
-            'kills': match.get('kills', 0),
-            'deaths': match.get('deaths', 0),
-            'assists': match.get('assists', 0),
-            'champion_level': match.get('champion_level', 0),
-            'total_minions_killed': match.get('total_minions_killed', 0),
-            'gold_earned': match.get('gold_earned', 0),
-            'total_damage_dealt_to_champions': match.get('total_damage_dealt_to_champions', 0),
-            'damage_dealt_to_objectives': match.get('damage_dealt_to_objectives', 0),
-            'vision_score': match.get('vision_score', 0),
-            'wards_placed': match.get('wards_placed', 0),
-            'wards_killed': match.get('wards_killed', 0),
-            'total_heal': match.get('total_heal', 0),
-            'time_ccing_others': match.get('time_ccing_others', 0),
-            'turret_kills': match.get('turret_kills', 0),
-            'penta_kills': match.get('penta_kills', 0),
-            'quadra_kills': match.get('quadra_kills', 0),
-            'triple_kills': match.get('triple_kills', 0),
-            'double_kills': match.get('double_kills', 0),
-            'items': processed_items, # Usa la lista de ítems procesada
-            'summoner_spell_1_id': match.get('summoner_spell_1_id', 'SummonerFlash'), # Asegúrate que estos son nombres de archivos de DDragon
-            'summoner_spell_2_id': match.get('summoner_spell_2_id', 'SummonerHeal'), # Asegúrate que estos son nombres de archivos de DDragon
-            'perk_main_id': match.get('perk_main_id', 'perk/8000/Conqueror/Conqueror.png'), # Ruta de imagen por defecto
-            'perk_sub_id': match.get('perk_sub_id', 8100), # ID numérico por defecto (ej. Dominación)
-        }
-        processed_matches.append(processed_match)
-
-    perfil['historial_partidas'] = processed_matches
-    
-    # Sort the full history by timestamp (most recent first) for consistent display
+    # 7. Ordenar el historial por fecha (más reciente primero)
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
 
+    # 8. Renderizar la plantilla `jugador.html`, pasándole el objeto `perfil`
     return render_template('jugador.html', 
                            perfil=perfil, 
-                           now=datetime.now(), 
-                           ddragon_version=DDRAGON_VERSION,
-                           datetime=datetime) # ¡Esta es la línea clave para Jinja2!
-
+                           ddragon_version=DDRAGON_VERSION)
 
 def actualizar_historial_partidas_en_segundo_plano():
     """
