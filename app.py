@@ -814,10 +814,14 @@ def perfil_jugador(game_name):
             perfil['ranked_solo_tier'] = item.get('tier')
             perfil['ranked_solo_rank'] = item.get('rank')
             perfil['ranked_solo_lp'] = item.get('league_points')
+            perfil['ranked_solo_wins'] = item.get('wins')  # <-- Add this line
+            perfil['ranked_solo_losses'] = item.get('losses') # <-- Add this line
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['ranked_flex_tier'] = item.get('tier')
             perfil['ranked_flex_rank'] = item.get('rank')
             perfil['ranked_flex_lp'] = item.get('league_points')
+            perfil['ranked_flex_wins'] = item.get('wins')  # <-- Add this line
+            perfil['ranked_flex_losses'] = item.get('losses') # <-- Add this line
 
     # 7. Ordenar el historial por fecha (más reciente primero)
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
