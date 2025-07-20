@@ -390,59 +390,6 @@
         .dark-mode .small-text-stats {
             color: #adb5bd; /* Lighter gray for better contrast in dark mode */
         }
-
-        /* New styles for win/loss rows */
-        .match-win-row {
-            background-color: #d4edda !important; /* Light green for wins */
-        }
-        .match-loss-row {
-            background-color: #cfe2ff !important; /* Light blue for losses */
-        }
-        .dark-mode .match-win-row {
-            background-color: #28a74533 !important; /* Darker green with transparency for dark mode */
-        }
-        .dark-mode .match-loss-row {
-            background-color: #007bff33 !important; /* Darker blue with transparency for dark mode */
-        }
-
-        /* Styles for the analysis modal */
-        .modal-content {
-            background-color: #fff;
-            color: #212529;
-            border-radius: 10px;
-        }
-        .dark-mode .modal-content {
-            background-color: #343a40;
-            color: #f8f9fa;
-        }
-        .modal-header {
-            border-bottom: 1px solid #dee2e6;
-        }
-        .dark-mode .modal-header {
-            border-bottom-color: #495057;
-        }
-        .modal-footer {
-            border-top: 1px solid #dee2e6;
-        }
-        .dark-mode .modal-footer {
-            border-top-color: #495057;
-        }
-        .modal-title {
-            color: #007bff;
-        }
-        .dark-mode .modal-title {
-            color: #f8f9fa;
-        }
-        .btn-close {
-            filter: invert(0); /* Ensure close button is visible in light mode */
-        }
-        .dark-mode .btn-close {
-            filter: invert(1); /* Invert close button color for dark mode */
-        }
-        .spinner-border {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
     </style>
 </head>
 
@@ -489,10 +436,10 @@
 <div class="container mt-5">
     <div class="profile-header">
         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png"
-             alt="Imagen de Invocador"
+             alt="Imagen de {{ perfil.nombre }}"
              onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'white\'/></svg>';">
-        <h1>{{ perfil.nombre }} <span class="text-muted small-text">({{ perfil.game_name }}#{{ perfil.tag_line }})</span></h1>
-        <a href="https://www.op.gg/summoners/{{ perfil.region | lower }}/{{ perfil.game_name }}-{{ perfil.tag_line }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
+        <h1>{{ perfil.nombre }} <span class="text-muted small-text">({{ perfil.game_name }})</span></h1>
+        <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
     </div>
 
     <div class="row">
@@ -503,34 +450,54 @@
                     Clasificatoria Solo/Duo
                 </div>
                 <div class="card-body">
-                    <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.soloq.tier }}">
-                    <div class="rank-details">
-                        <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
-                        <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
-                        <p class="{{ 'win-rate-alto' if (perfil.soloq.wins / (perfil.soloq.wins + perfil.soloq.losses) * 100) >= 50 else 'win-rate-bajo' }}">Win Rate: {{ "%.2f" | format((perfil.soloq.wins / (perfil.soloq.wins + perfil.soloq.losses) * 100) if (perfil.soloq.wins + perfil.soloq.losses) > 0 else 0) }}%</p>
-                        <p>
-                            Peak Elo:
-                            <span class="peak-elo">{{ perfil.soloq.peak_elo }}</span>
-                        </p>
+                    {% if perfil.soloq %}
+                        <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.soloq.tier }}">
+                        <div class="rank-details">
+                            <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
+                            <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
+                            {% set soloq_total_games = perfil.soloq.wins + perfil.soloq.losses %}
+                            {% set soloq_win_rate = (perfil.soloq.wins / soloq_total_games * 100) if soloq_total_games > 0 else 0 %}
+                            <p class="{% if soloq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                Win Rate: {{ '%.2f'|format(soloq_win_rate) }}%
+                            </p>
+                            <p>
+                                Peak Elo:
+                                {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - perfil.soloq.get('peak_elo', 0) %} {# Safely access peak_elo #}
+                                {% if diff_peak_soloq == 0 %}
+                                    <span class="peak-elo">PEAK</span>
+                                {% else %}
+                                    {{ perfil.soloq.get('peak_elo', 0) }} LPs ({{ diff_peak_soloq }} LPs desde el pico)
+                                {% endif %}
+                            </p>
 
-                        <div class="champion-stats-container">
-                            {% for champ_stat in perfil.soloq.top_champion_stats %}
-                            <div class="champion-stats-item">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ perfil.ddragon_version }}/img/champion/{{ champ_stat.champion_name }}.png"
-                                     alt="{{ champ_stat.champion_name }}"
-                                     title="{{ champ_stat.champion_name }}">
-                                <div class="champion-stats-info">
-                                    <h5 class="mb-0">{{ champ_stat.champion_name }}</h5>
-                                    <p class="mb-0 small-text-stats">Partidas: {{ champ_stat.games_played }}</p>
-                                    <p class="mb-0 small-text-stats {{ 'win-rate-alto' if champ_stat.win_rate >= 50 else 'win-rate-bajo' }}">
-                                        WR: {{ champ_stat.win_rate }}%
-                                    </p>
-                                    <p class="mb-0 kda-text">KDA: {{ "%.2f" | format(champ_stat.kda) }}</p>
-                                </div>
+                            <div class="champion-stats-container">
+                                {% if perfil.soloq.top_champion_stats %}
+                                    {% for champion_stat in perfil.soloq.top_champion_stats %}
+                                    <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png"
+                                             alt="{{ champion_stat.champion_name }}"
+                                             title="{{ champion_stat.champion_name }}">
+                                        <div class="champion-stats-info">
+                                            <h5 class="mb-0">{{ champion_stat.champion_name }}</h5>
+                                            <p class="mb-0 small-text-stats">Partidas: {{ champion_stat.games_played }}</p>
+                                            <p class="mb-0 small-text-stats {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                                WR: {{ '%.0f'|format(champion_stat.win_rate) }}%
+                                            </p>
+                                            {% if champion_stat.kda is defined %}
+                                            <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(champion_stat.kda) }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="small-text-stats">No hay datos de campeones principales para SoloQ en este split.</p>
+                                {% endif %}
                             </div>
-                            {% endfor %}
+
                         </div>
-                    </div>
+                    {% else %}
+                        <p>No hay datos de clasificatoria Solo/Duo disponibles para este jugador.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -542,34 +509,54 @@
                     Clasificatoria Flexible
                 </div>
                 <div class="card-body">
-                    <img src="" alt="{{ perfil.flex.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.flex.tier }}">
-                    <div class="rank-details">
-                        <h4>{{ perfil.flex.tier }} {{ perfil.flex.rank }} ({{ perfil.flex.league_points }} LPs)</h4>
-                        <p>Wins: {{ perfil.flex.wins }} | Losses: {{ perfil.flex.losses }} | Total: {{ perfil.flex.wins + perfil.flex.losses }}</p>
-                        <p class="{{ 'win-rate-alto' if (perfil.flex.wins / (perfil.flex.wins + perfil.flex.losses) * 100) >= 50 else 'win-rate-bajo' }}">Win Rate: {{ "%.2f" | format((perfil.flex.wins / (perfil.flex.wins + perfil.flex.losses) * 100) if (perfil.flex.wins + perfil.flex.losses) > 0 else 0) }}%</p>
-                        <p>
-                            Peak Elo:
-                            <span class="peak-elo">{{ perfil.flex.peak_elo }}</span>
-                        </p>
+                    {% if perfil.flex %}
+                        <img src="" alt="{{ perfil.flex.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.flex.tier }}">
+                        <div class="rank-details">
+                            <h4>{{ perfil.flex.tier }} {{ perfil.flex.rank }} ({{ perfil.flex.league_points }} LPs)</h4>
+                            <p>Wins: {{ perfil.flex.wins }} | Losses: {{ perfil.flex.losses }} | Total: {{ perfil.flex.wins + perfil.flex.losses }}</p>
+                            {% set flex_total_games = perfil.flex.wins + perfil.flex.losses %} {# Define flex_total_games here #}
+                            {% set flex_win_rate = (perfil.flex.wins / flex_total_games * 100) if flex_total_games > 0 else 0 %}
+                            <p class="{% if flex_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                Win Rate: {{ '%.2f'|format(flex_win_rate) }}%
+                            </p>
+                            <p>
+                                Peak Elo:
+                                {% set diff_peak_flex = perfil.flex.valor_clasificacion - perfil.flex.get('peak_elo', 0) %} {# Safely access peak_elo #}
+                                {% if diff_peak_flex == 0 %}
+                                    <span class="peak-elo">PEAK</span>
+                                {% else %}
+                                    {{ perfil.flex.get('peak_elo', 0) }} LPs ({{ diff_peak_flex }} LPs desde el pico)
+                                {% endif %}
+                            </p>
 
-                        <div class="champion-stats-container">
-                            {% for champ_stat in perfil.flex.top_champion_stats %}
-                            <div class="champion-stats-item">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ perfil.ddragon_version }}/img/champion/{{ champ_stat.champion_name }}.png"
-                                     alt="{{ champ_stat.champion_name }}"
-                                     title="{{ champ_stat.champion_name }}">
-                                <div class="champion-stats-info">
-                                    <h5 class="mb-0">{{ champ_stat.champion_name }}</h5>
-                                    <p class="mb-0 small-text-stats">Partidas: {{ champ_stat.games_played }}</p>
-                                    <p class="mb-0 small-text-stats {{ 'win-rate-alto' if champ_stat.win_rate >= 50 else 'win-rate-bajo' }}">
-                                        WR: {{ champ_stat.win_rate }}%
-                                    </p>
-                                    <p class="mb-0 kda-text">KDA: {{ "%.2f" | format(champ_stat.kda) }}</p>
-                                </div>
+                            <div class="champion-stats-container">
+                                {% if perfil.flex.top_champion_stats %}
+                                    {% for champion_stat in perfil.flex.top_champion_stats %}
+                                    <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png"
+                                             alt="{{ champion_stat.champion_name }}"
+                                             title="{{ champion_stat.champion_name }}">
+                                        <div class="champion-stats-info">
+                                            <h5 class="mb-0">{{ champion_stat.champion_name }}</h5>
+                                            <p class="mb-0 small-text-stats">Partidas: {{ champion_stat.games_played }}</p>
+                                            <p class="mb-0 small-text-stats {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                                                WR: {{ '%.0f'|format(champion_stat.win_rate) }}%
+                                            </p>
+                                            {% if champion_stat.kda is defined %}
+                                            <p class="mb-0 kda-text">KDA: {{ '%.2f'|format(champion_stat.kda) }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="small-text-stats">No hay datos de campeones principales para Flex en este split.</p>
+                                {% endif %}
                             </div>
-                            {% endfor %}
+
                         </div>
-                    </div>
+                    {% else %}
+                        <p>No hay datos de clasificatoria Flexible disponibles para este jugador.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -598,7 +585,7 @@
             </select>
         </div>
         <div class="table-responsive">
-            <table class="table table-light table-hover rounded match-history-table">
+            <table class="table table-light table-striped table-hover rounded match-history-table">
                 <thead>
                     <tr>
                         <th>Campeón</th>
@@ -607,39 +594,90 @@
                         <th>KDA</th>
                         <th>Items</th>
                         <th>Resultado / Fecha</th>
-                        <th>Análisis ✨</th>
                     </tr>
                 </thead>
                 <tbody id="matchHistoryTableBody">
-                    <!-- Match history rows will be populated by JavaScript -->
+                    {% set all_recent_matches = [] %}
+                    {% if perfil.soloq and perfil.soloq.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.soloq.recent_matches %}{% endif %}
+                    {% if perfil.flex and perfil.flex.recent_matches %}{% set all_recent_matches = all_recent_matches + perfil.flex.recent_matches %}{% endif %}
+                    
+                    {% set sorted_matches = all_recent_matches | sort(attribute='game_end_timestamp', reverse=true) %}
+
+                    {% if sorted_matches %}
+                        {% for match in sorted_matches %}
+                        <tr data-queue-id="{{ match.queue_id }}" data-champion-name="{{ match.champion_name }}">
+                            <td>
+                                <div class="champion-level-container">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
+                                         alt="{{ match.champion_name }}">
+                                    {% if match.champion_level is defined %}
+                                    <span class="champion-level">{{ match.champion_level }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="small-text-stats">{{ match.champion_name }}</div>
+                            </td>
+                            <td>
+                                <div class="summoner-spells">
+                                    {% if match.summoner_spell_1_id is defined and match.summoner_spell_1_id != None %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_1_id }}.png"
+                                         alt="Hechizo 1" title="Hechizo 1" onerror="this.style.display='none';">
+                                    {% endif %}
+                                    {% if match.summoner_spell_2_id is defined and match.summoner_spell_2_id != None %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_2_id }}.png"
+                                         alt="Hechizo 2" title="Hechizo 2" onerror="this.style.display='none';">
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="runes">
+                                    {% if match.perk_main_id is defined and match.perk_main_id != None %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_main_id }}"
+                                         alt="Runa Principal" title="Runa Principal" class="keystone" onerror="this.style.display='none';">
+                                    {% endif %}
+                                    {% if match.perk_sub_id is defined and match.perk_sub_id != None %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_sub_id }}"
+                                         alt="Runa Secundaria" title="Runa Secundaria" class="sub-rune" onerror="this.style.display='none';">
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span>
+                            </td>
+                            <td>
+                                <div class="item-images">
+                                    {% for item_id in match['items'] %}
+                                        {% if item_id != 0 %} {# Only display if item_id is not 0 (empty slot) #}
+                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png"
+                                                 alt="Item"
+                                                 onerror="this.style.display='none';"> {# Hide if image fails to load #}
+                                        {% else %}
+                                            {# Use a div with CSS for a consistent gray square placeholder #}
+                                            <div class="item-placeholder"></div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="match-result {% if match.win %}win{% else %}loss{% endif %}">
+                                    {% if match.win %}Victoria{% else %}Derrota{% endif %}
+                                </span><br>
+                                <span class="small-text-stats">{{ match.queue_id | get_queue_type }}</span><br>
+                                <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No hay datos de partidas recientes disponibles para este jugador en este momento.
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
 
-</div>
-
-<!-- Modal para el Análisis de Partida -->
-<div class="modal fade" id="matchAnalysisModal" tabindex="-1" aria-labelledby="matchAnalysisModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="matchAnalysisModalLabel">Análisis de Partida</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="matchAnalysisBody">
-                <div class="d-flex justify-content-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando análisis...</span>
-                    </div>
-                </div>
-                <p class="text-center mt-2">Cargando análisis de la partida...</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Script de Bootstrap JS -->
@@ -720,80 +758,30 @@
         }
         setInterval(cambiarImagenes, 5000);
 
-        // Access perfil data from the Jinja2 context by embedding it as a JSON object
-        // This is crucial for JavaScript to access the data passed from Flask
-        const perfilData = {{ perfil | tojson }};
-
-        // Función para obtener el tipo de cola basado en el ID
-        function getQueueType(queueId) {
-            const queueTypes = {
-                420: "Clasificatoria Solo/Duo",
-                440: "Clasificatoria Flexible",
-                450: "ARAM",
-                900: "URF",
-                // Agrega más tipos de cola según sea necesario
-            };
-            return queueTypes[queueId] || "Cola Desconocida";
-        }
-
-        // Función para formatear el timestamp a una fecha legible
-        function formatTimestamp(timestampMs) {
-            const date = new Date(timestampMs);
-            return date.toLocaleString(); // Formato de fecha y hora local
-        }
-
-        // Función para obtener el nombre del item dado su ID (esto sería idealmente de una API de LoL)
-        // Para este ejemplo, usaremos un mapeo simple
-        const itemNames = {
-            3078: "Muramana",
-            3089: "Rabadon's Deathcap",
-            3157: "Zhonya's Hourglass",
-            1056: "Doran's Ring",
-            2055: "Control Ward",
-            3031: "Infinity Edge",
-            3006: "Berserker's Greaves",
-            3042: "Manamune",
-            3147: "Guardian Angel",
-            1036: "Long Sword",
-            3072: "Bloodthirster",
-            3085: "Runaan's Hurricane",
-            3020: "Sorcerer's Shoes",
-            3135: "Void Staff"
-            // Add more item IDs and names as needed
-        };
-
-        function getItemName(itemId) {
-            return itemNames[itemId] || "Item Desconocido";
-        }
-
-        // --- Lógica de Filtrado del Historial de Partidas ---
+        // --- Match History Filtering Logic ---
         const queueFilter = document.getElementById('queueFilter');
         const championFilter = document.getElementById('championFilter');
         const matchHistoryTableBody = document.getElementById('matchHistoryTableBody');
-        const matchAnalysisModal = new bootstrap.Modal(document.getElementById('matchAnalysisModal'));
-        const matchAnalysisBody = document.getElementById('matchAnalysisBody');
+        // Make a copy of the initial list items (table rows) to filter from
+        const allMatchRows = Array.from(matchHistoryTableBody.children); 
 
-        // Combinar todas las partidas recientes de SoloQ y Flex
-        // Asegúrate de que perfilData.soloq y perfilData.flex existan y tengan recent_matches
-        const allRecentMatchesData = [
-            ...(perfilData.soloq && perfilData.soloq.recent_matches ? perfilData.soloq.recent_matches : []),
-            ...(perfilData.flex && perfilData.flex.recent_matches ? perfilData.flex.recent_matches : [])
-        ];
-
-        // Ordenar las partidas por timestamp de fin de juego (más reciente primero)
-        allRecentMatchesData.sort((a, b) => b.game_end_timestamp - a.game_end_timestamp);
-
-        // Función para poblar el filtro de campeón
+        // Function to populate the champion filter dropdown
         function populateChampionFilter() {
             const uniqueChampions = new Set();
+            // Access perfilData which is passed from Flask
+            const allRecentMatchesData = [
+                ...(perfilData.soloq && perfilData.soloq.recent_matches ? perfilData.soloq.recent_matches : []),
+                ...(perfilData.flex && perfilData.flex.recent_matches ? perfilData.flex.recent_matches : [])
+            ];
+
             allRecentMatchesData.forEach(match => {
                 uniqueChampions.add(match.champion_name);
             });
 
-            // Limpiar opciones existentes excepto "Todos"
+            // Clear existing options except "Todos"
             championFilter.innerHTML = '<option value="all">Todos</option>';
-
-            // Añadir campeones únicos al desplegable
+            
+            // Add unique champions to the dropdown
             Array.from(uniqueChampions).sort().forEach(championName => {
                 const option = document.createElement('option');
                 option.value = championName;
@@ -802,177 +790,37 @@
             });
         }
 
-        // Función para renderizar las filas de la tabla de historial de partidas
-        function renderMatchHistoryTable(matchesToRender) {
-            matchHistoryTableBody.innerHTML = ''; // Limpiar la tabla existente
-
-            if (matchesToRender.length === 0) {
-                const noDataRow = document.createElement('tr');
-                noDataRow.innerHTML = `<td colspan="7" class="text-center text-muted">
-                                            No hay datos de partidas recientes disponibles para este jugador en este momento.
-                                        </td>`;
-                matchHistoryTableBody.appendChild(noDataRow);
-                return;
-            }
-
-            matchesToRender.forEach(match => {
-                const row = document.createElement('tr');
-                row.dataset.queueId = match.queue_id;
-                row.dataset.championName = match.champion_name;
-
-                // Add class based on win/loss
-                if (match.win) {
-                    row.classList.add('match-win-row');
-                } else {
-                    row.classList.add('match-loss-row');
-                }
-
-                const championImageSrc = `https://ddragon.leagueoflegends.com/cdn/${perfilData.ddragon_version}/img/champion/${match.champion_name}.png`;
-                const spell1ImageSrc = `https://ddragon.leagueoflegends.com/cdn/${perfilData.ddragon_version}/img/spell/${match.summoner_spell_1_id}.png`;
-                const spell2ImageSrc = `https://ddragon.leagueoflegends.com/cdn/${perfilData.ddragon_version}/img/spell/${match.summoner_spell_2_id}.png`;
-                const perkMainImageSrc = `https://ddragon.leagueoflegends.com/cdn/img/${match.perk_main_id}`;
-                const perkSubImageSrc = `https://ddragon.leagueoflegends.com/cdn/img/${match.perk_sub_id}`;
-
-                // Generar las imágenes de los items
-                let itemImagesHtml = '';
-                // Asegurarse de que 'items' sea un array y tenga al menos 7 elementos para evitar errores de índice
-                const itemsArray = match.items || [];
-                for (let i = 0; i < 7; i++) {
-                    const itemId = itemsArray[i];
-                    if (itemId && itemId !== 0) {
-                        itemImagesHtml += `<img src="https://ddragon.leagueoflegends.com/cdn/${perfilData.ddragon_version}/img/item/${itemId}.png"
-                                                alt="${getItemName(itemId)}" title="${getItemName(itemId)}" onerror="this.style.display='none';">`;
-                    } else {
-                        itemImagesHtml += `<div class="item-placeholder"></div>`; // Placeholder para slots vacíos
-                    }
-                }
-
-                row.innerHTML = `
-                    <td>
-                        <div class="champion-level-container">
-                            <img src="${championImageSrc}" alt="${match.champion_name}">
-                            ${match.champion_level ? `<span class="champion-level">${match.champion_level}</span>` : ''}
-                        </div>
-                        <div class="small-text-stats">${match.champion_name}</div>
-                    </td>
-                    <td>
-                        <div class="summoner-spells">
-                            ${match.summoner_spell_1_id ? `<img src="${spell1ImageSrc}" alt="Hechizo 1" title="${match.summoner_spell_1_id.replace('Summoner', '')}" onerror="this.style.display='none';">` : ''}
-                            ${match.summoner_spell_2_id ? `<img src="${spell2ImageSrc}" alt="Hechizo 2" title="${match.summoner_spell_2_id.replace('Summoner', '')}" onerror="this.style.display='none';">` : ''}
-                        </div>
-                    </td>
-                    <td>
-                        <div class="runes">
-                            ${match.perk_main_id ? `<img src="${perkMainImageSrc}" alt="Runa Principal" title="Runa Principal" class="keystone" onerror="this.style.display='none';">` : ''}
-                            ${match.perk_sub_id ? `<img src="${perkSubImageSrc}" alt="Runa Secundaria" title="Runa Secundaria" class="sub-rune" onerror="this.style.display='none';">` : ''}
-                        </div>
-                    </td>
-                    <td>
-                        <span class="kda-text">${match.kills}/${match.deaths}/${match.assists}</span>
-                    </td>
-                    <td>
-                        <div class="item-images">
-                            ${itemImagesHtml}
-                        </div>
-                    </td>
-                    <td>
-                        <span class="match-result ${match.win ? 'win' : 'loss'}">
-                            ${match.win ? 'Victoria' : 'Derrota'}
-                        </span><br>
-                        <span class="small-text-stats">${getQueueType(match.queue_id)}</span><br>
-                        <span class="small-text-stats">${formatTimestamp(match.game_end_timestamp)}</span>
-                    </td>
-                    <td>
-                        <button class="btn btn-info btn-sm analyze-match-btn"
-                                data-match-index="${allRecentMatchesData.indexOf(match)}">
-                            Analizar ✨
-                        </button>
-                    </td>
-                `;
-                matchHistoryTableBody.appendChild(row);
-            });
-
-            // Attach event listeners to the new analyze buttons
-            document.querySelectorAll('.analyze-match-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    const matchIndex = e.target.dataset.matchIndex;
-                    const matchToAnalyze = allRecentMatchesData[matchIndex];
-                    await analyzeMatchWithGemini(matchToAnalyze);
-                });
-            });
-        }
-
         // Function to apply filters
         function applyMatchHistoryFilters() {
             const selectedQueue = queueFilter.value;
             const selectedChampion = championFilter.value;
 
-            const filteredMatches = allRecentMatchesData.filter(match => {
-                const isQueueMatch = (selectedQueue === 'all' || match.queue_id == selectedQueue);
-                const isChampionMatch = (selectedChampion === 'all' || match.champion_name === selectedChampion);
-                return isQueueMatch && isChampionMatch;
-            });
+            allMatchRows.forEach(matchRow => {
+                const matchQueueId = matchRow.dataset.queueId;
+                const matchChampionName = matchRow.dataset.championName;
 
-            renderMatchHistoryTable(filteredMatches);
-        }
+                const isQueueMatch = (selectedQueue === 'all' || matchQueueId == selectedQueue); // Use == for type coercion
+                const isChampionMatch = (selectedChampion === 'all' || matchChampionName === selectedChampion);
 
-        // Función para llamar a la API de Gemini y obtener el análisis
-        async function analyzeMatchWithGemini(match) {
-            // Show loading state in modal
-            matchAnalysisBody.innerHTML = `
-                <div class="d-flex justify-content-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando análisis...</span>
-                    </div>
-                </div>
-                <p class="text-center mt-2">Cargando análisis de la partida...</p>
-            `;
-            matchAnalysisModal.show();
-
-            const queueType = getQueueType(match.queue_id);
-            const winLoss = match.win ? 'victoria' : 'derrota';
-            const itemsBuilt = match.items
-                                .filter(id => id !== 0)
-                                .map(id => getItemName(id))
-                                .filter((value, index, self) => self.indexOf(value) === index) // Remove duplicates
-                                .slice(0, 4) // Limit to top 4 items for conciseness
-                                .join(', ');
-
-            const prompt = `Analiza el rendimiento de un jugador en una partida de League of Legends. El jugador usó a ${match.champion_name} con un KDA de ${match.kills}/${match.deaths}/${match.assists}. La partida fue una ${winLoss} en la cola ${queueType}. Los items principales que construyó fueron: ${itemsBuilt}. Proporciona un breve análisis de su actuación en esta partida, destacando puntos fuertes y áreas de mejora. Sé conciso y directo.`;
-
-            try {
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiKey = ""; // Canvas will automatically provide the API key
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const analysisText = result.candidates[0].content.parts[0].text;
-                    matchAnalysisBody.innerHTML = `<p>${analysisText}</p>`;
+                if (isQueueMatch && isChampionMatch) {
+                    matchRow.style.display = ''; // Show the row
                 } else {
-                    matchAnalysisBody.innerHTML = `<p class="text-danger">Error: No se pudo generar el análisis. Inténtalo de nuevo.</p>`;
-                    console.error('Gemini API response structure unexpected:', result);
+                    matchRow.style.display = 'none'; // Hide the row
                 }
-            } catch (error) {
-                matchAnalysisBody.innerHTML = `<p class="text-danger">Error al conectar con la API de Gemini: ${error.message}</p>`;
-                console.error('Error calling Gemini API:', error);
-            }
+            });
         }
+
+        // Attach event listeners to filters
+        queueFilter.addEventListener('change', applyMatchHistoryFilters);
+        championFilter.addEventListener('change', applyMatchHistoryFilters);
+
+        // Access perfil data from the Jinja2 context by embedding it as a JSON object
+        // This is crucial for JavaScript to access the data passed from Flask
+        const perfilData = {{ perfil | tojson }};
 
         // Initial population and application of filters
         populateChampionFilter();
-        applyMatchHistoryFilters(); // Render the table with all data initially
+        applyMatchHistoryFilters();
     });
 </script>
 
