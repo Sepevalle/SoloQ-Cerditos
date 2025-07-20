@@ -792,26 +792,23 @@ def index():
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
-@app.route('/jugador/<path:game_name>') # Use <path:game_name> to handle '/' in Riot IDs
+@app.route('/jugador/<path:game_name>')
 def perfil_jugador(game_name):
     """Muestra una página de perfil para un jugador específico."""
     todos_los_datos, _ = obtener_datos_jugadores()
     
-    # Filter data for the specific player
     datos_del_jugador = [j for j in todos_los_datos if j['game_name'] == game_name]
     
     if not datos_del_jugador:
         return render_template('404.html'), 404
     
     primer_perfil = datos_del_jugador[0]
-    puuid = primer_perfil.get('puuid') # Get the PUUID for fetching match history
+    puuid = primer_perfil.get('puuid')
 
-    # Fetch match history
-    historial_partidas_completo = {} # Renombrado para mayor claridad
+    historial_partidas_completo = {}
     if puuid:
         historial_partidas_completo = leer_historial_jugador_github(puuid)
 
-    # Preparar el objeto 'perfil' para la plantilla
     perfil = {
         'nombre': primer_perfil['jugador'],
         'game_name': game_name,
@@ -819,12 +816,10 @@ def perfil_jugador(game_name):
         'perfil_icon_url': primer_perfil.get('perfil_icon_url'),
         'banner_champion_splash': primer_perfil.get('banner_champion_splash'),
 
-        # Añadir las estadísticas de clasificatoria directamente al perfil si existen
         'ranked_solo_tier': None, 'ranked_solo_rank': None, 'ranked_solo_lp': 0, 'ranked_solo_wins': 0, 'ranked_solo_losses': 0,
         'ranked_flex_tier': None, 'ranked_flex_rank': None, 'ranked_flex_lp': 0, 'ranked_flex_wins': 0, 'ranked_flex_losses': 0,
     }
 
-    # Asignar datos de clasificatoria
     for item in datos_del_jugador:
         if item['queue_type'] == 'RANKED_SOLO_5x5':
             perfil['ranked_solo_tier'] = item.get('tier')
@@ -839,17 +834,56 @@ def perfil_jugador(game_name):
             perfil['ranked_flex_wins'] = item.get('wins')
             perfil['ranked_flex_losses'] = item.get('losses')
 
-    # IMPORTANTE: Pasar el historial de partidas completo para que la plantilla lo filtre y pagine
-    perfil['historial_partidas'] = historial_partidas_completo.get('matches', [])
+    # Obtener el historial de partidas, asegurándose de que sea una lista
+    raw_matches = historial_partidas_completo.get('matches', [])
+    
+    processed_matches = []
+    for match in raw_matches:
+        # Crea un diccionario para cada partida con valores predeterminados
+        # para evitar errores si algún campo falta.
+        processed_match = {
+            'game_end_timestamp': match.get('game_end_timestamp', 0),
+            'game_duration': match.get('game_duration', 0),
+            'win': match.get('win', False),
+            'queue_id': match.get('queue_id', 0),
+            'champion_name': match.get('champion_name', 'Unknown'),
+            'kills': match.get('kills', 0),
+            'deaths': match.get('deaths', 0),
+            'assists': match.get('assists', 0),
+            'champion_level': match.get('champion_level', 0),
+            'total_minions_killed': match.get('total_minions_killed', 0),
+            'gold_earned': match.get('gold_earned', 0),
+            'total_damage_dealt_to_champions': match.get('total_damage_dealt_to_champions', 0),
+            'damage_dealt_to_objectives': match.get('damage_dealt_to_objectives', 0),
+            'vision_score': match.get('vision_score', 0),
+            'wards_placed': match.get('wards_placed', 0),
+            'wards_killed': match.get('wards_killed', 0),
+            'total_heal': match.get('total_heal', 0),
+            'time_ccing_others': match.get('time_ccing_others', 0),
+            'turret_kills': match.get('turret_kills', 0),
+            'penta_kills': match.get('penta_kills', 0),
+            'quadra_kills': match.get('quadra_kills', 0),
+            'triple_kills': match.get('triple_kills', 0),
+            'double_kills': match.get('double_kills', 0),
+            'items': match.get('items', [0,0,0,0,0,0,0]), # Asegúrate de tener 7 ítems, o maneja la longitud en Jinja
+            'summoner_spell_1_id': match.get('summoner_spell_1_id', 'SummonerFlash'), # Valor por defecto para hechizo, ajusta si es necesario
+            'summoner_spell_2_id': match.get('summoner_spell_2_id', 'SummonerHeal'), # Valor por defecto para hechizo, ajusta si es necesario
+            'perk_main_id': match.get('perk_main_id', 'perk/8000/Conqueror/Conqueror.png'), # Ruta de imagen por defecto
+            'perk_sub_id': match.get('perk_sub_id', 8100), # ID numérico por defecto (ej. Dominación)
+            # Asegúrate de añadir cualquier otro campo que uses en jugador.html
+        }
+        processed_matches.append(processed_match)
+
+    perfil['historial_partidas'] = processed_matches
     
     # Sort the full history by timestamp (most recent first) for consistent display
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
 
     return render_template('jugador.html', 
                            perfil=perfil, 
-                           now=datetime.now(), # <--- Esto ya lo pasabas, ¡bien!
-                           ddragon_version=DDRAGON_VERSION, # <--- Esto también, ¡bien!
-                           datetime=datetime) # <--- ¡ESTA ES LA LÍNEA CRUCIAL QUE FALTABA!
+                           now=datetime.now(), 
+                           ddragon_version=DDRAGON_VERSION,
+                           datetime=datetime)
 
 
 def actualizar_historial_partidas_en_segundo_plano():
