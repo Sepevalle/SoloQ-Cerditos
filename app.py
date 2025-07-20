@@ -347,9 +347,9 @@ def obtener_info_partida(args):
                     "killing_sprees": p.get('killingSprees', 0),
                     "largest_killing_spree": p.get('largestKillingSpree', 0),
                     "penta_kills": p.get('pentaKills', 0),
-                    "quadra_kills": p.get('quadraKills', 0),
-                    "triple_kills": p.get('tripleKills', 0),
-                    "double_kills": p.get('doubleKills', 0)
+                    "quadra_kills": p.get('quadra_kills', 0),
+                    "triple_kills": p.get('triple_kills', 0),
+                    "double_kills": p.get('double_kills', 0)
                 }
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error procesando los detalles de la partida {match_id}: {e}")
