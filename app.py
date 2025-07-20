@@ -843,23 +843,31 @@ def perfil_jugador(game_name):
     
     processed_matches = []
     for match in raw_matches:
-        # Aseguramos que 'items' sea siempre una lista de enteros
+        # --- BLOQUE DE CÓDIGO CRÍTICO PARA EL SANEAMIENTO DE 'items' ---
         raw_items = match.get('items', []) 
 
+        # Aseguramos que 'items' sea siempre una lista
         if not isinstance(raw_items, list):
-            if callable(raw_items): 
+            if callable(raw_items): # Si es una función o método (como dict.items)
                 raw_items = []
-            elif isinstance(raw_items, dict): 
+            elif isinstance(raw_items, dict): # Si es un diccionario
                 raw_items = list(raw_items.values())
-            else: 
+            else: # Cualquier otro tipo inesperado
                 raw_items = []
 
-        # Convertimos cada elemento a int, default a 0 si no es convertible
-        processed_items = [int(item_id) if isinstance(item_id, (int, float)) or (isinstance(item_id, str) and item_id.isdigit()) else 0 for item_id in raw_items]
-        
+        # Convertimos cada elemento a int, default a 0 si no es convertible, y aseguramos 7 elementos
+        processed_items = []
+        for item_id in raw_items:
+            try:
+                processed_items.append(int(item_id))
+            except (ValueError, TypeError):
+                processed_items.append(0) # Si no es convertible, usa 0
+
+        # Aseguramos que siempre haya 7 elementos, rellenando con 0 si es necesario
         while len(processed_items) < 7:
             processed_items.append(0)
-        processed_items = processed_items[:7] 
+        processed_items = processed_items[:7] # Aseguramos que no haya más de 7 (aunque es poco probable)
+        # --- FIN DEL BLOQUE CRÍTICO ---
 
         processed_match = {
             'game_end_timestamp': match.get('game_end_timestamp', 0),
