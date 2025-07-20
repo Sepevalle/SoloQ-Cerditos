@@ -777,59 +777,50 @@ def index():
 def perfil_jugador(game_name):
     """
     Muestra una página de perfil para un jugador específico.
-    Esta es la versión CORREGIDA Y MEJORADA de tu función original.
     """
-    # 1. Obtener los datos de todos los jugadores de la caché
     todos_los_datos, _ = obtener_datos_jugadores()
     
-    # 2. Filtrar para encontrar los datos del jugador específico por su `game_name`
     datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
     
-    # 3. Si no se encuentra al jugador, mostrar la página de error 404
     if not datos_del_jugador:
         return render_template('404.html'), 404
     
-    # 4. Obtener el PUUID para poder buscar su historial de partidas
     primer_perfil = datos_del_jugador[0]
     puuid = primer_perfil.get('puuid')
 
-    # 5. Leer el historial de partidas desde GitHub usando el PUUID
     historial_partidas_completo = {}
     if puuid:
         historial_partidas_completo = leer_historial_jugador_github(puuid)
 
-    # 6. Preparar un objeto `perfil` limpio y completo para enviar a la plantilla
-    #    Esto asegura que la plantilla siempre reciba todas las variables que espera.
     perfil = {
         'nombre': primer_perfil.get('jugador', 'N/A'),
         'game_name': game_name,
-        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''), # Usar la URL de la caché
+        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''),
         'historial_partidas': historial_partidas_completo.get('matches', [])
-        # Aquí puedes añadir más datos del `primer_perfil` si los necesitas en la plantilla
     }
     
-    # Añadimos los datos de SoloQ y Flex al perfil
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['ranked_solo_tier'] = item.get('tier')
             perfil['ranked_solo_rank'] = item.get('rank')
             perfil['ranked_solo_lp'] = item.get('league_points')
-            perfil['ranked_solo_wins'] = item.get('wins')  # <-- Add this line
-            perfil['ranked_solo_losses'] = item.get('losses') # <-- Add this line
+            perfil['ranked_solo_wins'] = item.get('wins')
+            perfil['ranked_solo_losses'] = item.get('losses')
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['ranked_flex_tier'] = item.get('tier')
             perfil['ranked_flex_rank'] = item.get('rank')
             perfil['ranked_flex_lp'] = item.get('league_points')
-            perfil['ranked_flex_wins'] = item.get('wins')  # <-- Add this line
-            perfil['ranked_flex_losses'] = item.get('losses') # <-- Add this line
+            perfil['ranked_flex_wins'] = item.get('wins')
+            perfil['ranked_flex_losses'] = item.get('losses')
 
-    # 7. Ordenar el historial por fecha (más reciente primero)
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
 
-    # 8. Renderizar la plantilla `jugador.html`, pasándole el objeto `perfil`
+    # Pass datetime to the template
     return render_template('jugador.html', 
                            perfil=perfil, 
-                           ddragon_version=DDRAGON_VERSION)
+                           ddragon_version=DDRAGON_VERSION,
+                           datetime=datetime, # Pass the datetime object
+                           now=datetime.now()) # Pass the current time
 
 def actualizar_historial_partidas_en_segundo_plano():
     """
