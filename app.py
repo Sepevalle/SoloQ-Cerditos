@@ -815,9 +815,9 @@ def perfil_jugador(game_name):
     perfil = {
         'nombre': primer_perfil['jugador'],
         'game_name': game_name,
-        'tagline': primer_perfil.get('tagline'), # Asegúrate de que 'tagline' se obtenga si existe
-        'perfil_icon_url': primer_perfil.get('perfil_icon_url'), # Asegúrate de que esta URL esté en tus datos
-        'banner_champion_splash': primer_perfil.get('banner_champion_splash'), # Asegúrate de que esta URL esté en tus datos
+        'tagline': primer_perfil.get('tagline'),
+        'perfil_icon_url': primer_perfil.get('perfil_icon_url'),
+        'banner_champion_splash': primer_perfil.get('banner_champion_splash'),
 
         # Añadir las estadísticas de clasificatoria directamente al perfil si existen
         'ranked_solo_tier': None, 'ranked_solo_rank': None, 'ranked_solo_lp': 0, 'ranked_solo_wins': 0, 'ranked_solo_losses': 0,
@@ -847,8 +847,9 @@ def perfil_jugador(game_name):
 
     return render_template('jugador.html', 
                            perfil=perfil, 
-                           now=datetime.now(), # <--- Aquí se pasa la hora actual para el cálculo de "hace X días"
-                           ddragon_version=DDRAGON_VERSION) # <--- Aquí se pasa la versión de DDragon
+                           now=datetime.now(), # <--- Esto ya lo pasabas, ¡bien!
+                           ddragon_version=DDRAGON_VERSION, # <--- Esto también, ¡bien!
+                           datetime=datetime) # <--- ¡ESTA ES LA LÍNEA CRUCIAL QUE FALTABA!
 
 
 def actualizar_historial_partidas_en_segundo_plano():
