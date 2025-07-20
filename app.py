@@ -792,42 +792,6 @@ def index():
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
-El app.route('/jugador/<path:game_name>') quedaría de la siguiente manera, ya preparado para enviar el historial de partidas completo (ordenado y con los datos necesarios para DDragon) y la variable now a tu plantilla jugador.html para la paginación y la visualización de imágenes.
-
-Python
-
-from flask import Flask, render_template, redirect, url_for, request, jsonify
-import requests
-import os
-import time
-import threading
-import json
-import base64
-from datetime import datetime
-from collections import Counter
-from datetime import timedelta
-from concurrent.futures import ThreadPoolExecutor
-
-# ... (tus importaciones y configuraciones existentes, como app = Flask(__name__),
-# make_api_request, obtener_nombre_campeon, ALL_SUMMONER_SPELLS, ALL_RUNES, etc.) ...
-
-# Asegúrate de que esta función exista en tu app.py y obtenga la versión más reciente de DDragon
-# Es crucial para que las URLs de las imágenes de DDragon en el HTML sean correctas.
-def get_ddragon_version():
-    try:
-        response = requests.get('https://ddragon.leagueoflegends.com/api/versions.json')
-        response.raise_for_status() # Lanza un error para códigos de estado HTTP erróneos
-        versions = response.json()
-        if versions:
-            return versions[0] # La última versión es la primera en la lista
-    except requests.exceptions.RequestException as e:
-        print(f"Error al obtener la versión de DDragon: {e}")
-    return "14.13.1" # Versión por defecto en caso de fallo o si falla la API
-
-DDRAGON_VERSION = get_ddragon_version() # Define DDRAGON_VERSION globalmente o pásala donde la necesites
-
-# ... (resto de tus funciones como obtener_datos_jugadores, leer_historial_jugador_github, etc.) ...
-
 @app.route('/jugador/<path:game_name>') # Use <path:game_name> to handle '/' in Riot IDs
 def perfil_jugador(game_name):
     """Muestra una página de perfil para un jugador específico."""
@@ -885,6 +849,7 @@ def perfil_jugador(game_name):
                            perfil=perfil, 
                            now=datetime.now(), # <--- Aquí se pasa la hora actual para el cálculo de "hace X días"
                            ddragon_version=DDRAGON_VERSION) # <--- Aquí se pasa la versión de DDragon
+
 
 def actualizar_historial_partidas_en_segundo_plano():
     """
