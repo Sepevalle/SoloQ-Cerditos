@@ -834,13 +834,36 @@ def perfil_jugador(game_name):
             perfil['ranked_flex_wins'] = item.get('wins')
             perfil['ranked_flex_losses'] = item.get('losses')
 
-    # Obtener el historial de partidas, asegurándose de que sea una lista
     raw_matches = historial_partidas_completo.get('matches', [])
     
     processed_matches = []
     for match in raw_matches:
-        # Crea un diccionario para cada partida con valores predeterminados
-        # para evitar errores si algún campo falta.
+        # **START OF MODIFICATION FOR 'items' FIELD**
+        # Aseguramos que 'items' sea siempre una lista de enteros
+        raw_items = match.get('items', []) # Obtiene el valor de 'items', o una lista vacía por defecto
+
+        # Aseguramos que raw_items es una lista antes de procesarla
+        if not isinstance(raw_items, list):
+            # Si no es una lista, intentamos convertirla. Para este error particular,
+            # si fuera un método, esto lo convertiría a una lista vacía.
+            if callable(raw_items): # Si es una función/método, no podemos iterar sobre ella
+                raw_items = []
+            elif isinstance(raw_items, dict): # Si es un diccionario, quizás queremos sus valores
+                raw_items = list(raw_items.values())
+            else: # Para cualquier otro tipo inesperado, lo convertimos a lista vacía
+                raw_items = []
+
+        # Convertimos cada elemento a int, default a 0 si no es convertible
+        processed_items = [int(item_id) if isinstance(item_id, (int, float)) or (isinstance(item_id, str) and item_id.isdigit()) else 0 for item_id in raw_items]
+        
+        # Opcional: Asegurar que siempre hay 7 ítems (slot 0-6). Ajusta según tu necesidad.
+        # Mientras más robusto sea el procesamiento aquí, menos errores en la plantilla.
+        while len(processed_items) < 7:
+            processed_items.append(0)
+        processed_items = processed_items[:7] # Limitar a 7 si hay más
+
+        # **END OF MODIFICATION FOR 'items' FIELD**
+
         processed_match = {
             'game_end_timestamp': match.get('game_end_timestamp', 0),
             'game_duration': match.get('game_duration', 0),
@@ -865,18 +888,16 @@ def perfil_jugador(game_name):
             'quadra_kills': match.get('quadra_kills', 0),
             'triple_kills': match.get('triple_kills', 0),
             'double_kills': match.get('double_kills', 0),
-            'items': match.get('items', [0,0,0,0,0,0,0]), # Asegúrate de tener 7 ítems, o maneja la longitud en Jinja
-            'summoner_spell_1_id': match.get('summoner_spell_1_id', 'SummonerFlash'), # Valor por defecto para hechizo, ajusta si es necesario
-            'summoner_spell_2_id': match.get('summoner_spell_2_id', 'SummonerHeal'), # Valor por defecto para hechizo, ajusta si es necesario
-            'perk_main_id': match.get('perk_main_id', 'perk/8000/Conqueror/Conqueror.png'), # Ruta de imagen por defecto
-            'perk_sub_id': match.get('perk_sub_id', 8100), # ID numérico por defecto (ej. Dominación)
-            # Asegúrate de añadir cualquier otro campo que uses en jugador.html
+            'items': processed_items, # Usa la lista de ítems procesada
+            'summoner_spell_1_id': match.get('summoner_spell_1_id', 'SummonerFlash'),
+            'summoner_spell_2_id': match.get('summoner_spell_2_id', 'SummonerHeal'),
+            'perk_main_id': match.get('perk_main_id', 'perk/8000/Conqueror/Conqueror.png'),
+            'perk_sub_id': match.get('perk_sub_id', 8100),
         }
         processed_matches.append(processed_match)
 
     perfil['historial_partidas'] = processed_matches
     
-    # Sort the full history by timestamp (most recent first) for consistent display
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
 
     return render_template('jugador.html', 
