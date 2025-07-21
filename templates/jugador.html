@@ -514,11 +514,13 @@
                         </p>
                         <p>
                             Peak Elo:
-                            {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - perfil.soloq.get('peak_elo', 0) %} {# Safely access peak_elo #}
+                            {% set peak_elo_soloq = perfil.soloq.get('peak_elo', 0) %}
+                            {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - peak_elo_soloq %}
                             {% if diff_peak_soloq == 0 %}
-                                <span class="peak-elo">PEAK</span>
+                                <span class="peak-elo">{{ peak_elo_soloq | format_peak_elo }}</span>
                             {% else %}
-                                {{ perfil.soloq.get('peak_elo', 0) }} LPs ({{ diff_peak_soloq }} LPs desde el pico)
+                                {{ peak_elo_soloq | format_peak_elo }}
+                                <span class="small-text-stats">({{ (diff_peak_soloq * -1) }} LPs por debajo)</span>
                             {% endif %}
                         </p>
                         <p>
@@ -571,11 +573,13 @@
                         </p>
                         <p>
                             Peak Elo:
-                            {% set diff_peak_flexq = perfil.flexq.valor_clasificacion - perfil.flexq.get('peak_elo', 0) %} {# Safely access peak_elo #}
+                            {% set peak_elo_flexq = perfil.flexq.get('peak_elo', 0) %}
+                            {% set diff_peak_flexq = perfil.flexq.valor_clasificacion - peak_elo_flexq %}
                             {% if diff_peak_flexq == 0 %}
-                                <span class="peak-elo">PEAK</span>
+                                <span class="peak-elo">{{ peak_elo_flexq | format_peak_elo }}</span>
                             {% else %}
-                                {{ perfil.flexq.get('peak_elo', 0) }} LPs ({{ diff_peak_flexq }} LPs desde el pico)
+                                {{ peak_elo_flexq | format_peak_elo }}
+                                <span class="small-text-stats">({{ (diff_peak_flexq * -1) }} LPs por debajo)</span>
                             {% endif %}
                         </p>
                         <p>

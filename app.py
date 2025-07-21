@@ -45,6 +45,41 @@ def get_queue_type_filter(queue_id):
 def format_timestamp_filter(timestamp):
     return datetime.fromtimestamp(timestamp / 1000).strftime("%d/%m/%Y %H:%M")
 
+@app.template_filter('format_peak_elo')
+def format_peak_elo_filter(valor):
+    """
+    Convierte un valor de clasificación numérico de nuevo a un formato legible
+    como 'TIER RANK (LP LPs)'.
+    """
+    if valor is None:
+        return "N/A"
+    
+    try:
+        valor = int(valor)
+    except (ValueError, TypeError):
+        return "N/A"
+
+    # Master, Grandmaster, Challenger
+    if valor >= 2800:
+        lps = valor - 2800
+        # No podemos distinguir entre Master, GM, Challenger solo con el valor.
+        # Mostramos un genérico para estos tiers.
+        return f"MASTER TIER ({lps} LPs)"
+
+    tier_map_reverse = {
+        6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD", 
+        2: "SILVER", 1: "BRONZE", 0: "IRON"
+    }
+    rank_map_reverse = {3: "I", 2: "II", 1: "III", 0: "IV"}
+
+    tier_value = valor // 400
+    remainder_after_tier = valor % 400
+    rank_value = remainder_after_tier // 100
+    lps = remainder_after_tier % 100
+    tier_str = tier_map_reverse.get(tier_value, "UNKNOWN")
+    rank_str = rank_map_reverse.get(rank_value, "")
+    return f"{tier_str.capitalize()} {rank_str} ({lps} LPs)"
+
 # Configuración de la API de Riot Games
 RIOT_API_KEY = os.environ.get("RIOT_API_KEY")
 if not RIOT_API_KEY:
