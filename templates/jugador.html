@@ -342,6 +342,36 @@
         .highlight-performance {
             border-left: 4px solid #ffc107; /* Borde dorado para partidas destacadas */
         }
+        .multikill-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.75em;
+            font-weight: bold;
+            color: white;
+            border-radius: 4px;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+        .penta-kill { background-color: #ff4500; } /* NaranjaRojo */
+        .quadra-kill { background-color: #9400d3; } /* Violeta Oscuro */
+        .triple-kill { background-color: #dc143c; } /* Carmesí */
+        .double-kill { background-color: #0056b3; } /* Azul */
+
+        .damage-bar {
+            display: flex;
+            width: 100%;
+            min-width: 100px; /* Asegura que la barra tenga un ancho mínimo */
+            height: 18px;
+            border-radius: 4px;
+            overflow: hidden;
+            background-color: #e9ecef;
+            border: 1px solid #ccc;
+        }
+        .damage-physical { background-color: #ff8c00; } /* Naranja */
+        .damage-magic { background-color: #4169e1; } /* Azul Royal */
+        .damage-true { background-color: #f8f9fa; } /* Casi blanco */
+        .dark-mode .damage-bar { background-color: #212529; border-color: #495057; }
+
         /* --- FIN: Mejoras de visualización del historial --- */
 
         /* Styles for filter controls */
@@ -596,6 +626,7 @@
                             <th>Campeón</th>
                             <th>KDA</th>
                             <th>Daño a Campeones</th>
+                            <th>Composición de Daño</th>
                             <th>Oro Ganado</th>
                             <th>Súbditos</th>
                             <th>Visión</th>
@@ -627,6 +658,15 @@
                             </td>
                             <td>
                                 <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span>
+                                {% if match.penta_kills > 0 %}
+                                    <span class="multikill-badge penta-kill">PENTA{% if match.penta_kills > 1 %} x{{ match.penta_kills }}{% endif %}</span>
+                                {% elif match.quadra_kills > 0 %}
+                                    <span class="multikill-badge quadra-kill">QUADRA{% if match.quadra_kills > 1 %} x{{ match.quadra_kills }}{% endif %}</span>
+                                {% elif match.triple_kills > 0 %}
+                                    <span class="multikill-badge triple-kill">TRIPLE{% if match.triple_kills > 1 %} x{{ match.triple_kills }}{% endif %}</span>
+                                {% elif match.double_kills > 0 %}
+                                    <span class="multikill-badge double-kill">DOUBLE{% if match.double_kills > 1 %} x{{ match.double_kills }}{% endif %}</span>
+                                {% endif %}
                                 <br>
                                 <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>
                             </td>
@@ -641,6 +681,21 @@
                                         0 DPM
                                     {% endif %}
                                 </span>
+                            </td>
+                            <td>
+                                {% set total_damage = match.physical_damage_dealt_to_champions + match.magic_damage_dealt_to_champions + match.true_damage_dealt_to_champions %}
+                                {% if total_damage > 0 %}
+                                    {% set physical_pct = (match.physical_damage_dealt_to_champions / total_damage * 100) %}
+                                    {% set magic_pct = (match.magic_damage_dealt_to_champions / total_damage * 100) %}
+                                    {% set true_pct = (match.true_damage_dealt_to_champions / total_damage * 100) %}
+                                    <div class="damage-bar" title="Físico: {{ '{:,.0f}'.format(match.physical_damage_dealt_to_champions) }} | Mágico: {{ '{:,.0f}'.format(match.magic_damage_dealt_to_champions) }} | Verdadero: {{ '{:,.0f}'.format(match.true_damage_dealt_to_champions) }}">
+                                        <div class="damage-physical" style="width: {{ physical_pct }}%;"></div>
+                                        <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
+                                        <div class="damage-true" style="width: {{ true_pct }}%;"></div>
+                                    </div>
+                                {% else %}
+                                    <span>N/A</span>
+                                {% endif %}
                             </td>
                             <td>
                                 {{ '{:,.0f}'.format(match.gold_earned) }}
