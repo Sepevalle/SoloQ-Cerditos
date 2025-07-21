@@ -626,7 +626,6 @@
                             <th>Campeón</th>
                             <th>KDA</th>
                             <th>Daño a Campeones</th>
-                            <th>Composición de Daño</th>
                             <th>Oro Ganado</th>
                             <th>Súbditos</th>
                             <th>Visión</th>
@@ -671,30 +670,29 @@
                                 <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>
                             </td>
                             <td>
-                                {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}
-                                <br>
-                                <span class="small-text-stats">
-                                    {% set game_duration_minutes = match.game_duration / 60 %}
-                                    {% if game_duration_minutes > 0 %}
-                                        {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions / game_duration_minutes) }} DPM
-                                    {% else %}
-                                        0 DPM
-                                    {% endif %}
-                                </span>
-                            </td>
-                            <td>
+                                <div>{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</div>
+                                <div>
+                                    <span class="small-text-stats">
+                                        {% set game_duration_minutes = match.game_duration / 60 %}
+                                        {% if game_duration_minutes > 0 %}
+                                            {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions / game_duration_minutes) }} DPM
+                                        {% else %}
+                                            0 DPM
+                                        {% endif %}
+                                    </span>
+                                </div>
                                 {% set total_damage = match.physical_damage_dealt_to_champions + match.magic_damage_dealt_to_champions + match.true_damage_dealt_to_champions %}
                                 {% if total_damage > 0 %}
                                     {% set physical_pct = (match.physical_damage_dealt_to_champions / total_damage * 100) %}
                                     {% set magic_pct = (match.magic_damage_dealt_to_champions / total_damage * 100) %}
                                     {% set true_pct = (match.true_damage_dealt_to_champions / total_damage * 100) %}
-                                    <div class="damage-bar" title="Físico: {{ '{:,.0f}'.format(match.physical_damage_dealt_to_champions) }} | Mágico: {{ '{:,.0f}'.format(match.magic_damage_dealt_to_champions) }} | Verdadero: {{ '{:,.0f}'.format(match.true_damage_dealt_to_champions) }}">
+                                    <div class="damage-bar mt-1" title="Físico: {{ '{:,.0f}'.format(match.physical_damage_dealt_to_champions) }} | Mágico: {{ '{:,.0f}'.format(match.magic_damage_dealt_to_champions) }} | Verdadero: {{ '{:,.0f}'.format(match.true_damage_dealt_to_champions) }}">
                                         <div class="damage-physical" style="width: {{ physical_pct }}%;"></div>
                                         <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
                                         <div class="damage-true" style="width: {{ true_pct }}%;"></div>
                                     </div>
                                 {% else %}
-                                    <span>N/A</span>
+                                    <div class="mt-1"><span>N/A</span></div>
                                 {% endif %}
                             </td>
                             <td>
