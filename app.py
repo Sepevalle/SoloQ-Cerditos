@@ -717,7 +717,13 @@ def actualizar_cache():
                 "champion_name": campeon_nombre,
                 "win_rate": win_rate,
                 "games_played": total_partidas,
-                "kda": kda
+                "kda": kda,
+                # --- DATOS AÑADIDOS PARA LA PLANTILLA ---
+                "kills": total_kills,
+                "deaths": total_deaths,
+                "assists": total_assists,
+                "wins": wins,
+                "losses": total_partidas - wins
             })
 
     with cache_lock:

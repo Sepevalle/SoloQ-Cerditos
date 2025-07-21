@@ -448,7 +448,7 @@
                 </div>
                 <div class="card-body">
                     {% if perfil.soloq %}
-                    <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.soloq.tier }}">
+                    <img src="{{ perfil.soloq.elo_icon_url or '' }}" alt="{{ perfil.soloq.tier }}" class="elo-image-lg">
                     <div class="rank-details">
                         <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
                         <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
@@ -499,7 +499,7 @@
                 </div>
                 <div class="card-body">
                     {% if perfil.flexq %}
-                    <img src="" alt="{{ perfil.flexq.tier }}" class="elo-image-lg" data-elo-tier="{{ perfil.flexq.tier }}">
+                    <img src="{{ perfil.flexq.elo_icon_url or '' }}" alt="{{ perfil.flexq.tier }}" class="elo-image-lg">
                     <div class="rank-details">
                         <h4>{{ perfil.flexq.tier }} {{ perfil.flexq.rank }} ({{ perfil.flexq.league_points }} LPs)</h4>
                         <p>Wins: {{ perfil.flexq.wins }} | Losses: {{ perfil.flexq.losses }} | Total: {{ perfil.flexq.wins + perfil.flexq.losses }}</p>
@@ -788,12 +788,6 @@
                 toggleAudioBtn.title = "Desmutear Música";
                 localStorage.setItem('backgroundAudioMuted', 'true');
             }
-        });
-
-        // Elo image handling
-        document.querySelectorAll('.elo-image-lg').forEach(img => {
-            const tier = img.dataset.eloTier;
-            img.src = `https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/ranked-emblems/Emblem_${tier}.png`;
         });
 
         // Filter functionality
