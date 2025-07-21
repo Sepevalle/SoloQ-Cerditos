@@ -659,7 +659,6 @@
                 <table class="table table-striped table-hover match-history-table">
                     <thead>
                         <tr>
-                            <th>Resultado</th>
                             <th>Tipo de Partida</th>
                             <th>Campeón</th>
                             <th>KDA</th>
@@ -671,7 +670,7 @@
                             <th>Runas</th>
                             <th>Objetos</th>
                             <th>Duración</th>
-                            <th>Fecha</th>
+                            <th>Resultado / Fecha</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -682,9 +681,6 @@
                             data-champion-name="{{ match.champion_name }}"
                             class="{{ 'match-row-win' if match.win else 'match-row-loss' }} {{ 'highlight-performance' if kda_ratio >= 5.0 }}"
                         >
-                            <td class="match-result {{ 'text-success' if match.win else 'text-danger' }}">
-                                {{ 'Victoria' if match.win else 'Derrota' }}
-                            </td>
                             <td>{{ match.queue_id | get_queue_type }}</td>
                             <td>
                                 <div class="champion-level-container">
@@ -762,7 +758,22 @@
                                     {% endif %}
                                 </span>
                             </td>
-                            <td>{{ match.vision_score }}</td>
+                            <td title="Puntuación de Visión (por minuto) | Wards de Control | Wards Colocados / Destruidos">
+                                <span class="fw-bold">{{ match.vision_score }}</span>
+                                <br>
+                                <span class="small-text-stats">
+                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                    {% if game_duration_minutes > 0 %}
+                                        {{ '%.2f'|format(match.vision_score / game_duration_minutes) }} VSPM
+                                    {% else %}
+                                        0.00 VSPM
+                                    {% endif %}
+                                </span>
+                                <br>
+                                <span class="small-text-stats">
+                                    {{ match.get('detector_wards_placed', 0) }} | {{ match.get('wards_placed', 0) }} / {{ match.get('wards_killed', 0) }}
+                                </span>
+                            </td>
                             <td>
                                 <div class="summoner-spells">
                                     {% if match.summoner_spell_1_id %}
@@ -806,7 +817,11 @@
                                 </div>
                             </td>
                             <td>{{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s</td>
-                            <td>{{ match.game_end_timestamp | format_timestamp }}</td>
+                            <td class="{{ 'text-success' if match.win else 'text-danger' }}">
+                                {{ 'Victoria' if match.win else 'Derrota' }}
+                                <br>
+                                <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
