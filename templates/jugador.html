@@ -555,13 +555,7 @@
         <div class="card-body">
             <div class="filter-controls">
                 <label for="queueFilter">Tipo de Cola:</label>
-                <select id="queueFilter" class="form-select">
-                    <option value="all">Todas</option>
-                    {% for match in perfil.historial_partidas %}
-                        <option value="{{ match.queue_id }}">{{ match.queue_id | get_queue_type }}</option>
-                    {% endfor %}
-                </select>
-
+                <select id="queueFilter" class="form-select"></select>
                 <label for="championFilter">Campeón:</label>
                 <select id="championFilter" class="form-select">
                     <option value="all">Todos</option>
@@ -704,10 +698,10 @@
         // Banner dynamic images (if needed, this logic seems specific)
         const bannerImg = document.getElementById('banner-img');
         const banners = [
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner1.png",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner2.png",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner3.png",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner4.png",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner1.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner2.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner3.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner4.jpg",
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
         ];
         let currentBannerIndex = 0;
@@ -835,6 +829,26 @@
             });
         }
 
+        function populateQueueFilter() {
+            const queueTypes = new Map();
+            allMatchRows.forEach(row => {
+                const queueId = row.dataset.queueId;
+                const queueName = row.cells[1].textContent.trim();
+                if (!queueTypes.has(queueId)) {
+                    queueTypes.set(queueId, queueName);
+                }
+            });
+
+            queueFilter.innerHTML = '<option value="all">Todas</option>';
+            const sortedQueues = Array.from(queueTypes.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+            sortedQueues.forEach(([queueId, queueName]) => {
+                const option = document.createElement('option');
+                option.value = queueId;
+                option.textContent = queueName;
+                queueFilter.appendChild(option);
+            });
+        }
+
         function setupPagination(rows, currentPage) {
             paginationControls.innerHTML = "";
             const pageCount = Math.ceil(rows.length / rowsPerPage);
@@ -883,7 +897,7 @@
 
             const filteredRows = Array.from(allMatchRows).filter(matchRow => {
                 const isQueueMatch = (selectedQueue === 'all' || matchRow.dataset.queueId == selectedQueue);
-                const isChampionMatch = (selectedChampion === 'all' || matchChampionName === selectedChampion);
+                const isChampionMatch = (selectedChampion === 'all' || matchRow.dataset.championName === selectedChampion);
                 return isQueueMatch && isChampionMatch;
             });
 
@@ -904,6 +918,7 @@
         queueFilter.addEventListener('change', updateMatchHistoryView);
         championFilter.addEventListener('change', updateMatchHistoryView);
         populateChampionFilter();
+        populateQueueFilter();
         updateMatchHistoryView();
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });

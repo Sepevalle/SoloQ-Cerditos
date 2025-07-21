@@ -398,42 +398,60 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-        const audio = document.getElementById('backgroundAudio');
+        const backgroundAudio = document.getElementById('backgroundAudio');
         const toggleAudioButton = document.getElementById('toggleAudio');
         const volumeSlider = document.getElementById('volumeSlider');
         const muteIcon = document.getElementById('muteIcon');
 
-        // Inicialmente silenciar el audio para cumplir con políticas de autoplay
-        audio.muted = true;
-        // El navegador puede bloquear el autoplay, el audio se iniciará con la interacción del usuario.
-        audio.play().catch(error => console.log('La reproducción automática de audio fue bloqueada por el navegador.', error));
+        // --- INICIO: LÓGICA DE AUDIO CON LOCALSTORAGE ---
+        const savedVolume = localStorage.getItem('backgroundAudioVolume');
+        if (savedVolume !== null) {
+            backgroundAudio.volume = parseFloat(savedVolume);
+            volumeSlider.value = parseFloat(savedVolume);
+        } else {
+            backgroundAudio.volume = 1.0;
+            volumeSlider.value = 1.0;
+        }
 
-        const playAudio = () => {
-            // Intenta reproducir el audio si está pausado. Esto es necesario para navegadores
-            // que bloquean el autoplay hasta que haya una interacción del usuario.
-            if (audio.paused) {
-                audio.play().catch(e => console.log("El usuario debe interactuar con la página para reproducir audio.", e));
+        const savedMuteState = localStorage.getItem('backgroundAudioMuted');
+        if (savedMuteState === 'true') {
+            backgroundAudio.muted = true;
+            muteIcon.className = 'fas fa-microphone-slash';
+            toggleAudioButton.title = 'Desmutear Música';
+        } else {
+            backgroundAudio.muted = false;
+            muteIcon.className = 'fas fa-microphone-alt';
+            toggleAudioButton.title = 'Silenciar Música';
+            const playPromise = backgroundAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => console.log("Autoplay de audio bloqueado:", error));
             }
-        };
+        }
 
-        // Control de volumen
-        volumeSlider.addEventListener('input', function() {
-            playAudio();
-            audio.volume = this.value;
-        });
-
-        // Actualizar el icono del botón de silenciar/desmutear
         toggleAudioButton.addEventListener('click', () => {
-            playAudio();
-            audio.muted = !audio.muted;
-            if (audio.muted) {
+            backgroundAudio.muted = !backgroundAudio.muted;
+            if (backgroundAudio.muted) {
                 muteIcon.className = 'fas fa-microphone-slash';
                 toggleAudioButton.title = 'Desmutear Música';
+                localStorage.setItem('backgroundAudioMuted', 'true');
             } else {
                 muteIcon.className = 'fas fa-microphone-alt';
                 toggleAudioButton.title = 'Silenciar Música';
+                backgroundAudio.play().catch(e => console.log("Play fallido tras desmutear:", e));
+                localStorage.setItem('backgroundAudioMuted', 'false');
             }
         });
+
+        volumeSlider.addEventListener('input', function() {
+            backgroundAudio.volume = this.value;
+            localStorage.setItem('backgroundAudioVolume', this.value);
+            if (this.value > 0 && backgroundAudio.muted) {
+                toggleAudioButton.click(); // Simula un clic para desmutear
+            } else if (this.value == 0 && !backgroundAudio.muted) {
+                toggleAudioButton.click(); // Simula un clic para mutear
+            }
+        });
+        // --- FIN: LÓGICA DE AUDIO CON LOCALSTORAGE ---
 
         const imagenesElo = {
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
@@ -454,8 +472,23 @@
         });
 
         const toggleModeButton = document.getElementById("toggle-mode");
-        toggleModeButton.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
+        const body = document.body;
 
+        // --- INICIO: LÓGICA DE MODO OSCURO CON LOCALSTORAGE ---
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            toggleModeButton.textContent = 'Modo Claro';
+        } else {
+            toggleModeButton.textContent = 'Modo Oscuro';
+        }
+
+        toggleModeButton.addEventListener('click', function() {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            toggleModeButton.textContent = isDarkMode ? 'Modo Claro' : 'Modo Oscuro';
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+        });
+        // --- FIN: LÓGICA DE MODO OSCURO CON LOCALSTORAGE ---
         // --- INICIO DE LA NUEVA LÓGICA DE TABLA ---
         
         const filtro = document.getElementById("filtro");
@@ -572,10 +605,10 @@
         // --- LÓGICA PARA ROTAR EL BANNER SUPERIOR ---
         const bannerImg = document.getElementById('banner-img');
         const banners = [
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner1.png",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner2.png",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner3.png",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner4.png",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner1.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner2.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner3.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner4.jpg",
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
         ];
         let currentBannerIndex = 0;
