@@ -807,20 +807,12 @@ def perfil_jugador(game_name):
         # Aquí puedes añadir más datos del `primer_perfil` si los necesitas en la plantilla
     }
     
-    # Añadimos los datos de SoloQ y Flex al perfil
+    # Añadimos los datos de SoloQ y Flex al perfil como objetos anidados
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
-            perfil['ranked_solo_tier'] = item.get('tier')
-            perfil['ranked_solo_rank'] = item.get('rank')
-            perfil['ranked_solo_lp'] = item.get('league_points')
-            perfil['ranked_solo_wins'] = item.get('wins') # Added these two lines back in
-            perfil['ranked_solo_losses'] = item.get('losses') # Added these two lines back in
+            perfil['soloq'] = item
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
-            perfil['ranked_flex_tier'] = item.get('tier')
-            perfil['ranked_flex_rank'] = item.get('rank')
-            perfil['ranked_flex_lp'] = item.get('league_points')
-            perfil['ranked_flex_wins'] = item.get('wins') # Added these two lines back in
-            perfil['ranked_flex_losses'] = item.get('losses') # Added these two lines back in
+            perfil['flexq'] = item
 
     # 7. Ordenar el historial por fecha (más reciente primero)
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
