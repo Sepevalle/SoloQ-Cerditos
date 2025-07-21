@@ -754,6 +754,27 @@ def actualizar_cache():
             # Evitar división por cero para el KDA
             kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
 
+            # --- NUEVO: Encontrar la partida con el KDA más alto ---
+            best_kda_match_info = None
+            if partidas_del_campeon:
+                def get_kda_for_match(p):
+                    k = p.get('kills', 0)
+                    d = p.get('deaths', 0)
+                    a = p.get('assists', 0)
+                    return (k + a) / d if d > 0 else float(k + a)
+
+                best_match = max(partidas_del_campeon, key=get_kda_for_match)
+                
+                best_kda_value = get_kda_for_match(best_match)
+
+                best_kda_match_info = {
+                    "kda": best_kda_value,
+                    "kills": best_match.get('kills', 0),
+                    "deaths": best_match.get('deaths', 0),
+                    "assists": best_match.get('assists', 0),
+                    "timestamp": best_match.get('game_end_timestamp')
+                }
+
             jugador['top_champion_stats'].append({
                 "champion_name": campeon_nombre,
                 "win_rate": win_rate,
@@ -767,7 +788,8 @@ def actualizar_cache():
                 "losses": total_partidas - wins,
                 "avg_kills": avg_kills,
                 "avg_deaths": avg_deaths,
-                "avg_assists": avg_assists
+                "avg_assists": avg_assists,
+                "best_kda_match": best_kda_match_info
             })
 
     with cache_lock:
