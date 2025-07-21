@@ -326,6 +326,23 @@
         .match-history-table .match-result {
             font-size: 1.1em; /* Larger result text */
         }
+        /* --- INICIO: Mejoras de visualización del historial --- */
+        .match-row-win {
+            background-color: rgba(40, 167, 69, 0.08);
+        }
+        .match-row-loss {
+            background-color: rgba(220, 53, 69, 0.08);
+        }
+        .dark-mode .match-row-win {
+            background-color: rgba(40, 167, 69, 0.15);
+        }
+        .dark-mode .match-row-loss {
+            background-color: rgba(220, 53, 69, 0.15);
+        }
+        .highlight-performance {
+            border-left: 4px solid #ffc107; /* Borde dorado para partidas destacadas */
+        }
+        /* --- FIN: Mejoras de visualización del historial --- */
 
         /* Styles for filter controls */
         .filter-controls {
@@ -591,7 +608,12 @@
                     </thead>
                     <tbody>
                         {% for match in perfil.historial_partidas %}
-                        <tr data-queue-id="{{ match.queue_id }}" data-champion-name="{{ match.champion_name }}">
+                        {% set kda_ratio = ((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 999 %}
+                        <tr 
+                            data-queue-id="{{ match.queue_id }}" 
+                            data-champion-name="{{ match.champion_name }}"
+                            class="{{ 'match-row-win' if match.win else 'match-row-loss' }} {{ 'highlight-performance' if kda_ratio >= 5.0 }}"
+                        >
                             <td class="match-result {{ 'text-success' if match.win else 'text-danger' }}">
                                 {{ 'Victoria' if match.win else 'Derrota' }}
                             </td>
