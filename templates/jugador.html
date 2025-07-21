@@ -298,21 +298,28 @@
             font-size: 1.1em; /* Larger KDA text */
             font-weight: bold;
         }
-        .match-history-table .item-images {
-            display: flex; /* Ensure items are in a row */
-            flex-wrap: wrap; /* Allow items to wrap if screen is too small */
-            justify-content: center; /* Center items */
-            gap: 3px;
+        .items-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
-        .match-history-table .item-images img,
-        .match-history-table .item-images .item-placeholder { /* For placeholder */
-            width: 25px; /* Slightly smaller items for compactness */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            width: calc(25px * 3 + 3px * 2); /* 3 items + 2 gaps */
+        }
+        .items-grid img, .items-grid .item-placeholder,
+        .trinket-item img, .trinket-item .item-placeholder {
+            width: 25px;
             height: 25px;
             border-radius: 5px;
-            background-color: transparent; /* Make placeholder transparent by default */
-            border: 1px solid rgba(108, 117, 125, 0.3); /* Subtle border for placeholder */
         }
-        .dark-mode .match-history-table .item-images .item-placeholder {
+        .trinket-item .item-placeholder, .items-grid .item-placeholder {
+            border: 1px solid rgba(108, 117, 125, 0.3);
+        }
+        .dark-mode .trinket-item .item-placeholder, .dark-mode .items-grid .item-placeholder {
             border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border in dark mode */
         }
         .match-history-table .match-result {
@@ -600,9 +607,42 @@
                                 <br>
                                 <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>
                             </td>
-                            <td>{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</td>
-                            <td>{{ '{:,.0f}'.format(match.gold_earned) }}</td>
-                            <td>{{ match.total_minions_killed }}</td>
+                            <td>
+                                {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}
+                                <br>
+                                <span class="small-text-stats">
+                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                    {% if game_duration_minutes > 0 %}
+                                        {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions / game_duration_minutes) }} DPM
+                                    {% else %}
+                                        0 DPM
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {{ '{:,.0f}'.format(match.gold_earned) }}
+                                <br>
+                                <span class="small-text-stats">
+                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                    {% if game_duration_minutes > 0 %}
+                                        {{ '{:,.0f}'.format(match.gold_earned / game_duration_minutes) }} GPM
+                                    {% else %}
+                                        0 GPM
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {{ match.total_minions_killed + match.neutral_minions_killed }}
+                                <br>
+                                <span class="small-text-stats">
+                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                    {% if game_duration_minutes > 0 %}
+                                        {{ '%.1f'|format((match.total_minions_killed + match.neutral_minions_killed) / game_duration_minutes) }} CS/min
+                                    {% else %}
+                                        0.0 CS/min
+                                    {% endif %}
+                                </span>
+                            </td>
                             <td>{{ match.vision_score }}</td>
                             <td>
                                 <div class="summoner-spells">
@@ -625,14 +665,25 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="item-images">
-                                    {% for item_id in match.player_items %}
-                                        {% if item_id > 0 %}
-                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                <div class="items-layout">
+                                    <div class="items-grid">
+                                        {% for i in range(6) %}
+                                            {% set item_id = match.player_items[i] %}
+                                            {% if item_id > 0 %}
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                            {% else %}
+                                                <div class="item-placeholder"></div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="trinket-item">
+                                        {% set trinket_id = match.player_items[6] %}
+                                        {% if trinket_id > 0 %}
+                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ trinket_id }}.png" alt="Trinket">
                                         {% else %}
                                             <div class="item-placeholder"></div>
                                         {% endif %}
-                                    {% endfor %}
+                                    </div>
                                 </div>
                             </td>
                             <td>{{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s</td>
