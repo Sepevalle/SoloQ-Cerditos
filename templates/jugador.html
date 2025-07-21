@@ -803,18 +803,23 @@
             }
         });
 
-        // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN ---
+        // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN (REESTRUCTURADA) ---
         const queueFilter = document.getElementById('queueFilter');
         const championFilter = document.getElementById('championFilter');
         const allMatchRows = document.querySelectorAll('.match-history-table tbody tr');
         const paginationControls = document.getElementById('pagination-controls');
         const rowsPerPage = 10;
 
+        // --- ESTADO ---
+        let currentPage = 1;
+
+        // --- FUNCIONES AUXILIARES ---
         function populateChampionFilter() {
             const championNames = new Set();
             allMatchRows.forEach(row => {
                 championNames.add(row.dataset.championName);
             });
+
             championFilter.innerHTML = '<option value="all">Todos</option>';
             const sortedChampionNames = Array.from(championNames).sort();
             sortedChampionNames.forEach(championName => {
@@ -830,92 +835,85 @@
             allMatchRows.forEach(row => {
                 const queueId = row.dataset.queueId;
                 const queueName = row.cells[1].textContent.trim();
-                if (!queueTypes.has(queueId)) {
-                    queueTypes.set(queueId, queueName);
-                }
+                if (!queueTypes.has(queueId)) queueTypes.set(queueId, queueName);
             });
 
             queueFilter.innerHTML = '<option value="all">Todas</option>';
             const sortedQueues = Array.from(queueTypes.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-            sortedQueues.forEach(([queueId, queueName]) => {
-                const option = document.createElement('option');
-                option.value = queueId;
-                option.textContent = queueName;
-                queueFilter.appendChild(option);
-            });
+            sortedQueues.forEach(([queueId, queueName]) => queueFilter.add(new Option(queueName, queueId)));
         }
 
-        function setupPagination(rows, currentPage) {
+        function setupPagination(totalRows, page) {
             paginationControls.innerHTML = "";
-            const pageCount = Math.ceil(rows.length / rowsPerPage);
+            const pageCount = Math.ceil(totalRows / rowsPerPage);
             if (pageCount <= 1) return;
 
-            // Botón "Anterior"
             const prevLi = document.createElement('li');
-            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">&laquo;</a>`;
+            prevLi.className = `page-item ${page === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${page - 1}">&laquo;</a>`;
             paginationControls.appendChild(prevLi);
 
-            // Botones de número de página
             for (let i = 1; i <= pageCount; i++) {
                 const li = document.createElement('li');
-                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                li.className = `page-item ${i === page ? 'active' : ''}`;
                 li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
                 paginationControls.appendChild(li);
             }
 
-            // Botón "Siguiente"
             const nextLi = document.createElement('li');
-            nextLi.className = `page-item ${currentPage === pageCount ? 'disabled' : ''}`;
-            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">&raquo;</a>`;
+            nextLi.className = `page-item ${page === pageCount ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${page + 1}">&raquo;</a>`;
             paginationControls.appendChild(nextLi);
         }
 
-        function displayPage(page, rows) {
-            const startIndex = (page - 1) * rowsPerPage;
-            const endIndex = startIndex + rowsPerPage;
-            
-            // Muestra solo las filas de la página actual dentro del conjunto filtrado
-            rows.forEach((row, index) => {
-                row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
-            });
-
-            // Re-renderiza los controles de paginación para actualizar el estado (activo/deshabilitado)
-            setupPagination(rows, page);
-        }
-
-        function updateMatchHistoryView() {
+        // --- FUNCIÓN DE RENDERIZADO PRINCIPAL ---
+        function renderMatchHistory() {
             const selectedQueue = queueFilter.value;
             const selectedChampion = championFilter.value;
 
-            // Oculta todas las filas antes de aplicar filtros y paginación
-            allMatchRows.forEach(row => row.style.display = 'none');
-
-            const filteredRows = Array.from(allMatchRows).filter(matchRow => {
-                const isQueueMatch = (selectedQueue === 'all' || matchRow.dataset.queueId == selectedQueue);
-                const isChampionMatch = (selectedChampion === 'all' || matchRow.dataset.championName === selectedChampion);
+            const filteredRows = Array.from(allMatchRows).filter(row => {
+                const isQueueMatch = (selectedQueue === 'all' || row.dataset.queueId == selectedQueue);
+                const isChampionMatch = (selectedChampion === 'all' || row.dataset.championName === selectedChampion);
                 return isQueueMatch && isChampionMatch;
             });
 
-            displayPage(1, filteredRows); // Muestra la primera página de los resultados filtrados
+            setupPagination(filteredRows.length, currentPage);
 
-            // Usa delegación de eventos para manejar los clics en la paginación
-            paginationControls.onclick = (e) => {
-                e.preventDefault();
-                const target = e.target.closest('.page-link');
-                if (!target || target.parentElement.classList.contains('disabled')) return;
-                
-                const page = parseInt(target.dataset.page, 10);
-                displayPage(page, filteredRows);
-            };
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            allMatchRows.forEach(row => row.style.display = 'none');
+            filteredRows.forEach((row, index) => {
+                if (index >= startIndex && index < endIndex) row.style.display = '';
+            });
         }
 
-        // Event listeners y carga inicial
-        queueFilter.addEventListener('change', updateMatchHistoryView);
-        championFilter.addEventListener('change', updateMatchHistoryView);
+        // --- EVENT LISTENERS ---
+        queueFilter.addEventListener('change', () => {
+            currentPage = 1;
+            renderMatchHistory();
+        });
+        championFilter.addEventListener('change', () => {
+            currentPage = 1;
+            renderMatchHistory();
+        });
+
+        paginationControls.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = e.target.closest('.page-link');
+            if (!target || target.parentElement.classList.contains('disabled')) return;
+
+            const newPage = parseInt(target.dataset.page, 10);
+            if (newPage !== currentPage) {
+                currentPage = newPage;
+                renderMatchHistory();
+            }
+        });
+
+        // --- INICIALIZACIÓN ---
         populateChampionFilter();
         populateQueueFilter();
-        updateMatchHistoryView();
+        renderMatchHistory();
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
 </script>
