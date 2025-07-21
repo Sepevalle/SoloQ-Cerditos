@@ -854,21 +854,22 @@
             const pageCount = Math.ceil(totalRows / rowsPerPage);
             if (pageCount <= 1) return;
 
+            // Botón "Anterior"
             const prevLi = document.createElement('li');
             prevLi.className = `page-item ${page === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${page - 1}">&laquo;</a>`;
+            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${page - 1}">&laquo; Anterior</a>`;
             paginationControls.appendChild(prevLi);
 
-            for (let i = 1; i <= pageCount; i++) {
-                const li = document.createElement('li');
-                li.className = `page-item ${i === page ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
-                paginationControls.appendChild(li);
-            }
+            // Indicador de página "Página X de Y"
+            const pageInfoLi = document.createElement('li');
+            pageInfoLi.className = 'page-item disabled';
+            pageInfoLi.innerHTML = `<span class="page-link">Página ${page} de ${pageCount}</span>`;
+            paginationControls.appendChild(pageInfoLi);
 
+            // Botón "Siguiente"
             const nextLi = document.createElement('li');
             nextLi.className = `page-item ${page === pageCount ? 'disabled' : ''}`;
-            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${page + 1}">&raquo;</a>`;
+            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${page + 1}">Siguiente &raquo;</a>`;
             paginationControls.appendChild(nextLi);
         }
 
