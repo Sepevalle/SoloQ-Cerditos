@@ -657,14 +657,14 @@
                             </td>
                             <td>
                                 <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span>
-                                {% if match.penta_kills > 0 %}
-                                    <span class="multikill-badge penta-kill">PENTA{% if match.penta_kills > 1 %} x{{ match.penta_kills }}{% endif %}</span>
-                                {% elif match.quadra_kills > 0 %}
-                                    <span class="multikill-badge quadra-kill">QUADRA{% if match.quadra_kills > 1 %} x{{ match.quadra_kills }}{% endif %}</span>
-                                {% elif match.triple_kills > 0 %}
-                                    <span class="multikill-badge triple-kill">TRIPLE{% if match.triple_kills > 1 %} x{{ match.triple_kills }}{% endif %}</span>
-                                {% elif match.double_kills > 0 %}
-                                    <span class="multikill-badge double-kill">DOUBLE{% if match.double_kills > 1 %} x{{ match.double_kills }}{% endif %}</span>
+                                {% if match.pentaKills > 0 %}
+                                    <span class="multikill-badge penta-kill">PENTA{% if match.pentaKills > 1 %} x{{ match.pentaKills }}{% endif %}</span>
+                                {% elif match.quadraKills > 0 %}
+                                    <span class="multikill-badge quadra-kill">QUADRA{% if match.quadraKills > 1 %} x{{ match.quadraKills }}{% endif %}</span>
+                                {% elif match.tripleKills > 0 %}
+                                    <span class="multikill-badge triple-kill">TRIPLE{% if match.tripleKills > 1 %} x{{ match.tripleKills }}{% endif %}</span>
+                                {% elif match.doubleKills > 0 %}
+                                    <span class="multikill-badge double-kill">DOUBLE{% if match.doubleKills > 1 %} x{{ match.doubleKills }}{% endif %}</span>
                                 {% endif %}
                                 <br>
                                 <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>
