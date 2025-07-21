@@ -474,8 +474,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
                                         <div class="champion-stats-info">
                                             <h5>{{ champion_stat.champion_name }}</h5>
-                                            <p class="kda-text">KDA: {{ '%.1f'|format(champion_stat.kda) }} ({{ champion_stat.kills }}/{{ champion_stat.deaths }}/{{ champion_stat.assists }})</p>
-                                            <p>Win Rate: {{ '%.2f'|format(champion_stat.win_rate) }}% ({{ champion_stat.wins }}/{{ champion_stat.losses }})</p>
+                                            <p class="kda-text fw-bold">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
+                                            <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
+                                            <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
+                                            <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -525,8 +527,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
                                         <div class="champion-stats-info">
                                             <h5>{{ champion_stat.champion_name }}</h5>
-                                            <p class="kda-text">KDA: {{ '%.1f'|format(champion_stat.kda) }} ({{ champion_stat.kills }}/{{ champion_stat.deaths }}/{{ champion_stat.assists }})</p>
-                                            <p>Win Rate: {{ '%.2f'|format(champion_stat.win_rate) }}% ({{ champion_stat.wins }}/{{ champion_stat.losses }})</p>
+                                            <p class="kda-text fw-bold">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
+                                            <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
+                                            <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
+                                            <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
                                         </div>
                                     </div>
                                 {% endfor %}

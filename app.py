@@ -710,6 +710,11 @@ def actualizar_cache():
             total_deaths = sum(p.get('deaths', 0) for p in partidas_del_campeon)
             total_assists = sum(p.get('assists', 0) for p in partidas_del_campeon)
             
+            # Calcular estadísticas promedio por partida
+            avg_kills = total_kills / total_partidas if total_partidas > 0 else 0
+            avg_deaths = total_deaths / total_partidas if total_partidas > 0 else 0
+            avg_assists = total_assists / total_partidas if total_partidas > 0 else 0
+
             # Evitar división por cero para el KDA
             kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
 
@@ -723,7 +728,10 @@ def actualizar_cache():
                 "deaths": total_deaths,
                 "assists": total_assists,
                 "wins": wins,
-                "losses": total_partidas - wins
+                "losses": total_partidas - wins,
+                "avg_kills": avg_kills,
+                "avg_deaths": avg_deaths,
+                "avg_assists": avg_assists
             })
 
     with cache_lock:
