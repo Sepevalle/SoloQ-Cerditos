@@ -213,8 +213,8 @@
             padding: 20px;
         }
         .rank-card .elo-image-lg {
-            width: 80px;
-            height: 80px;
+            width: 120px;
+            height: 120px;
             object-fit: contain;
             margin-bottom: 15px;
         }
@@ -725,7 +725,8 @@
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg",
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg",
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/3.jpg",
-            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/4.jpg"
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/4.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/5.jpg"
         ];
         let currentLateralBannerIndex = 0;
 
@@ -812,22 +813,20 @@
             }
         });
 
-        // Filter functionality
+        // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN ---
         const queueFilter = document.getElementById('queueFilter');
         const championFilter = document.getElementById('championFilter');
         const allMatchRows = document.querySelectorAll('.match-history-table tbody tr');
+        const paginationControls = document.getElementById('pagination-controls');
+        const rowsPerPage = 10;
 
-        // Function to populate champion filter dynamically
         function populateChampionFilter() {
             const championNames = new Set();
             allMatchRows.forEach(row => {
                 championNames.add(row.dataset.championName);
             });
-
-            // Clear existing options except "All"
             championFilter.innerHTML = '<option value="all">Todos</option>';
             const sortedChampionNames = Array.from(championNames).sort();
-
             sortedChampionNames.forEach(championName => {
                 const option = document.createElement('option');
                 option.value = championName;
@@ -836,37 +835,77 @@
             });
         }
 
-        // Function to apply filters
-        function applyMatchHistoryFilters() {
+        function setupPagination(rows, currentPage) {
+            paginationControls.innerHTML = "";
+            const pageCount = Math.ceil(rows.length / rowsPerPage);
+            if (pageCount <= 1) return;
+
+            // Botón "Anterior"
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">&laquo;</a>`;
+            paginationControls.appendChild(prevLi);
+
+            // Botones de número de página
+            for (let i = 1; i <= pageCount; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+
+            // Botón "Siguiente"
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === pageCount ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">&raquo;</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        function displayPage(page, rows) {
+            const startIndex = (page - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            
+            // Muestra solo las filas de la página actual dentro del conjunto filtrado
+            rows.forEach((row, index) => {
+                row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+            });
+
+            // Re-renderiza los controles de paginación para actualizar el estado (activo/deshabilitado)
+            setupPagination(rows, page);
+        }
+
+        function updateMatchHistoryView() {
             const selectedQueue = queueFilter.value;
             const selectedChampion = championFilter.value;
 
-            allMatchRows.forEach(matchRow => {
-                const matchQueueId = matchRow.dataset.queueId;
-                const matchChampionName = matchRow.dataset.championName;
+            // Oculta todas las filas antes de aplicar filtros y paginación
+            allMatchRows.forEach(row => row.style.display = 'none');
 
-                const isQueueMatch = (selectedQueue === 'all' || matchQueueId == selectedQueue); // Use == for type coercion
+            const filteredRows = Array.from(allMatchRows).filter(matchRow => {
+                const isQueueMatch = (selectedQueue === 'all' || matchRow.dataset.queueId == selectedQueue);
                 const isChampionMatch = (selectedChampion === 'all' || matchChampionName === selectedChampion);
-
-                if (isQueueMatch && isChampionMatch) {
-                    matchRow.style.display = ''; // Show the row
-                } else {
-                    matchRow.style.display = 'none'; // Hide the row
-                }
+                return isQueueMatch && isChampionMatch;
             });
+
+            displayPage(1, filteredRows); // Muestra la primera página de los resultados filtrados
+
+            // Usa delegación de eventos para manejar los clics en la paginación
+            paginationControls.onclick = (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.page-link');
+                if (!target || target.parentElement.classList.contains('disabled')) return;
+                
+                const page = parseInt(target.dataset.page, 10);
+                displayPage(page, filteredRows);
+            };
         }
 
-        // Attach event listeners to filters
-        queueFilter.addEventListener('change', applyMatchHistoryFilters);
-        championFilter.addEventListener('change', applyMatchHistoryFilters);
-
-        // Access perfil data from the Jinja2 context by embedding it as a JSON object
-        // This is crucial for JavaScript to access the data passed from Flask
-        const perfilData = {{ perfil | tojson }};
-
-        // Initial population and application of filters
+        // Event listeners y carga inicial
+        queueFilter.addEventListener('change', updateMatchHistoryView);
+        championFilter.addEventListener('change', updateMatchHistoryView);
         populateChampionFilter();
-        applyMatchHistoryFilters();
+        updateMatchHistoryView();
+        // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
 </script>
 

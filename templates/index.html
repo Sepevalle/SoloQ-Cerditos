@@ -569,6 +569,23 @@
         filtro.addEventListener("change", aplicarFiltro);
         aplicarFiltro(); // Carga inicial con filtro y ordenación por defecto
 
+        // --- LÓGICA PARA ROTAR EL BANNER SUPERIOR ---
+        const bannerImg = document.getElementById('banner-img');
+        const banners = [
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner1.png",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner2.png",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner3.png",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner4.png",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
+        ];
+        let currentBannerIndex = 0;
+
+        function changeBanner() {
+            currentBannerIndex = (currentBannerIndex + 1) % banners.length;
+            bannerImg.src = banners[currentBannerIndex];
+        }
+        setInterval(changeBanner, 5000); // Cambia el banner cada 5 segundos
+
         const leftBanner = document.getElementById("left-banner");
         const rightBanner = document.getElementById("right-banner");
         const imagePaths = [
