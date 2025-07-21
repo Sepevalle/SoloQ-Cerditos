@@ -360,8 +360,8 @@
         .damage-bar {
             display: flex;
             width: 100%;
-            min-width: 100px; /* Asegura que la barra tenga un ancho mínimo */
-            height: 18px;
+            min-width: 80px; /* Ancho mínimo ajustado */
+            height: 12px; /* Altura reducida para una barra más fina */
             border-radius: 4px;
             overflow: hidden;
             background-color: #e9ecef;
@@ -521,6 +521,10 @@
                                 {{ perfil.soloq.get('peak_elo', 0) }} LPs ({{ diff_peak_soloq }} LPs desde el pico)
                             {% endif %}
                         </p>
+                        <p>
+                            Rachas (Max): 
+                            <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
+                        </p>
 
                         <div class="champion-stats-container">
                             {% if perfil.soloq.top_champion_stats %}
@@ -573,6 +577,10 @@
                             {% else %}
                                 {{ perfil.flexq.get('peak_elo', 0) }} LPs ({{ diff_peak_flexq }} LPs desde el pico)
                             {% endif %}
+                        </p>
+                        <p>
+                            Rachas (Max): 
+                            <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
                         </p>
 
                         <div class="champion-stats-container">
@@ -657,18 +665,19 @@
                             </td>
                             <td>
                                 <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span>
-                                {% set penta_kills = match.get('pentaKills', 0) %}
-                                {% set quadra_kills = match.get('quadraKills', 0) %}
-                                {% set triple_kills = match.get('tripleKills', 0) %}
-                                {% set double_kills = match.get('doubleKills', 0) %}
-                                {% if penta_kills > 0 %}
-                                    <span class="multikill-badge penta-kill">PENTA{% if penta_kills > 1 %} x{{ penta_kills }}{% endif %}</span>
-                                {% elif quadra_kills > 0 %}
-                                    <span class="multikill-badge quadra-kill">QUADRA{% if quadra_kills > 1 %} x{{ quadra_kills }}{% endif %}</span>
-                                {% elif triple_kills > 0 %}
-                                    <span class="multikill-badge triple-kill">TRIPLE{% if triple_kills > 1 %} x{{ triple_kills }}{% endif %}</span>
-                                {% elif double_kills > 0 %}
-                                    <span class="multikill-badge double-kill">DOUBLE{% if double_kills > 1 %} x{{ double_kills }}{% endif %}</span>
+                                {% set largest_multi_kill = match.get('largestMultiKill', 0) %}
+                                {% if largest_multi_kill >= 5 %}
+                                    {% set count = match.get('pentaKills', 1) %}
+                                    <span class="multikill-badge penta-kill">PENTA{% if count > 1 %} x{{ count }}{% endif %}</span>
+                                {% elif largest_multi_kill == 4 %}
+                                    {% set count = match.get('quadraKills', 1) %}
+                                    <span class="multikill-badge quadra-kill">QUADRA{% if count > 1 %} x{{ count }}{% endif %}</span>
+                                {% elif largest_multi_kill == 3 %}
+                                    {% set count = match.get('tripleKills', 1) %}
+                                    <span class="multikill-badge triple-kill">TRIPLE{% if count > 1 %} x{{ count }}{% endif %}</span>
+                                {% elif largest_multi_kill == 2 %}
+                                    {% set count = match.get('doubleKills', 1) %}
+                                    <span class="multikill-badge double-kill">DOUBLE{% if count > 1 %} x{{ count }}{% endif %}</span>
                                 {% endif %}
                                 <br>
                                 <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>

@@ -326,10 +326,11 @@ def obtener_info_partida(args):
                     "total_time_spent_dead": p.get('totalTimeSpentDead', 0),
                     "killing_sprees": p.get('killingSprees', 0),
                     "largest_killing_spree": p.get('largestKillingSpree', 0),
-                    "penta_kills": p.get('pentaKills', 0),
-                    "quadra_kills": p.get('quadra_kills', 0),
-                    "triple_kills": p.get('triple_kills', 0),
-                    "double_kills": p.get('double_kills', 0)
+                    "largestMultiKill": p.get('largestMultiKill', 0),
+                    "pentaKills": p.get('pentaKills', 0),
+                    "quadraKills": p.get('quadraKills', 0),
+                    "tripleKills": p.get('tripleKills', 0),
+                    "doubleKills": p.get('doubleKills', 0)
                 }
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error procesando los detalles de la partida {match_id}: {e}")
@@ -748,6 +749,35 @@ def get_peak_elo_key(jugador):
     """Genera una clave para el peak ELO usando el nombre del jugador y su Riot ID."""
     return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
 
+def calcular_rachas(partidas):
+    """
+    Calcula las rachas de victorias y derrotas más largas de una lista de partidas.
+    Las partidas deben estar ordenadas por fecha, de más reciente a más antigua.
+    """
+    if not partidas:
+        return {'max_win_streak': 0, 'max_loss_streak': 0}
+
+    max_win_streak = 0
+    max_loss_streak = 0
+    current_win_streak = 0
+    current_loss_streak = 0
+
+    # Las partidas vienen de más recientes a más antiguas, las invertimos para un cálculo cronológico
+    for partida in reversed(partidas):
+        if partida.get('win'):
+            current_win_streak += 1
+            current_loss_streak = 0
+        else:
+            current_loss_streak += 1
+            current_win_streak = 0
+        
+        if current_win_streak > max_win_streak:
+            max_win_streak = current_win_streak
+        if current_loss_streak > max_loss_streak:
+            max_loss_streak = current_loss_streak
+            
+    return {'max_win_streak': max_win_streak, 'max_loss_streak': max_loss_streak}
+
 @app.route('/')
 def index():
     """Renderiza la página principal con la lista de jugadores."""
@@ -827,6 +857,21 @@ def perfil_jugador(game_name):
             perfil['soloq'] = item
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['flexq'] = item
+
+    # --- NUEVO: Calcular rachas para cada cola ---
+    historial_total = perfil.get('historial_partidas', [])
+    
+    # Filtrar y calcular para SoloQ
+    if 'soloq' in perfil:
+        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
+        rachas_soloq = calcular_rachas(partidas_soloq)
+        perfil['soloq'].update(rachas_soloq)
+
+    # Filtrar y calcular para FlexQ
+    if 'flexq' in perfil:
+        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
+        rachas_flexq = calcular_rachas(partidas_flexq)
+        perfil['flexq'].update(rachas_flexq)
 
     # 7. Ordenar el historial por fecha (más reciente primero)
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
