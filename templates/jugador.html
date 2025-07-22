@@ -756,10 +756,13 @@
                                     <div class="mt-1"><span>N/A</span></div>
                                 {% endif %}
                             </td>
-                            <td title="Daño a Objetivos / Torretas / Objetivos Robados">
+                            <td title="Daño a Objetivos / Torretas / Inhibidores / Objetivos Robados">
                                 <div>{{ '{:,.0f}'.format(match.get('damage_dealt_to_objectives', 0)) }}</div>
                                 <span class="small-text-stats">
                                     <i class="fas fa-chess-rook"></i> {{ match.get('turret_kills', 0) }}
+                                </span>
+                                <span class="small-text-stats">
+                                    <i class="fas fa-monument"></i> {{ match.get('inhibitor_kills', 0) }}
                                 </span>
                                 {% if match.get('objectives_stolen', 0) > 0 %}
                                     <span class="small-text-stats text-warning fw-bold">
