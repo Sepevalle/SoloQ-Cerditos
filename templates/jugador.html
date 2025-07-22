@@ -926,6 +926,14 @@
                                                         {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
                                                         {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
                                                     </h6>
+                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                        <div class="text-center" style="width: 110px;">KDA</div>
+                                                        <div class="text-center" style="width: 80px;">Daño</div>
+                                                        <div class="text-center" style="width: 80px;">CS</div>
+                                                        <div class="text-center" style="width: 50px;">Visión</div>
+                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                    </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
                                                             {% if participante.team_id == 200 %}
