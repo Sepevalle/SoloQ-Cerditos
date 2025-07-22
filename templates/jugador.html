@@ -916,8 +916,15 @@
                                                                     <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
                                                                 </div>
                                                                 <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                                <br>
+                                                                <span class="small-text-stats">
+                                                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                                                    {{ participante.get('total_cs', 0) }} cs/{{ '%.1f'|format(game_duration_minutes) }} min 
                                                                 <div class="d-flex align-items-center ms-2 gap-1">
                                                                     {% for item_id in participante.get('items', []) %}
+                                                                       <br>
+                                                                        <span class="small-text-stats">
+                                                                     {% set game_duration_minutes = match.game_duration / 60 %}
                                                                         {% if item_id > 0 %}
                                                                             <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
                                                                         {% else %}
