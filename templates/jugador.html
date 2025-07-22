@@ -900,13 +900,20 @@
                                                         {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
                                                         {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
                                                     </h6>
+                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                        <div class="text-center" style="width: 80px;">KDA</div>
+                                                        <div class="text-center" style="width: 80px;">Daño</div>
+                                                        <div class="text-center" style="width: 50px;">CS</div>
+                                                        <div class="text-center" style="width: 50px;">Visión</div>
+                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                    </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
                                                             {% if participante.team_id == 200 %}
                                                             <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
                                                                 <div class="d-flex align-items-center" style="min-width: 150px;">
                                                                     <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
-                                                                    <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
                                                                 </div>
                                                                 <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
                                                                 <div class="d-flex align-items-center ms-2 gap-1">
@@ -983,7 +990,7 @@
         const toggleModeBtn = document.getElementById('toggle-mode');
         const body = document.body;
 
-        // Load mode from localStorage
+
         if (localStorage.getItem('darkMode') === 'enabled') {
             body.classList.add('dark-mode');
             toggleModeBtn.textContent = 'Modo Claro';
@@ -1018,7 +1025,7 @@
         // Lateral images dynamic (also specific to your design)
         const leftBanner = document.getElementById('left-banner');
         const rightBanner = document.getElementById('right-banner');
-        const lateralBanners = [
+       const lateralBanners = [
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg",
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg",
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/3.jpg",
@@ -1252,6 +1259,13 @@
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
 </script>
+
+
+
+
+
+
+
 
 </body>
 </html>

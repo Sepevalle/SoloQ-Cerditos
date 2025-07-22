@@ -302,7 +302,10 @@ def obtener_info_partida(args):
                 "deaths": p.get('deaths', 0),
                 "assists": p.get('assists', 0),
                 "items": [p.get(f'item{i}', 0) for i in range(7)],
-                "team_id": p.get('teamId') # 100 para el equipo azul, 200 para el rojo
+                "team_id": p.get('teamId'), # 100 para el equipo azul, 200 para el rojo
+                "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
+                "vision_score": p.get('visionScore', 0),
+                "total_cs": p.get('totalMinionsKilled', 0) + p.get('neutralMinionsKilled', 0)
             }
             all_participants_details.append(participant_summary)
 
