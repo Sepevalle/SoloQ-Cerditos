@@ -869,16 +869,42 @@
                                                         {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
                                                         {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
                                                     </h6>
+                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                        <div class="text-center" style="width: 110px;">KDA</div>
+                                                        <div class="text-center" style="width: 80px;">Daño</div>
+                                                        <div class="text-center" style="width: 80px;">CS</div>
+                                                        <div class="text-center" style="width: 50px;">Visión</div>
+                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                    </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
                                                             {% if participante.team_id == 100 %}
                                                             <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
-                                                                <div class="d-flex align-items-center" style="min-width: 150px;">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
                                                                     <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
                                                                     <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
                                                                 </div>
-                                                                <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
-                                                                <div class="d-flex align-items-center ms-2 gap-1">
+                                                                <div class="text-center" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
+                                                                </div>
+                                                                <div class="text-center" style="width: 80px;">
+                                                                    <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
+                                                                </div>
+                                                                <div class="text-center" style="width: 80px;">
+                                                                    <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
+                                                                    <br>
+                                                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                                                    {% if game_duration_minutes > 0 %}
+                                                                    <span class="small-text-stats">({{ '%.1f'|format(participante.get('total_cs', 0) / game_duration_minutes) }}/m)</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="text-center" style="width: 50px;">
+                                                                    <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
                                                                     {% for item_id in participante.get('items', []) %}
                                                                         {% if item_id > 0 %}
                                                                             <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
@@ -887,7 +913,7 @@
                                                                         {% endif %}
                                                                     {% endfor %}
                                                                 </div>
-                                                            </li>
+                                                            </li>                                                            
                                                             {% endif %}
                                                         {% endfor %}
                                                     </ul>
@@ -900,23 +926,34 @@
                                                         {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
                                                         {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
                                                     </h6>
-                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
-                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
-                                                        <div class="text-center" style="width: 80px;">KDA</div>
-                                                        <div class="text-center" style="width: 80px;">Daño</div>
-                                                        <div class="text-center" style="width: 50px;">CS</div>
-                                                        <div class="text-center" style="width: 50px;">Visión</div>
-                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
-                                                    </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
                                                             {% if participante.team_id == 200 %}
                                                             <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
-                                                                <div class="d-flex align-items-center" style="min-width: 150px;">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
                                                                     <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
+                                                                    <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
                                                                 </div>
-                                                                <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
-                                                                <div class="d-flex align-items-center ms-2 gap-1">
+                                                                <div class="text-center" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
+                                                                </div>
+                                                                <div class="text-center" style="width: 80px;">
+                                                                    <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
+                                                                </div>
+                                                                <div class="text-center" style="width: 80px;">
+                                                                    <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
+                                                                    <br>
+                                                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                                                    {% if game_duration_minutes > 0 %}
+                                                                    <span class="small-text-stats">({{ '%.1f'|format(participante.get('total_cs', 0) / game_duration_minutes) }}/m)</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="text-center" style="width: 50px;">
+                                                                    <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
                                                                     {% for item_id in participante.get('items', []) %}
                                                                         {% if item_id > 0 %}
                                                                             <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">

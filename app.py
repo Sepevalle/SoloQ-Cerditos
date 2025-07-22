@@ -318,6 +318,18 @@ def obtener_info_partida(args):
             if p.get('puuid') == puuid:
                 main_player_data = p
 
+        # --- NUEVO: Añadir KP% a cada participante ---
+        for detail in all_participants_details:
+            p_team_id = detail.get('team_id')
+            p_total_team_kills = team_kills.get(p_team_id, 1)
+            p_kills = detail.get('kills', 0)
+            p_assists = detail.get('assists', 0)
+            
+            kp = 0
+            if p_total_team_kills > 0:
+                kp = (p_kills + p_assists) / p_total_team_kills * 100
+            detail['kill_participation'] = kp
+
         if not main_player_data:
             # Si por alguna razón no se encuentra al jugador principal, no devolver nada.
             return None
