@@ -847,7 +847,7 @@
                                                             </div>
                                                             <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
                                                             <div class="d-flex align-items-center ms-2 gap-1">
-                                                                {% for item_id in participante.items %}
+                                                                {% for item_id in participante.get('items', []) %}
                                                                     {% if item_id > 0 %}
                                                                         <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
                                                                     {% else %}
@@ -878,7 +878,7 @@
                                                             </div>
                                                             <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
                                                             <div class="d-flex align-items-center ms-2 gap-1">
-                                                                {% for item_id in participante.items %}
+                                                                {% for item_id in participante.get('items', []) %}
                                                                     {% if item_id > 0 %}
                                                                         <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
                                                                     {% else %}
