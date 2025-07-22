@@ -901,31 +901,18 @@
                         <div class="match-stat-item">
                             <span class="value">{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</span>
                             <span class="label">Daño</span>
-                            {% set game_duration_minutes = match.game_duration / 60 %}
-                            {% if game_duration_minutes > 0 %}
-                                <span class="small-text-stats">{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions / game_duration_minutes) }} DPM</span>
-                            {% endif %}
                         </div>
                         <div class="match-stat-item">
                             <span class="value">{{ match.total_minions_killed + match.neutral_minions_killed }}</span>
                             <span class="label">CS</span>
-                            {% if game_duration_minutes > 0 %}
-                                <span class="small-text-stats">{{ '%.1f'|format((match.total_minions_killed + match.neutral_minions_killed) / game_duration_minutes) }} CS/m</span>
-                            {% endif %}
                         </div>
                         <div class="match-stat-item">
                             <span class="value">{{ match.vision_score }}</span>
                             <span class="label">Visión</span>
-                            {% if game_duration_minutes > 0 %}
-                                <span class="small-text-stats">{{ '%.2f'|format(match.vision_score / game_duration_minutes) }} VSPM</span>
-                            {% endif %}
                         </div>
                         <div class="match-stat-item">
                             <span class="value">{{ '{:,.0f}'.format(match.gold_earned) }}</span>
                             <span class="label">Oro</span>
-                            {% if game_duration_minutes > 0 %}
-                                <span class="small-text-stats">{{ '{:,.0f}'.format(match.gold_earned / game_duration_minutes) }} GPM</span>
-                            {% endif %}
                         </div>
                     </div>
 
@@ -971,9 +958,19 @@
                                     {% for participante in match.all_participants %}
                                         {% if participante.team_id == 100 %}
                                         <div class="participant-row {% if participante.summoner_name == perfil.game_name.split('#')[0] %}player-highlight{% endif %}">
-                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png" alt="{{ participante.champion_name }}">
-                                            <span class="name" title="{{ participante.summoner_name }}">{{ participante.summoner_name }}</span>
-                                            <span class="stats">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                            <!-- Grupo 1: Jugador -->
+                                            <div class="d-flex align-items-center" style="flex-grow: 1;">
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png" alt="{{ participante.champion_name }}">
+                                                <span class="name" title="{{ participante.summoner_name }}">{{ participante.summoner_name }}</span>
+                                            </div>
+                                            <!-- Grupo 2: KDA -->
+                                            <div class="text-center">
+                                                <span class="stats">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                <br>
+                                                {% set p_kda = ((participante.kills + participante.assists) / participante.deaths) if participante.deaths > 0 else 999 %}
+                                                <span class="small-text-stats">({{ '%.2f'|format(p_kda) }} KDA)</span>
+                                            </div>
+                                            <!-- Grupo 3: Objetos -->
                                             <div class="items-small">
                                                 {% for item_id in participante.get('items', []) %}
                                                     {% if item_id > 0 %}
@@ -998,9 +995,19 @@
                                     {% for participante in match.all_participants %}
                                         {% if participante.team_id == 200 %}
                                         <div class="participant-row {% if participante.summoner_name == perfil.game_name.split('#')[0] %}player-highlight{% endif %}">
-                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png" alt="{{ participante.champion_name }}">
-                                            <span class="name" title="{{ participante.summoner_name }}">{{ participante.summoner_name }}</span>
-                                            <span class="stats">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                            <!-- Grupo 1: Jugador -->
+                                            <div class="d-flex align-items-center" style="flex-grow: 1;">
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png" alt="{{ participante.champion_name }}">
+                                                <span class="name" title="{{ participante.summoner_name }}">{{ participante.summoner_name }}</span>
+                                            </div>
+                                            <!-- Grupo 2: KDA -->
+                                            <div class="text-center">
+                                                <span class="stats">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                <br>
+                                                {% set p_kda = ((participante.kills + participante.assists) / participante.deaths) if participante.deaths > 0 else 999 %}
+                                                <span class="small-text-stats">({{ '%.2f'|format(p_kda) }} KDA)</span>
+                                            </div>
+                                            <!-- Grupo 3: Objetos -->
                                             <div class="items-small">
                                                 {% for item_id in participante.get('items', []) %}
                                                     {% if item_id > 0 %}
