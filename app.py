@@ -344,6 +344,7 @@ def obtener_info_partida(args):
             "kills": p.get('kills', 0),
             "deaths": p.get('deaths', 0),
             "assists": p.get('assists', 0),
+            "kda": (p.get('kills', 0) + p.get('assists', 0)) / max(1, p.get('deaths', 0)),
             "player_items": player_items,
             "game_end_timestamp": game_end_timestamp,
             "queue_id": info.get('queueId'),

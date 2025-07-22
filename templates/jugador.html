@@ -754,7 +754,7 @@
                                 </td>
                                 <td>
                                     <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span><br>
-                                    <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / max(1, match.deaths)) }}</span>
+                                    <span class="small-text-stats">KDA: {{ '%.2f'|format(match.kda) }}</span>
                                 </td>
                                 <td>
                                     <div class="items-layout">
