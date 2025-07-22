@@ -663,6 +663,7 @@
                             <th>Campeón</th>
                             <th>KDA</th>
                             <th>Daño a Campeones</th>
+                            <th>Daño a Objetivos</th>
                             <th>Oro Ganado</th>
                             <th>Súbditos</th>
                             <th>Visión</th>
@@ -709,6 +710,8 @@
                                 {% endif %}
                                 <br>
                                 <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>
+                                <br>
+                                <span class="small-text-stats fw-bold" title="Participación en Asesinatos">{{ '%.0f'|format(match.get('kill_participation', 0)) }}% KP</span>
                             </td>
                             <td>
                                 <div>{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</div>
@@ -734,6 +737,17 @@
                                     </div>
                                 {% else %}
                                     <div class="mt-1"><span>N/A</span></div>
+                                {% endif %}
+                            </td>
+                            <td title="Daño a Objetivos / Torretas / Objetivos Robados">
+                                <div>{{ '{:,.0f}'.format(match.get('damage_dealt_to_objectives', 0)) }}</div>
+                                <span class="small-text-stats">
+                                    <i class="fas fa-chess-rook"></i> {{ match.get('turret_kills', 0) }}
+                                </span>
+                                {% if match.get('objectives_stolen', 0) > 0 %}
+                                    <span class="small-text-stats text-warning fw-bold">
+                                        <i class="fas fa-hand-lizard"></i> {{ match.get('objectives_stolen', 0) }} Robados
+                                    </span>
                                 {% endif %}
                             </td>
                             <td>
@@ -827,7 +841,7 @@
                         </tr>
                         {% if match.all_participants %}
                         <tr id="match-{{ loop.index }}" class="hidden">
-                            <td colspan="12" class="p-0">
+                            <td colspan="13" class="p-0">
                                 <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
                                     <div class="row g-2">
                                         <!-- Equipo Azul (ID 100) -->

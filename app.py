@@ -290,6 +290,7 @@ def obtener_info_partida(args):
         # --- NUEVO: Recopilar datos de TODOS los participantes ---
         all_participants_details = []
         main_player_data = None
+        team_kills = {100: 0, 200: 0} # Para calcular el KP%
 
         for p in participants:
             # Extraer detalles clave para la lista de resumen
@@ -305,6 +306,11 @@ def obtener_info_partida(args):
             }
             all_participants_details.append(participant_summary)
 
+            # Sumar asesinatos del equipo
+            team_id = p.get('teamId')
+            if team_id in team_kills:
+                team_kills[team_id] += p.get('kills', 0)
+
             # Identificar los datos del jugador principal para el retorno detallado
             if p.get('puuid') == puuid:
                 main_player_data = p
@@ -319,6 +325,16 @@ def obtener_info_partida(args):
         
         # Reasignamos 'p' para reutilizar el código de extracción de estadísticas detalladas
         p = main_player_data
+
+        # --- NUEVO: Calcular Kill Participation (KP%) ---
+        player_team_id = p.get('teamId')
+        total_team_kills = team_kills.get(player_team_id, 1) # Evitar división por cero
+        player_kills = p.get('kills', 0)
+        player_assists = p.get('assists', 0)
+        
+        kill_participation = 0
+        if total_team_kills > 0:
+            kill_participation = (player_kills + player_assists) / total_team_kills * 100
 
         # Extraer IDs de ítems, reemplazando None con 0
         player_items = [p.get(f'item{i}', 0) for i in range(0, 7)]
@@ -392,6 +408,7 @@ def obtener_info_partida(args):
             "first_blood_kill": p.get('firstBloodKill', False),
             "first_blood_assist": p.get('firstBloodAssist', False),
             "objectives_stolen": p.get('objectivesStolen', 0),
+            "kill_participation": kill_participation,
 
             # --- AÑADIMOS LA LISTA DE TODOS LOS PARTICIPANTES ---
             "all_participants": all_participants_details
