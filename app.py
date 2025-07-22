@@ -1009,7 +1009,7 @@ def _get_player_profile_data(game_name):
 
 
 @app.route('/jugador_original/<path:game_name>')
-def perfil_jugador(game_name):
+def perfil_jugador_original(game_name):
     """
     Muestra una página de perfil para un jugador específico.
     Esta es la versión CORREGIDA Y MEJORADA de tu función original.
