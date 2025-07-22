@@ -287,86 +287,114 @@ def obtener_info_partida(args):
             print(f"Partida {match_id} marcada como remake.")
             return None
 
+        # --- NUEVO: Recopilar datos de TODOS los participantes ---
+        all_participants_details = []
+        main_player_data = None
+
+        for p in participants:
+            # Extraer detalles clave para la lista de resumen
+            participant_summary = {
+                "summoner_name": p.get('riotIdGameName', p.get('summonerName')), # Compatible con nombres antiguos/nuevos
+                "champion_name": obtener_nombre_campeon(p.get('championId')),
+                "win": p.get('win', False),
+                "kills": p.get('kills', 0),
+                "deaths": p.get('deaths', 0),
+                "assists": p.get('assists', 0),
+                "items": [p.get(f'item{i}', 0) for i in range(7)],
+                "team_id": p.get('teamId') # 100 para el equipo azul, 200 para el rojo
+            }
+            all_participants_details.append(participant_summary)
+
+            # Identificar los datos del jugador principal para el retorno detallado
+            if p.get('puuid') == puuid:
+                main_player_data = p
+
+        if not main_player_data:
+            # Si por alguna razón no se encuentra al jugador principal, no devolver nada.
+            return None
+
         # Se suman 2 horas (7,200,000 milisegundos) para ajustar la zona horaria.
         game_end_timestamp = info.get('gameEndTimestamp', 0) + 7200000
         game_duration = info.get('gameDuration', 0) # Duración de la partida en segundos
+        
+        # Reasignamos 'p' para reutilizar el código de extracción de estadísticas detalladas
+        p = main_player_data
 
-        for p in participants:
-            if p.get('puuid') == puuid:
-                # Extraer IDs de ítems, reemplazando None con 0
-                player_items = [p.get(f'item{i}', 0) for i in range(0, 7)] # Changed from 'items'
+        # Extraer IDs de ítems, reemplazando None con 0
+        player_items = [p.get(f'item{i}', 0) for i in range(0, 7)]
 
-                spell1_id = p.get('summoner1Id')
-                spell2_id = p.get('summoner2Id')
-                
-                perks = p.get('perks', {})
-                perk_main_id = None
-                perk_sub_id = None
+        spell1_id = p.get('summoner1Id')
+        spell2_id = p.get('summoner2Id')
+        
+        perks = p.get('perks', {})
+        perk_main_id = None
+        perk_sub_id = None
 
-                if 'styles' in perks and len(perks['styles']) > 0:
-                    if len(perks['styles'][0]['selections']) > 0:
-                        perk_main_id = perks['styles'][0]['selections'][0]['perk']
-                    if len(perks['styles']) > 1:
-                        perk_sub_id = perks['styles'][1]['style']
+        if 'styles' in perks and len(perks['styles']) > 0:
+            if len(perks['styles'][0]['selections']) > 0:
+                perk_main_id = perks['styles'][0]['selections'][0]['perk']
+            if len(perks['styles']) > 1:
+                perk_sub_id = perks['styles'][1]['style']
 
-                # Extracción de las nuevas estadísticas
-                return {
-                    "match_id": match_id,
-                    "champion_name": obtener_nombre_campeon(p.get('championId')),
-                    "win": p.get('win', False),
-                    "kills": p.get('kills', 0),
-                    "deaths": p.get('deaths', 0),
-                    "assists": p.get('assists', 0),
-                    "player_items": player_items, # Changed from 'items'
-                    "game_end_timestamp": game_end_timestamp,
-                    "queue_id": info.get('queueId'),
-                    "champion_level": p.get('champLevel'),
-                    "summoner_spell_1_id": ALL_SUMMONER_SPELLS.get(spell1_id),
-                    "summoner_spell_2_id": ALL_SUMMONER_SPELLS.get(spell2_id),
-                    "perk_main_id": ALL_RUNES.get(perk_main_id),
-                    "perk_sub_id": ALL_RUNES.get(perk_sub_id),
+        # Extracción de las nuevas estadísticas
+        return {
+            "match_id": match_id,
+            "champion_name": obtener_nombre_campeon(p.get('championId')),
+            "win": p.get('win', False),
+            "kills": p.get('kills', 0),
+            "deaths": p.get('deaths', 0),
+            "assists": p.get('assists', 0),
+            "player_items": player_items,
+            "game_end_timestamp": game_end_timestamp,
+            "queue_id": info.get('queueId'),
+            "champion_level": p.get('champLevel'),
+            "summoner_spell_1_id": ALL_SUMMONER_SPELLS.get(spell1_id),
+            "summoner_spell_2_id": ALL_SUMMONER_SPELLS.get(spell2_id),
+            "perk_main_id": ALL_RUNES.get(perk_main_id),
+            "perk_sub_id": ALL_RUNES.get(perk_sub_id),
+            "total_minions_killed": p.get('totalMinionsKilled', 0),
+            "neutral_minions_killed": p.get('neutralMinionsKilled', 0),
+            "gold_earned": p.get('goldEarned', 0),
+            "gold_spent": p.get('goldSpent', 0),
+            "game_duration": game_duration,
+            "total_damage_dealt": p.get('totalDamageDealt', 0),
+            "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
+            "physical_damage_dealt_to_champions": p.get('physicalDamageDealtToChampions', 0),
+            "magic_damage_dealt_to_champions": p.get('magicDamageDealtToChampions', 0),
+            "true_damage_dealt_to_champions": p.get('trueDamageDealtToChampions', 0),
+            "damage_self_mitigated": p.get('damageSelfMitigated', 0),
+            "damage_dealt_to_buildings": p.get('damageDealtToBuildings', 0),
+            "damage_dealt_to_objectives": p.get('damageDealtToObjectives', 0),
+            "total_heal": p.get('totalHeal', 0),
+            "total_heals_on_teammates": p.get('totalHealsOnTeammates', 0),
+            "total_damage_shielded_on_teammates": p.get('totalDamageShieldedOnTeammates', 0),
+            "vision_score": p.get('visionScore', 0),
+            "wards_placed": p.get('wardsPlaced', 0),
+            "wards_killed": p.get('wardsKilled', 0),
+            "detector_wards_placed": p.get('detectorWardsPlaced', 0),
+            "time_ccing_others": p.get('timeCCingOthers', 0),
+            "turret_kills": p.get('turretKills', 0),
+            "inhibitor_kills": p.get('inhibitorKills', 0),
+            "baron_kills": p.get('baronKills', 0),
+            "dragon_kills": p.get('dragonKills', 0),
+            "total_time_spent_dead": p.get('totalTimeSpentDead', 0),
+            "killing_sprees": p.get('killingSprees', 0),
+            "largest_killing_spree": p.get('largestKillingSpree', 0),
+            "largestMultiKill": p.get('largestMultiKill', 0),
+            "pentaKills": p.get('pentaKills', 0),
+            "quadraKills": p.get('quadraKills', 0),
+            "tripleKills": p.get('tripleKills', 0),
+            "doubleKills": p.get('doubleKills', 0),
+            "individual_position": p.get('individualPosition', 'N/A'),
+            "total_damage_taken": p.get('totalDamageTaken', 0),
+            "total_time_cc_dealt": p.get('totalTimeCCDealt', 0),
+            "first_blood_kill": p.get('firstBloodKill', False),
+            "first_blood_assist": p.get('firstBloodAssist', False),
+            "objectives_stolen": p.get('objectivesStolen', 0),
 
-                    # --- NUEVAS ESTADÍSTICAS AÑADIDAS ---
-                    "total_minions_killed": p.get('totalMinionsKilled', 0),
-                    "neutral_minions_killed": p.get('neutralMinionsKilled', 0),
-                    "gold_earned": p.get('goldEarned', 0),
-                    "gold_spent": p.get('goldSpent', 0),
-                    "game_duration": game_duration, # En segundos
-
-                    "total_damage_dealt": p.get('totalDamageDealt', 0),
-                    "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
-                    "physical_damage_dealt_to_champions": p.get('physicalDamageDealtToChampions', 0),
-                    "magic_damage_dealt_to_champions": p.get('magicDamageDealtToChampions', 0),
-                    "true_damage_dealt_to_champions": p.get('trueDamageDealtToChampions', 0),
-                    "damage_self_mitigated": p.get('damageSelfMitigated', 0),
-                    "damage_dealt_to_buildings": p.get('damageDealtToBuildings', 0),
-                    "damage_dealt_to_objectives": p.get('damageDealtToObjectives', 0),
-                    
-                    "total_heal": p.get('totalHeal', 0),
-                    "total_heals_on_teammates": p.get('totalHealsOnTeammates', 0),
-                    "total_damage_shielded_on_teammates": p.get('totalDamageShieldedOnTeammates', 0),
-                    
-                    "vision_score": p.get('visionScore', 0),
-                    "wards_placed": p.get('wardsPlaced', 0),
-                    "wards_killed": p.get('wardsKilled', 0),
-                    "detector_wards_placed": p.get('detectorWardsPlaced', 0),
-
-                    "time_ccing_others": p.get('timeCCingOthers', 0),
-
-                    "turret_kills": p.get('turretKills', 0),
-                    "inhibitor_kills": p.get('inhibitorKills', 0),
-                    "baron_kills": p.get('baronKills', 0),
-                    "dragon_kills": p.get('dragonKills', 0),
-
-                    "total_time_spent_dead": p.get('totalTimeSpentDead', 0),
-                    "killing_sprees": p.get('killingSprees', 0),
-                    "largest_killing_spree": p.get('largestKillingSpree', 0),
-                    "largestMultiKill": p.get('largestMultiKill', 0),
-                    "pentaKills": p.get('pentaKills', 0),
-                    "quadraKills": p.get('quadraKills', 0),
-                    "tripleKills": p.get('tripleKills', 0),
-                    "doubleKills": p.get('doubleKills', 0)
-                }
+            # --- AÑADIMOS LA LISTA DE TODOS LOS PARTICIPANTES ---
+            "all_participants": all_participants_details
+        }
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error procesando los detalles de la partida {match_id}: {e}")
     return None
