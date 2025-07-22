@@ -1210,13 +1210,15 @@
             
             filteredMainRows.forEach((row, index) => {
                 if (index >= startIndex && index < endIndex) {
-                    row.style.display = ''; // Muestra la fila principal
+                    row.style.display = '';
                     // Si la fila de detalles está visible, la mantenemos visible. Si no, se queda oculta.
                     const detailRow = row.nextElementSibling;
                     if (detailRow && detailRow.id.startsWith('match-') && !detailRow.classList.contains('hidden')) {
                         detailRow.style.display = '';
                     }
                 }
+                else
+                    row.style.display = 'none';
             });
         }
 
