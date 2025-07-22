@@ -1188,37 +1188,38 @@
         function renderMatchHistory() {
             const selectedQueue = queueFilter.value;
             const selectedChampion = championFilter.value;
-            
-            // 1. Filtrar solo las filas de partidas principales
+
+            // 1. Obtener y filtrar las filas de partidas principales
             const mainMatchRows = Array.from(allMatchRows).filter(row => row.hasAttribute('data-queue-id'));
-            
             const filteredMainRows = mainMatchRows.filter(row => {
                 const queueMatch = (selectedQueue === 'all' || row.dataset.queueId === selectedQueue);
                 const championMatch = (selectedChampion === 'all' || row.dataset.championName === selectedChampion);
                 return queueMatch && championMatch;
             });
 
-            // 2. Configurar la paginación BASADO EN LAS FILAS FILTRADAS
+            // 2. Configurar la paginación basado en los resultados filtrados
             setupPagination(filteredMainRows.length, currentPage);
 
-            // 3. Ocultar TODAS las filas (principales y de detalles)
-            allMatchRows.forEach(row => row.style.display = 'none');
-
-            // 4. Mostrar solo las filas de la página actual
+            // 3. Determinar qué filas mostrar en la página actual
             const startIndex = (currentPage - 1) * rowsPerPage;
             const endIndex = startIndex + rowsPerPage;
-            
-            filteredMainRows.forEach((row, index) => {
-                if (index >= startIndex && index < endIndex) {
+            const rowsForCurrentPage = filteredMainRows.slice(startIndex, endIndex);
+
+            // 4. Iterar sobre TODAS las filas principales para establecer su visibilidad
+            mainMatchRows.forEach(row => {
+                const detailRow = row.nextElementSibling;
+
+                if (rowsForCurrentPage.includes(row)) {
+                    // Esta fila está en la página actual, así que la mostramos.
+                    // No tocamos el 'display' de la fila de detalles para no interferir con la animación.
                     row.style.display = '';
-                    // Si la fila de detalles está visible, la mantenemos visible. Si no, se queda oculta.
-                    const detailRow = row.nextElementSibling;
-                    if (detailRow && detailRow.id.startsWith('match-') && !detailRow.classList.contains('hidden')) {
-                        detailRow.style.display = '';
+                } else {
+                    // Esta fila NO está en la página actual, la ocultamos junto con su detalle.
+                    row.style.display = 'none';
+                    if (detailRow && detailRow.id.startsWith('match-')) {
+                        detailRow.style.display = 'none';
                     }
                 }
-                else
-                    row.style.display = 'none';
             });
         }
 
