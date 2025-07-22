@@ -937,6 +937,80 @@ def index():
 @app.route('/jugador/<path:game_name>')
 def perfil_jugador(game_name):
     """
+    Muestra una página de perfil para un jugador específico, detectando
+    el tipo de dispositivo para renderizar la plantilla adecuada.
+    """
+    perfil = _get_player_profile_data(game_name)
+    if not perfil:
+        return render_template('404.html'), 404
+
+    # Detección del dispositivo a través del User-Agent
+    user_agent_string = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent_string for keyword in ['mobi', 'android', 'iphone', 'ipad'])
+    
+    # Seleccionar la plantilla basada en el dispositivo
+    template_name = 'jugador_2.html' if is_mobile else 'jugador.html'
+    
+    print(f"Dispositivo detectado como {'Móvil' if is_mobile else 'Escritorio'}. Renderizando {template_name}.")
+
+    return render_template(template_name,
+                           perfil=perfil,
+                           ddragon_version=DDRAGON_VERSION,
+                           datetime=datetime,
+                           now=datetime.now())
+
+def _get_player_profile_data(game_name):
+    """
+    Función auxiliar que encapsula la lógica para obtener y procesar
+    todos los datos de un perfil de jugador.
+    Devuelve el diccionario 'perfil' o None si no se encuentra el jugador.
+    """
+    todos_los_datos, _ = obtener_datos_jugadores()
+    datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
+    
+    if not datos_del_jugador:
+        return None
+    
+    primer_perfil = datos_del_jugador[0]
+    puuid = primer_perfil.get('puuid')
+
+    historial_partidas_completo = {}
+    if puuid:
+        historial_partidas_completo = leer_historial_jugador_github(puuid)
+
+    perfil = {
+        'nombre': primer_perfil.get('jugador', 'N/A'),
+        'game_name': game_name,
+        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''),
+        'historial_partidas': historial_partidas_completo.get('matches', [])
+    }
+    
+    for item in datos_del_jugador:
+        if item.get('queue_type') == 'RANKED_SOLO_5x5':
+            perfil['soloq'] = item
+        elif item.get('queue_type') == 'RANKED_FLEX_SR':
+            perfil['flexq'] = item
+
+    historial_total = perfil.get('historial_partidas', [])
+    
+    if 'soloq' in perfil:
+        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
+        rachas_soloq = calcular_rachas(partidas_soloq)
+        perfil['soloq'].update(rachas_soloq)
+
+    if 'flexq' in perfil:
+        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
+        rachas_flexq = calcular_rachas(partidas_flexq)
+        perfil['flexq'].update(rachas_flexq)
+
+    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+    
+    return perfil
+
+
+@app.route('/jugador_original/<path:game_name>')
+def perfil_jugador(game_name):
+    """
     Muestra una página de perfil para un jugador específico.
     Esta es la versión CORREGIDA Y MEJORADA de tu función original.
     """
@@ -1000,60 +1074,6 @@ def perfil_jugador(game_name):
                            ddragon_version=DDRAGON_VERSION,
                            datetime=datetime, # Pass the datetime object
                            now=datetime.now()) # Pass the current time
-
-@app.route('/jugador2/<path:game_name>')
-def perfil_jugador_2(game_name):
-    """
-    Muestra una página de perfil alternativa para un jugador específico,
-    renderizando la plantilla jugador_2.html.
-    """
-    # La lógica para obtener los datos es idéntica a la de perfil_jugador
-    todos_los_datos, _ = obtener_datos_jugadores()
-    datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
-    
-    if not datos_del_jugador:
-        return render_template('404.html'), 404
-    
-    primer_perfil = datos_del_jugador[0]
-    puuid = primer_perfil.get('puuid')
-
-    historial_partidas_completo = {}
-    if puuid:
-        historial_partidas_completo = leer_historial_jugador_github(puuid)
-
-    perfil = {
-        'nombre': primer_perfil.get('jugador', 'N/A'),
-        'game_name': game_name,
-        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''), # Usar la URL de la caché
-        'historial_partidas': historial_partidas_completo.get('matches', [])
-    }
-    
-    for item in datos_del_jugador:
-        if item.get('queue_type') == 'RANKED_SOLO_5x5':
-            perfil['soloq'] = item
-        elif item.get('queue_type') == 'RANKED_FLEX_SR':
-            perfil['flexq'] = item
-
-    historial_total = perfil.get('historial_partidas', [])
-    
-    if 'soloq' in perfil:
-        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
-        rachas_soloq = calcular_rachas(partidas_soloq)
-        perfil['soloq'].update(rachas_soloq)
-
-    if 'flexq' in perfil:
-        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
-        rachas_flexq = calcular_rachas(partidas_flexq)
-        perfil['flexq'].update(rachas_flexq)
-
-    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-
-    # La única diferencia es que renderizamos la nueva plantilla
-    return render_template('jugador_2.html', 
-                           perfil=perfil, 
-                           ddragon_version=DDRAGON_VERSION,
-                           datetime=datetime,
-                           now=datetime.now())
 
 def actualizar_historial_partidas_en_segundo_plano():
     """

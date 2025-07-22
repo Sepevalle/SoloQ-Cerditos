@@ -619,6 +619,25 @@
         }
         .bg-opacity-25 { background-color: rgba(255, 193, 7, 0.25); } /* Para resaltar jugador en detalles */
 
+        /* --- INICIO: Mejoras de Responsividad para Móviles --- */
+        @media (max-width: 576px) {
+            .profile-header h1 {
+                font-size: 1.5rem; /* Reducir tamaño del nombre en móviles */
+            }
+            .match-card-item {
+                min-width: 0; /* Permitir que las tarjetas sean más pequeñas que 300px */
+            }
+            .match-details-expanded .participant-row {
+                flex-direction: column; /* Apilar los elementos verticalmente */
+                align-items: flex-start; /* Alinear al inicio */
+                gap: 5px; /* Añadir espacio entre elementos apilados */
+            }
+            .match-details-expanded .participant-row .stats,
+            .match-details-expanded .participant-row .items-small {
+                margin-left: 0; /* Eliminar margen izquierdo en móvil */
+            }
+        }
+        /* --- FIN: Mejoras de Responsividad para Móviles --- */
     </style>
 </head>
 
