@@ -1096,62 +1096,72 @@
         const championFilter = document.getElementById('championFilter');
         const allMatchRows = document.querySelectorAll('.match-history-table tbody tr');
         const paginationControls = document.getElementById('pagination-controls');
-        const rowsPerPage = 10;
+        const rowsPerPage = 10; // Partidas por página
 
         // --- ESTADO ---
         let currentPage = 1;
 
         // --- FUNCIONES AUXILIARES ---
         function populateChampionFilter() {
+            // Usamos un Set para evitar campeones duplicados
             const championNames = new Set();
             allMatchRows.forEach(row => {
-                championNames.add(row.dataset.championName);
+                // Solo consideramos las filas de partidas principales, no las de detalles
+                if (row.dataset.championName) {
+                    championNames.add(row.dataset.championName);
+                }
             });
 
             championFilter.innerHTML = '<option value="all">Todos</option>';
+            // Convertimos el Set a un Array y lo ordenamos alfabéticamente
             const sortedChampionNames = Array.from(championNames).sort();
             sortedChampionNames.forEach(championName => {
-                const option = document.createElement('option');
-                option.value = championName;
-                option.textContent = championName;
-                championFilter.appendChild(option);
+                championFilter.add(new Option(championName, championName));
             });
         }
 
         function populateQueueFilter() {
+            // Usamos un Map para asociar ID de cola con su nombre, evitando duplicados
             const queueTypes = new Map();
             allMatchRows.forEach(row => {
-                const queueId = row.dataset.queueId;
-                const queueName = row.cells[1].textContent.trim();
-                if (!queueTypes.has(queueId)) queueTypes.set(queueId, queueName);
+                // Solo consideramos las filas de partidas principales
+                if (row.dataset.queueId) {
+                    const queueId = row.dataset.queueId;
+                    // CORRECCIÓN: El nombre de la cola está en la primera celda (índice 0)
+                    const queueName = row.cells[0].textContent.trim(); 
+                    if (!queueTypes.has(queueId)) {
+                        queueTypes.set(queueId, queueName);
+                    }
+                }
             });
 
             queueFilter.innerHTML = '<option value="all">Todas</option>';
+            // Ordenamos las colas por nombre para una mejor UX
             const sortedQueues = Array.from(queueTypes.entries()).sort((a, b) => a[1].localeCompare(b[1]));
             sortedQueues.forEach(([queueId, queueName]) => queueFilter.add(new Option(queueName, queueId)));
         }
 
         function setupPagination(totalRows, page) {
             paginationControls.innerHTML = "";
-            const pageCount = Math.ceil(totalRows / rowsPerPage);
+            const pageCount = Math.ceil(totalRows / rowsPerPage) || 1; // Aseguramos que al menos sea 1
             if (pageCount <= 1) return;
 
             // Botón "Anterior"
             const prevLi = document.createElement('li');
             prevLi.className = `page-item ${page === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${page - 1}">&laquo; Anterior</a>`;
+            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${page - 1}" aria-label="Previous">&laquo; Anterior</a>`;
             paginationControls.appendChild(prevLi);
 
             // Indicador de página "Página X de Y"
             const pageInfoLi = document.createElement('li');
             pageInfoLi.className = 'page-item disabled';
-            pageInfoLi.innerHTML = `<span class="page-link">Página ${page} de ${pageCount}</span>`;
+            pageInfoLi.innerHTML = `<span class="page-link">Página ${page} de ${pageCount}</span>`; // Más claro para el usuario
             paginationControls.appendChild(pageInfoLi);
 
             // Botón "Siguiente"
             const nextLi = document.createElement('li');
             nextLi.className = `page-item ${page === pageCount ? 'disabled' : ''}`;
-            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${page + 1}">Siguiente &raquo;</a>`;
+            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${page + 1}" aria-label="Next">Siguiente &raquo;</a>`;
             paginationControls.appendChild(nextLi);
         }
 
@@ -1159,38 +1169,52 @@
         function renderMatchHistory() {
             const selectedQueue = queueFilter.value;
             const selectedChampion = championFilter.value;
-
-            const filteredRows = Array.from(allMatchRows).filter(row => {
-                const isQueueMatch = (selectedQueue === 'all' || row.dataset.queueId == selectedQueue);
-                const isChampionMatch = (selectedChampion === 'all' || row.dataset.championName === selectedChampion);
-                return isQueueMatch && isChampionMatch;
+            
+            // 1. Filtrar solo las filas de partidas principales
+            const mainMatchRows = Array.from(allMatchRows).filter(row => row.hasAttribute('data-queue-id'));
+            
+            const filteredMainRows = mainMatchRows.filter(row => {
+                const queueMatch = (selectedQueue === 'all' || row.dataset.queueId === selectedQueue);
+                const championMatch = (selectedChampion === 'all' || row.dataset.championName === selectedChampion);
+                return queueMatch && championMatch;
             });
 
-            setupPagination(filteredRows.length, currentPage);
+            // 2. Configurar la paginación BASADO EN LAS FILAS FILTRADAS
+            setupPagination(filteredMainRows.length, currentPage);
 
+            // 3. Ocultar TODAS las filas (principales y de detalles)
+            allMatchRows.forEach(row => row.style.display = 'none');
+
+            // 4. Mostrar solo las filas de la página actual
             const startIndex = (currentPage - 1) * rowsPerPage;
             const endIndex = startIndex + rowsPerPage;
-
-            allMatchRows.forEach(row => row.style.display = 'none');
-            filteredRows.forEach((row, index) => {
-                if (index >= startIndex && index < endIndex) row.style.display = '';
+            
+            filteredMainRows.forEach((row, index) => {
+                if (index >= startIndex && index < endIndex) {
+                    row.style.display = ''; // Muestra la fila principal
+                    // Si la fila de detalles está visible, la mantenemos visible. Si no, se queda oculta.
+                    const detailRow = row.nextElementSibling;
+                    if (detailRow && detailRow.id.startsWith('match-') && !detailRow.classList.contains('hidden')) {
+                        detailRow.style.display = '';
+                    }
+                }
             });
         }
 
         // --- EVENT LISTENERS ---
         queueFilter.addEventListener('change', () => {
-            currentPage = 1;
+            currentPage = 1; // Resetear a la primera página al cambiar el filtro
             renderMatchHistory();
         });
         championFilter.addEventListener('change', () => {
-            currentPage = 1;
+            currentPage = 1; // Resetear a la primera página al cambiar el filtro
             renderMatchHistory();
         });
 
         paginationControls.addEventListener('click', (e) => {
             e.preventDefault();
             const target = e.target.closest('.page-link');
-            if (!target || target.parentElement.classList.contains('disabled')) return;
+            if (!target || target.parentElement.classList.contains('disabled') || target.parentElement.classList.contains('active')) return;
 
             const newPage = parseInt(target.dataset.page, 10);
             if (newPage !== currentPage) {
@@ -1200,8 +1224,8 @@
         });
 
         // --- INICIALIZACIÓN ---
-        populateChampionFilter();
         populateQueueFilter();
+        populateChampionFilter();
         renderMatchHistory();
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
