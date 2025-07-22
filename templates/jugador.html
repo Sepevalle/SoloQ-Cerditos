@@ -444,6 +444,23 @@
         .dark-mode .small-text-stats, .dark-mode .small-text {
             color: #adb5bd; /* Lighter gray for better contrast in dark mode */
         }
+
+        /* --- INICIO: Animación para desplegar detalles de partida --- */
+        .details-content-wrapper {
+            display: grid;
+            grid-template-rows: 0fr; /* Colapsado por defecto */
+            transition: grid-template-rows 0.4s ease-in-out;
+        }
+
+        /* Cuando la fila contenedora (tr) NO tiene la clase 'hidden', se expande */
+        tr:not(.hidden) .details-content-wrapper {
+            grid-template-rows: 1fr;
+        }
+
+        .details-content-wrapper > div {
+            overflow: hidden; /* Esencial para que la animación de grid funcione */
+        }
+        /* --- FIN: Animación para desplegar detalles de partida --- */
     </style>
 </head>
 
@@ -842,68 +859,70 @@
                         {% if match.all_participants %}
                         <tr id="match-{{ loop.index }}" class="hidden">
                             <td colspan="13" class="p-0">
-                                <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
-                                    <div class="row g-2">
-                                        <!-- Equipo Azul (ID 100) -->
-                                        <div class="col-md-6">
-                                            <div class="p-2 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
-                                                <h6 class="text-primary fw-bold mb-2">
-                                                    {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
-                                                    {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
-                                                </h6>
-                                                <ul class="list-unstyled mb-0">
-                                                    {% for participante in match.all_participants %}
-                                                        {% if participante.team_id == 100 %}
-                                                        <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
-                                                            <div class="d-flex align-items-center" style="min-width: 150px;">
-                                                                <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
-                                                                <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
-                                                            </div>
-                                                            <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
-                                                            <div class="d-flex align-items-center ms-2 gap-1">
-                                                                {% for item_id in participante.get('items', []) %}
-                                                                    {% if item_id > 0 %}
-                                                                        <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
-                                                                    {% else %}
-                                                                        <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
-                                                                    {% endif %}
-                                                                {% endfor %}
-                                                            </div>
-                                                        </li>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </ul>
+                                <div class="details-content-wrapper">
+                                    <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
+                                        <div class="row g-2">
+                                            <!-- Equipo Azul (ID 100) -->
+                                            <div class="col-md-6">
+                                                <div class="p-2 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
+                                                    <h6 class="text-primary fw-bold mb-2">
+                                                        {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
+                                                        {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
+                                                    </h6>
+                                                    <ul class="list-unstyled mb-0">
+                                                        {% for participante in match.all_participants %}
+                                                            {% if participante.team_id == 100 %}
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
+                                                                <div class="d-flex align-items-center" style="min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
+                                                                    <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
+                                                                </div>
+                                                                <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                                <div class="d-flex align-items-center ms-2 gap-1">
+                                                                    {% for item_id in participante.get('items', []) %}
+                                                                        {% if item_id > 0 %}
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                                        {% else %}
+                                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                                        {% endif %}
+                                                                    {% endfor %}
+                                                                </div>
+                                                            </li>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <!-- Equipo Rojo (ID 200) -->
-                                        <div class="col-md-6">
-                                            <div class="p-2 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
-                                                <h6 class="text-danger fw-bold mb-2">
-                                                    {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
-                                                    {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
-                                                </h6>
-                                                <ul class="list-unstyled mb-0">
-                                                    {% for participante in match.all_participants %}
-                                                        {% if participante.team_id == 200 %}
-                                                        <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
-                                                            <div class="d-flex align-items-center" style="min-width: 150px;">
-                                                                <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
-                                                                <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
-                                                            </div>
-                                                            <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
-                                                            <div class="d-flex align-items-center ms-2 gap-1">
-                                                                {% for item_id in participante.get('items', []) %}
-                                                                    {% if item_id > 0 %}
-                                                                        <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
-                                                                    {% else %}
-                                                                        <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
-                                                                    {% endif %}
-                                                                {% endfor %}
-                                                            </div>
-                                                        </li>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </ul>
+                                            <!-- Equipo Rojo (ID 200) -->
+                                            <div class="col-md-6">
+                                                <div class="p-2 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
+                                                    <h6 class="text-danger fw-bold mb-2">
+                                                        {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
+                                                        {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
+                                                    </h6>
+                                                    <ul class="list-unstyled mb-0">
+                                                        {% for participante in match.all_participants %}
+                                                            {% if participante.team_id == 200 %}
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
+                                                                <div class="d-flex align-items-center" style="min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
+                                                                    <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
+                                                                </div>
+                                                                <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                                <div class="d-flex align-items-center ms-2 gap-1">
+                                                                    {% for item_id in participante.get('items', []) %}
+                                                                        {% if item_id > 0 %}
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                                        {% else %}
+                                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                                        {% endif %}
+                                                                    {% endfor %}
+                                                                </div>
+                                                            </li>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
