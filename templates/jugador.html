@@ -461,106 +461,6 @@
             overflow: hidden; /* Esencial para que la animación de grid funcione */
         }
         /* --- FIN: Animación para desplegar detalles de partida --- */
-
-        /* --- INICIO: Estilos para la alineación de los detalles de la partida --- */
-        /* Ajustes para el contenedor de los detalles */
-        .details-row-content {
-            display: flex;
-            flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
-            justify-content: space-between; /* Distribuye el espacio entre los elementos */
-            align-items: flex-start; /* Alinea los elementos al inicio */
-            padding: 0.5rem 0; /* Espaciado interno */
-            text-align: center; /* Centra el texto por defecto */
-        }
-
-        /* Estilo para cada columna de detalle (Daño, CS, Visión, Objetos) */
-        .details-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Centra el contenido verticalmente */
-            justify-content: flex-start;
-            padding: 0 0.5rem; /* Espaciado entre columnas */
-            flex: 1; /* Permite que las columnas crezcan y se encojan */
-            min-width: 60px; /* Ancho mínimo para evitar que se colapsen demasiado */
-            box-sizing: border-box; /* Incluye padding en el width */
-        }
-
-        /* Ajustes específicos para las columnas de los encabezados */
-        .details-header-col {
-            font-weight: bold;
-            color: #6c757d; /* Color de texto para los encabezados */
-            font-size: 0.85em;
-            text-transform: uppercase;
-            margin-bottom: 0.25rem; /* Espacio debajo del encabezado */
-        }
-
-        /* Alineación específica para la columna de Jugador */
-        .details-player-col {
-            flex: 2; /* Más espacio para el nombre del jugador y el campeón */
-            min-width: 150px;
-            text-align: left; /* Alinea el texto a la izquierda */
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-        }
-
-        /* Alineación específica para KDA */
-        .details-kda-col {
-            flex: 1.2;
-            min-width: 100px;
-        }
-
-        /* Alineación específica para Daño */
-        .details-damage-col {
-            flex: 1.2;
-            min-width: 80px;
-        }
-
-        /* Alineación específica para CS */
-        .details-cs-col {
-            flex: 1;
-            min-width: 70px;
-        }
-
-        /* Alineación específica para Visión */
-        .details-vision-col {
-            flex: 0.8;
-            min-width: 50px;
-        }
-
-        /* Alineación específica para Objetos */
-        .details-items-col {
-            flex: 2; /* Más espacio para los objetos */
-            min-width: 180px;
-            justify-content: center;
-        }
-
-        /* Ocultar encabezados en pantallas pequeñas y mostrarlos solo en md y superior */
-        .details-header-row {
-            display: none;
-        }
-        @media (min-width: 768px) { /* md breakpoint de Bootstrap */
-            .details-header-row {
-                display: flex; /* Mostrar en pantallas medianas y grandes */
-            }
-        }
-
-        /* Estilo para los elementos de la lista de participantes */
-        .participant-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.25rem 0;
-            border-bottom: 1px solid rgba(0,0,0,0.05); /* Separador entre participantes */
-        }
-        .dark-mode .participant-row {
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .participant-row:last-child {
-            border-bottom: none;
-        }
-        /* --- FIN: Estilos para la alineación de los detalles de la partida --- */
-
     </style>
 </head>
 
@@ -605,7 +505,7 @@
 </div>
 
 
-<div class="container mt-5">
+<div class="container-fluid mt-5 px-md-4 px-lg-5">
     <div class="profile-header">
         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png" alt="Imagen de {{ perfil.nombre }}" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'white\'/></svg>';">
          <h1>{{ perfil.nombre }} <span class="small-text">({{ perfil.game_name }})</span></h1>
@@ -972,32 +872,31 @@
                                                         {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
                                                         {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
                                                     </h6>
-                                                    <!-- Encabezados de los detalles de los participantes -->
-                                                    <div class="details-row-content details-header-row">
-                                                        <div class="details-col details-player-col">Jugador</div>
-                                                        <div class="details-col details-kda-col">KDA</div>
-                                                        <div class="details-col details-damage-col">Daño</div>
-                                                        <div class="details-col details-cs-col">CS</div>
-                                                        <div class="details-col details-vision-col">Visión</div>
-                                                        <div class="details-col details-items-col">Objetos</div>
+                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                        <div class="text-start" style="width: 110px;">KDA</div>
+                                                        <div class="text-start" style="width: 80px;">Daño</div>
+                                                        <div class="text-start" style="width: 80px;">CS</div>
+                                                        <div class="text-start" style="width: 50px;">Visión</div>
+                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
                                                     </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
                                                             {% if participante.team_id == 100 %}
-                                                            <li class="participant-row rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
-                                                                <div class="details-col details-player-col">
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
                                                                     <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
                                                                     <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
                                                                 </div>
-                                                                <div class="details-col details-kda-col">
+                                                                <div class="text-start" style="width: 110px;">
                                                                     <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
                                                                     <br>
                                                                     <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
                                                                 </div>
-                                                                <div class="details-col details-damage-col">
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
                                                                     <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
                                                                 </div>
-                                                                <div class="details-col details-cs-col">
+                                                                <div class="text-start" style="width: 80px;">
                                                                     <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
                                                                     <br>
                                                                     {% set game_duration_minutes = match.game_duration / 60 %}
@@ -1005,10 +904,10 @@
                                                                     <span class="small-text-stats">({{ '%.1f'|format(participante.get('total_cs', 0) / game_duration_minutes) }}/m)</span>
                                                                     {% endif %}
                                                                 </div>
-                                                                <div class="details-col details-vision-col">
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
                                                                     <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
                                                                 </div>
-                                                                <div class="details-col details-items-col">
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
                                                                     {% for item_id in participante.get('items', []) %}
                                                                         {% if item_id > 0 %}
                                                                             <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
@@ -1030,32 +929,31 @@
                                                         {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
                                                         {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
                                                     </h6>
-                                                    <!-- Encabezados de los detalles de los participantes -->
-                                                    <div class="details-row-content details-header-row">
-                                                        <div class="details-col details-player-col">Jugador</div>
-                                                        <div class="details-col details-kda-col">KDA</div>
-                                                        <div class="details-col details-damage-col">Daño</div>
-                                                        <div class="details-col details-cs-col">CS</div>
-                                                        <div class="details-col details-vision-col">Visión</div>
-                                                        <div class="details-col details-items-col">Objetos</div>
+                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                        <div class="text-start" style="width: 110px;">KDA</div>
+                                                        <div class="text-start" style="width: 80px;">Daño</div>
+                                                        <div class="text-start" style="width: 80px;">CS</div>
+                                                        <div class="text-start" style="width: 50px;">Visión</div>
+                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
                                                     </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
                                                             {% if participante.team_id == 200 %}
-                                                            <li class="participant-row rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
-                                                                <div class="details-col details-player-col">
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
                                                                     <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
                                                                     <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
                                                                 </div>
-                                                                <div class="details-col details-kda-col">
+                                                                <div class="text-start" style="width: 110px;">
                                                                     <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
                                                                     <br>
                                                                     <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
                                                                 </div>
-                                                                <div class="details-col details-damage-col">
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
                                                                     <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
                                                                 </div>
-                                                                <div class="details-col details-cs-col">
+                                                                <div class="text-start" style="width: 80px;">
                                                                     <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
                                                                     <br>
                                                                     {% set game_duration_minutes = match.game_duration / 60 %}
@@ -1063,10 +961,10 @@
                                                                     <span class="small-text-stats">({{ '%.1f'|format(participante.get('total_cs', 0) / game_duration_minutes) }}/m)</span>
                                                                     {% endif %}
                                                                 </div>
-                                                                <div class="details-col details-vision-col">
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
                                                                     <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
                                                                 </div>
-                                                                <div class="details-col details-items-col">
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
                                                                     {% for item_id in participante.get('items', []) %}
                                                                         {% if item_id > 0 %}
                                                                             <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
@@ -1409,5 +1307,13 @@
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
 </script>
+
+
+
+
+
+
+
+
 </body>
 </html>
