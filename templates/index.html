@@ -229,22 +229,28 @@
 
         /* Estilos para el cambio de LP en 24h */
         .lp-change-positive {
+            font-weight: normal;
         }
         .lp-change-negative {
             color: tomato; /* Rojo */
+            font-weight: normal;
         }
         .lp-change-neutral {
             color: #6c757d; /* Gris */
+            font-weight: normal;
         }
 
         /* Nuevos estilos para la columna Dif. Elo */
         .elo-diff-positive {
+            font-weight: normal;
         }
         .elo-diff-negative {
             color: tomato; /* Rojo */
+            font-weight: normal;
         }
         .elo-diff-neutral {
             color: #6c757d; /* Gris */
+            font-weight: normal;
         }
     </style>
 </head>
@@ -403,7 +409,7 @@
                                 <span class="lp-change-neutral">0 LP</span>
                             {% endif %}
                         {% else %}
-                            N/A
+                            <span class="lp-change-neutral">N/A</span>
                         {% endif %}
                     </td>
                     <td class="elo-diferencia"></td>
