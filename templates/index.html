@@ -226,6 +226,19 @@
         .table thead th.sort-desc::after {
             content: ' \2193'; /* Flecha abajo */
         }
+
+        /* Estilos para el cambio de LP en 24h */
+        .lp-change-positive {
+            color: #228B22; /* Verde */
+            font-weight: bold;
+        }
+        .lp-change-negative {
+            color: tomato; /* Rojo */
+            font-weight: bold;
+        }
+        .lp-change-neutral {
+            color: #6c757d; /* Gris */
+        }
     </style>
 </head>
 
@@ -304,6 +317,7 @@
                     <th data-sort-by="win_rate">Win Rate</th>
                     <th class="hidden">Valor Clasificación</th>
                     <th>Dist. Peak Elo</th>
+                    <th data-sort-by="lp_change_24h">LP en 24h</th> {# New column header #}
                     <th>Dif. Elo</th>
                     <th>Estado</th>
                 </tr>
@@ -370,6 +384,19 @@
                             <span class="peak-elo">PEAK</span>
                         {% else %}
                             {{ diff_peak }} LPs
+                        {% endif %}
+                    </td>
+                    <td> {# New column for LP change in 24h #}
+                        {% if jugador.lp_change_24h is not none %}
+                            {% if jugador.lp_change_24h > 0 %}
+                                <span class="lp-change-positive">+{{ jugador.lp_change_24h }} LP</span>
+                            {% elif jugador.lp_change_24h < 0 %}
+                                <span class="lp-change-negative">{{ jugador.lp_change_24h }} LP</span>
+                            {% else %}
+                                <span class="lp-change-neutral">0 LP</span>
+                            {% endif %}
+                        {% else %}
+                            N/A
                         {% endif %}
                     </td>
                     <td class="elo-diferencia"></td>
@@ -518,6 +545,10 @@
                 case 'win_rate':
                     // Para el win rate, quitar el '%' y convertir a número
                     return parseFloat(cell.textContent);
+                case 'lp_change_24h': // Handle new column for sorting
+                    const lpChangeText = cell.textContent.trim();
+                    if (lpChangeText === 'N/A') return -Infinity; // Place N/A at the bottom
+                    return parseFloat(lpChangeText.replace(/[^0-9.-]/g, '')); // Extract number
                 default:
                     // Para el resto de columnas numéricas (wins, losses, total)
                     return parseInt(cell.textContent, 10);

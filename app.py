@@ -658,6 +658,31 @@ def guardar_historial_jugador_github(puuid, historial_data):
     except Exception as e:
         print(f"Error en la petición PUT a GitHub para el historial de {puuid}: {e}")
 
+def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_player):
+    """
+    Calcula el cambio total de LP para un jugador en una cola específica en las últimas 24 horas.
+    """
+    now_timestamp_ms = int(datetime.now().timestamp() * 1000)
+    one_day_ago_timestamp_ms = now_timestamp_ms - (24 * 60 * 60 * 1000)
+    
+    lp_change_24h = 0
+    
+    # Map API queue type name to queue ID for filtering matches
+    queue_id_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
+    target_queue_id = queue_id_map.get(queue_type_api_name)
+
+    if not target_queue_id:
+        return 0
+
+    for match in all_matches_for_player:
+        match_timestamp = match.get('game_end_timestamp', 0)
+        # Ensure match is for the correct queue and within the last 24 hours
+        if match_timestamp >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
+            if match.get('lp_change_this_game') is not None:
+                lp_change_24h += match['lp_change_this_game']
+    return lp_change_24h
+
+
 def procesar_jugador(args_tuple):
     """
     Procesa los datos de un solo jugador.
@@ -731,12 +756,10 @@ def procesar_jugador(args_tuple):
                     lp_change = post_game_lp - pre_game_lp
                     print(f"[{riot_id}] [LP Tracker] Jugador terminó partida de {tracked_queue_type}. Cambio de LP: {pre_game_lp} -> {post_game_lp} ({lp_change:+d} LP)")
                     
-                    # Store the LP change to be associated with a match later
                     with pending_lp_updates_lock:
-                        # Use the current time as a proxy for game end time if not available from spectator API
                         pending_lp_updates[(puuid, tracked_queue_type)] = {
                             'lp_change': lp_change,
-                            'detection_timestamp': time.time() # Timestamp when LP change was detected
+                            'detection_timestamp': time.time()
                         }
                 else:
                     print(f"[{riot_id}] [LP Tracker] Jugador terminó partida de {tracked_queue_type} pero no se encontró información de Elo post-partida.")
@@ -881,13 +904,21 @@ def actualizar_cache():
         queue_id = queue_map.get(queue_type)
 
         jugador['top_champion_stats'] = [] # Ahora será una lista para los top 3
+        jugador['lp_change_24h'] = 0 # Initialize for index.html
 
         if not puuid or not queue_id:
             continue
         
         historial = leer_historial_jugador_github(puuid)
+        all_matches_for_player = historial.get('matches', [])
+
+        # Calculate LP change for the last 24 hours for this specific queue type
+        jugador['lp_change_24h'] = _calculate_lp_change_for_player(
+            puuid, queue_type, all_matches_for_player
+        )
+
         partidas_jugador = [
-            p for p in historial.get('matches', []) 
+            p for p in all_matches_for_player
             if p.get('queue_id') == queue_id and
                # Filtramos para que solo cuenten las partidas del split activo
                p.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
@@ -1097,21 +1128,13 @@ def _get_player_profile_data(game_name):
         'historial_partidas': historial_partidas_completo.get('matches', [])
     }
     
-    # Calcular LP en las últimas 24h
-    now_timestamp_ms = int(datetime.now().timestamp() * 1000)
-    one_day_ago_timestamp_ms = now_timestamp_ms - (24 * 60 * 60 * 1000)
-
-    lp_change_soloq_24h = 0
-    lp_change_flexq_24h = 0
-
-    for match in perfil['historial_partidas']:
-        match_timestamp = match.get('game_end_timestamp', 0)
-        if match_timestamp >= one_day_ago_timestamp_ms:
-            if match.get('lp_change_this_game') is not None:
-                if match.get('queue_id') == 420: # SoloQ
-                    lp_change_soloq_24h += match['lp_change_this_game']
-                elif match.get('queue_id') == 440: # FlexQ
-                    lp_change_flexq_24h += match['lp_change_this_game']
+    # Calcular LP en las últimas 24h usando la nueva función auxiliar
+    lp_change_soloq_24h = _calculate_lp_change_for_player(
+        puuid, "RANKED_SOLO_5x5", perfil['historial_partidas']
+    )
+    lp_change_flexq_24h = _calculate_lp_change_for_player(
+        puuid, "RANKED_FLEX_SR", perfil['historial_partidas']
+    )
 
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
@@ -1187,27 +1210,19 @@ def perfil_jugador_original(game_name):
     # --- NUEVO: Calcular rachas para cada cola ---
     historial_total = perfil.get('historial_partidas', [])
     
-    # Filtrar y calcular para SoloQ
     if 'soloq' in perfil:
         partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
         rachas_soloq = calcular_rachas(partidas_soloq)
         perfil['soloq'].update(rachas_soloq)
 
-    # Filtrar y calcular para FlexQ
     if 'flexq' in perfil:
         partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
         rachas_flexq = calcular_rachas(partidas_flexq)
         perfil['flexq'].update(rachas_flexq)
 
-    # 7. Ordenar el historial por fecha (más reciente primero)
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-
-    # 8. Renderizar la plantilla `jugador.html`, pasándole el objeto `perfil`
-    return render_template('jugador.html', 
-                           perfil=perfil, 
-                           ddragon_version=DDRAGON_VERSION,
-                           datetime=datetime, # Pass the datetime object
-                           now=datetime.now()) # Pass the current time
+    
+    return perfil
 
 def actualizar_historial_partidas_en_segundo_plano():
     """
