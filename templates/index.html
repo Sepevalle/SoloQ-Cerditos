@@ -229,7 +229,6 @@
 
         /* Estilos para el cambio de LP en 24h */
         .lp-change-positive {
-            color: #228B22; /* Verde */
             font-weight: bold;
         }
         .lp-change-negative {
@@ -243,12 +242,9 @@
 
         /* Nuevos estilos para la columna Dif. Elo */
         .elo-diff-positive {
-            color: #228B22; /* Verde */
-            font-weight: bold;
         }
         .elo-diff-negative {
             color: tomato; /* Rojo */
-            font-weight: bold;
         }
         .elo-diff-neutral {
             color: #6c757d; /* Gris */
@@ -400,7 +396,7 @@
                         {% else %}
                             {{ diff_peak }} LPs
                         {% endif %}
-                    </td>
+                    </td> 
                     <td > {# New column for LP change in 24h #}
                         {% if jugador.lp_change_24h is not none %}
                             {% if jugador.lp_change_24h > 0 %}
