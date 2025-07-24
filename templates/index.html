@@ -279,9 +279,9 @@
         <div class="col text-start">
             <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
             <select id="filtro" class="form-select d-inline-block w-auto">
-                <option value="todo" selected>TODO</option> <!-- Default to TODO -->
-                <option value="420">SOLOQ</option> <!-- Numeric ID for SoloQ -->
-                <option value="440">FLEX</option> <!-- Numeric ID for FlexQ -->
+                <option value="420" selected>SOLOQ</option> <!-- Default to SOLOQ -->
+                <option value="440">FLEX</option>
+                <option value="todo">TODO</option> 
             </select>
         </div>
     </div>
@@ -312,7 +312,7 @@
                 {% for jugador in datos_jugadores %}
                 {% set total_games = jugador.wins + jugador.losses %}
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                <tr class="queue-type {{ jugador.queue_type }}">
+                <tr class="queue-type-{{ jugador.queue_type }}"> {# Changed class here #}
                     <td></td>
                     <td class="jugador-columna">
                         <div class="d-flex align-items-center">
