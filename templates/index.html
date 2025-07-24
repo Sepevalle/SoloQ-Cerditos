@@ -238,6 +238,21 @@
         }
         .lp-change-neutral {
             color: #6c757d; /* Gris */
+            font-weight: bold; /* Añadido para consistencia */
+        }
+
+        /* Nuevos estilos para la columna Dif. Elo */
+        .elo-diff-positive {
+            color: #228B22; /* Verde */
+            font-weight: bold;
+        }
+        .elo-diff-negative {
+            color: tomato; /* Rojo */
+            font-weight: bold;
+        }
+        .elo-diff-neutral {
+            color: #6c757d; /* Gris */
+            font-weight: bold;
         }
     </style>
 </head>
@@ -317,7 +332,7 @@
                     <th data-sort-by="win_rate">Win Rate</th>
                     <th class="hidden">Valor Clasificación</th>
                     <th>Dist. Peak Elo</th>
-                    <th data-sort-by="lp_change_24h">LP en 24h</th> {# New column header #}
+                    <th data-sort-by="lp_change_24h">LP en 24h</th>
                     <th>Dif. Elo</th>
                     <th>Estado</th>
                 </tr>
@@ -593,21 +608,35 @@
 
                 const eloDiffCell = row.querySelector(".elo-diferencia");
                 
+                // Limpiar clases de estilo previas
+                eloDiffCell.classList.remove('elo-diff-positive', 'elo-diff-negative', 'elo-diff-neutral');
+
                 // Calcular la diferencia de ELO solo si la tabla está ordenada por ELO
                 if (sortedBy === 'elo') {
                     if (index === 0) {
                         // El primer jugador no tiene diferencia
                         eloDiffCell.textContent = "—";
+                        eloDiffCell.classList.add('elo-diff-neutral'); // Estilo neutral
                     } else {
                         // Obtener el valor de ELO directamente de la celda oculta
                         const currentElo = parseFloat(row.querySelector(".hidden").textContent);
                         const prevElo = parseFloat(visibleRows[index - 1].querySelector(".hidden").textContent);
                         const diff = Math.round(prevElo - currentElo); // Usar Math.round para evitar decimales
                         eloDiffCell.textContent = `${diff} LPs`;
+
+                        // Aplicar clases de estilo según la diferencia
+                        if (diff > 0) {
+                            eloDiffCell.classList.add('elo-diff-positive');
+                        } else if (diff < 0) {
+                            eloDiffCell.classList.add('elo-diff-negative');
+                        } else {
+                            eloDiffCell.classList.add('elo-diff-neutral');
+                        }
                     }
                 } else {
                     // Si no está ordenado por ELO, mostrar N/A
                     eloDiffCell.textContent = "N/A";
+                    eloDiffCell.classList.add('elo-diff-neutral'); // Estilo neutral
                 }
             });
         };
