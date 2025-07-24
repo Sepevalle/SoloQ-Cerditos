@@ -820,7 +820,7 @@ def procesar_jugador(args_tuple):
             "valor_clasificacion": calcular_valor_clasificacion(
                 entry.get('tier', 'Sin rango'),
                 entry.get('rank', ''),
-                entry.get('leaguepoints', 0)
+                entry.get('leaguePoints', 0)
             ),
             "nombre_campeon": nombre_campeon,
             "champion_id": current_champion_id if current_champion_id else "Desconocido"
