@@ -1085,6 +1085,10 @@ def _get_player_profile_data(game_name):
     historial_partidas_completo = {}
     if puuid:
         historial_partidas_completo = leer_historial_jugador_github(puuid)
+        # Asegurarse de que cada partida tiene 'lp_change_this_game'
+        for match in historial_partidas_completo.get('matches', []):
+            if 'lp_change_this_game' not in match:
+                match['lp_change_this_game'] = None # O 0, dependiendo de cómo quieras representarlo si no hay datos
 
     perfil = {
         'nombre': primer_perfil.get('jugador', 'N/A'),
@@ -1158,6 +1162,10 @@ def perfil_jugador_original(game_name):
     historial_partidas_completo = {}
     if puuid:
         historial_partidas_completo = leer_historial_jugador_github(puuid)
+        # Asegurarse de que cada partida tiene 'lp_change_this_game'
+        for match in historial_partidas_completo.get('matches', []):
+            if 'lp_change_this_game' not in match:
+                match['lp_change_this_game'] = None # O 0, dependiendo de cómo quieras representarlo si no hay datos
 
     # 6. Preparar un objeto `perfil` limpio y completo para enviar a la plantilla
     #    Esto asegura que la plantilla siempre reciba todas las variables que espera.
