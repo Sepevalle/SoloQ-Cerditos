@@ -72,8 +72,14 @@ def format_peak_elo_filter(valor):
     }
     rank_map_reverse = {"I": 3, "II": 2, "III": 1, "IV": 0}
 
-    valor_base_tier = tierOrden.get(tier_upper, 0) * 400
-    valor_division = rankOrden.get(rank, 0) * 100
+    # CORRECCIÓN: Usar tier_map_reverse y rank_map_reverse
+    tier_upper = "" # Inicializar para evitar NameError si no se usa en el if/else
+    if valor >= 0: # Asegurarse de que valor es válido para los tiers inferiores
+        tier_value = valor // 400
+        tier_upper = tier_map_reverse.get(tier_value, "UNKNOWN") # Obtener el nombre del tier
+
+    valor_base_tier = tier_map_reverse.get(tier_value, 0) * 400 # Usar tier_map_reverse
+    valor_division = rank_map_reverse.get(rank, 0) * 100 # Usar rank_map_reverse
 
     return valor_base_tier + valor_division + league_points
 
@@ -402,7 +408,7 @@ def obtener_info_partida(args):
             "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
             "physical_damage_dealt_to_champions": p.get('physicalDamageDealtToChampions', 0),
             "magic_damage_dealt_to_champions": p.get('magicDamageDealtToChampions', 0),
-            "true_damage_dealt_to_champions": p.get('trueDamageDealtToChampions', 0),
+            "true_damage_dealt_to_champions": p.get('true_damage_dealt_to_champions', 0),
             "damage_self_mitigated": p.get('damageSelfMitigated', 0),
             "damage_dealt_to_buildings": p.get('damageDealtToBuildings', 0),
             "damage_dealt_to_objectives": p.get('damageDealtToObjectives', 0),
@@ -776,7 +782,7 @@ def procesar_jugador(args_tuple):
             "valor_clasificacion": calcular_valor_clasificacion(
                 entry.get('tier', 'Sin rango'),
                 entry.get('rank', ''),
-                entry.get('leaguePoints', 0)
+                entry.get('league_points', 0)
             ),
             "nombre_campeon": nombre_campeon,
             "champion_id": current_champion_id if current_champion_id else "Desconocido"
@@ -1072,11 +1078,29 @@ def _get_player_profile_data(game_name):
         'historial_partidas': historial_partidas_completo.get('matches', [])
     }
     
+    # Calcular LP en las últimas 24h
+    now_timestamp_ms = int(datetime.now().timestamp() * 1000)
+    one_day_ago_timestamp_ms = now_timestamp_ms - (24 * 60 * 60 * 1000)
+
+    lp_change_soloq_24h = 0
+    lp_change_flexq_24h = 0
+
+    for match in perfil['historial_partidas']:
+        match_timestamp = match.get('game_end_timestamp', 0)
+        if match_timestamp >= one_day_ago_timestamp_ms:
+            if match.get('lp_change_this_game') is not None:
+                if match.get('queue_id') == 420: # SoloQ
+                    lp_change_soloq_24h += match['lp_change_this_game']
+                elif match.get('queue_id') == 440: # FlexQ
+                    lp_change_flexq_24h += match['lp_change_this_game']
+
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['soloq'] = item
+            perfil['soloq']['lp_change_24h'] = lp_change_soloq_24h
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['flexq'] = item
+            perfil['flexq']['lp_change_24h'] = lp_change_flexq_24h
 
     historial_total = perfil.get('historial_partidas', [])
     
