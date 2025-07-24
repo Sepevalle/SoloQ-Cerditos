@@ -62,26 +62,41 @@ def format_peak_elo_filter(valor):
     # Master, Grandmaster, Challenger
     if valor >= 2800:
         lps = valor - 2800
-        # No podemos distinguir entre Master, GM, Challenger solo con el valor.
-        # Mostramos un genérico para estos tiers.
-        return f"MASTER TIER ({lps} LPs)"
+        # Para estos tiers, no tenemos rank (I, II, III, IV) sino solo LPs.
+        # No podemos reconstruir perfectamente Maestro, GM, Aspirante solo del valor de LP,
+        # así que usaremos un genérico "Maestro+" y los LPs.
+        # Puedes ajustar los umbrales si tienes una forma más precisa de distinguirlos.
+        if valor >= 3200: # Ejemplo de umbral para Aspirante, ajustar según sea necesario
+            return f"CHALLENGER ({lps} LPs)"
+        elif valor >= 3000: # Ejemplo de umbral para Gran Maestro
+            return f"GRANDMASTER ({lps} LPs)"
+        else:
+            return f"MASTER ({lps} LPs)"
 
-    tier_map_reverse = {
+    # Para tiers inferiores (Hierro a Diamante)
+    tier_map = {
         6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD", 
         2: "SILVER", 1: "BRONZE", 0: "IRON"
     }
-    rank_map_reverse = {"I": 3, "II": 2, "III": 1, "IV": 0}
+    rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"}
 
-    # CORRECCIÓN: Usar tier_map_reverse y rank_map_reverse
-    tier_upper = "" # Inicializar para evitar NameError si no se usa en el if/else
-    if valor >= 0: # Asegurarse de que valor es válido para los tiers inferiores
-        tier_value = valor // 400
-        tier_upper = tier_map_reverse.get(tier_value, "UNKNOWN") # Obtener el nombre del tier
+    # Calcular LPs primero (el resto al dividir por 100)
+    league_points = valor % 100
+    
+    # Calcular el valor sin LPs
+    valor_without_lps = valor - league_points
+    
+    # Calcular el valor de la división (0 para IV, 1 para III, 2 para II, 3 para I)
+    # Es el resto de (valor_without_lps / 100) dividido por 4
+    rank_value = (valor_without_lps // 100) % 4
+    
+    # Calcular el valor del tier
+    tier_value = (valor_without_lps // 100) // 4
 
-    valor_base_tier = tier_map_reverse.get(tier_value, 0) * 400 # Usar tier_map_reverse
-    valor_division = rank_map_reverse.get(rank, 0) * 100 # Usar rank_map_reverse
+    tier_name = tier_map.get(tier_value, "UNKNOWN")
+    rank_name = rank_map.get(rank_value, "")
 
-    return valor_base_tier + valor_division + league_points
+    return f"{tier_name} {rank_name} ({league_points} LPs)"
 
 # Configuración de la API de Riot Games
 RIOT_API_KEY = os.environ.get("RIOT_API_KEY")
