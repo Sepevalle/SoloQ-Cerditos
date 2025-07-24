@@ -279,9 +279,9 @@
         <div class="col text-start">
             <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
             <select id="filtro" class="form-select d-inline-block w-auto">
-                <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
-                <option value="RANKED_FLEX_SR">FLEX</option>
-                <option value="todo">TODO</option>
+                <option value="todo" selected>TODO</option> <!-- Default to TODO -->
+                <option value="420">SOLOQ</option> <!-- Numeric ID for SoloQ -->
+                <option value="440">FLEX</option> <!-- Numeric ID for FlexQ -->
             </select>
         </div>
     </div>
@@ -585,7 +585,8 @@
         const aplicarFiltro = () => {
             const selectedQueue = filtro.value;
             tbody.querySelectorAll("tr").forEach(row => {
-                row.style.display = (selectedQueue === 'todo' || row.classList.contains(selectedQueue)) ? '' : 'none';
+                // Modificado para buscar la clase que contiene el ID numérico
+                row.style.display = (selectedQueue === 'todo' || row.classList.contains(`queue-type-${selectedQueue}`)) ? '' : 'none';
             });
             sortTable(currentSort.column, currentSort.direction);
         };
