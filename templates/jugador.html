@@ -531,7 +531,7 @@
                     {% if perfil.soloq %}
                     <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
+                        <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.leaguepoints }} LPs)</h4>
                         <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
                         {% set soloq_total_games = perfil.soloq.wins + perfil.soloq.losses %}
                         {% set soloq_win_rate = (perfil.soloq.wins / soloq_total_games * 100) if soloq_total_games > 0 else 0 %}
@@ -616,7 +616,7 @@
                     {% if perfil.flexq %}
                     <img src="" alt="{{ perfil.flexq.tier }}" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>{{ perfil.flexq.tier }} {{ perfil.flexq.rank }} ({{ perfil.flexq.league_points }} LPs)</h4>
+                        <h4>{{ perfil.flexq.tier }} {{ perfil.flexq.rank }} ({{ perfil.flexq.leaguepoints }} LPs)</h4>
                         <p>Wins: {{ perfil.flexq.wins }} | Losses: {{ perfil.flexq.losses }} | Total: {{ perfil.flexq.wins + perfil.flexq.losses }}</p>
                         {% set flexq_total_games = perfil.flexq.wins + perfil.flexq.losses %}
                         {% set flexq_win_rate = (perfil.flexq.wins / flexq_total_games * 100) if flexq_total_games > 0 else 0 %}

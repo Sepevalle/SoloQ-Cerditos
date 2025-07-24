@@ -81,10 +81,10 @@ def format_peak_elo_filter(valor):
     rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"}
 
     # Calcular LPs primero (el resto al dividir por 100)
-    league_points = valor % 100
+    leaguepoints = valor % 100
     
     # Calcular el valor sin LPs
-    valor_without_lps = valor - league_points
+    valor_without_lps = valor - leaguepoints
     
     # Calcular el valor de la división (0 para IV, 1 para III, 2 para II, 3 para I)
     # Es el resto de (valor_without_lps / 100) dividido por 4
@@ -96,7 +96,7 @@ def format_peak_elo_filter(valor):
     tier_name = tier_map.get(tier_value, "UNKNOWN")
     rank_name = rank_map.get(rank_value, "")
 
-    return f"{tier_name} {rank_name} ({league_points} LPs)"
+    return f"{tier_name} {rank_name} ({leaguepoints} LPs)"
 
 # Configuración de la API de Riot Games
 RIOT_API_KEY = os.environ.get("RIOT_API_KEY")
@@ -483,7 +483,7 @@ def leer_cuentas(url):
         print(f"Error al leer las cuentas: {e}")
         return []
 
-def calcular_valor_clasificacion(tier, rank, league_points):
+def calcular_valor_clasificacion(tier, rank, leaguepoints):
     """
     Calcula un valor numérico para la clasificación de un jugador,
     permitiendo ordenar y comparar Elo de forma más sencilla.
@@ -493,7 +493,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
     # Para Master, Grandmaster y Challenger, el cálculo es más simple.
     # La base es 2800 (el valor después de Diamond I 100 LP) y se suman los LPs.
     if tier_upper in ["MASTER", "GRANDMASTER", "CHALLENGER"]:
-        return 2800 + league_points
+        return 2800 + leaguepoints
 
     tierOrden = {
         "DIAMOND": 6,
@@ -511,7 +511,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
     valor_base_tier = tierOrden.get(tier_upper, 0) * 400
     valor_division = rankOrden.get(rank, 0) * 100
 
-    return valor_base_tier + valor_division + league_points
+    return valor_base_tier + valor_division + leaguepoints
 
 def leer_peak_elo():
     """Lee los datos de peak Elo desde un archivo JSON en GitHub."""
@@ -809,7 +809,7 @@ def procesar_jugador(args_tuple):
             "queue_type": entry.get('queueType', 'Desconocido'),
             "tier": entry.get('tier', 'Sin rango'),
             "rank": entry.get('rank', ''),
-            "league_points": entry.get('leaguePoints', 0),
+            "leaguepoints": entry.get('leaguePoints', 0),
             "wins": entry.get('wins', 0),
             "losses": entry.get('losses', 0),
             "jugador": jugador_nombre,
@@ -820,7 +820,7 @@ def procesar_jugador(args_tuple):
             "valor_clasificacion": calcular_valor_clasificacion(
                 entry.get('tier', 'Sin rango'),
                 entry.get('rank', ''),
-                entry.get('league_points', 0)
+                entry.get('leaguepoints', 0)
             ),
             "nombre_campeon": nombre_campeon,
             "champion_id": current_champion_id if current_champion_id else "Desconocido"
