@@ -461,6 +461,44 @@
             overflow: hidden; /* Esencial para que la animación de grid funcione */
         }
         /* --- FIN: Animación para desplegar detalles de partida --- */
+
+        /* Styles for LP change in table */
+        .lp-gain {
+            color: #228B22; /* Green for positive LP */
+            font-weight: bold;
+        }
+        .lp-loss {
+            color: tomato; /* Red for negative LP */
+            font-weight: bold;
+        }
+        .lp-neutral {
+            color: #6c757d; /* Gray for no change or N/A */
+        }
+
+        /* Styles for the Elo graph */
+        .elo-graph-container {
+            margin-top: 40px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .dark-mode .elo-graph-container {
+            background-color: #343a40;
+        }
+        .elo-graph-container h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007bff;
+        }
+        .dark-mode .elo-graph-container h3 {
+            color: #ffffff;
+        }
+        .chart-canvas {
+            max-height: 400px; /* Limit height for better viewing */
+            width: 100%; /* Ensure responsiveness */
+        }
     </style>
 </head>
 
@@ -658,6 +696,24 @@
         </div>
     </div>
 
+    <!-- Elo Evolution Graph Section -->
+    <div class="elo-graph-container">
+        <h3>Evolución de Elo (Solo/Duo)</h3>
+        <canvas id="soloqEloChart" class="chart-canvas"></canvas>
+        {% if not perfil.soloq_elo_history %}
+            <p class="text-center text-muted mt-3">No hay datos de historial de Elo para Solo/Duo.</p>
+        {% endif %}
+    </div>
+
+    <div class="elo-graph-container">
+        <h3>Evolución de Elo (Flexible)</h3>
+        <canvas id="flexqEloChart" class="chart-canvas"></canvas>
+        {% if not perfil.flexq_elo_history %}
+            <p class="text-center text-muted mt-3">No hay datos de historial de Elo para Flexible.</p>
+        {% endif %}
+    </div>
+
+
     <div class="card match-history-card">
         <div class="card-header">
             Historial de Partidas
@@ -688,6 +744,7 @@
                             <th>Runas</th>
                             <th>Objetos</th>
                             <th>Duración</th>
+                            <th>Puntos Ganados</th> <!-- New column for LP change -->
                             <th>Resultado / Fecha</th>
                         </tr>
                     </thead>
@@ -853,6 +910,19 @@
                                 </div>
                             </td>
                             <td>{{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s</td>
+                            <td>
+                                {% if match.lp_change is not none %}
+                                    {% if match.lp_change > 0 %}
+                                        <span class="lp-gain">+{{ match.lp_change }} LP</span>
+                                    {% elif match.lp_change < 0 %}
+                                        <span class="lp-loss">{{ match.lp_change }} LP</span>
+                                    {% else %}
+                                        <span class="lp-neutral">0 LP</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="lp-neutral">N/A</span>
+                                {% endif %}
+                            </td>
                             <td class="{{ 'text-success' if match.win else 'text-danger' }}">
                                 {{ 'Victoria' if match.win else 'Derrota' }}
                                 <br>
@@ -861,7 +931,7 @@
                         </tr>
                         {% if match.all_participants %}
                         <tr id="match-{{ loop.index }}" class="hidden">
-                            <td colspan="13" class="p-0">
+                            <td colspan="14" class="p-0"> <!-- Updated colspan for new column -->
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
                                         <div class="row g-2">
@@ -1006,6 +1076,10 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Chart.js Luxon Adapter for time series -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.min.js"></script>
 <script>
     // Esta función debe estar en el ámbito global para que la llame el `onclick`
     function toggleMatchDetails(matchId) {
@@ -1021,7 +1095,7 @@
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
             "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
             "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
-            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/GOLD.png",
             "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/PLATINUM.png",
             "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
             "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/DIAMOND.png",
@@ -1245,7 +1319,7 @@
             const selectedChampion = championFilter.value;
 
             // 1. Obtener y filtrar las filas de partidas principales
-            const mainMatchRows = Array.from(allMatchRows).filter(row => row.hasAttribute('data-queue-id'));
+            const mainMatchRows = Array.from(document.querySelectorAll('.match-history-table tbody > tr:not([id^="match-"])'));
             const filteredMainRows = mainMatchRows.filter(row => {
                 const queueMatch = (selectedQueue === 'all' || row.dataset.queueId === selectedQueue);
                 const championMatch = (selectedChampion === 'all' || row.dataset.championName === selectedChampion);
@@ -1262,18 +1336,13 @@
 
             // 4. Iterar sobre TODAS las filas principales para establecer su visibilidad
             mainMatchRows.forEach(row => {
-                const detailRow = row.nextElementSibling;
+                const detailRow = row.nextElementSibling; // Get the detail row that follows
+                const isMainRowVisible = rowsForCurrentPage.includes(row);
 
-                if (rowsForCurrentPage.includes(row)) {
-                    // Esta fila está en la página actual, así que la mostramos.
-                    // No tocamos el 'display' de la fila de detalles para no interferir con la animación.
-                    row.style.display = '';
-                } else {
-                    // Esta fila NO está en la página actual, la ocultamos junto con su detalle.
-                    row.style.display = 'none';
-                    if (detailRow && detailRow.id.startsWith('match-')) {
-                        detailRow.style.display = 'none';
-                    }
+                row.style.display = isMainRowVisible ? '' : 'none';
+                if (detailRow && detailRow.id.startsWith('match-')) {
+                    // Only hide the detail row if its main row is hidden
+                    detailRow.style.display = isMainRowVisible && !detailRow.classList.contains('hidden') ? '' : 'none';
                 }
             });
         }
@@ -1305,15 +1374,246 @@
         populateChampionFilter();
         renderMatchHistory();
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
+
+        // --- INICIO: LÓGICA DEL GRÁFICO DE ELO ---
+        const soloqEloHistoryData = JSON.parse('{{ soloq_elo_history_json | safe }}');
+        const flexqEloHistoryData = JSON.parse('{{ flexq_elo_history_json | safe }}');
+
+        const tierMap = {
+            0: { name: "Iron IV", img: imagenesElo["IRON"] },
+            100: { name: "Iron III", img: imagenesElo["IRON"] },
+            200: { name: "Iron II", img: imagenesElo["IRON"] },
+            300: { name: "Iron I", img: imagenesElo["IRON"] },
+            400: { name: "Bronze IV", img: imagenesElo["BRONZE"] },
+            500: { name: "Bronze III", img: imagenesElo["BRONZE"] },
+            600: { name: "Bronze II", img: imagenesElo["BRONZE"] },
+            700: { name: "Bronze I", img: imagenesElo["BRONZE"] },
+            800: { name: "Silver IV", img: imagenesElo["SILVER"] },
+            900: { name: "Silver III", img: imagenesElo["SILVER"] },
+            1000: { name: "Silver II", img: imagenesElo["SILVER"] },
+            1100: { name: "Silver I", img: imagenesElo["SILVER"] },
+            1200: { name: "Gold IV", img: imagenesElo["GOLD"] },
+            1300: { name: "Gold III", img: imagenesElo["GOLD"] },
+            1400: { name: "Gold II", img: imagenesElo["GOLD"] },
+            1500: { name: "Gold I", img: imagenesElo["GOLD"] },
+            1600: { name: "Platinum IV", img: imagenesElo["PLATINUM"] },
+            1700: { name: "Platinum III", img: imagenesElo["PLATINUM"] },
+            1800: { name: "Platinum II", img: imagenesElo["PLATINUM"] },
+            1900: { name: "Platinum I", img: imagenesElo["PLATINUM"] },
+            2000: { name: "Emerald IV", img: imagenesElo["EMERALD"] },
+            2100: { name: "Emerald III", img: imagenesElo["EMERALD"] },
+            2200: { name: "Emerald II", img: imagenesElo["EMERALD"] },
+            2300: { name: "Emerald I", img: imagenesElo["EMERALD"] },
+            2400: { name: "Diamond IV", img: imagenesElo["DIAMOND"] },
+            2500: { name: "Diamond III", img: imagenesElo["DIAMOND"] },
+            2600: { name: "Diamond II", img: imagenesElo["DIAMOND"] },
+            2700: { name: "Diamond I", img: imagenesElo["DIAMOND"] },
+            2800: { name: "Master", img: imagenesElo["MASTER"] },
+            2900: { name: "Grandmaster", img: imagenesElo["GRANDMASTER"] },
+            3000: { name: "Challenger", img: imagenesElo["CHALLENGER"] }
+        };
+
+        function getTierNameFromElo(eloValue) {
+            let tierName = "Unranked";
+            let closestElo = -1;
+            for (const eloThreshold in tierMap) {
+                if (eloValue >= parseInt(eloThreshold) && parseInt(eloThreshold) > closestElo) {
+                    closestElo = parseInt(eloThreshold);
+                    tierName = tierMap[eloThreshold].name;
+                }
+            }
+            return tierName;
+        }
+
+        function getTierImageFromElo(eloValue) {
+            let tierImage = "";
+            let closestElo = -1;
+            for (const eloThreshold in tierMap) {
+                if (eloValue >= parseInt(eloThreshold) && parseInt(eloThreshold) > closestElo) {
+                    closestElo = parseInt(eloThreshold);
+                    tierImage = tierMap[eloThreshold].img;
+                }
+            }
+            return tierImage;
+        }
+
+        const commonChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return new Date(context[0].parsed.x).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                        },
+                        label: function(context) {
+                            const elo = context.parsed.y;
+                            const tier = getTierNameFromElo(elo);
+                            return `${tier} (${elo} LP)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        tooltipFormat: 'dd/MM/yyyy HH:mm',
+                        displayFormats: {
+                            day: 'dd/MM'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Fecha'
+                    },
+                    adapters: {
+                        date: {
+                            locale: 'es'
+                        }
+                    },
+                    grid: {
+                        color: (context) => {
+                            const body = document.body;
+                            return body.classList.contains('dark-mode') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                        }
+                    },
+                    ticks: {
+                        color: (context) => {
+                            const body = document.body;
+                            return body.classList.contains('dark-mode') ? '#adb5bd' : '#6c757d';
+                        }
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Elo'
+                    },
+                    min: 0, // Ensure all tiers are visible, assuming Iron IV is 0
+                    max: 3200, // Max Elo value (Challenger + some buffer)
+                    ticks: {
+                        callback: function(value, index, values) {
+                            // Only show labels at tier boundaries
+                            const tierLabel = tierMap[value] ? tierMap[value].name : '';
+                            return tierLabel;
+                        },
+                        stepSize: 100, // Show ticks every 100 LP (for divisions)
+                        color: (context) => {
+                            const body = document.body;
+                            return body.classList.contains('dark-mode') ? '#adb5bd' : '#6c757d';
+                        }
+                    },
+                    afterBuildTicks: function(axis) {
+                        // Custom ticks for tier boundaries
+                        axis.ticks = Object.keys(tierMap).map(elo => ({ value: parseInt(elo), label: tierMap[elo].name }));
+                    },
+                    grid: {
+                        color: (context) => {
+                            const body = document.body;
+                            return body.classList.contains('dark-mode') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                        }
+                    }
+                }
+            }
+        };
+
+        // Custom plugin to draw images on Y-axis ticks
+        const tierIconPlugin = {
+            id: 'tierIconPlugin',
+            afterDraw: (chart, args, options) => {
+                const { ctx, chartArea: { left, right, top, bottom, width, height }, scales: { y } } = chart;
+                ctx.save();
+
+                // Draw icons for each tier boundary
+                Object.keys(tierMap).forEach(eloThreshold => {
+                    const eloValue = parseInt(eloThreshold);
+                    const pixelY = y.getPixelForValue(eloValue);
+                    const imgUrl = tierMap[eloThreshold].img;
+
+                    if (imgUrl) {
+                        const img = new Image();
+                        img.src = imgUrl;
+                        img.onload = () => {
+                            const imgWidth = 20; // Adjust size as needed
+                            const imgHeight = 20;
+                            const xOffset = 5; // Distance from the axis label
+                            const yOffset = -imgHeight / 2; // Center vertically
+
+                            // Draw image to the left of the Y-axis labels
+                            ctx.drawImage(img, y.left - imgWidth - xOffset, pixelY + yOffset, imgWidth, imgHeight);
+                            chart.draw(); // Redraw chart after image loads
+                        };
+                        // If image is already loaded, draw it immediately
+                        if (img.complete) {
+                            const imgWidth = 20;
+                            const imgHeight = 20;
+                            const xOffset = 5;
+                            const yOffset = -imgHeight / 2;
+                            ctx.drawImage(img, y.left - imgWidth - xOffset, pixelY + yOffset, imgWidth, imgHeight);
+                        }
+                    }
+                });
+                ctx.restore();
+            }
+        };
+
+        Chart.register(tierIconPlugin);
+
+
+        // SoloQ Chart
+        if (soloqEloHistoryData.length > 0) {
+            const soloqCtx = document.getElementById('soloqEloChart').getContext('2d');
+            new Chart(soloqCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Elo Solo/Duo',
+                        data: soloqEloHistoryData.map(item => ({ x: item.timestamp, y: item.elo })),
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: 'rgb(75, 192, 192)',
+                        pointBorderColor: '#fff',
+                        pointHoverBorderColor: 'rgb(75, 192, 192)',
+                        pointHoverBackgroundColor: '#fff'
+                    }]
+                },
+                options: commonChartOptions
+            });
+        }
+
+        // FlexQ Chart
+        if (flexqEloHistoryData.length > 0) {
+            const flexqCtx = document.getElementById('flexqEloChart').getContext('2d');
+            new Chart(flexqCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Elo Flexible',
+                        data: flexqEloHistoryData.map(item => ({ x: item.timestamp, y: item.elo })),
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: 'rgb(255, 99, 132)',
+                        pointBorderColor: '#fff',
+                        pointHoverBorderColor: 'rgb(255, 99, 132)',
+                        pointHoverBackgroundColor: '#fff'
+                    }]
+                },
+                options: commonChartOptions
+            });
+        }
+        // --- FIN: LÓGICA DEL GRÁFICO DE ELO ---
     });
 </script>
-
-
-
-
-
-
-
-
 </body>
 </html>
