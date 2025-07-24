@@ -279,9 +279,9 @@
         <div class="col text-start">
             <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
             <select id="filtro" class="form-select d-inline-block w-auto">
-                <option value="420" selected>SOLOQ</option> <!-- Default to SOLOQ -->
-                <option value="440">FLEX</option>
-                <option value="todo">TODO</option> 
+                <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
+                <option value="RANKED_FLEX_SR">FLEX</option>
+                <option value="todo">TODO</option>
             </select>
         </div>
     </div>
@@ -309,91 +309,85 @@
                 </tr>
             </thead>
             <tbody>
-                {% if not datos_jugadores %}
-                <tr>
-                    <td colspan="12" class="text-center py-4">No hay jugadores disponibles o los datos aún se están cargando. Por favor, asegúrate de que el backend está funcionando y obteniendo datos.</td>
-                </tr>
-                {% else %}
-                    {% for jugador in datos_jugadores %}
-                    {% set total_games = jugador.wins + jugador.losses %}
-                    {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                    <tr class="queue-type-{{ jugador.queue_type }}"> {# Changed class here #}
-                        <td></td>
-                        <td class="jugador-columna">
-                            <div class="d-flex align-items-center">
-                                <img
-                                    src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png"
-                                    alt="Imagen de {{ jugador.jugador }}"
-                                    class="imagen-jugador"
-                                    style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
-                                    onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
-                                <span class="ms-2">{{ jugador.jugador }}</span>
-                            </a>
-                        </td>
-                        <td>
-                            {# Access the first champion in the list if it exists #}
-                            {% if jugador.top_champion_stats and jugador.top_champion_stats[0] is defined %}
-                                {% set top_champion = jugador.top_champion_stats[0] %}
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ top_champion.champion_name }}.png" 
-                                         alt="{{ top_champion.champion_name }}"
-                                         title="{{ top_champion.champion_name }}"
-                                         style="width: 32px; height: 32px; border-radius: 50%;" />
-                                    <div class="ms-2 text-start">
-                                        <div class="fw-bold {% if top_champion.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(top_champion.win_rate) }}% WR</div>
-                                        <div class="small-text-stats">({{ top_champion.games_played }} partidas)</div>
-                                        {% if top_champion.kda is defined %}
-                                        <div class="small-text-stats">{{ '%.2f'|format(top_champion.kda) }} KDA</div>
-                                        {% endif %}
-                                    </div>
+                {% for jugador in datos_jugadores %}
+                {% set total_games = jugador.wins + jugador.losses %}
+                {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
+                <tr class="queue-type {{ jugador.queue_type }}">
+                    <td></td>
+                    <td class="jugador-columna">
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png"
+                                alt="Imagen de {{ jugador.jugador }}"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">{{ jugador.jugador }}</span>
+                        </a>
+                    </td>
+                    <td>
+                        {# Access the first champion in the list if it exists #}
+                        {% if jugador.top_champion_stats and jugador.top_champion_stats[0] is defined %}
+                            {% set top_champion = jugador.top_champion_stats[0] %}
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ top_champion.champion_name }}.png" 
+                                     alt="{{ top_champion.champion_name }}"
+                                     title="{{ top_champion.champion_name }}"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold {% if top_champion.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(top_champion.win_rate) }}% WR</div>
+                                    <div class="small-text-stats">({{ top_champion.games_played }} partidas)</div>
+                                    {% if top_champion.kda is defined %}
+                                    <div class="small-text-stats">{{ '%.2f'|format(top_champion.kda) }} KDA</div>
+                                    {% endif %}
                                 </div>
-                            {% else %}
-                                <span>N/A</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="/jugador/{{ jugador.game_name | urlencode }}">{{ jugador.game_name }}</a>
-                        </td>
-                        <td class="elo-columna">
-                            <div class="d-flex align-items-center" style="position: relative;">
-                                <img src="" alt="{{ jugador.tier }}" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
-                                <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
-                                    {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
-                                </span>
                             </div>
-                        </td>
-                        <td>{{ jugador.wins }}</td>
-                        <td>{{ jugador.losses }}</td>
-                        <td>{{ total_games }}</td>
-                        <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                            {{ '{:.2f}'.format(win_rate) }}%
-                        </td>
-                        <td class="hidden">{{ jugador.valor_clasificacion }}</td>
-                        <td>
-                            {% set diff_peak = jugador.valor_clasificacion - jugador.peak_elo %}
-                            {% if diff_peak == 0 %}
-                                <span class="peak-elo">PEAK</span>
+                        {% else %}
+                            <span>N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/jugador/{{ jugador.game_name | urlencode }}">{{ jugador.game_name }}</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="{{ jugador.tier }}" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                {{ jugador.tier }} {{ jugador.rank }} ({{ jugador.league_points }} LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>{{ jugador.wins }}</td>
+                    <td>{{ jugador.losses }}</td>
+                    <td>{{ total_games }}</td>
+                    <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                        {{ '{:.2f}'.format(win_rate) }}%
+                    </td>
+                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
+                    <td>
+                        {% set diff_peak = jugador.valor_clasificacion - jugador.peak_elo %}
+                        {% if diff_peak == 0 %}
+                            <span class="peak-elo">PEAK</span>
+                        {% else %}
+                            {{ diff_peak }} LPs
+                        {% endif %}
+                    </td>
+                    <td class="elo-diferencia"></td>
+                    <td>
+                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
+                            {% if jugador.en_partida %}
+                                <span class="estado-en-partida">In Game</span>
+                                <img src="http://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" 
+                                     alt="{{ jugador.nombre_campeon }}" 
+                                     style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
                             {% else %}
-                                {{ diff_peak }} LPs
+                                Inactivo
                             {% endif %}
-                        </td>
-                        <td class="elo-diferencia"></td>
-                        <td>
-                            <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
-                                {% if jugador.en_partida %}
-                                    <span class="estado-en-partida">In Game</span>
-                                    <img src="http://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" 
-                                         alt="{{ jugador.nombre_campeon }}" 
-                                         style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
-                                {% else %}
-                                    Inactivo
-                                {% endif %}
-                            </a>
-                        </td>
+                        </a>
+                    </td>
 
-                    </tr>
-                    {% endfor %}
-                {% endif %}
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -591,8 +585,7 @@
         const aplicarFiltro = () => {
             const selectedQueue = filtro.value;
             tbody.querySelectorAll("tr").forEach(row => {
-                // Modificado para buscar la clase que contiene el ID numérico
-                row.style.display = (selectedQueue === 'todo' || row.classList.contains(`queue-type-${selectedQueue}`)) ? '' : 'none';
+                row.style.display = (selectedQueue === 'todo' || row.classList.contains(selectedQueue)) ? '' : 'none';
             });
             sortTable(currentSort.column, currentSort.direction);
         };

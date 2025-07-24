@@ -5,7 +5,7 @@ import time
 import threading
 import json
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta # Import datetime and timedelta
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
@@ -39,7 +39,6 @@ def get_queue_type_filter(queue_id):
         2010: "Tutorial",
         2020: "Tutorial",
     }
-    # The queue_id passed here should now always be an integer due to changes in procesar_jugador
     return queue_names.get(int(queue_id), "Desconocido")
 
 @app.template_filter('format_timestamp')
@@ -65,12 +64,7 @@ def format_peak_elo_filter(valor):
         lps = valor - 2800
         # No podemos distinguir entre Master, GM, Challenger solo con el valor.
         # Mostramos un genérico para estos tiers.
-        if valor >= 3000: # Arbitrary threshold for Challenger
-            return f"CHALLENGER ({lps} LPs)"
-        elif valor >= 2900: # Arbitrary threshold for Grandmaster
-            return f"GRANDMASTER ({lps} LPs)"
-        else: # Master
-            return f"MASTER ({lps} LPs)"
+        return f"MASTER TIER ({lps} LPs)"
 
     tier_map_reverse = {
         6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD", 
@@ -78,13 +72,12 @@ def format_peak_elo_filter(valor):
     }
     rank_map_reverse = {3: "I", 2: "II", 1: "III", 0: "IV"}
 
-    tier_value_numeric = valor // 400
+    tier_value = valor // 400
     remainder_after_tier = valor % 400
-    rank_value_numeric = remainder_after_tier // 100
+    rank_value = remainder_after_tier // 100
     lps = remainder_after_tier % 100
-    
-    tier_str = tier_map_reverse.get(tier_value_numeric, "UNKNOWN")
-    rank_str = rank_map_reverse.get(rank_value_numeric, "")
+    tier_str = tier_map_reverse.get(tier_value, "UNKNOWN")
+    rank_str = rank_map_reverse.get(rank_value, "")
     return f"{tier_str.capitalize()} {rank_str} ({lps} LPs)"
 
 # Configuración de la API de Riot Games
@@ -98,18 +91,11 @@ BASE_URL_ASIA = "https://asia.api.riotgames.com"
 BASE_URL_EUW = "https://euw1.api.riotgames.com"
 BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 
-# Global map for queue type strings to their numeric IDs from League-V4 API
-QUEUE_TYPE_TO_ID_MAP = {
-    "RANKED_SOLO_5x5": 420,
-    "RANKED_FLEX_SR": 440,
-    # Add other ranked queue types if they appear and need mapping from League-V4
-}
 
 # Caché para almacenar los datos de los jugadores
 cache = {
     "datos_jugadores": [],
-    "timestamp": 0,
-    "update_count": 0 # Contador para controlar la frecuencia de llamadas a esta_en_partida
+    "timestamp": 0
 }
 CACHE_TIMEOUT = 130  # 2 minutos
 cache_lock = threading.Lock()
@@ -135,9 +121,6 @@ SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())
 API_SESSION = requests.Session()
 
 def make_api_request(url, retries=3, backoff_factor=0.5):
-    """
-    Realiza una petición a la API de Riot con reintentos y manejo de Rate Limit (código 429).
-    """
     for i in range(retries):
         try:
             # Añadimos la clave de la API en la cabecera de cada petición
@@ -145,14 +128,14 @@ def make_api_request(url, retries=3, backoff_factor=0.5):
             response = API_SESSION.get(url, headers=headers, timeout=10)
             if response.status_code == 429:
                 retry_after = int(response.headers.get('Retry-After', 5))
-                print(f"Rate limit exceeded. Waiting {retry_after} seconds...")
+                print(f"Rate limit excedido. Esperando {retry_after} segundos...")
                 time.sleep(retry_after)
                 continue
             
-            response.raise_for_status() # Lanza una excepción para códigos de error HTTP (4xx o 5xx)
+            response.raise_for_status()
             return response
         except requests.exceptions.RequestException as e:
-            print(f"Error in request to {url}: {e}. Attempt {i + 1}/{retries}")
+            print(f"Error en la petición a {url}: {e}. Intento {i + 1}/{retries}")
             if i < retries - 1:
                 time.sleep(backoff_factor * (2 ** i))
     return None
@@ -160,16 +143,15 @@ def make_api_request(url, retries=3, backoff_factor=0.5):
 DDRAGON_VERSION = "14.9.1"
 
 def actualizar_version_ddragon():
-    """Obtiene la última versión de Data Dragon."""
     global DDRAGON_VERSION
     try:
         url = f"{BASE_URL_DDRAGON}/api/versions.json"
         response = requests.get(url, timeout=5)
         if response.status_code == 200:
             DDRAGON_VERSION = response.json()[0]
-            print(f"Data Dragon version set to: {DDRAGON_VERSION}")
+            print(f"Versión de Data Dragon establecida a: {DDRAGON_VERSION}")
     except requests.exceptions.RequestException as e:
-        print(f"Error getting Data Dragon version: {e}. Using fallback version: {DDRAGON_VERSION}")
+        print(f"Error al obtener la versión de Data Dragon: {e}. Usando versión de respaldo: {DDRAGON_VERSION}")
 
 actualizar_version_ddragon()
 
@@ -178,7 +160,6 @@ ALL_RUNES = {}
 ALL_SUMMONER_SPELLS = {}
 
 def obtener_todos_los_campeones():
-    """Carga los datos de todos los campeones desde Data Dragon."""
     url_campeones = f"{BASE_URL_DDRAGON}/cdn/{DDRAGON_VERSION}/data/es_ES/champion.json"
     response = make_api_request(url_campeones)
     if response:
@@ -192,9 +173,11 @@ def obtener_todas_las_runas():
     runes = {}
     if data:
         for tree in data.json():
+            # Store the icon path for the main rune style (e.g., Precision, Domination)
             runes[tree['id']] = tree['icon']
             for slot in tree['slots']:
                 for perk in slot['runes']:
+                    # Store the icon path for individual perks (runes)
                     runes[perk['id']] = perk['icon']
     return runes
 
@@ -205,7 +188,11 @@ def obtener_todos_los_hechizos():
     spells = {}
     if data and 'data' in data.json():
         for k, v in data.json()['data'].items():
-            spells[int(v['key'])] = v['id']
+            # Riot API match data provides summoner spell IDs as integers (e.g., 4 for Flash).
+            # DDragon uses a string ID (e.g., "SummonerFlash") for the image file.
+            # v['key'] is the numerical ID as a string (e.g., "4")
+            # v['id'] is the DDragon image name (e.g., "SummonerFlash")
+            spells[int(v['key'])] = v['id'] # Map numerical ID (int) to DDragon image ID (str)
     return spells
 
 def actualizar_ddragon_data():
@@ -222,6 +209,7 @@ actualizar_ddragon_data()
 
 def obtener_nombre_campeon(champion_id):
     """Obtiene el nombre de un campeón dado su ID."""
+    # Usamos ALL_CHAMPIONS que ya está cargado con el mapeo correcto
     return ALL_CHAMPIONS.get(champion_id, "Desconocido")
 
 def obtener_puuid(api_key, riot_id, region):
@@ -231,17 +219,17 @@ def obtener_puuid(api_key, riot_id, region):
     if response:
         return response.json()
     else:
-        print(f"Could not get PUUID for {riot_id} after several attempts.")
+        print(f"No se pudo obtener el PUUID para {riot_id} después de varios intentos.")
         return None
 
 def obtener_id_invocador(api_key, puuid):
-    """Obtiene el ID de invocador y el profileIconId de un jugador dado su PUUID."""
+    """Obtiene el ID de invocador de un jugador dado su PUUID."""
     url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
         return response.json()
     else:
-        print(f"Could not get summoner ID for {puuid}.")
+        print(f"No se pudo obtener el ID de invocador para {puuid}.")
         return None
 
 def obtener_elo(api_key, puuid):
@@ -251,7 +239,7 @@ def obtener_elo(api_key, puuid):
     if response:
         return response.json()
     else:
-        print(f"Could not get Elo for {puuid}.")
+        print(f"No se pudo obtener el Elo para {puuid}.")
         return None
 
 def esta_en_partida(api_key, puuid):
@@ -267,23 +255,23 @@ def esta_en_partida(api_key, puuid):
             for participant in game_data.get("participants", []):
                 if participant["puuid"] == puuid:
                     return participant.get("championId")
+            # This should ideally not happen if the API returns consistent data, but handle it
             print(f"Warning: Player {puuid} is in game but not found in participants list.")
             return None  
         elif response.status_code == 404:  # Player not in game (expected response)
             return None
         else:  # Unexpected error
-            response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f"Error checking if player {puuid} is in game: {e}")
-        return None
+            response.raise_for_status()  # Raises an exception for bad responses (4xx or 5xx)
+    except requests.exceptions.RequestException as e:  # Handle potential request errors
+        print(f"Error checking if player {puuid} is in game: {e}")  # Log the error
+        return None  # Assume player is not in game in case of errors
 
 def obtener_info_partida(args):
     """
     Función auxiliar para ThreadPoolExecutor. Obtiene el campeón jugado y el resultado de una partida,
-    además del nivel, hechizos, runas y MUCHAS MÁS ESTADÍSTICAS DETALLADAS para análisis exhaustivo.
-    Ahora también incluye el ELO del jugador en el momento de la consulta.
+    además del nivel, hechizos, runas y AHORA MUCHAS MÁS ESTADÍSTICAS DETALLADAS.
     """
-    match_id, puuid, api_key, player_elo_data_at_fetch = args # player_elo_data_at_fetch now contains both soloq and flexq data
+    match_id, puuid, api_key = args
     url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
     response_match = make_api_request(url_match)
     if not response_match:
@@ -293,84 +281,77 @@ def obtener_info_partida(args):
         info = match_data.get('info', {})
         participants = info.get('participants', [])
 
+        # La API de Riot marca las partidas 'remake' con el flag 'gameEndedInEarlySurrender'.
+        # Si este flag es 'true' para cualquier participante, la partida es un remake.
         if any(p.get('gameEndedInEarlySurrender', False) for p in participants):
-            print(f"Match {match_id} marked as remake.")
+            print(f"Partida {match_id} marcada como remake.")
             return None
 
+        # --- NUEVO: Recopilar datos de TODOS los participantes ---
+        all_participants_details = []
         main_player_data = None
-        
-        # Calculate team totals for share metrics
-        team_totals = {
-            100: {'kills': 0, 'damage': 0, 'gold': 0, 'cs': 0},
-            200: {'kills': 0, 'damage': 0, 'gold': 0, 'cs': 0}
-        }
-        all_participants_details = [] # To store details for all participants
+        team_kills = {100: 0, 200: 0} # Para calcular el KP%
 
         for p in participants:
-            team_id = p.get('teamId')
-            if team_id in team_totals:
-                team_totals[team_id]['kills'] += p.get('kills', 0)
-                team_totals[team_id]['damage'] += p.get('totalDamageDealtToChampions', 0)
-                team_totals[team_id]['gold'] += p.get('goldEarned', 0)
-                team_totals[team_id]['cs'] += p.get('totalMinionsKilled', 0) + p.get('neutralMinionsKilled', 0)
-
-            if p.get('puuid') == puuid:
-                main_player_data = p
-            
-            # Collect details for all participants for the expanded view
-            all_participants_details.append({
-                "summoner_name": p.get('riotIdGameName', p.get('summonerName')),
+            # Extraer detalles clave para la lista de resumen
+            participant_summary = {
+                "summoner_name": p.get('riotIdGameName', p.get('summonerName')), # Compatible con nombres antiguos/nuevos
                 "champion_name": obtener_nombre_campeon(p.get('championId')),
                 "win": p.get('win', False),
                 "kills": p.get('kills', 0),
                 "deaths": p.get('deaths', 0),
                 "assists": p.get('assists', 0),
                 "items": [p.get(f'item{i}', 0) for i in range(7)],
-                "team_id": p.get('teamId'),
+                "team_id": p.get('teamId'), # 100 para el equipo azul, 200 para el rojo
                 "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
                 "vision_score": p.get('visionScore', 0),
                 "total_cs": p.get('totalMinionsKilled', 0) + p.get('neutralMinionsKilled', 0)
-            })
+            }
+            all_participants_details.append(participant_summary)
 
+            # Sumar asesinatos del equipo
+            team_id = p.get('teamId')
+            if team_id in team_kills:
+                team_kills[team_id] += p.get('kills', 0)
+
+            # Identificar los datos del jugador principal para el retorno detallado
+            if p.get('puuid') == puuid:
+                main_player_data = p
+
+        # --- NUEVO: Añadir KP% a cada participante ---
+        for detail in all_participants_details:
+            p_team_id = detail.get('team_id')
+            p_total_team_kills = team_kills.get(p_team_id, 1)
+            p_kills = detail.get('kills', 0)
+            p_assists = detail.get('assists', 0)
+            
+            kp = 0
+            if p_total_team_kills > 0:
+                kp = (p_kills + p_assists) / p_total_team_kills * 100
+            detail['kill_participation'] = kp
 
         if not main_player_data:
+            # Si por alguna razón no se encuentra al jugador principal, no devolver nada.
             return None
 
-        game_end_timestamp = info.get('gameEndTimestamp', 0) + 7200000 # Convert to local time if needed, assuming it's UTC
-        game_duration = info.get('gameDuration', 0) # In seconds
-
-        p = main_player_data
-        player_team_id = p.get('teamId')
+        # Se suman 2 horas (7,200,000 milisegundos) para ajustar la zona horaria.
+        game_end_timestamp = info.get('gameEndTimestamp', 0) + 7200000
+        game_duration = info.get('gameDuration', 0) # Duración de la partida en segundos
         
-        # Calculate player's kill participation (KP)
-        total_team_kills = team_totals[player_team_id]['kills']
+        # Reasignamos 'p' para reutilizar el código de extracción de estadísticas detalladas
+        p = main_player_data
+
+        # --- NUEVO: Calcular Kill Participation (KP%) ---
+        player_team_id = p.get('teamId')
+        total_team_kills = team_kills.get(player_team_id, 1) # Evitar división por cero
         player_kills = p.get('kills', 0)
         player_assists = p.get('assists', 0)
+        
         kill_participation = 0
         if total_team_kills > 0:
             kill_participation = (player_kills + player_assists) / total_team_kills * 100
 
-        # Calculate player's damage share
-        total_team_damage = team_totals[player_team_id]['damage']
-        player_damage = p.get('totalDamageDealtToChampions', 0)
-        damage_share = 0
-        if total_team_damage > 0:
-            damage_share = (player_damage / total_team_damage) * 100
-
-        # Calculate player's gold share
-        total_team_gold = team_totals[player_team_id]['gold']
-        player_gold = p.get('goldEarned', 0)
-        gold_share = 0
-        if total_team_gold > 0:
-            gold_share = (player_gold / total_team_gold) * 100
-        
-        # Calculate player's CS share
-        total_team_cs = team_totals[player_team_id]['cs']
-        player_cs = p.get('totalMinionsKilled', 0) + p.get('neutralMinionsKilled', 0)
-        cs_share = 0
-        if total_team_cs > 0:
-            cs_share = (player_cs / total_team_cs) * 100
-
+        # Extraer IDs de ítems, reemplazando None con 0
         player_items = [p.get(f'item{i}', 0) for i in range(0, 7)]
 
         spell1_id = p.get('summoner1Id')
@@ -386,27 +367,15 @@ def obtener_info_partida(args):
             if len(perks['styles']) > 1:
                 perk_sub_id = perks['styles'][1]['style']
 
-        # Add KP% to all participants in all_participants_details
-        for participant_detail in all_participants_details:
-            p_team_id = participant_detail.get('team_id')
-            p_total_team_kills = team_totals.get(p_team_id, {'kills': 0})['kills']
-            p_kills = participant_detail.get('kills', 0)
-            p_assists = participant_detail.get('assists', 0)
-            
-            kp = 0
-            if p_total_team_kills > 0:
-                kp = (p_kills + p_assists) / p_total_team_kills * 100
-            participant_detail['kill_participation'] = kp
-
-
+        # Extracción de las nuevas estadísticas
         return {
             "match_id": match_id,
             "champion_name": obtener_nombre_campeon(p.get('championId')),
             "win": p.get('win', False),
-            "kills": player_kills,
+            "kills": p.get('kills', 0),
             "deaths": p.get('deaths', 0),
             "assists": p.get('assists', 0),
-            "kda": (player_kills + player_assists) / max(1, p.get('deaths', 0)),
+            "kda": (p.get('kills', 0) + p.get('assists', 0)) / max(1, p.get('deaths', 0)),
             "player_items": player_items,
             "game_end_timestamp": game_end_timestamp,
             "queue_id": info.get('queueId'),
@@ -417,11 +386,11 @@ def obtener_info_partida(args):
             "perk_sub_id": ALL_RUNES.get(perk_sub_id),
             "total_minions_killed": p.get('totalMinionsKilled', 0),
             "neutral_minions_killed": p.get('neutralMinionsKilled', 0),
-            "gold_earned": player_gold,
+            "gold_earned": p.get('goldEarned', 0),
             "gold_spent": p.get('goldSpent', 0),
-            "game_duration": game_duration, # In seconds
+            "game_duration": game_duration,
             "total_damage_dealt": p.get('totalDamageDealt', 0),
-            "total_damage_dealt_to_champions": player_damage,
+            "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
             "physical_damage_dealt_to_champions": p.get('physicalDamageDealtToChampions', 0),
             "magic_damage_dealt_to_champions": p.get('magicDamageDealtToChampions', 0),
             "true_damage_dealt_to_champions": p.get('trueDamageDealtToChampions', 0),
@@ -449,29 +418,22 @@ def obtener_info_partida(args):
             "tripleKills": p.get('tripleKills', 0),
             "doubleKills": p.get('doubleKills', 0),
             "individual_position": p.get('individualPosition', 'N/A'),
-            "team_position": p.get('teamPosition', 'N/A'), # New: Specific role within the team
             "total_damage_taken": p.get('totalDamageTaken', 0),
             "total_time_cc_dealt": p.get('totalTimeCCDealt', 0),
             "first_blood_kill": p.get('firstBloodKill', False),
             "first_blood_assist": p.get('firstBloodAssist', False),
             "objectives_stolen": p.get('objectivesStolen', 0),
             "kill_participation": kill_participation,
-            "damage_share": damage_share, # New: Player's damage share of team's total damage to champions
-            "gold_share": gold_share,     # New: Player's gold share of team's total gold
-            "cs_share": cs_share,         # New: Player's CS share of team's total CS
-            "total_team_kills": total_team_kills, # New: Total team kills for context
-            "total_team_damage": total_team_damage, # New: Total team damage to champions for context
-            "total_team_gold": total_team_gold, # New: Total team gold for context
-            "total_team_cs": total_team_cs, # New: Total team CS for context
-            "all_participants": all_participants_details, # All participants data
-            "player_elo_at_match_time": player_elo_data_at_fetch # Elo data at the time this match was fetched
+
+            # --- AÑADIMOS LA LISTA DE TODOS LOS PARTICIPANTES ---
+            "all_participants": all_participants_details
         }
     except (json.JSONDecodeError, KeyError) as e:
-        print(f"Error processing match details {match_id}: {e}")
+        print(f"Error procesando los detalles de la partida {match_id}: {e}")
     return None
 
 def leer_cuentas(url):
-    """Reads player accounts from a text file hosted on GitHub."""
+    """Lee las cuentas de jugadores desde un archivo de texto alojado en GitHub."""
     try:
         response = requests.get(url)
         if response.status_code == 200:
@@ -485,40 +447,24 @@ def leer_cuentas(url):
                     cuentas.append((riot_id, jugador))
             return cuentas
         else:
-            print(f"Error reading file: {response.status_code}")
+            print(f"Error al leer el archivo: {response.status_code}")
             return []
     except Exception as e:
-        print(f"Error reading accounts: {e}")
+        print(f"Error al leer las cuentas: {e}")
         return []
 
 def calcular_valor_clasificacion(tier, rank, league_points):
     """
-    Calculates a numeric value for a player's rank,
-    allowing for easier sorting and comparison of Elo.
+    Calcula un valor numérico para la clasificación de un jugador,
+    permitiendo ordenar y comparar Elo de forma más sencilla.
     """
     tier_upper = tier.upper()
     
-    # For Master, Grandmaster, and Challenger, the calculation is simpler.
-    # The base is 2800 (the value after Diamond I 100 LP) and LPs are added.
+    # Para Master, Grandmaster y Challenger, el cálculo es más simple.
+    # La base es 2800 (el valor después de Diamond I 100 LP) y se suman los LPs.
     if tier_upper in ["MASTER", "GRANDMASTER", "CHALLENGER"]:
-        # Assign a higher base value for GM/Challenger to ensure they sort above Master
-        if tier_upper == "CHALLENGER":
-            return 3000 + league_points
-        elif tier_upper == "GRANDMASTER":
-            return 2900 + league_points
-        else: # Master
-            return 2800 + league_points
+        return 2800 + league_points
 
-    tierOrden = {
-        "DIAMOND": 6,
-        "EMERALD": 5,
-        "PLATINUM": 4,
-        "GOLD": 3,
-        "SILVER": 2, 
-        "BRONZE": 1, 
-        "IRON": 0    
-    }
-    # Corrected tierOrden for consistency with string keys
     tierOrden = {
         "DIAMOND": 6,
         "EMERALD": 5,
@@ -529,8 +475,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
         "IRON": 0
     }
 
-
-    # The division value is an extra on top of the base tier value (IV=0, III=100, II=200, I=300)
+    # El valor de la división es un extra sobre el valor base del tier (IV=0, III=100, II=200, I=300)
     rankOrden = {"I": 3, "II": 2, "III": 1, "IV": 0}
 
     valor_base_tier = tierOrden.get(tier_upper, 0) * 400
@@ -539,69 +484,71 @@ def calcular_valor_clasificacion(tier, rank, league_points):
     return valor_base_tier + valor_division + league_points
 
 def leer_peak_elo():
-    """Reads peak Elo data from a JSON file on GitHub."""
-    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/Full-IA/peak_elo.json"
+    """Lee los datos de peak Elo desde un archivo JSON en GitHub."""
+    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
     try:
         resp = requests.get(url)
-        resp.raise_for_status()
+        resp.raise_for_status()  # Lanza una excepción para códigos de error HTTP (4xx o 5xx)
         return True, resp.json()
     except Exception as e:
-        print(f"Error reading peak elo: {e}")
+        print(f"Error leyendo peak elo: {e}")
     return False, {}
 
 def leer_puuids():
-    """Reads the PUUIDs file from GitHub."""
-    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/Full-IA/puuids.json"
+    """Lee el archivo de PUUIDs desde GitHub."""
+    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/puuids.json"
     try:
         resp = requests.get(url)
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 404:
-            print("The puuids.json file does not exist, a new one will be created.")
+            print("El archivo puuids.json no existe, se creará uno nuevo.")
             return {}
     except Exception as e:
-        print(f"Error reading puuids.json: {e}")
-        return {}
+        print(f"Error leyendo puuids.json: {e}")
+    return {}
 
 def guardar_puuids_en_github(puuid_dict):
-    """Saves or updates the puuids.json file on GitHub."""
+    """Guarda o actualiza el archivo puuids.json en GitHub."""
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/puuids.json"
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
-        print("GitHub token not found to save PUUIDs.")
+        print("Token de GitHub no encontrado para guardar PUUIDs.")
         return
 
     headers = {"Authorization": f"token {token}"}
     
+    # Intentar obtener el SHA del archivo si existe
     sha = None
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             sha = response.json().get('sha')
     except Exception as e:
-        print(f"Could not get SHA for puuids.json: {e}")
+        print(f"No se pudo obtener el SHA de puuids.json: {e}")
 
     contenido_json = json.dumps(puuid_dict, indent=2)
     contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
     
-    data = {"message": "Update PUUIDs", "content": contenido_b64, "branch": "Full-IA"}
+    data = {"message": "Actualizar PUUIDs", "content": contenido_b64, "branch": "main"}
     if sha:
         data["sha"] = sha
 
     response = requests.put(url, headers=headers, json=data)
     if response.status_code in (200, 201):
-        print("puuids.json file updated successfully on GitHub.")
+        print("Archivo puuids.json actualizado correctamente en GitHub.")
     else:
-        print(f"Error updating puuids.json: {response.status_code} - {response.text}")
+        print(f"Error al actualizar puuids.json: {response.status_code} - {response.text}")
 
 def guardar_peak_elo_en_github(peak_elo_dict):
-    """Saves or updates the peak_elo.json file on GitHub."""
+    """Guarda o actualiza el archivo peak_elo.json en GitHub."""
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
-        print("GitHub token not found")
+        print("Token de GitHub no encontrado")
         return
 
+    # Obtener el contenido actual del archivo para el SHA
     sha = None
     try:
         response = requests.get(url, headers={"Authorization": f"token {token}"})
@@ -609,11 +556,12 @@ def guardar_peak_elo_en_github(peak_elo_dict):
             contenido_actual = response.json()
             sha = contenido_actual['sha']
         else:
-            print(f"Error getting peak_elo.json file for SHA: {response.status_code}")
+            print(f"Error al obtener el archivo peak_elo.json para SHA: {response.status_code}")
     except Exception as e:
-        print(f"Error getting SHA for peak_elo.json: {e}")
+        print(f"Error al obtener el SHA de peak_elo.json: {e}")
         return
 
+    # Codificar el contenido en base64 como requiere la API de GitHub
     try:
         contenido_json = json.dumps(peak_elo_dict, ensure_ascii=False, indent=2)
         contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
@@ -622,39 +570,39 @@ def guardar_peak_elo_en_github(peak_elo_dict):
             url,
             headers={"Authorization": f"token {token}"},
             json={
-                "message": "Update peak elo",
+                "message": "Actualizar peak elo",
                 "content": contenido_b64,
                 "sha": sha,
-                "branch": "Full-IA"
+                "branch": "main"
             }
         )
         if response.status_code in (200, 201):
-            print("peak_elo.json file updated successfully on GitHub.")
+            print("Archivo peak_elo.json actualizado correctamente en GitHub.")
         else:
-            print(f"Error updating peak_elo.json: {response.status_code} - {response.text}")
+            print(f"Error al actualizar peak_elo.json: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"Error updating peak_elo.json file: {e}")
+        print(f"Error al actualizar el archivo peak_elo.json: {e}")
 
 def leer_historial_jugador_github(puuid):
-    """Reads a player's match history from GitHub."""
-    url = f"https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/Full-IA/match_history/{puuid}.json"
+    """Lee el historial de partidas de un jugador desde GitHub."""
+    url = f"https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/match_history/{puuid}.json"
     try:
         resp = requests.get(url, timeout=10)
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 404:
-            print(f"No history found for {puuid}. A new one will be created.")
+            print(f"No se encontró historial para {puuid}. Se creará uno nuevo.")
             return {}
     except Exception as e:
-        print(f"Error reading history for {puuid}: {e}")
+        print(f"Error leyendo el historial para {puuid}: {e}")
     return {}
 
 def guardar_historial_jugador_github(puuid, historial_data):
-    """Saves or updates a player's match history on GitHub."""
+    """Guarda o actualiza el historial de partidas de un jugador en GitHub."""
     url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/match_history/{puuid}.json"
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
-        print(f"GitHub token not found to save history for {puuid}.")
+        print(f"Token de GitHub no encontrado para guardar historial de {puuid}.")
         return
 
     headers = {"Authorization": f"token {token}"}
@@ -664,73 +612,59 @@ def guardar_historial_jugador_github(puuid, historial_data):
         if response.status_code == 200:
             sha = response.json().get('sha')
     except Exception as e:
-        print(f"Could not get SHA for {puuid}'s history: {e}")
+        print(f"No se pudo obtener el SHA del historial de {puuid}: {e}")
 
     contenido_json = json.dumps(historial_data, indent=2)
     contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
-    data = {"message": f"Update match history for {puuid}", "content": contenido_b64, "branch": "Full-IA"}
+    data = {"message": f"Actualizar historial de partidas para {puuid}", "content": contenido_b64, "branch": "main"}
     if sha:
         data["sha"] = sha
     try:
         response = requests.put(url, headers=headers, json=data, timeout=10)
         if response.status_code in (200, 201):
-            print(f"History for {puuid}.json updated successfully on GitHub.")
+            print(f"Historial de {puuid}.json actualizado correctamente en GitHub.")
         else:
-            print(f"Error updating history for {puuid}.json: {response.status_code} - {response.text}")
+            print(f"Error al actualizar historial de {puuid}.json: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"Error in PUT request to GitHub for {puuid}'s history: {e}")
+        print(f"Error en la petición PUT a GitHub para el historial de {puuid}: {e}")
 
 def procesar_jugador(args_tuple):
     """
-    Processes a single player's data.
-    Implements smart update logic to reduce API calls.
-    Only updates Elo if the player is currently in game or has recently finished a game.
+    Procesa los datos de un solo jugador.
+    Implementa una lógica de actualización inteligente para reducir llamadas a la API.
+    Solo actualiza el Elo si el jugador está o ha estado en partida recientemente.
     """
     cuenta, puuid, api_key_main, api_key_spectator, old_data_list, check_in_game_this_update = args_tuple
     riot_id, jugador_nombre = cuenta
 
     if not puuid:
-        print(f"WARNING: Skipping processing for {riot_id} because its PUUID could not be obtained. Check if the Riot ID is correct in accounts.txt.")
+        print(f"ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID. Revisa que el Riot ID sea correcto en cuentas.txt.")
         return []
 
-    champion_id = None
-    is_currently_in_game = False
-    if check_in_game_this_update: # Only calls esta_en_partida in specific cycles
-        champion_id = esta_en_partida(api_key_spectator, puuid)
-        is_currently_in_game = champion_id is not None
+    # 1. Sondeo ligero: usar la clave secundaria para esta llamada frecuente.
+    champion_id = esta_en_partida(api_key_spectator, puuid)
+    is_currently_in_game = champion_id is not None
 
-    # Check if the player was in game in the previous cycle.
+    # 2. Decisión inteligente: ¿necesitamos una actualización completa?
+    # Comprobamos si el jugador estaba en partida en el ciclo anterior.
     was_in_game_before = old_data_list and any(d.get('en_partida') for d in old_data_list)
     
-    # Full update is only done if it's a new player, if they are currently in game,
-    # or if they just finished a game (was in game before but not anymore).
+    # La actualización completa solo se hace si es un jugador nuevo, si está en partida ahora,
+    # o si acaba de terminar una partida (estaba en partida antes pero ya no).
     needs_full_update = not old_data_list or is_currently_in_game or was_in_game_before
 
     if not needs_full_update:
-        # Inactive player, we reuse old data and only update their status.
-        print(f"Player {riot_id} inactive. Skipping Elo update.")
+        # Jugador inactivo, reutilizamos los datos antiguos y solo actualizamos su estado.
+        print(f"Jugador {riot_id} inactivo. Omitiendo actualización de Elo.")
         for data in old_data_list:
-            data['en_partida'] = False # Ensure status is reflected correctly
+            data['en_partida'] = False
         return old_data_list
 
-    print(f"Updating full data for {riot_id} (status: {'in game' if is_currently_in_game else 'recently finished'}).")
-    
-    # Get summoner ID and profileIconId
-    summoner_info = obtener_id_invocador(api_key_main, puuid)
-    profile_icon_id = summoner_info.get('profileIconId') if summoner_info else None
-    perfil_icon_url = f"{BASE_URL_DDRAGON}/cdn/{DDRAGON_VERSION}/img/profileicon/{profile_icon_id}.png" if profile_icon_id else "https://placehold.co/120x120/4a90e2/ffffff?text=Icono"
-
-
+    print(f"Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
+    # Usar la clave principal para obtener los datos de Elo, que es una operación menos frecuente pero más crítica.
     elo_info = obtener_elo(api_key_main, puuid)
-    if not elo_info:
-        print(f"Could not get Elo for {riot_id}. Reusing old data if available.")
-        # If Elo retrieval fails, we return old data if it exists,
-        # but update the 'en_partida' status if just checked.
-        if old_data_list:
-            for data in old_data_list:
-                data['en_partida'] = is_currently_in_game
-            return old_data_list
-        return []
+    if not elo_info: # Si falla la obtención de Elo, devolvemos los datos antiguos si existen
+        return old_data_list if old_data_list else []
 
     riot_id_modified = riot_id.replace("#", "-")
     url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
@@ -739,15 +673,9 @@ def procesar_jugador(args_tuple):
     datos_jugador_list = []
     for entry in elo_info:
         nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"
-        
-        # Get the string queueType from the API response
-        api_queue_type_string = entry.get('queueType', 'Desconocido')
-        # Convert it to the numeric ID using the global map
-        numeric_queue_id = QUEUE_TYPE_TO_ID_MAP.get(api_queue_type_string, api_queue_type_string) # Fallback to string if not found, though for ranked it should be found
-
         datos_jugador = {
             "game_name": riot_id,
-            "queue_type": numeric_queue_id, # Store the numeric ID here
+            "queue_type": entry.get('queueType', 'Desconocido'),
             "tier": entry.get('tier', 'Sin rango'),
             "rank": entry.get('rank', ''),
             "league_points": entry.get('leaguePoints', 0),
@@ -755,7 +683,7 @@ def procesar_jugador(args_tuple):
             "losses": entry.get('losses', 0),
             "jugador": jugador_nombre,
             "url_perfil": url_perfil,
-            "puuid": puuid,
+            "puuid": puuid, # Se añade para usarlo como clave en cachés
             "url_ingame": url_ingame,
             "en_partida": is_currently_in_game,
             "valor_clasificacion": calcular_valor_clasificacion(
@@ -764,32 +692,30 @@ def procesar_jugador(args_tuple):
                 entry.get('leaguePoints', 0)
             ),
             "nombre_campeon": nombre_campeon,
-            "champion_id": champion_id if champion_id else "Desconocido",
-            "perfil_icon_url": perfil_icon_url # Add profile icon URL
+            "champion_id": champion_id if champion_id else "Desconocido"
         }
         datos_jugador_list.append(datos_jugador)
     return datos_jugador_list
 
 def actualizar_cache():
     """
-    This function performs the heavy lifting: it gets all data from the API
-    and updates the global cache. It is designed to run in the background.
+    Esta función realiza el trabajo pesado: obtiene todos los datos de la API
+    y actualiza la caché global. Está diseñada para ser ejecutada en segundo plano.
     """
-    print("Starting cache update...")
+    print("Iniciando actualización de la caché...")
     api_key_main = os.environ.get('RIOT_API_KEY')
-    api_key_spectator = os.environ.get('RIOT_API_KEY_2', api_key_main) # Use secondary or primary
-
-    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/Full-IA/cuentas.txt"
+    # Usar la clave secundaria para el espectador, con fallback a la principal si no existe.
+    api_key_spectator = os.environ.get('RIOT_API_KEY_2', api_key_main)
+    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     
     if not api_key_main:
-        print("CRITICAL ERROR: RIOT_API_KEY environment variable is not set. The application cannot function.")
+        print("ERROR CRÍTICO: La variable de entorno RIOT_API_KEY no está configurada. La aplicación no puede funcionar.")
         return
     
     with cache_lock:
         old_cache_data = cache.get('datos_jugadores', [])
-        cache['update_count'] = cache.get('update_count', 0) + 1
-        check_in_game_this_update = cache['update_count'] % 2 == 1 # Call esta_en_partida every two cycles
     
+    # Crear un mapa para acceso rápido a los datos antiguos por PUUID
     old_data_map_by_puuid = {}
     for d in old_cache_data:
         puuid = d.get('puuid')
@@ -800,12 +726,18 @@ def actualizar_cache():
 
     cuentas = leer_cuentas(url_cuentas)
 
+    # --- NUEVO: Controlar la frecuencia de 'esta_en_partida' ---
+    with cache_lock:
+        cache['update_count'] = cache.get('update_count', 0) + 1
+    check_in_game_this_update = cache['update_count'] % 2 == 1
+
     puuid_dict = leer_puuids()
     puuids_actualizados = False
 
+    # Paso 1: Asegurarse de que todos los jugadores tienen un PUUID en el diccionario
     for riot_id, _ in cuentas:
         if riot_id not in puuid_dict:
-            print(f"PUUID not found for {riot_id}. Getting it from the API...")
+            print(f"No se encontró PUUID para {riot_id}. Obteniéndolo de la API...")
             game_name, tag_line = riot_id.split('#')[0], riot_id.split('#')[1]
             puuid_info = obtener_puuid(api_key_main, game_name, tag_line)
             if puuid_info and 'puuid' in puuid_info:
@@ -815,14 +747,15 @@ def actualizar_cache():
     if puuids_actualizados:
         guardar_puuids_en_github(puuid_dict)
 
+    # Paso 2: Procesar todos los jugadores en paralelo, pasando sus datos antiguos
     todos_los_datos = []
     tareas = []
     for cuenta in cuentas:
         riot_id = cuenta[0]
         puuid = puuid_dict.get(riot_id)
-        old_data_for_player = old_data_map_by_puuid.get(puuid, []) # Ensure it's an empty list if no old data
+        old_data_for_player = old_data_map_by_puuid.get(puuid)
         tareas.append((cuenta, puuid, api_key_main, api_key_spectator, 
-                      old_data_for_player, check_in_game_this_update))
+                      old_data_for_player, check_in_game_this_update)) # Pass the value here
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         resultados = executor.map(procesar_jugador, tareas)
@@ -831,25 +764,31 @@ def actualizar_cache():
         if datos_jugador_list:
             todos_los_datos.extend(datos_jugador_list)
 
-    # Removed the redundant queue_map here as queue_type is now numeric from procesar_jugador
+    # Paso 3: Calcular y añadir estadísticas del top 3 campeones más jugados desde el historial
+    queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
     for jugador in todos_los_datos:
+        """Calcula las estadísticas del top 3 campeones más jugados para un jugador."""
         puuid = jugador.get('puuid')
-        queue_id = jugador.get('queue_type') # queue_type is already the numeric ID
-        
-        jugador['top_champion_stats'] = []
+        queue_type = jugador.get('queue_type')
+        queue_id = queue_map.get(queue_type)
+
+        jugador['top_champion_stats'] = [] # Ahora será una lista para los top 3
+
         if not puuid or not queue_id:
             continue
-
+        
         historial = leer_historial_jugador_github(puuid)
         partidas_jugador = [
             p for p in historial.get('matches', []) 
             if p.get('queue_id') == queue_id and
+               # Filtramos para que solo cuenten las partidas del split activo
                p.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
         ]
 
         if not partidas_jugador:
             continue
 
+        # Contar campeones para encontrar el top 3
         contador_campeones = Counter(p['champion_name'] for p in partidas_jugador)
         if not contador_campeones:
             continue
@@ -857,6 +796,7 @@ def actualizar_cache():
         top_3_campeones = contador_campeones.most_common(3)
 
         for campeon_nombre, _ in top_3_campeones:
+            # Calcular stats para cada campeón en el top 3
             partidas_del_campeon = [p for p in partidas_jugador if p['champion_name'] == campeon_nombre]
             
             total_partidas = len(partidas_del_campeon)
@@ -867,12 +807,15 @@ def actualizar_cache():
             total_deaths = sum(p.get('deaths', 0) for p in partidas_del_campeon)
             total_assists = sum(p.get('assists', 0) for p in partidas_del_campeon)
             
+            # Calcular estadísticas promedio por partida
             avg_kills = total_kills / total_partidas if total_partidas > 0 else 0
             avg_deaths = total_deaths / total_partidas if total_partidas > 0 else 0
             avg_assists = total_assists / total_partidas if total_partidas > 0 else 0
 
+            # Evitar división por cero para el KDA
             kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
 
+            # --- NUEVO: Encontrar la partida con el KDA más alto ---
             best_kda_match_info = None
             if partidas_del_campeon:
                 def get_kda_for_match(p):
@@ -898,6 +841,7 @@ def actualizar_cache():
                 "win_rate": win_rate,
                 "games_played": total_partidas,
                 "kda": kda,
+                # --- DATOS AÑADIDOS PARA LA PLANTILLA ---
                 "kills": total_kills,
                 "deaths": total_deaths,
                 "assists": total_assists,
@@ -912,21 +856,21 @@ def actualizar_cache():
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = time.time()
-    print("Cache update completed.")
+    print("Actualización de la caché completada.")
 
 def obtener_datos_jugadores():
-    """Gets cached player data."""
+    """Obtiene los datos cacheados de los jugadores."""
     with cache_lock:
         return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
 
 def get_peak_elo_key(jugador):
-    """Generates a key for peak ELO using the player's name and Riot ID."""
+    """Genera una clave para el peak ELO usando el nombre del jugador y su Riot ID."""
     return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
 
 def calcular_rachas(partidas):
     """
-    Calculates the longest win and loss streaks from a list of matches.
-    Matches must be sorted by date, from most recent to oldest.
+    Calcula las rachas de victorias y derrotas más largas de una lista de partidas.
+    Las partidas deben estar ordenadas por fecha, de más reciente a más antigua.
     """
     if not partidas:
         return {'max_win_streak': 0, 'max_loss_streak': 0}
@@ -936,7 +880,8 @@ def calcular_rachas(partidas):
     current_win_streak = 0
     current_loss_streak = 0
 
-    for partida in reversed(partidas): # Invert to calculate chronologically
+    # Las partidas vienen de más recientes a más antiguas, las invertimos para un cálculo cronológico
+    for partida in reversed(partidas):
         if partida.get('win'):
             current_win_streak += 1
             current_loss_streak = 0
@@ -951,152 +896,9 @@ def calcular_rachas(partidas):
             
     return {'max_win_streak': max_win_streak, 'max_loss_streak': max_loss_streak}
 
-# New function to calculate aggregated statistics per queue
-def calcular_stats_agregadas(partidas):
-    """Calculates aggregated statistics (per game/minute averages) for a list of matches."""
-    stats = {
-        'total_games': len(partidas),
-        'total_wins': sum(1 for p in partidas if p.get('win')),
-        'total_losses': sum(1 for p in partidas if not p.get('win')),
-        'total_kills': sum(p.get('kills', 0) for p in partidas),
-        'total_deaths': sum(p.get('deaths', 0) for p in partidas),
-        'total_assists': sum(p.get('assists', 0) for p in partidas),
-        'total_cs': sum(p.get('total_minions_killed', 0) + p.get('neutral_minions_killed', 0) for p in partidas),
-        'total_gold_earned': sum(p.get('gold_earned', 0) for p in partidas),
-        'total_damage_dealt_to_champions': sum(p.get('total_damage_dealt_to_champions', 0) for p in partidas),
-        'total_vision_score': sum(p.get('vision_score', 0) for p in partidas),
-        'total_game_duration_seconds': sum(p.get('game_duration', 0) for p in partidas),
-        'total_kill_participation_sum': sum(p.get('kill_participation', 0) for p in partidas),
-        'total_damage_share_sum': sum(p.get('damage_share', 0) for p in partidas), # New
-        'total_gold_share_sum': sum(p.get('gold_share', 0) for p in partidas),     # New
-        'total_cs_share_sum': sum(p.get('cs_share', 0) for p in partidas),         # New
-        'total_damage_taken': sum(p.get('total_damage_taken', 0) for p in partidas), # New
-        'total_heal': sum(p.get('total_heal', 0) for p in partidas),               # New
-        'total_wards_placed': sum(p.get('wards_placed', 0) for p in partidas),     # New
-        'total_wards_killed': sum(p.get('wards_killed', 0) for p in partidas),     # New
-        'total_detector_wards_placed': sum(p.get('detector_wards_placed', 0) for p in partidas), # New
-        'total_time_ccing_others': sum(p.get('time_ccing_others', 0) for p in partidas), # New
-        'total_turret_kills': sum(p.get('turret_kills', 0) for p in partidas),     # New
-        'total_inhibitor_kills': sum(p.get('inhibitor_kills', 0) for p in partidas), # New
-        'total_baron_kills': sum(p.get('baron_kills', 0) for p in partidas),       # New
-        'total_dragon_kills': sum(p.get('dragon_kills', 0) for p in partidas),     # New
-        'total_penta_kills': sum(p.get('pentaKills', 0) for p in partidas),       # New
-        'total_quadra_kills': sum(p.get('quadraKills', 0) for p in partidas),     # New
-        'total_triple_kills': sum(p.get('tripleKills', 0) for p in partidas),     # New
-        'total_double_kills': sum(p.get('doubleKills', 0) for p in partidas),     # New
-        'total_first_blood_kills': sum(1 for p in partidas if p.get('first_blood_kill')), # New
-        'total_first_blood_assists': sum(1 for p in partidas if p.get('first_blood_assist')), # New
-        'total_objectives_stolen': sum(p.get('objectives_stolen', 0) for p in partidas), # New
-        'total_largest_killing_spree_sum': sum(p.get('largest_killing_spree', 0) for p in partidas), # New
-        'total_largest_multi_kill_sum': sum(p.get('largestMultiKill', 0) for p in partidas), # New
-        'total_time_spent_dead': sum(p.get('total_time_spent_dead', 0) for p in partidas), # New
-        'total_champion_level_sum': sum(p.get('champion_level', 0) for p in partidas) # New
-    }
-
-    if stats['total_games'] == 0:
-        return {
-            'avg_kda': 0.0, 'avg_cs_per_min': 0.0, 'avg_gold_per_min': 0.0,
-            'avg_damage_per_min': 0.0, 'avg_vision_score_per_min': 0.0,
-            'avg_kp': 0.0, 'win_rate': 0.0, 'total_games': 0,
-            'avg_kills_per_min': 0.0, 'avg_deaths_per_min': 0.0, 'avg_assists_per_min': 0.0,
-            'avg_damage_share': 0.0, 'avg_gold_share': 0.0, 'avg_cs_share': 0.0,
-            'avg_damage_taken_per_min': 0.0, 'avg_heal_per_min': 0.0,
-            'avg_wards_placed_per_min': 0.0, 'avg_wards_killed_per_min': 0.0, 'avg_detector_wards_placed_per_min': 0.0,
-            'avg_time_ccing_others_per_min': 0.0, 'avg_turret_kills_per_game': 0.0,
-            'avg_inhibitor_kills_per_game': 0.0, 'avg_baron_kills_per_game': 0.0, 'avg_dragon_kills_per_game': 0.0,
-            'penta_kills': 0, 'quadra_kills': 0, 'triple_kills': 0, 'double_kills': 0,
-            'first_blood_kill_rate': 0.0, 'first_blood_assist_rate': 0.0,
-            'avg_objectives_stolen_per_game': 0.0, 'avg_largest_killing_spree': 0.0,
-            'avg_largest_multi_kill': 0.0, 'avg_time_spent_dead_per_min': 0.0,
-            'avg_champion_level': 0.0
-        }
-
-    avg_kda = (stats['total_kills'] + stats['total_assists']) / max(1, stats['total_deaths'])
-    win_rate = (stats['total_wins'] / stats['total_games']) * 100
-
-    total_duration_minutes = stats['total_game_duration_seconds'] / 60
-    
-    avg_cs_per_min = stats['total_cs'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_gold_per_min = stats['total_gold_earned'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_damage_per_min = stats['total_damage_dealt_to_champions'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_vision_score_per_min = stats['total_vision_score'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_kp = stats['total_kill_participation_sum'] / stats['total_games'] if stats['total_games'] > 0 else 0
-
-    # New per minute stats
-    avg_kills_per_min = stats['total_kills'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_deaths_per_min = stats['total_deaths'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_assists_per_min = stats['total_assists'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_damage_taken_per_min = stats['total_damage_taken'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_heal_per_min = stats['total_heal'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_wards_placed_per_min = stats['total_wards_placed'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_wards_killed_per_min = stats['total_wards_killed'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_detector_wards_placed_per_min = stats['total_detector_wards_placed'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_time_ccing_others_per_min = stats['total_time_ccing_others'] / total_duration_minutes if total_duration_minutes > 0 else 0
-    avg_time_spent_dead_per_min = stats['total_time_spent_dead'] / total_duration_minutes if total_duration_minutes > 0 else 0
-
-
-    # New share stats
-    avg_damage_share = stats['total_damage_share_sum'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    avg_gold_share = stats['total_gold_share_sum'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    avg_cs_share = stats['total_cs_share_sum'] / stats['total_games'] if stats['total_games'] > 0 else 0
-
-    # New per game stats
-    avg_turret_kills_per_game = stats['total_turret_kills'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    avg_inhibitor_kills_per_game = stats['total_inhibitor_kills'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    avg_baron_kills_per_game = stats['total_baron_kills'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    avg_dragon_kills_per_game = stats['total_dragon_kills'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    avg_objectives_stolen_per_game = stats['total_objectives_stolen'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    
-    first_blood_kill_rate = (stats['total_first_blood_kills'] / stats['total_games']) * 100 if stats['total_games'] > 0 else 0
-    first_blood_assist_rate = (stats['total_first_blood_assists'] / stats['total_games']) * 100 if stats['total_games'] > 0 else 0
-
-    avg_largest_killing_spree = stats['total_largest_killing_spree_sum'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    avg_largest_multi_kill = stats['total_largest_multi_kill_sum'] / stats['total_games'] if stats['total_games'] > 0 else 0
-    avg_champion_level = stats['total_champion_level_sum'] / stats['total_games'] if stats['total_games'] > 0 else 0
-
-
-    return {
-        'avg_kda': avg_kda,
-        'avg_cs_per_min': avg_cs_per_min,
-        'avg_gold_per_min': avg_gold_per_min,
-        'avg_damage_per_min': avg_damage_per_min,
-        'avg_vision_score_per_min': avg_vision_score_per_min,
-        'avg_kp': avg_kp,
-        'win_rate': win_rate,
-        'total_games': stats['total_games'],
-        'avg_kills_per_min': avg_kills_per_min,
-        'avg_deaths_per_min': avg_deaths_per_min,
-        'avg_assists_per_min': avg_assists_per_min,
-        'avg_damage_share': avg_damage_share,
-        'avg_gold_share': avg_gold_share,
-        'avg_cs_share': avg_cs_share,
-        'avg_damage_taken_per_min': avg_damage_taken_per_min,
-        'avg_heal_per_min': avg_heal_per_min,
-        'avg_wards_placed_per_min': avg_wards_placed_per_min,
-        'avg_wards_killed_per_min': avg_wards_killed_per_min,
-        'avg_detector_wards_placed_per_min': avg_detector_wards_placed_per_min,
-        'avg_time_ccing_others_per_min': avg_time_ccing_others_per_min,
-        'avg_turret_kills_per_game': avg_turret_kills_per_game,
-        'avg_inhibitor_kills_per_game': avg_inhibitor_kills_per_game,
-        'avg_baron_kills_per_game': avg_baron_kills_per_game,
-        'avg_dragon_kills_per_game': avg_dragon_kills_per_game,
-        'penta_kills': stats['total_penta_kills'],
-        'quadra_kills': stats['total_quadra_kills'],
-        'triple_kills': stats['total_triple_kills'],
-        'double_kills': stats['total_double_kills'],
-        'first_blood_kill_rate': first_blood_kill_rate,
-        'first_blood_assist_rate': first_blood_assist_rate,
-        'avg_objectives_stolen_per_game': avg_objectives_stolen_per_game,
-        'avg_largest_killing_spree': avg_largest_killing_spree,
-        'avg_largest_multi_kill': avg_largest_multi_kill,
-        'avg_time_spent_dead_per_min': avg_time_spent_dead_per_min,
-        'avg_champion_level': avg_champion_level
-    }
-
-
 @app.route('/')
 def index():
-    """Renders the main page with the player list."""
+    """Renderiza la página principal con la lista de jugadores."""
 
     datos_jugadores, timestamp = obtener_datos_jugadores()
     
@@ -1114,71 +916,54 @@ def index():
                 peak = valor
                 actualizado = True
             jugador["peak_elo"] = peak
-    
+
         if actualizado:
             guardar_peak_elo_en_github(peak_elo_dict)
     else:
-        print("WARNING: Could not read peak_elo.json file. Peak updates will be skipped.")
+        print("ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
         for jugador in datos_jugadores:
-            jugador["peak_elo"] = jugador["valor_clasificacion"]
+            jugador["peak_elo"] = jugador["valor_clasificacion"] # Como fallback, mostramos el valor actual
 
-    # Filtering logic for the main page
-    queue_filter = request.args.get('queue_filter')
-    if queue_filter == 'soloq':
-        filtered_jugadores = [j for j in datos_jugadores if j.get('queue_type') == QUEUE_TYPE_TO_ID_MAP["RANKED_SOLO_5x5"]]
-    elif queue_filter == 'flexq':
-        filtered_jugadores = [j for j in datos_jugadores if j.get('queue_type') == QUEUE_TYPE_TO_ID_MAP["RANKED_FLEX_SR"]]
-    else: # 'all' or no filter
-        filtered_jugadores = datos_jugadores
-
+    # Obtenemos el nombre del split activo para mostrarlo en la web
     split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
     ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
     
-    return render_template('index.html', datos_jugadores=filtered_jugadores, # Pass filtered data
+    
+    return render_template('index.html', datos_jugadores=datos_jugadores,
                            ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=DDRAGON_VERSION, 
-                           split_activo_nombre=split_activo_nombre,
-                           active_filter=queue_filter) # Pass active filter for UI highlighting
+                           split_activo_nombre=split_activo_nombre)
 
 @app.route('/jugador/<path:game_name>')
 def perfil_jugador(game_name):
     """
-    Displays a profile page for a specific player, now using a single responsive template.
+    Muestra una página de perfil para un jugador específico, detectando
+    el tipo de dispositivo para renderizar la plantilla adecuada.
     """
     perfil = _get_player_profile_data(game_name)
     if not perfil:
         return render_template('404.html'), 404
 
-    # Always render jugador.html, which is now responsive
-    template_name = 'jugador.html'
+    # Detección del dispositivo a través del User-Agent
+    user_agent_string = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent_string for keyword in ['mobi', 'android', 'iphone', 'ipad'])
     
-    print(f"Rendering {template_name} for {game_name}.")
+    # Seleccionar la plantilla basada en el dispositivo
+    template_name = 'jugador_2.html' if is_mobile else 'jugador.html'
+    
+    print(f"Dispositivo detectado como {'Móvil' if is_mobile else 'Escritorio'}. Renderizando {template_name}.")
 
     return render_template(template_name,
                            perfil=perfil,
                            ddragon_version=DDRAGON_VERSION,
                            datetime=datetime,
-                           now=datetime.now(),
-                           soloq_elo_history_json=json.dumps(perfil.get('soloq_elo_history', [])),
-                           flexq_elo_history_json=json.dumps(perfil.get('flexq_elo_history', [])))
-
-@app.route('/buscar_invocador', methods=['GET'])
-def buscar_invocador():
-    """
-    Handles summoner search requests and redirects to the player profile page.
-    """
-    game_name = request.args.get('game_name')
-    if game_name:
-        # You can add validation logic for game_name here if needed
-        return redirect(url_for('perfil_jugador', game_name=game_name))
-    return redirect(url_for('index')) # Redirect to the main page if no game_name provided
-
+                           now=datetime.now())
 
 def _get_player_profile_data(game_name):
     """
-    Auxiliary function that encapsulates the logic to get and process
-    all data for a player profile.
-    Returns the 'profile' dictionary or None if the player is not found.
+    Función auxiliar que encapsula la lógica para obtener y procesar
+    todos los datos de un perfil de jugador.
+    Devuelve el diccionario 'perfil' o None si no se encuentra el jugador.
     """
     todos_los_datos, _ = obtener_datos_jugadores()
     datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
@@ -1201,105 +986,114 @@ def _get_player_profile_data(game_name):
     }
     
     for item in datos_del_jugador:
-        if item.get('queue_type') == QUEUE_TYPE_TO_ID_MAP["RANKED_SOLO_5x5"]: # Use numeric ID
+        if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['soloq'] = item
-        elif item.get('queue_type') == QUEUE_TYPE_TO_ID_MAP["RANKED_FLEX_SR"]: # Use numeric ID
+        elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['flexq'] = item
 
     historial_total = perfil.get('historial_partidas', [])
-    
-    # Sort history for LP calculation and graph data
-    historial_total.sort(key=lambda x: x.get('game_end_timestamp', 0)) # Sort by timestamp ascending
-
-    soloq_elo_history = []
-    flexq_elo_history = []
-
-    # Calculate LP changes and prepare graph data
-    # Keep track of the last processed Elo for each queue type
-    last_soloq_elo = None
-    last_flexq_elo = None
-
-    for i, match in enumerate(historial_total):
-        lp_change = None # Default to None if not a ranked game or no previous data
-        current_elo_data = match.get('player_elo_at_match_time', {})
-        
-        # Determine the queue type of the match
-        match_queue_id = match.get('queue_id')
-
-        # Process SoloQ matches
-        if match_queue_id == QUEUE_TYPE_TO_ID_MAP["RANKED_SOLO_5x5"] and 'soloq' in current_elo_data:
-            current_soloq_elo = current_elo_data['soloq'].get('valor_clasificacion')
-            if current_soloq_elo is not None:
-                if last_soloq_elo is not None:
-                    lp_change = current_soloq_elo - last_soloq_elo
-                last_soloq_elo = current_soloq_elo
-                soloq_elo_history.append({
-                    'timestamp': match['game_end_timestamp'],
-                    'elo': current_soloq_elo,
-                    'tier': current_elo_data['soloq'].get('tier', 'UNKNOWN'),
-                    'rank': current_elo_data['soloq'].get('rank', '')
-                })
-
-        # Process FlexQ matches
-        elif match_queue_id == QUEUE_TYPE_TO_ID_MAP["RANKED_FLEX_SR"] and 'flexq' in current_elo_data:
-            current_flexq_elo = current_elo_data['flexq'].get('valor_clasificacion')
-            if current_flexq_elo is not None:
-                if last_flexq_elo is not None:
-                    lp_change = current_flexq_elo - last_flexq_elo
-                last_flexq_elo = current_flexq_elo
-                flexq_elo_history.append({
-                    'timestamp': match['game_end_timestamp'],
-                    'elo': current_flexq_elo,
-                    'tier': current_elo_data['flexq'].get('tier', 'UNKNOWN'),
-                    'rank': current_elo_data['flexq'].get('rank', '')
-                })
-        
-        match['lp_change'] = lp_change
-
-    # Reverse sort for display in HTML table (most recent first)
-    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-
-    # Add Elo history to profile
-    perfil['soloq_elo_history'] = soloq_elo_history
-    perfil['flexq_elo_history'] = flexq_elo_history
     
     if 'soloq' in perfil:
         partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
         rachas_soloq = calcular_rachas(partidas_soloq)
         perfil['soloq'].update(rachas_soloq)
-        # Calculate and add analysis statistics for SoloQ
-        perfil['soloq']['analysis_stats'] = calcular_stats_agregadas(partidas_soloq)
 
     if 'flexq' in perfil:
         partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
         rachas_flexq = calcular_rachas(partidas_flexq)
         perfil['flexq'].update(rachas_flexq)
-        # Calculate and add analysis statistics for FlexQ
-        perfil['flexq']['analysis_stats'] = calcular_stats_agregadas(partidas_flexq)
 
+    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+    
     return perfil
 
 
+@app.route('/jugador_original/<path:game_name>')
+def perfil_jugador_original(game_name):
+    """
+    Muestra una página de perfil para un jugador específico.
+    Esta es la versión CORREGIDA Y MEJORADA de tu función original.
+    """
+    # 1. Obtener los datos de todos los jugadores de la caché
+    todos_los_datos, _ = obtener_datos_jugadores()
+    
+    # 2. Filtrar para encontrar los datos del jugador específico por su `game_name`
+    datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
+    
+    # 3. Si no se encuentra al jugador, mostrar la página de error 404
+    if not datos_del_jugador:
+        return render_template('404.html'), 404
+    
+    # 4. Obtener el PUUID para poder buscar su historial de partidas
+    primer_perfil = datos_del_jugador[0]
+    puuid = primer_perfil.get('puuid')
+
+    # 5. Leer el historial de partidas desde GitHub usando el PUUID
+    historial_partidas_completo = {}
+    if puuid:
+        historial_partidas_completo = leer_historial_jugador_github(puuid)
+
+    # 6. Preparar un objeto `perfil` limpio y completo para enviar a la plantilla
+    #    Esto asegura que la plantilla siempre reciba todas las variables que espera.
+    perfil = {
+        'nombre': primer_perfil.get('jugador', 'N/A'),
+        'game_name': game_name,
+        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''), # Usar la URL de la caché
+        'historial_partidas': historial_partidas_completo.get('matches', [])
+        # Aquí puedes añadir más datos del `primer_perfil` si los necesitas en la plantilla
+    }
+    
+    # Añadimos los datos de SoloQ y Flex al perfil como objetos anidados
+    for item in datos_del_jugador:
+        if item.get('queue_type') == 'RANKED_SOLO_5x5':
+            perfil['soloq'] = item
+        elif item.get('queue_type') == 'RANKED_FLEX_SR':
+            perfil['flexq'] = item
+
+    # --- NUEVO: Calcular rachas para cada cola ---
+    historial_total = perfil.get('historial_partidas', [])
+    
+    # Filtrar y calcular para SoloQ
+    if 'soloq' in perfil:
+        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
+        rachas_soloq = calcular_rachas(partidas_soloq)
+        perfil['soloq'].update(rachas_soloq)
+
+    # Filtrar y calcular para FlexQ
+    if 'flexq' in perfil:
+        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
+        rachas_flexq = calcular_rachas(partidas_flexq)
+        perfil['flexq'].update(rachas_flexq)
+
+    # 7. Ordenar el historial por fecha (más reciente primero)
+    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+
+    # 8. Renderizar la plantilla `jugador.html`, pasándole el objeto `perfil`
+    return render_template('jugador.html', 
+                           perfil=perfil, 
+                           ddragon_version=DDRAGON_VERSION,
+                           datetime=datetime, # Pass the datetime object
+                           now=datetime.now()) # Pass the current time
+
 def actualizar_historial_partidas_en_segundo_plano():
     """
-    Function that runs in a separate thread to update the match history
-    of all players periodically.
+    Función que se ejecuta en un hilo separado para actualizar el historial de partidas
+    de todos los jugadores de forma periódica.
     """
-    print("Starting match history update thread.")
+    print("Iniciando hilo de actualización de historial de partidas.")
     api_key = os.environ.get('RIOT_API_KEY')
     if not api_key:
-        print("ERROR: RIOT_API_KEY not configured. Match history cannot be updated.")
+        print("ERROR: RIOT_API_KEY no configurada. No se puede actualizar el historial de partidas.")
         return
 
-    # Use the global QUEUE_TYPE_TO_ID_MAP directly
-    queue_map = QUEUE_TYPE_TO_ID_MAP 
-    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/Full-IA/cuentas.txt"
+    queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
+    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
 
     while True:
         try:
-            # Ensure DDragon data is loaded
+            # Asegurarse de que los datos de DDragon estén cargados
+            # Esto es crucial antes de intentar mapear IDs a nombres/rutas de imagen
             if not ALL_CHAMPIONS or not ALL_RUNES or not ALL_SUMMONER_SPELLS:
-                print("DDragon data not fully loaded, attempting to re-update.")
                 actualizar_ddragon_data()
 
             cuentas = leer_cuentas(url_cuentas)
@@ -1308,44 +1102,18 @@ def actualizar_historial_partidas_en_segundo_plano():
             for riot_id, jugador_nombre in cuentas:
                 puuid = puuid_dict.get(riot_id)
                 if not puuid:
-                    print(f"Skipping history update for {riot_id}: PUUID not found.")
+                    print(f"Saltando actualización de historial para {riot_id}: PUUID no encontrado.")
                     continue
 
                 historial_existente = leer_historial_jugador_github(puuid)
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
+                # Mantenemos un conjunto separado de IDs de remakes para evitar re-consultarlos.
                 remakes_guardados = set(historial_existente.get('remakes', []))
                 
-                # Get current Elo for the player to embed in new matches
-                current_elo_data_for_player = {}
-                elo_info = obtener_elo(api_key, puuid)
-                if elo_info:
-                    for entry in elo_info:
-                        if entry.get('queueType') == "RANKED_SOLO_5x5":
-                            current_elo_data_for_player['soloq'] = {
-                                "tier": entry.get('tier', 'Sin rango'),
-                                "rank": entry.get('rank', ''),
-                                "league_points": entry.get('leaguePoints', 0),
-                                "valor_clasificacion": calcular_valor_clasificacion(
-                                    entry.get('tier', 'Sin rango'),
-                                    entry.get('rank', ''),
-                                    entry.get('leaguePoints', 0)
-                                )
-                            }
-                        elif entry.get('queueType') == "RANKED_FLEX_SR":
-                            current_elo_data_for_player['flexq'] = {
-                                "tier": entry.get('tier', 'Sin rango'),
-                                "rank": entry.get('rank', ''),
-                                "league_points": entry.get('leaguePoints', 0),
-                                "valor_clasificacion": calcular_valor_clasificacion(
-                                    entry.get('tier', 'Sin rango'),
-                                    entry.get('rank', ''),
-                                    entry.get('leaguePoints', 0)
-                                )
-                            }
                 
+                # 2. Obtener TODOS los IDs de partidas de la temporada (SoloQ y Flex)
                 all_match_ids_season = []
-                # Iterate over values of QUEUE_TYPE_TO_ID_MAP to get numeric queue IDs
-                for queue_id in QUEUE_TYPE_TO_ID_MAP.values(): 
+                for queue_id in queue_map.values():
                     start_index = 0
                     while True:
                         url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
@@ -1357,79 +1125,82 @@ def actualizar_historial_partidas_en_segundo_plano():
                         if len(match_ids_page) < 100: break
                         start_index += 100
                 
+                # 3. Filtrar para obtener solo los IDs de partidas nuevas y no remakes
                 nuevos_match_ids = [
                     mid for mid in all_match_ids_season 
                     if mid not in ids_partidas_guardadas and mid not in remakes_guardados
                 ]
 
-                if not nuevos_match_ids:
-                    print(f"No new matches for {riot_id}. Skipping.")
+                if not nuevos_match_ids: # No hay nuevas partidas
+                    print(f"No hay partidas nuevas para {riot_id}. Omitiendo.")
                     continue
 
-                print(f"Found {len(nuevos_match_ids)} new matches for {riot_id}. Processing...")
+                print(f"Se encontraron {len(nuevos_match_ids)} partidas nuevas para {riot_id}. Procesando...")
 
-                tareas = []
-                for match_id in nuevos_match_ids:
-                    # Pass the entire current_elo_data_for_player dictionary
-                    tareas.append((match_id, puuid, api_key, current_elo_data_for_player)) 
-
+                # 4. Procesar solo las partidas nuevas en paralelo
+                tareas = [(match_id, puuid, api_key) for match_id in nuevos_match_ids]
                 with ThreadPoolExecutor(max_workers=10) as executor:
                     nuevas_partidas_info = list(executor.map(obtener_info_partida, tareas))
-                
-                nuevas_partidas_validas = [p for p in nuevas_partidas_info if p is not None]
+
+                # 5. Añadir las nuevas partidas al historial y guardar
+                # Separar las partidas válidas de los remakes basándonos en el valor de retorno de obtener_info_partida.
+                nuevas_partidas_validas = [p for p in nuevas_partidas_info if p is not None]  # No es remake
                 nuevos_remakes = [
-                    match_id for i, match_id in enumerate(nuevos_match_ids)
-                    if nuevas_partidas_info[i] is None
+                    match_id for i, match_id in enumerate(nuevos_match_ids) # Enumerate para obtener índice
+                    if nuevas_partidas_info[i] is None # None indica que fue marcado como remake
                 ]
+
                 
                 if nuevas_partidas_validas:
                     historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
-                    # Sort after adding new matches to ensure correct LP calculation order later
-                    historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'])
+                    # Opcional: ordenar por fecha
+                    historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
 
                 if nuevos_remakes:
+                    # Añadir los IDs de los nuevos remakes al conjunto existente
                     remakes_guardados.update(nuevos_remakes)
+                    # Actualizar la lista de remakes en el historial
                     historial_existente['remakes'] = list(remakes_guardados)
                 
                 if nuevas_partidas_validas or nuevos_remakes:
-                    guardar_historial_jugador_github(puuid, historial_existente)
-                    print(f"History for {riot_id} updated with {len(nuevas_partidas_validas)} new matches and {len(nuevos_remakes)} remakes.")
+                    guardar_historial_jugador_github(puuid, historial_existente) # Guardar todo el historial, incluso si solo hay remakes
+                    print(f"Historial de {riot_id} actualizado con {len(nuevas_partidas_validas)} partidas nuevas y {len(nuevos_remakes)} remakes.")
 
-            print("History update cycle completed. Next check in 5 minutes.")
-            time.sleep(600)
+            print("Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
+            time.sleep(600) # Esperar 5 minutos para el siguiente ciclo
 
         except Exception as e:
-            print(f"Error in stats update thread: {e}. Retrying in 5 minutes.")
+            print(f"Error en el hilo de actualización de estadísticas: {e}. Reintentando en 5 minutos.")
             time.sleep(600)
 
 def keep_alive():
-    """Sends a periodic request to the application itself to keep it active on services like Render."""
+    """Envía una solicitud periódica a la propia aplicación para mantenerla activa en servicios como Render."""
     while True:
         try:
             requests.get('https://soloq-cerditos-34kd.onrender.com/')
-            print("Keeping the application active with a request.")
+            print("Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
         time.sleep(200)
 
 def actualizar_cache_periodicamente():
-    """Updates the player data cache periodically."""
+    """Actualiza la caché de datos de los jugadores de forma periódica."""
     while True:
         actualizar_cache()
         time.sleep(CACHE_TIMEOUT)
 
 if __name__ == "__main__":
-    # Thread to keep the app alive on Render
+    # Hilo para mantener la app activa en Render
     keep_alive_thread = threading.Thread(target=keep_alive)
     keep_alive_thread.daemon = True
     keep_alive_thread.start()
 
-    # Thread to update the cache in the background
+    # Hilo para actualizar la caché en segundo plano
     cache_thread = threading.Thread(target=actualizar_cache_periodicamente)
     cache_thread.daemon = True
     cache_thread.start()
 
-    # Thread for match history update
+    # Hilo para la actualización del historial de partidas
     stats_thread = threading.Thread(target=actualizar_historial_partidas_en_segundo_plano)
     stats_thread.daemon = True
     stats_thread.start()
