@@ -5,7 +5,7 @@ import time
 import threading
 import json
 import base64
-from datetime import datetime, timedelta # Import datetime and timedelta
+from datetime import datetime, timedelta
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
@@ -29,11 +29,11 @@ def get_queue_type_filter(queue_id):
         850: "Co-op vs. AI (ARAM)",
         900: "URF",
         1020: "One For All",
-        1090: "Arena", # Ocasional, por ejemplo para eventos
-        1100: "Arena", # Ocasional, por ejemplo para eventos
+        1090: "Arena",
+        1100: "Arena",
         1300: "Nexus Blitz",
         1400: "Ultimate Spellbook",
-        1700: "Arena", # Nuevo ID de Arena
+        1700: "Arena",
         1900: "URF (ARAM)",
         2000: "Tutorial",
         2010: "Tutorial",
@@ -70,15 +70,12 @@ def format_peak_elo_filter(valor):
         6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD", 
         2: "SILVER", 1: "BRONZE", 0: "IRON"
     }
-    rank_map_reverse = {3: "I", 2: "II", 1: "III", 0: "IV"}
+    rank_map_reverse = {"I": 3, "II": 2, "III": 1, "IV": 0}
 
-    tier_value = valor // 400
-    remainder_after_tier = valor % 400
-    rank_value = remainder_after_tier // 100
-    lps = remainder_after_tier % 100
-    tier_str = tier_map_reverse.get(tier_value, "UNKNOWN")
-    rank_str = rank_map_reverse.get(rank_value, "")
-    return f"{tier_str.capitalize()} {rank_str} ({lps} LPs)"
+    valor_base_tier = tierOrden.get(tier_upper, 0) * 400
+    valor_division = rankOrden.get(rank, 0) * 100
+
+    return valor_base_tier + valor_division + league_points
 
 # Configuración de la API de Riot Games
 RIOT_API_KEY = os.environ.get("RIOT_API_KEY")
@@ -99,6 +96,16 @@ cache = {
 }
 CACHE_TIMEOUT = 130  # 2 minutos
 cache_lock = threading.Lock()
+
+# Global storage for LP tracking
+# Stores { (puuid, queue_type_string): {'pre_game_lp': int, 'game_start_timestamp': float, 'riot_id': str} }
+player_in_game_lp = {}
+player_in_game_lp_lock = threading.Lock()
+
+# Stores { (puuid, queue_type_string): {'lp_change': int, 'detection_timestamp': float} }
+# This will hold LP changes detected immediately after a game, to be associated with a match later.
+pending_lp_updates = {}
+pending_lp_updates_lock = threading.Lock()
 
 # --- CONFIGURACIÓN DE SPLITS ---
 SPLITS = {
@@ -243,7 +250,10 @@ def obtener_elo(api_key, puuid):
         return None
 
 def esta_en_partida(api_key, puuid):
-    """Comprueba si un jugador está en una partida activa. Realiza un único intento."""
+    """
+    Comprueba si un jugador está en una partida activa.
+    Retorna los datos completos de la partida si está en una, None si no.
+    """
     try:
         url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
 
@@ -251,13 +261,12 @@ def esta_en_partida(api_key, puuid):
 
         if response.status_code == 200:  # Player is in game
             game_data = response.json()
-            # Check participants for the target puuid and return champion ID
+            # Verify the player is indeed in the participants list (should always be true)
             for participant in game_data.get("participants", []):
                 if participant["puuid"] == puuid:
-                    return participant.get("championId")
-            # This should ideally not happen if the API returns consistent data, but handle it
+                    return game_data # Return full game data
             print(f"Warning: Player {puuid} is in game but not found in participants list.")
-            return None  
+            return None
         elif response.status_code == 404:  # Player not in game (expected response)
             return None
         else:  # Unexpected error
@@ -641,9 +650,82 @@ def procesar_jugador(args_tuple):
         print(f"ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID. Revisa que el Riot ID sea correcto en cuentas.txt.")
         return []
 
+    # Obtener la información de Elo actual del jugador
+    elo_info = obtener_elo(api_key_main, puuid)
+    if not elo_info: # Si falla la obtención de Elo, devolvemos los datos antiguos si existen
+        print(f"No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP.")
+        return old_data_list if old_data_list else []
+
     # 1. Sondeo ligero: usar la clave secundaria para esta llamada frecuente.
-    champion_id = esta_en_partida(api_key_spectator, puuid)
-    is_currently_in_game = champion_id is not None
+    game_data = esta_en_partida(api_key_spectator, puuid)
+    is_currently_in_game = game_data is not None
+
+    # --- LP Tracking Logic ---
+    with player_in_game_lp_lock:
+        if is_currently_in_game:
+            # El jugador está en partida. Almacenar su LP actual si no está ya almacenado.
+            active_game_queue_id = game_data.get('gameQueueConfigId')
+            
+            # Usamos un mapeo inverso para obtener el nombre de la cola de la API de League
+            # que es lo que viene en el elo_info (ej. RANKED_SOLO_5x5)
+            queue_type_api_name = None
+            if active_game_queue_id == 420:
+                queue_type_api_name = "RANKED_SOLO_5x5"
+            elif active_game_queue_id == 440:
+                queue_type_api_name = "RANKED_FLEX_SR"
+            
+            if queue_type_api_name:
+                elo_entry_for_active_queue = next((entry for entry in elo_info if entry.get('queueType') == queue_type_api_name), None)
+                if elo_entry_for_active_queue:
+                    current_lp = elo_entry_for_active_queue.get('leaguePoints', 0)
+                    lp_tracking_key = (puuid, queue_type_api_name)
+
+                    if lp_tracking_key not in player_in_game_lp:
+                        player_in_game_lp[lp_tracking_key] = {
+                            'pre_game_lp': current_lp,
+                            'game_start_timestamp': time.time(),
+                            'riot_id': riot_id,
+                            'queue_type': queue_type_api_name # Almacenar el nombre de la cola de la API
+                        }
+                        print(f"[{riot_id}] [LP Tracker] Jugador entró en partida de {get_queue_type_filter(active_game_queue_id)}. LP pre-partida almacenado: {current_lp}")
+                else:
+                    print(f"[{riot_id}] [LP Tracker] Jugador en partida de {get_queue_type_filter(active_game_queue_id)} pero no se encontró información de Elo para esa cola.")
+            else:
+                print(f"[{riot_id}] [LP Tracker] Jugador en partida de cola no clasificatoria ({get_queue_type_filter(active_game_queue_id)}). No se rastrea LP.")
+
+        # Si el jugador NO está en partida, verificar si estaba siendo trackeado
+        # para calcular el cambio de LP.
+        # Creamos una lista de claves a eliminar para evitar modificar el diccionario mientras iteramos.
+        keys_to_remove = []
+        for lp_tracking_key, pre_game_data in player_in_game_lp.items():
+            tracked_puuid, tracked_queue_type = lp_tracking_key
+            if tracked_puuid == puuid:
+                # Este jugador estaba siendo trackeado, y ahora no está en partida.
+                # Esto significa que la partida que estábamos siguiendo ha terminado.
+                
+                post_game_elo_entry = next((entry for entry in elo_info if entry.get('queueType') == tracked_queue_type), None)
+                if post_game_elo_entry:
+                    pre_game_lp = pre_game_data['pre_game_lp']
+                    post_game_lp = post_game_elo_entry.get('leaguePoints', 0)
+                    lp_change = post_game_lp - pre_game_lp
+                    print(f"[{riot_id}] [LP Tracker] Jugador terminó partida de {tracked_queue_type}. Cambio de LP: {pre_game_lp} -> {post_game_lp} ({lp_change:+d} LP)")
+                    
+                    # Store the LP change to be associated with a match later
+                    with pending_lp_updates_lock:
+                        # Use the current time as a proxy for game end time if not available from spectator API
+                        pending_lp_updates[(puuid, tracked_queue_type)] = {
+                            'lp_change': lp_change,
+                            'detection_timestamp': time.time() # Timestamp when LP change was detected
+                        }
+                else:
+                    print(f"[{riot_id}] [LP Tracker] Jugador terminó partida de {tracked_queue_type} pero no se encontró información de Elo post-partida.")
+                
+                keys_to_remove.append(lp_tracking_key)
+        
+        for key in keys_to_remove:
+            del player_in_game_lp[key]
+
+    # --- End LP Tracking Logic ---
 
     # 2. Decisión inteligente: ¿necesitamos una actualización completa?
     # Comprobamos si el jugador estaba en partida en el ciclo anterior.
@@ -661,18 +743,23 @@ def procesar_jugador(args_tuple):
         return old_data_list
 
     print(f"Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
-    # Usar la clave principal para obtener los datos de Elo, que es una operación menos frecuente pero más crítica.
-    elo_info = obtener_elo(api_key_main, puuid)
-    if not elo_info: # Si falla la obtención de Elo, devolvemos los datos antiguos si existen
-        return old_data_list if old_data_list else []
-
+    
     riot_id_modified = riot_id.replace("#", "-")
     url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
     url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
     
     datos_jugador_list = []
+    # champion_id is now retrieved from game_data if available, otherwise "Desconocido"
+    current_champion_id = None
+    if is_currently_in_game and game_data:
+        # Find the specific participant for this puuid to get their championId
+        for participant in game_data.get("participants", []):
+            if participant["puuid"] == puuid:
+                current_champion_id = participant.get("championId")
+                break
+
     for entry in elo_info:
-        nombre_campeon = obtener_nombre_campeon(champion_id) if champion_id else "Desconocido"
+        nombre_campeon = obtener_nombre_campeon(current_champion_id) if current_champion_id else "Desconocido"
         datos_jugador = {
             "game_name": riot_id,
             "queue_type": entry.get('queueType', 'Desconocido'),
@@ -692,7 +779,7 @@ def procesar_jugador(args_tuple):
                 entry.get('leaguePoints', 0)
             ),
             "nombre_campeon": nombre_campeon,
-            "champion_id": champion_id if champion_id else "Desconocido"
+            "champion_id": current_champion_id if current_champion_id else "Desconocido"
         }
         datos_jugador_list.append(datos_jugador)
     return datos_jugador_list
@@ -1149,6 +1236,32 @@ def actualizar_historial_partidas_en_segundo_plano():
                     match_id for i, match_id in enumerate(nuevos_match_ids) # Enumerate para obtener índice
                     if nuevas_partidas_info[i] is None # None indica que fue marcado como remake
                 ]
+
+                # Attempt to apply pending LP updates to the newly fetched valid matches
+                with pending_lp_updates_lock:
+                    keys_to_clear_from_pending = []
+                    for lp_update_key, lp_update_data in pending_lp_updates.items():
+                        update_puuid, update_queue_type = lp_update_key
+                        
+                        # Find the most recent match for this player and queue type
+                        # We assume the LP change corresponds to the most recently added game of that queue type.
+                        # This is a heuristic and might not be perfect if multiple games finish very close.
+                        most_recent_match = None
+                        for match in sorted(nuevas_partidas_validas, key=lambda x: x['game_end_timestamp'], reverse=True):
+                            if match['puuid'] == update_puuid and \
+                               (match['queue_id'] == 420 and update_queue_type == "RANKED_SOLO_5x5" or \
+                                match['queue_id'] == 440 and update_queue_type == "RANKED_FLEX_SR"):
+                                most_recent_match = match
+                                break
+                        
+                        if most_recent_match:
+                            # Add LP change to the match data
+                            most_recent_match['lp_change_this_game'] = lp_update_data['lp_change']
+                            print(f"[{riot_id}] [LP Associator] LP change {lp_update_data['lp_change']} associated with match {most_recent_match['match_id']}")
+                            keys_to_clear_from_pending.append(lp_update_key)
+                    
+                    for key in keys_to_clear_from_pending:
+                        del pending_lp_updates[key]
 
                 
                 if nuevas_partidas_validas:

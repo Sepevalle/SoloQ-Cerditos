@@ -178,6 +178,15 @@
             background: #fff;
         }
 
+        .lp-gain {
+            color: #228B22; /* Green for positive LP */
+            font-weight: bold;
+        }
+        .lp-loss {
+            color: #dc3545; /* Red for negative LP */
+            font-weight: bold;
+        }
+
         #toggle-mode {
             font-weight: bold;
         }
@@ -544,6 +553,19 @@
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
                         </p>
+                        {# Nuevo campo para LP en 24h #}
+                        {% if perfil.soloq.lp_change_24h is not none %}
+                            <p>
+                                LP en 24h: 
+                                {% if perfil.soloq.lp_change_24h > 0 %}
+                                    <span class="lp-gain">+{{ perfil.soloq.lp_change_24h }} LP</span>
+                                {% elif perfil.soloq.lp_change_24h < 0 %}
+                                    <span class="lp-loss">{{ perfil.soloq.lp_change_24h }} LP</span>
+                                {% else %}
+                                    <span>0 LP</span>
+                                {% endif %}
+                            </p>
+                        {% endif %}
 
                         <div class="champion-stats-container">
                             {% if perfil.soloq.top_champion_stats %}
@@ -616,6 +638,19 @@
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
                         </p>
+                        {# Nuevo campo para LP en 24h #}
+                        {% if perfil.flexq.lp_change_24h is not none %}
+                            <p>
+                                LP en 24h: 
+                                {% if perfil.flexq.lp_change_24h > 0 %}
+                                    <span class="lp-gain">+{{ perfil.flexq.lp_change_24h }} LP</span>
+                                {% elif perfil.flexq.lp_change_24h < 0 %}
+                                    <span class="lp-loss">{{ perfil.flexq.lp_change_24h }} LP</span>
+                                {% else %}
+                                    <span>0 LP</span>
+                                {% endif %}
+                            </p>
+                        {% endif %}
 
                         <div class="champion-stats-container">
                             {% if perfil.flexq.top_champion_stats %}
@@ -687,6 +722,7 @@
                             <th>Hechizos</th>
                             <th>Runas</th>
                             <th>Objetos</th>
+                            <th>LP</th> {# Nueva columna para LP #}
                             <th>Duración</th>
                             <th>Resultado / Fecha</th>
                         </tr>
@@ -852,6 +888,19 @@
                                     </div>
                                 </div>
                             </td>
+                            <td>
+                                {% if match.lp_change_this_game is not none %}
+                                    {% if match.lp_change_this_game > 0 %}
+                                        <span class="lp-gain">+{{ match.lp_change_this_game }} LP</span>
+                                    {% elif match.lp_change_this_game < 0 %}
+                                        <span class="lp-loss">{{ match.lp_change_this_game }} LP</span>
+                                    {% else %}
+                                        <span>0 LP</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span>N/A</span>
+                                {% endif %}
+                            </td>
                             <td>{{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s</td>
                             <td class="{{ 'text-success' if match.win else 'text-danger' }}">
                                 {{ 'Victoria' if match.win else 'Derrota' }}
@@ -861,7 +910,7 @@
                         </tr>
                         {% if match.all_participants %}
                         <tr id="match-{{ loop.index }}" class="hidden">
-                            <td colspan="13" class="p-0">
+                            <td colspan="14" class="p-0"> {# Colspan ajustado para la nueva columna LP #}
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
                                         <div class="row g-2">
@@ -1311,9 +1360,6 @@
 
 
 
-
-
-
-
 </body>
+</html>
 </html>
