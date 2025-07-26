@@ -267,6 +267,10 @@
         .champion-stats-info h5 {
             margin-bottom: 0;
             font-size: 1.1em;
+            color: #212529;
+        }
+        .dark-mode .champion-stats-info h5 {
+            color: #e2e8f0;
         }
         .kda-text {
             font-size: 0.9em;
@@ -913,6 +917,21 @@
                         <div class="match-stat-item">
                             <span class="value">{{ '{:,.0f}'.format(match.gold_earned) }}</span>
                             <span class="label">Oro</span>
+                        </div>
+                        {# Nueva sección para LP en la tarjeta de partida #}
+                        <div class="match-stat-item">
+                            {% if match.lp_change_this_game is not none %}
+                                {% if match.lp_change_this_game > 0 %}
+                                    <span class="value lp-gain">+{{ match.lp_change_this_game }}</span>
+                                {% elif match.lp_change_this_game < 0 %}
+                                    <span class="value lp-loss">{{ match.lp_change_this_game }}</span>
+                                {% else %}
+                                    <span class="value">0</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="value">N/A</span>
+                            {% endif %}
+                            <span class="label">LP</span>
                         </div>
                     </div>
 
