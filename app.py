@@ -455,6 +455,7 @@ def obtener_info_partida(args):
             "first_blood_assist": p.get('firstBloodAssist', False),
             "objectives_stolen": p.get('objectivesStolen', 0),
             "kill_participation": kill_participation,
+            "lp_change_this_game": None, # Initialize LP change to None for new matches
 
             # --- AÑADIMOS LA LISTA DE TODOS LOS PARTICIPANTES ---
             "all_participants": all_participants_details
@@ -1358,7 +1359,12 @@ def actualizar_historial_partidas_en_segundo_plano():
                         if key in pending_lp_updates:
                             del pending_lp_updates[key]
                 
-                if nuevas_partidas_validas or nuevas_remakes:
+                # Ensure all matches have the 'lp_change_this_game' field before saving
+                for match in historial_existente.get('matches', []):
+                    if 'lp_change_this_game' not in match:
+                        match['lp_change_this_game'] = None
+
+                if nuevas_partidas_validas or nuevas_remakes or keys_to_clear_from_pending:
                     # Opcional: ordenar por fecha
                     historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
 
