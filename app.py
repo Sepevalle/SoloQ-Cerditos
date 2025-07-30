@@ -8,6 +8,7 @@ import base64
 from datetime import datetime, timedelta
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+import queue # Import for the queue
 
 app = Flask(__name__)
 
@@ -80,7 +81,7 @@ def format_peak_elo_filter(valor):
         6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD", 
         2: "SILVER", 1: "BRONZE", 0: "IRON"
     }
-    rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"}
+    rank_map = {"I": 3, "II": 2, "III": 1, "IV": 0}
 
     # Calcular LPs primero (el resto al dividir por 100)
     league_points = valor % 100
@@ -148,30 +149,121 @@ SPLITS = {
 
 ACTIVE_SPLIT_KEY = "s15_split1"
 SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())
-API_SESSION = requests.Session()
 
-def make_api_request(url, retries=3, backoff_factor=0.5):
-    print(f"[make_api_request] Realizando petición a: {url}")
-    for i in range(retries):
+# --- CONFIGURACIÓN DEL CONTROL DE TASA DE API ---
+API_REQUEST_QUEUE = queue.Queue() # Cola para todas las peticiones a la API
+API_RESPONSE_EVENTS = {} # Diccionario para almacenar eventos de respuesta por ID de petición
+API_RESPONSE_DATA = {} # Diccionario para almacenar los datos de respuesta por ID de petición
+REQUEST_ID_COUNTER = 0 # Contador para IDs de petición únicos
+REQUEST_ID_COUNTER_LOCK = threading.Lock() # Bloqueo para el contador
+
+# Límites de tasa (ajustar según los límites reales de tu clave de API de Riot)
+# Ejemplo: 20 peticiones por segundo, 100 peticiones cada 2 minutos
+# Para simplificar, usaremos un límite general por segundo.
+RIOT_API_RATE_LIMIT_PER_SECOND = 10 # Máximo de peticiones por segundo
+RIOT_API_BURST_LIMIT = 20 # Máximo de peticiones permitidas en una ráfaga inicial
+
+_tokens = RIOT_API_BURST_LIMIT
+_last_refill_time = time.time()
+_tokens_lock = threading.Lock()
+
+def _refill_tokens():
+    """Rellena los tokens para el control de tasa."""
+    global _tokens, _last_refill_time
+    now = time.time()
+    time_elapsed = now - _last_refill_time
+    tokens_to_add = time_elapsed * RIOT_API_RATE_LIMIT_PER_SECOND
+    
+    with _tokens_lock:
+        _tokens = min(RIOT_API_BURST_LIMIT, _tokens + tokens_to_add)
+        _last_refill_time = now
+
+def _consume_token():
+    """Consume un token, esperando si es necesario."""
+    while True:
+        _refill_tokens()
+        with _tokens_lock:
+            if _tokens >= 1:
+                _tokens -= 1
+                return
+        time.sleep(0.1) # Espera un poco antes de reintentar
+
+def _api_rate_limiter_worker():
+    """Hilo de trabajo que procesa las peticiones de la cola respetando el límite de tasa."""
+    print("[_api_rate_limiter_worker] Hilo de control de tasa de API iniciado.")
+    session = requests.Session() # Usar una sesión persistente para el worker
+    while True:
         try:
-            # Añadimos la clave de la API en la cabecera de cada petición
-            headers = {"X-Riot-Token": RIOT_API_KEY}
-            response = API_SESSION.get(url, headers=headers, timeout=10)
-            if response.status_code == 429:
-                retry_after = int(response.headers.get('Retry-After', 5))
-                print(f"[make_api_request] Rate limit excedido. Esperando {retry_after} segundos... (Intento {i + 1}/{retries})")
-                time.sleep(retry_after)
-                continue
+            request_id, url, headers, timeout, is_spectator_api = API_REQUEST_QUEUE.get(timeout=1) # Espera 1 segundo
             
-            response.raise_for_status()
-            print(f"[make_api_request] Petición exitosa a {url}. Status: {response.status_code}")
-            return response
-        except requests.exceptions.RequestException as e:
-            print(f"[make_api_request] Error en la petición a {url}: {e}. Intento {i + 1}/{retries}")
-            if i < retries - 1:
-                time.sleep(backoff_factor * (2 ** i))
-    print(f"[make_api_request] Fallo en la petición a {url} después de {retries} intentos.")
-    return None
+            _consume_token() # Espera si no hay tokens disponibles
+
+            print(f"[_api_rate_limiter_worker] Procesando petición {request_id} a: {url}")
+            response = None
+            for i in range(3): # Reintentos para la petición real
+                try:
+                    response = session.get(url, headers=headers, timeout=timeout)
+                    if response.status_code == 429:
+                        retry_after = int(response.headers.get('Retry-After', 5))
+                        print(f"[_api_rate_limiter_worker] Rate limit excedido. Esperando {retry_after} segundos... (Intento {i + 1}/3)")
+                        time.sleep(retry_after)
+                        continue
+                    response.raise_for_status()
+                    print(f"[_api_rate_limiter_worker] Petición {request_id} exitosa. Status: {response.status_code}")
+                    break # Salir del bucle de reintentos si es exitoso
+                except requests.exceptions.RequestException as e:
+                    print(f"[_api_rate_limiter_worker] Error en petición {request_id} a {url}: {e}. Intento {i + 1}/3")
+                    if i < 2:
+                        time.sleep(0.5 * (2 ** i)) # Backoff exponencial
+            
+            with REQUEST_ID_COUNTER_LOCK:
+                API_RESPONSE_DATA[request_id] = response
+                if request_id in API_RESPONSE_EVENTS:
+                    API_RESPONSE_EVENTS[request_id].set() # Notificar que la respuesta está lista
+                else:
+                    print(f"[_api_rate_limiter_worker] Advertencia: Evento para request_id {request_id} no encontrado.")
+
+        except queue.Empty:
+            pass # No hay peticiones en la cola, sigue esperando
+        except Exception as e:
+            print(f"[_api_rate_limiter_worker] Error inesperado en el worker del control de tasa: {e}")
+            time.sleep(1) # Espera antes de continuar para evitar bucles de error
+
+# Modificación de make_api_request para usar la cola
+def make_api_request(url, retries=3, backoff_factor=0.5, is_spectator_api=False):
+    """
+    Envía una petición a la cola de la API y espera su respuesta, respetando el control de tasa.
+    """
+    with REQUEST_ID_COUNTER_LOCK:
+        global REQUEST_ID_COUNTER
+        request_id = REQUEST_ID_COUNTER
+        REQUEST_ID_COUNTER += 1
+        API_RESPONSE_EVENTS[request_id] = threading.Event()
+
+    headers = {"X-Riot-Token": RIOT_API_KEY}
+    API_REQUEST_QUEUE.put((request_id, url, headers, 10, is_spectator_api)) # 10 segundos de timeout
+
+    print(f"[make_api_request] Petición {request_id} encolada para {url}. Esperando respuesta...")
+    
+    # Esperar con un timeout para evitar bloqueos indefinidos
+    if not API_RESPONSE_EVENTS[request_id].wait(timeout=30): # Espera hasta 30 segundos por la respuesta
+        print(f"[make_api_request] Timeout esperando respuesta para la petición {request_id} a {url}.")
+        with REQUEST_ID_COUNTER_LOCK:
+            if request_id in API_RESPONSE_EVENTS:
+                del API_RESPONSE_EVENTS[request_id]
+            if request_id in API_RESPONSE_DATA:
+                del API_RESPONSE_DATA[request_id]
+        return None # Retorna None si hay timeout
+
+    with REQUEST_ID_COUNTER_LOCK:
+        response = API_RESPONSE_DATA.get(request_id)
+        # Limpiar los diccionarios después de obtener la respuesta
+        if request_id in API_RESPONSE_EVENTS:
+            del API_RESPONSE_EVENTS[request_id]
+        if request_id in API_RESPONSE_DATA:
+            del API_RESPONSE_DATA[request_id]
+    
+    return response
 
 DDRAGON_VERSION = "14.9.1"
 
@@ -180,7 +272,8 @@ def actualizar_version_ddragon():
     print("[actualizar_version_ddragon] Intentando obtener la última versión de Data Dragon.")
     try:
         url = f"{BASE_URL_DDRAGON}/api/versions.json"
-        response = requests.get(url, timeout=5)
+        # Esta llamada no usa make_api_request porque es una API diferente (DDragon, no Riot Games)
+        response = requests.get(url, timeout=5) 
         if response.status_code == 200:
             DDRAGON_VERSION = response.json()[0]
             print(f"[actualizar_version_ddragon] Versión de Data Dragon establecida a: {DDRAGON_VERSION}")
@@ -198,8 +291,9 @@ ALL_SUMMONER_SPELLS = {}
 def obtener_todos_los_campeones():
     print("[obtener_todos_los_campeones] Obteniendo datos de campeones de Data Dragon.")
     url_campeones = f"{BASE_URL_DDRAGON}/cdn/{DDRAGON_VERSION}/data/es_ES/champion.json"
-    response = make_api_request(url_campeones)
-    if response:
+    # Esta llamada no usa make_api_request porque es una API diferente (DDragon, no Riot Games)
+    response = requests.get(url_campeones, timeout=10) 
+    if response and response.status_code == 200:
         return {int(v['key']): v['id'] for k, v in response.json()['data'].items()}
     print("[obtener_todos_los_campeones] No se pudieron obtener los datos de campeones.")
     return {}
@@ -208,9 +302,10 @@ def obtener_todas_las_runas():
     """Carga los datos de las runas desde Data Dragon."""
     print("[obtener_todas_las_runas] Obteniendo datos de runas de Data Dragon.")
     url = f"{BASE_URL_DDRAGON}/cdn/{DDRAGON_VERSION}/data/es_ES/runesReforged.json"
-    data = make_api_request(url)
+    # Esta llamada no usa make_api_request porque es una API diferente (DDragon, no Riot Games)
+    data = requests.get(url, timeout=10)
     runes = {}
-    if data:
+    if data and data.status_code == 200:
         for tree in data.json():
             runes[tree['id']] = tree['icon']
             for slot in tree['slots']:
@@ -225,9 +320,10 @@ def obtener_todos_los_hechizos():
     """Carga los datos de los hechizos de invocador desde Data Dragon."""
     print("[obtener_todos_los_hechizos] Obteniendo datos de hechizos de invocador de Data Dragon.")
     url = f"{BASE_URL_DDRAGON}/cdn/{DDRAGON_VERSION}/data/es_ES/summoner.json"
-    data = make_api_request(url)
+    # Esta llamada no usa make_api_request porque es una API diferente (DDragon, no Riot Games)
+    data = requests.get(url, timeout=10)
     spells = {}
-    if data and 'data' in data.json():
+    if data and data.status_code == 200 and 'data' in data.json():
         for k, v in data.json()['data'].items():
             spells[int(v['key'])] = v['id']
         print("[obtener_todos_los_hechizos] Datos de hechizos de invocador cargados exitosamente.")
@@ -296,10 +392,10 @@ def esta_en_partida(api_key, puuid):
     print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
     try:
         url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
+        # Usar make_api_request con is_spectator_api=True para control de tasa específico si es necesario
+        response = make_api_request(url, is_spectator_api=True) 
 
-        response = API_SESSION.get(url, timeout=5)  # Direct request, no retries
-
-        if response.status_code == 200:  # Player is in game
+        if response and response.status_code == 200:  # Player is in game
             game_data = response.json()
             for participant in game_data.get("participants", []):
                 if participant["puuid"] == puuid:
@@ -307,12 +403,15 @@ def esta_en_partida(api_key, puuid):
                     return game_data
             print(f"[esta_en_partida] Advertencia: Jugador {puuid} está en partida pero no se encontró en la lista de participantes.")
             return None
-        elif response.status_code == 404:  # Player not in game (expected response)
+        elif response and response.status_code == 404:  # Player not in game (expected response)
             print(f"[esta_en_partida] Jugador {puuid} no está en partida activa (404 Not Found).")
+            return None
+        elif response is None: # make_api_request returned None due to timeout or persistent error
+            print(f"[esta_en_partida] make_api_request devolvió None para {puuid}. Posible timeout o error persistente.")
             return None
         else:  # Unexpected error
             print(f"[esta_en_partida] Error inesperado al verificar partida para {puuid}. Status: {response.status_code}")
-            response.raise_for_status()
+            response.raise_for_status() # Esto lanzará una excepción si el status no es 2xx
     except requests.exceptions.RequestException as e:
         print(f"[esta_en_partida] Error al verificar si el jugador {puuid} está en partida: {e}")
         return None
@@ -462,7 +561,7 @@ def obtener_info_partida(args):
             "doubleKills": p.get('doubleKills', 0),
             "individual_position": p.get('individualPosition', 'N/A'),
             "total_damage_taken": p.get('totalDamageTaken', 0),
-            "total_time_cc_dealt": p.get('totalTimeCCDealt', 0),
+            "total_time_cc_dealt": p.get('total_time_cc_dealt', 0),
             "first_blood_kill": p.get('firstBloodKill', False),
             "first_blood_assist": p.get('firstBloodAssist', False),
             "objectives_stolen": p.get('objectivesStolen', 0),
@@ -1430,6 +1529,13 @@ def actualizar_cache_periodicamente():
 
 if __name__ == "__main__":
     print("[main] Iniciando la aplicación Flask.")
+    
+    # Iniciar el hilo del control de tasa de API
+    api_rate_limiter_thread = threading.Thread(target=_api_rate_limiter_worker)
+    api_rate_limiter_thread.daemon = True
+    api_rate_limiter_thread.start()
+    print("[main] Hilo 'api_rate_limiter_thread' iniciado.")
+
     keep_alive_thread = threading.Thread(target=keep_alive)
     keep_alive_thread.daemon = True
     keep_alive_thread.start()
