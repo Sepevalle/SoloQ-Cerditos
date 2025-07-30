@@ -656,7 +656,7 @@ def leer_peak_elo():
     url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
     print(f"[leer_peak_elo] Leyendo peak elo desde: {url}")
     try:
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=30) # Aumentado timeout
         resp.raise_for_status()
         print("[leer_peak_elo] Peak elo leído exitosamente.")
         return True, resp.json()
@@ -669,7 +669,7 @@ def leer_puuids():
     url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/puuids.json"
     print(f"[leer_puuids] Leyendo PUUIDs desde: {url}")
     try:
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=30) # Aumentado timeout
         if resp.status_code == 200:
             print("[leer_puuids] PUUIDs leídos exitosamente.")
             return resp.json()
@@ -692,7 +692,7 @@ def guardar_puuids_en_github(puuid_dict):
     
     sha = None
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=30) # Aumentado timeout
         if response.status_code == 200:
             sha = response.json().get('sha')
             print(f"[guardar_puuids_en_github] SHA de puuids.json obtenido: {sha}")
@@ -707,7 +707,7 @@ def guardar_puuids_en_github(puuid_dict):
         data["sha"] = sha
 
     try:
-        response = requests.put(url, headers=headers, json=data)
+        response = requests.put(url, headers=headers, json=data, timeout=30) # Aumentado timeout
         if response.status_code in (200, 201):
             print("[guardar_puuids_en_github] Archivo puuids.json actualizado correctamente en GitHub.")
         else:
@@ -727,7 +727,7 @@ def guardar_peak_elo_en_github(peak_elo_dict):
     
     sha = None
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=30) # Aumentado timeout
         if response.status_code == 200:
             sha = response.json().get('sha')
             print(f"[guardar_peak_elo_en_github] SHA de peak_elo.json obtenido: {sha}")
@@ -749,7 +749,8 @@ def guardar_peak_elo_en_github(peak_elo_dict):
                 "content": contenido_b64,
                 "sha": sha,
                 "branch": "main"
-            }
+            },
+            timeout=30 # Aumentado timeout
         )
         if response.status_code in (200, 201):
             print("[guardar_peak_elo_en_github] Archivo peak_elo.json actualizado correctamente en GitHub.")
@@ -763,7 +764,7 @@ def leer_historial_jugador_github(puuid):
     url = f"https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/match_history/{puuid}.json"
     print(f"[leer_historial_jugador_github] Leyendo historial para PUUID: {puuid} desde: {url}")
     try:
-        resp = requests.get(url, timeout=10)
+        resp = requests.get(url, timeout=30) # Aumentado timeout
         if resp.status_code == 200:
             print(f"[leer_historial_jugador_github] Historial para {puuid} leído exitosamente.")
             return resp.json()
@@ -779,32 +780,41 @@ def guardar_historial_jugador_github(puuid, historial_data):
     url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/match_history/{puuid}.json"
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
-        print(f"Token de GitHub no encontrado para guardar historial de {puuid}. No se guardará el archivo.")
+        print(f"[guardar_historial_jugador_github] ERROR: Token de GitHub no encontrado para guardar historial de {puuid}. No se guardará el archivo.")
         return
 
     headers = {"Authorization": f"token {token}"}
     sha = None
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=30) # Aumentado timeout
         if response.status_code == 200:
             sha = response.json().get('sha')
-            print(f"[guardar_historial_jugador_github] SHA del historial de {puuid} obtenido: {sha}")
+            print(f"[guardar_historial_jugador_github] SHA del historial de {puuid} obtenido: {sha}.")
+        elif response.status_code == 404:
+            print(f"[guardar_historial_jugador_github] Archivo {puuid}.json no existe en GitHub, se creará uno nuevo.")
+        else:
+            print(f"[guardar_historial_jugador_github] Error al obtener SHA del historial de {puuid}: {response.status_code} - {response.text}")
+            return # Salir si no se puede obtener el SHA
     except Exception as e:
-        print(f"[guardar_historial_jugador_github] No se pudo obtener el SHA del historial de {puuid}: {e}")
+        print(f"[guardar_historial_jugador_github] Excepción al obtener SHA del historial de {puuid}: {e}")
+        return # Salir si hay una excepción
 
-    contenido_json = json.dumps(historial_data, indent=2)
+    contenido_json = json.dumps(historial_data, indent=2, ensure_ascii=False) # Añadido ensure_ascii=False
     contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+    
     data = {"message": f"Actualizar historial de partidas para {puuid}", "content": contenido_b64, "branch": "main"}
     if sha:
         data["sha"] = sha
+
     try:
-        response = requests.put(url, headers=headers, json=data, timeout=10)
+        print(f"[guardar_historial_jugador_github] Intentando guardar historial para {puuid} en GitHub. SHA: {sha}")
+        response = requests.put(url, headers=headers, json=data, timeout=30) # Aumentado timeout
         if response.status_code in (200, 201):
-            print(f"[guardar_historial_jugador_github] Historial de {puuid}.json actualizado correctamente en GitHub.")
+            print(f"[guardar_historial_jugador_github] Historial de {puuid}.json actualizado correctamente en GitHub. Status: {response.status_code}")
         else:
-            print(f"Error al actualizar historial de {puuid}.json: {response.status_code} - {response.text}")
+            print(f"[guardar_historial_jugador_github] ERROR: Fallo al actualizar historial de {puuid}.json: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"[guardar_historial_jugador_github] Error en la petición PUT a GitHub para el historial de {puuid}: {e}")
+        print(f"[guardar_historial_jugador_github] ERROR: Excepción en la petición PUT a GitHub para el historial de {puuid}: {e}")
 
 def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_player):
     """
@@ -960,7 +970,7 @@ def procesar_jugador(args_tuple):
             "valor_clasificacion": calcular_valor_clasificacion(
                 entry.get('tier', 'Sin rango'),
                 entry.get('rank', ''),
-                entry.get('leaguePoints', 0)
+                entry.get('league_points', 0)
             ),
             "nombre_campeon": nombre_campeon,
             "champion_id": current_champion_id if current_champion_id else "Desconocido"
@@ -1393,6 +1403,8 @@ def actualizar_historial_partidas_en_segundo_plano():
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
                 remakes_guardados = set(historial_existente.get('remakes', []))
                 
+                print(f"[actualizar_historial_partidas_en_segundo_plano] Historial existente para {riot_id}: {len(ids_partidas_guardadas)} partidas guardadas, {len(remakes_guardados)} remakes.")
+
                 all_match_ids_season = []
                 for queue_id in queue_map.values():
                     start_index = 0
@@ -1400,21 +1412,29 @@ def actualizar_historial_partidas_en_segundo_plano():
                         url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
                         response_matches = make_api_request(url_matches)
                         if not response_matches: 
-                            print(f"[actualizar_historial_partidas_en_segundo_plano] No más partidas o error para cola {queue_id} y PUUID {puuid}.")
+                            print(f"[actualizar_historial_partidas_en_segundo_plano] No más partidas o error para cola {queue_id} y PUUID {puuid}. Response: {response_matches}")
                             break
                         match_ids_page = response_matches.json()
                         if not match_ids_page: 
                             print(f"[actualizar_historial_partidas_en_segundo_plano] No se encontraron más IDs de partida para cola {queue_id} y PUUID {puuid}.")
                             break
                         all_match_ids_season.extend(match_ids_page)
-                        print(f"[actualizar_historial_partidas_en_segundo_plano] Obtenidos {len(match_ids_page)} IDs de partida para {riot_id} (cola {queue_id}).")
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Obtenidos {len(match_ids_page)} IDs de partida para {riot_id} (cola {queue_id}). Total de IDs de temporada hasta ahora: {len(all_match_ids_season)}.")
                         if len(match_ids_page) < 100: break
                         start_index += 100
                 
+                print(f"[actualizar_historial_partidas_en_segundo_plano] Total de IDs de partida de la temporada para {riot_id} obtenidos de la API: {len(all_match_ids_season)}.")
+
                 nuevos_match_ids = [
                     mid for mid in all_match_ids_season 
                     if mid not in ids_partidas_guardadas and mid not in remakes_guardados
                 ]
+
+                print(f"[actualizar_historial_partidas_en_segundo_plano] Se detectaron {len(nuevos_match_ids)} IDs de partida realmente nuevas para {riot_id}.")
+
+                # Initialize these variables to empty lists outside the if/else block
+                nuevas_partidas_validas = []
+                nuevos_remakes = []
 
                 if not nuevos_match_ids:
                     print(f"[actualizar_historial_partidas_en_segundo_plano] No hay partidas nuevas para {riot_id}. Omitiendo procesamiento de partidas.")
@@ -1513,18 +1533,18 @@ def actualizar_historial_partidas_en_segundo_plano():
                         match['lp_change_this_game'] = None
                         print(f"[actualizar_historial_partidas_en_segundo_plano] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} antes de guardar.")
 
+                # Only save if there were new valid matches, new remakes, or pending LP updates were cleared
                 if nuevas_partidas_validas or nuevos_remakes or keys_to_clear_from_pending:
                     historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
 
-                if nuevos_remakes:
-                    remakes_guardados.update(nuevos_remakes)
-                    historial_existente['remakes'] = list(remakes_guardados)
-                    print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidos {len(nuevos_remakes)} remakes al historial de {riot_id}.")
-                
-                if nuevas_partidas_validas or nuevos_remakes or keys_to_clear_from_pending:
+                    if nuevos_remakes:
+                        remakes_guardados.update(nuevos_remakes)
+                        historial_existente['remakes'] = list(remakes_guardados)
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidos {len(nuevos_remakes)} remakes al historial de {riot_id}.")
+                    
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
                     guardar_historial_jugador_github(puuid, historial_existente)
-                    print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} guardado en GitHub.")
                 else:
                     print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
 
