@@ -229,11 +229,12 @@
 
         /* Estilos para el cambio de LP en 24h */
         .lp-change-positive {
-            font-weight: normal;
+            color: #228B22; /* Green for positive LP */
+            font-weight: bold;
         }
         .lp-change-negative {
-            color: tomato; /* Rojo */
-            font-weight: normal;
+            color: #dc3545; /* Red for negative LP */
+            font-weight: bold;
         }
         .lp-change-neutral {
             color: #6c757d; /* Gris */
@@ -242,11 +243,12 @@
 
         /* Nuevos estilos para la columna Dif. Elo */
         .elo-diff-positive {
-            font-weight: normal;
+            color: #228B22; /* Green for positive difference */
+            font-weight: bold;
         }
         .elo-diff-negative {
-            color: tomato; /* Rojo */
-            font-weight: normal;
+            color: #dc3545; /* Red for negative difference */
+            font-weight: bold;
         }
         .elo-diff-neutral {
             color: #6c757d; /* Gris */
@@ -561,7 +563,8 @@
                 case 'lp_change_24h': // Handle new column for sorting
                     const lpChangeText = cell.textContent.trim();
                     if (lpChangeText === 'N/A') return -Infinity; // Place N/A at the bottom
-                    return parseFloat(lpChangeText.replace(/[^0-9.-]/g, '')); // Extract number
+                    // Extract number, handling '+' and '-' signs
+                    return parseFloat(lpChangeText.replace(/[+LP]/g, '')); 
                 default:
                     // Para el resto de columnas numéricas (wins, losses, total)
                     return parseInt(cell.textContent, 10);
@@ -619,8 +622,10 @@
                         // Obtener el valor de ELO directamente de la celda oculta
                         const currentElo = parseFloat(row.querySelector(".hidden").textContent);
                         const prevElo = parseFloat(visibleRows[index - 1].querySelector(".hidden").textContent);
-                        const diff = Math.round(prevElo - currentElo); // Usar Math.round para evitar decimales
-                        eloDiffCell.textContent = `${diff} LPs`;
+                        const diff = Math.round(currentElo - prevElo); // Calculate current - previous
+                        
+                        // Add '+' sign for positive differences
+                        eloDiffCell.textContent = `${diff > 0 ? '+' : ''}${diff} LPs`;
 
                         // Aplicar clases de estilo según la diferencia
                         if (diff > 0) {
