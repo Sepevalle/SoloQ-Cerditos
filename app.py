@@ -206,6 +206,9 @@ def _api_rate_limiter_worker():
     while True:
         try:
             # Obtener la petición de la cola. Timeout para que el hilo no se bloquee indefinidamente.
+            # Añadir logging para el tamaño de la cola
+            if not API_REQUEST_QUEUE.empty():
+                print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
             request_id, url, headers, timeout, is_spectator_api = API_REQUEST_QUEUE.get(timeout=1)
             
             # Consumir un token antes de realizar la petición
@@ -262,8 +265,8 @@ def make_api_request(url, retries=3, backoff_factor=0.5, is_spectator_api=False)
     
     # Esperar con un timeout para evitar bloqueos indefinidos
     # El timeout aquí es para la espera de la respuesta del worker, no de la API en sí.
-    # Aumentado de 30 a 60 segundos
-    if not API_RESPONSE_EVENTS[request_id].wait(timeout=60): 
+    # Aumentado de 60 a 120 segundos
+    if not API_RESPONSE_EVENTS[request_id].wait(timeout=120): 
         print(f"[make_api_request] Timeout esperando respuesta para la petición {request_id} a {url}.")
         with REQUEST_ID_COUNTER_LOCK:
             if request_id in API_RESPONSE_EVENTS:
