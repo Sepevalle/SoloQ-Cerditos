@@ -970,7 +970,7 @@ def procesar_jugador(args_tuple):
             "valor_clasificacion": calcular_valor_clasificacion(
                 entry.get('tier', 'Sin rango'),
                 entry.get('rank', ''),
-                entry.get('leaguePoints', 0)
+                entry.get('league_points', 0)
             ),
             "nombre_campeon": nombre_campeon,
             "champion_id": current_champion_id if current_champion_id else "Desconocido"
@@ -1062,9 +1062,13 @@ def actualizar_cache():
         historial = leer_historial_jugador_github(puuid)
         all_matches_for_player = historial.get('matches', [])
 
-        jugador['lp_change_24h'] = _calculate_lp_change_for_player(
-            puuid, queue_type, all_matches_for_player
-        )
+        # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
+        if queue_type == "RANKED_SOLO_5x5":
+            jugador['lp_change_24h'] = historial.get('soloq_lp_change_24h', 0)
+        elif queue_type == "RANKED_FLEX_SR":
+            jugador['lp_change_24h'] = historial.get('flexq_lp_change_24h', 0)
+        else:
+            jugador['lp_change_24h'] = 0 # Default for non-ranked queues
 
         partidas_jugador = [
             p for p in all_matches_for_player
@@ -1273,12 +1277,9 @@ def _get_player_profile_data(game_name):
         'historial_partidas': historial_partidas_completo.get('matches', [])
     }
     
-    lp_change_soloq_24h = _calculate_lp_change_for_player(
-        puuid, "RANKED_SOLO_5x5", perfil['historial_partidas']
-    )
-    lp_change_flexq_24h = _calculate_lp_change_for_player(
-        puuid, "RANKED_FLEX_SR", perfil['historial_partidas']
-    )
+    # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
+    lp_change_soloq_24h = historial_partidas_completo.get('soloq_lp_change_24h', 0)
+    lp_change_flexq_24h = historial_partidas_completo.get('flexq_lp_change_24h', 0)
 
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
@@ -1532,6 +1533,17 @@ def actualizar_historial_partidas_en_segundo_plano():
                     if 'lp_change_this_game' not in match:
                         match['lp_change_this_game'] = None
                         print(f"[actualizar_historial_partidas_en_segundo_plano] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} antes de guardar.")
+
+                # Recalcular y guardar el LP change en 24h para este jugador en el historial
+                current_soloq_lp_change_24h = _calculate_lp_change_for_player(
+                    puuid, "RANKED_SOLO_5x5", historial_existente.get('matches', [])
+                )
+                current_flexq_lp_change_24h = _calculate_lp_change_for_player(
+                    puuid, "RANKED_FLEX_SR", historial_existente.get('matches', [])
+                )
+                historial_existente['soloq_lp_change_24h'] = current_soloq_lp_change_24h
+                historial_existente['flexq_lp_change_24h'] = current_flexq_lp_change_24h
+                print(f"[actualizar_historial_partidas_en_segundo_plano] LP change 24h calculado para {riot_id}: SoloQ={current_soloq_lp_change_24h}, FlexQ={current_flexq_lp_change_24h}.")
 
                 # Only save if there were new valid matches, new remakes, or pending LP updates were cleared
                 if nuevas_partidas_validas or nuevos_remakes or keys_to_clear_from_pending:
