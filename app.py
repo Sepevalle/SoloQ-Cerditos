@@ -157,36 +157,47 @@ API_RESPONSE_DATA = {} # Diccionario para almacenar los datos de respuesta por I
 REQUEST_ID_COUNTER = 0 # Contador para IDs de petición únicos
 REQUEST_ID_COUNTER_LOCK = threading.Lock() # Bloqueo para el contador
 
-# Límites de tasa (ajustar según los límites reales de tu clave de API de Riot)
-# Ejemplo: 20 peticiones por segundo, 100 peticiones cada 2 minutos
-# Para simplificar, usaremos un límite general por segundo.
-RIOT_API_RATE_LIMIT_PER_SECOND = 10 # Máximo de peticiones por segundo
-RIOT_API_BURST_LIMIT = 20 # Máximo de peticiones permitidas en una ráfaga inicial
+class RateLimiter:
+    """
+    Clase para gestionar el control de tasa de llamadas a la API de Riot Games.
+    Utiliza un algoritmo de cubo de tokens.
+    """
+    def __init__(self, rate_per_second, burst_limit):
+        self.rate_per_second = rate_per_second
+        self.burst_limit = burst_limit
+        self.tokens = burst_limit  # Inicia con el límite de ráfaga
+        self.last_refill_time = time.time()
+        self.lock = threading.Lock()
 
-_tokens = RIOT_API_BURST_LIMIT
-_last_refill_time = time.time()
-_tokens_lock = threading.Lock()
+    def _refill_tokens(self):
+        """Rellena los tokens en el cubo según el tiempo transcurrido."""
+        now = time.time()
+        time_elapsed = now - self.last_refill_time
+        tokens_to_add = time_elapsed * self.rate_per_second
+        
+        with self.lock:
+            self.tokens = min(self.burst_limit, self.tokens + tokens_to_add)
+            self.last_refill_time = now
 
-def _refill_tokens():
-    """Rellena los tokens para el control de tasa."""
-    global _tokens, _last_refill_time
-    now = time.time()
-    time_elapsed = now - _last_refill_time
-    tokens_to_add = time_elapsed * RIOT_API_RATE_LIMIT_PER_SECOND
-    
-    with _tokens_lock:
-        _tokens = min(RIOT_API_BURST_LIMIT, _tokens + tokens_to_add)
-        _last_refill_time = now
+    def consume_token(self):
+        """
+        Consume un token. Espera si no hay tokens disponibles hasta que se rellenen.
+        """
+        while True:
+            self._refill_tokens()
+            with self.lock:
+                if self.tokens >= 1:
+                    self.tokens -= 1
+                    return
+            time.sleep(0.01) # Pequeña espera para evitar el "busy-waiting"
 
-def _consume_token():
-    """Consume un token, esperando si es necesario."""
-    while True:
-        _refill_tokens()
-        with _tokens_lock:
-            if _tokens >= 1:
-                _tokens -= 1
-                return
-        time.sleep(0.1) # Espera un poco antes de reintentar
+# Instancia global del RateLimiter para la API de Riot Games
+# Ajusta estos valores según los límites de tu clave de API de Riot
+# Límites típicos de la API de Riot (ejemplo): 20 peticiones/segundo, 100 peticiones/2 minutos
+riot_api_limiter = RateLimiter(
+    rate_per_second=20, # Aumentado de 10 a 20
+    burst_limit=100     # Aumentado de 20 a 100
+)
 
 def _api_rate_limiter_worker():
     """Hilo de trabajo que procesa las peticiones de la cola respetando el límite de tasa."""
@@ -194,28 +205,31 @@ def _api_rate_limiter_worker():
     session = requests.Session() # Usar una sesión persistente para el worker
     while True:
         try:
-            request_id, url, headers, timeout, is_spectator_api = API_REQUEST_QUEUE.get(timeout=1) # Espera 1 segundo
+            # Obtener la petición de la cola. Timeout para que el hilo no se bloquee indefinidamente.
+            request_id, url, headers, timeout, is_spectator_api = API_REQUEST_QUEUE.get(timeout=1)
             
-            _consume_token() # Espera si no hay tokens disponibles
+            # Consumir un token antes de realizar la petición
+            riot_api_limiter.consume_token()
 
             print(f"[_api_rate_limiter_worker] Procesando petición {request_id} a: {url}")
             response = None
-            for i in range(3): # Reintentos para la petición real
+            for i in range(3): # Reintentos para la petición HTTP real
                 try:
                     response = session.get(url, headers=headers, timeout=timeout)
                     if response.status_code == 429:
                         retry_after = int(response.headers.get('Retry-After', 5))
                         print(f"[_api_rate_limiter_worker] Rate limit excedido. Esperando {retry_after} segundos... (Intento {i + 1}/3)")
                         time.sleep(retry_after)
-                        continue
-                    response.raise_for_status()
+                        continue # Reintentar la petición después de esperar
+                    response.raise_for_status() # Lanza una excepción para códigos de error HTTP
                     print(f"[_api_rate_limiter_worker] Petición {request_id} exitosa. Status: {response.status_code}")
                     break # Salir del bucle de reintentos si es exitoso
                 except requests.exceptions.RequestException as e:
                     print(f"[_api_rate_limiter_worker] Error en petición {request_id} a {url}: {e}. Intento {i + 1}/3")
-                    if i < 2:
+                    if i < 2: # Si no es el último intento, espera y reintenta
                         time.sleep(0.5 * (2 ** i)) # Backoff exponencial
             
+            # Almacenar la respuesta y notificar al hilo que la solicitó
             with REQUEST_ID_COUNTER_LOCK:
                 API_RESPONSE_DATA[request_id] = response
                 if request_id in API_RESPONSE_EVENTS:
@@ -224,7 +238,7 @@ def _api_rate_limiter_worker():
                     print(f"[_api_rate_limiter_worker] Advertencia: Evento para request_id {request_id} no encontrado.")
 
         except queue.Empty:
-            pass # No hay peticiones en la cola, sigue esperando
+            pass # No hay peticiones en la cola, el hilo sigue esperando
         except Exception as e:
             print(f"[_api_rate_limiter_worker] Error inesperado en el worker del control de tasa: {e}")
             time.sleep(1) # Espera antes de continuar para evitar bucles de error
@@ -241,12 +255,15 @@ def make_api_request(url, retries=3, backoff_factor=0.5, is_spectator_api=False)
         API_RESPONSE_EVENTS[request_id] = threading.Event()
 
     headers = {"X-Riot-Token": RIOT_API_KEY}
-    API_REQUEST_QUEUE.put((request_id, url, headers, 10, is_spectator_api)) # 10 segundos de timeout
+    # Pone la petición en la cola. El worker la procesará cuando haya tokens disponibles.
+    API_REQUEST_QUEUE.put((request_id, url, headers, 10, is_spectator_api)) # 10 segundos de timeout para la petición HTTP
 
     print(f"[make_api_request] Petición {request_id} encolada para {url}. Esperando respuesta...")
     
     # Esperar con un timeout para evitar bloqueos indefinidos
-    if not API_RESPONSE_EVENTS[request_id].wait(timeout=30): # Espera hasta 30 segundos por la respuesta
+    # El timeout aquí es para la espera de la respuesta del worker, no de la API en sí.
+    # Aumentado de 30 a 60 segundos
+    if not API_RESPONSE_EVENTS[request_id].wait(timeout=60): 
         print(f"[make_api_request] Timeout esperando respuesta para la petición {request_id} a {url}.")
         with REQUEST_ID_COUNTER_LOCK:
             if request_id in API_RESPONSE_EVENTS:
