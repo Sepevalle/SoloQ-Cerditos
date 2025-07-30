@@ -219,6 +219,12 @@ def _api_rate_limiter_worker():
             for i in range(3): # Reintentos para la petición HTTP real
                 try:
                     response = session.get(url, headers=headers, timeout=timeout)
+                    
+                    # Si es una API de espectador y devuelve 404, no reintentar
+                    if is_spectator_api and response.status_code == 404:
+                        print(f"[_api_rate_limiter_worker] Petición {request_id} a la API de espectador devolvió 404. No se reintentará.")
+                        break # Salir del bucle de reintentos inmediatamente
+
                     if response.status_code == 429:
                         retry_after = int(response.headers.get('Retry-After', 5))
                         print(f"[_api_rate_limiter_worker] Rate limit excedido. Esperando {retry_after} segundos... (Intento {i + 1}/3)")
