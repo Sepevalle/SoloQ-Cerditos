@@ -330,7 +330,7 @@
                     <th data-sort-by="losses">Losses</th>
                     <th data-sort-by="total_games">Total Games</th>
                     <th data-sort-by="win_rate">Win Rate</th>
-                    <th>Valor Clasificación</th>
+                    <th class="hidden">Valor Clasificación</th>
                     <th>Dist. Peak Elo</th>
                     <th data-sort-by="lp_change_24h">LP en 24h</th>
                     <th>Dif. Elo</th>
@@ -392,7 +392,7 @@
                     <td class="{% if win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                         {{ '{:.2f}'.format(win_rate) }}%
                     </td>
-                    <td>{{ jugador.valor_clasificacion }}</td>
+                    <td class="hidden">{{ jugador.valor_clasificacion }}</td>
                     <td>
                         {% set diff_peak = jugador.valor_clasificacion - jugador.peak_elo %}
                         {% if diff_peak == 0 %}
@@ -418,7 +418,7 @@
                     <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
                             {% if jugador.en_partida %}
-                                <span class="estado-en-partida">Game</span>
+                                <span class="estado-en-partida">In Game</span>
                                 <img src="http://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" 
                                      alt="{{ jugador.nombre_campeon }}" 
                                      style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
