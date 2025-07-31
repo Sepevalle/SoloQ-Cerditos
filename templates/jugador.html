@@ -588,7 +588,7 @@
                                                         <strong style="color: #adb5bd;">Mejor Partida:</strong>
                                                         <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
                                                         <br>
-                                                        <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp | format_timestamp }}</span>
+                                                        <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -673,7 +673,7 @@
                                                         <strong style="color: #adb5bd;">Mejor Partida:</strong>
                                                         <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
                                                         <br>
-                                                        <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp | format_timestamp }}</span>
+                                                        <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -907,7 +907,7 @@
                             <td class="{{ 'text-success' if match.win else 'text-danger' }}">
                                 {{ 'Victoria' if match.win else 'Derrota' }}
                                 <br>
-                                <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                                <span class="small-text-stats">{{ match.game_end_timestamp }}</span>
                             </td>
                         </tr>
                         {% if match.all_participants %}

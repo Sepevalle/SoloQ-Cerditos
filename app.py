@@ -6,7 +6,6 @@ import threading
 import json
 import base64
 from datetime import datetime, timedelta
-import pytz # Añadido para un manejo robusto de zonas horarias
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 import queue # Import for the queue
@@ -45,16 +44,8 @@ def get_queue_type_filter(queue_id):
 
 @app.template_filter('format_timestamp')
 def format_timestamp_filter(timestamp):
-    """
-    Filtro robusto que convierte un timestamp UTC (en milisegundos) a una
-    cadena de texto formateada en la zona horaria local (Europe/Madrid).
-    """
-    if not timestamp:
-        return "N/A"
-    dt_utc = datetime.fromtimestamp(timestamp / 1000, tz=pytz.utc)
-    tz_local = pytz.timezone('Europe/Madrid')
-    dt_local = dt_utc.astimezone(tz_local)
-    return dt_local.strftime("%d/%m/%Y %H:%M:%S")
+    return datetime.fromtimestamp(timestamp / 1000).strftime("%d/%m/%Y %H:%M")
+
 
 @app.template_filter('format_peak_elo')
 def format_peak_elo_filter(valor):
@@ -539,9 +530,7 @@ def obtener_info_partida(args):
             print(f"[obtener_info_partida] Jugador principal {puuid} no encontrado en los participantes de la partida {match_id}.")
             return None
 
-        # REFACTOR: Almacenar siempre el timestamp en UTC puro, sin offsets.
-        # La API de Riot ya proporciona el timestamp en milisegundos UTC.
-        game_end_timestamp = info.get('gameEndTimestamp', 0)
+        game_end_timestamp = info.get('gameEndTimestamp', 0) 
         game_duration = info.get('gameDuration', 0)
         
         p = main_player_data
@@ -869,9 +858,10 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
         return 0
 
     for match in all_matches_for_player:
-        # REFACTOR: El timestamp ya está en UTC, no se necesita ninguna resta.
-        match_timestamp_utc = match.get('game_end_timestamp', 0)
-
+        # El timestamp guardado tiene un desfase de +2h (7200000ms).
+        # Lo restamos aquí para compararlo de forma consistente con el timestamp
+        # del servidor, que probablemente esté en UTC.
+        match_timestamp_utc = match.get('game_end_timestamp', 0) - 7200000
         # Ensure match is for the correct queue and within the last 24 hours
         if match_timestamp_utc >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
             if match.get('lp_change_this_game') is not None:
@@ -1247,13 +1237,11 @@ def index():
             jugador["peak_elo"] = jugador["valor_clasificacion"]
 
     split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
+    ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
     
-    # REFACTOR: Usar el filtro de plantilla para formatear la hora de actualización.
-    # El timestamp de la caché (time.time()) está en segundos, el filtro espera milisegundos.
-    ultima_actualizacion_ts_ms = timestamp * 1000
     print("[index] Renderizando index.html.")
-    return render_template('index.html', datos_jugadores=datos_jugadores,                           
-                           ultima_actualizacion_ts=ultima_actualizacion_ts_ms,
+    return render_template('index.html', datos_jugadores=datos_jugadores,
+                           ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
@@ -1544,12 +1532,12 @@ def actualizar_historial_partidas_en_segundo_plano():
 
                             if is_candidate:
                                 # Calculate time difference in seconds
-                                # REFACTOR: El timestamp de la partida ya está en UTC, no se necesita ninguna resta.
-                                match_end_ts_utc_sec = match.get('game_end_timestamp', 0) / 1000
-                                time_diff = detection_ts_sec - match_end_ts_utc_sec
+                                # The match timestamp is already adjusted by +2h, so no need to adjust again here.
+                                match_end_ts_sec = match.get('game_end_timestamp', 0) / 1000 
+                                time_diff = detection_ts_sec - match_end_ts_sec
 
                                 # Look for matches that ended within a reasonable window (e.g., 5 minutes) BEFORE the LP detection
-                                if 0 < time_diff < 600 and time_diff < smallest_time_diff: # 600 seconds = 10 minutes, increased window for safety
+                                if 0 < time_diff < 300 and time_diff < smallest_time_diff: # 300 seconds = 5 minutes
                                     smallest_time_diff = time_diff
                                     potential_match = match
 
