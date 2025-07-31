@@ -46,15 +46,40 @@ def get_queue_type_filter(queue_id):
 def format_timestamp_filter(timestamp):
     return datetime.fromtimestamp(timestamp / 1000).strftime("%d/%m/%Y %H:%M")
 
+
 @app.template_filter('format_peak_elo')
 def format_peak_elo_filter(valor):
-    """
-    Convierte un valor de clasificación numérico de nuevo a un formato legible
-    como 'TIER RANK (LP LPs)'.
-    """
     if valor is None:
-        print(f"[format_peak_elo_filter] Valor de entrada es None. Retornando 'N/A'.")
         return "N/A"
+    try:
+        valor = int(valor)
+    except (ValueError, TypeError):
+        return "N/A"
+
+    if valor >= 2800:
+        lps = valor - 2800
+        if valor >= 3200:
+            return f"CHALLENGER ({lps} LPs)"
+        elif valor >= 3000:
+            return f"GRANDMASTER ({lps} LPs)"
+        else:
+            return f"MASTER ({lps} LPs)"
+
+    tier_map = {
+        6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD",
+        2: "SILVER", 1: "BRONZE", 0: "IRON"
+    }
+    rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"}
+
+    league_points = valor % 100
+    valor_without_lps = valor - league_points
+    rank_value = (valor_without_lps // 100) % 4
+    tier_value = (valor_without_lps // 100) // 4
+
+    tier_name = tier_map.get(tier_value, "UNKNOWN")
+    rank_name = rank_map.get(rank_value, "")
+    return f"{tier_name} {rank_name} ({league_points} LPs)"
+
     
     try:
         valor = int(valor)
