@@ -530,10 +530,7 @@ def obtener_info_partida(args):
             print(f"[obtener_info_partida] Jugador principal {puuid} no encontrado en los participantes de la partida {match_id}.")
             return None
 
-        # Nueva lógica para manejar los timestamps
-        game_end_timestamp_raw = info.get('gameEndTimestamp', 0) # Para asociación de LP
-        game_end_timestamp_display = game_end_timestamp_raw + 7200000 # Para mostrar en la web (con +2 horas)
-
+        game_end_timestamp = info.get('gameEndTimestamp', 0) + 7200000
         game_duration = info.get('gameDuration', 0)
         
         p = main_player_data
@@ -573,8 +570,7 @@ def obtener_info_partida(args):
             "assists": p.get('assists', 0),
             "kda": (p.get('kills', 0) + p.get('assists', 0)) / max(1, p.get('deaths', 0)),
             "player_items": player_items,
-            "game_end_timestamp": game_end_timestamp_display, # Usa esta para la visualización en web
-            "game_end_timestamp_lp_association": game_end_timestamp_raw, # Usa esta para la asociación de LP
+            "game_end_timestamp": game_end_timestamp,
             "queue_id": info.get('queueId'),
             "champion_level": p.get('champLevel'),
             "summoner_spell_1_id": ALL_SUMMONER_SPELLS.get(spell1_id),
@@ -862,10 +858,12 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
         return 0
 
     for match in all_matches_for_player:
-        # Usamos game_end_timestamp_lp_association para la comparación de tiempo
-        match_timestamp_lp_association = match.get('game_end_timestamp_lp_association', 0)
-        
-        if match_timestamp_lp_association >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
+        # El timestamp guardado tiene un desfase de +2h (7200000ms).
+        # Lo restamos aquí para compararlo de forma consistente con el timestamp
+        # del servidor, que probablemente esté en UTC.
+        match_timestamp_utc = match.get('game_end_timestamp', 0) - 7200000
+        # Ensure match is for the correct queue and within the last 24 hours
+        if match_timestamp_utc >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
             if match.get('lp_change_this_game') is not None:
                 lp_change_24h += match['lp_change_this_game']
     print(f"[_calculate_lp_change_for_player] Cambio de LP en 24h para {puuid} en {queue_type_api_name}: {lp_change_24h} LP.")
@@ -1100,7 +1098,7 @@ def actualizar_cache():
         partidas_jugador = [
             p for p in all_matches_for_player
             if p.get('queue_id') == queue_id and
-               p.get('game_end_timestamp_lp_association', 0) / 1000 >= SEASON_START_TIMESTAMP # Usar la variable correcta
+               p.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
         ]
 
         if not partidas_jugador:
@@ -1534,8 +1532,8 @@ def actualizar_historial_partidas_en_segundo_plano():
 
                             if is_candidate:
                                 # Calculate time difference in seconds
-                                # Usamos game_end_timestamp_lp_association para la comparación de tiempo
-                                match_end_ts_sec = match.get('game_end_timestamp_lp_association', 0) / 1000 
+                                # The match timestamp is already adjusted by +2h, so no need to adjust again here.
+                                match_end_ts_sec = match.get('game_end_timestamp', 0) / 1000 
                                 time_diff = detection_ts_sec - match_end_ts_sec
 
                                 # Look for matches that ended within a reasonable window (e.g., 5 minutes) BEFORE the LP detection
@@ -1574,7 +1572,7 @@ def actualizar_historial_partidas_en_segundo_plano():
 
                 # Only save if there were new valid matches, new remakes, or pending LP updates were cleared
                 if nuevas_partidas_validas or nuevos_remakes or keys_to_clear_from_pending:
-                    historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp_lp_association'], reverse=True) # Usar la variable correcta para ordenar
+                    historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
 
                     if nuevos_remakes:
