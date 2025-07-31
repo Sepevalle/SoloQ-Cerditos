@@ -1532,12 +1532,13 @@ def actualizar_historial_partidas_en_segundo_plano():
 
                             if is_candidate:
                                 # Calculate time difference in seconds
-                                # The match timestamp is already adjusted by +2h, so no need to adjust again here.
-                                match_end_ts_sec = match.get('game_end_timestamp', 0) / 1000 
-                                time_diff = detection_ts_sec - match_end_ts_sec
+                                # The stored timestamp has a +2h offset. We must subtract it to compare with the detection timestamp, which is in UTC.
+                                match_end_ts_utc_sec = (match.get('game_end_timestamp', 0) / 1000) - 7200
+                                time_diff = detection_ts_sec - match_end_ts_utc_sec
+                                
 
                                 # Look for matches that ended within a reasonable window (e.g., 5 minutes) BEFORE the LP detection
-                                if 0 < time_diff < 300 and time_diff < smallest_time_diff: # 300 seconds = 5 minutes
+                                if 0 < time_diff < 600 and time_diff < smallest_time_diff: # 600 seconds = 10 minutes, increased window for safety
                                     smallest_time_diff = time_diff
                                     potential_match = match
 
