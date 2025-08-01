@@ -846,15 +846,6 @@
                                 <span class="fw-bold">{{ match.vision_score }}</span>
                                 <br>
                                 <span class="small-text-stats">
-                                    {% set game_duration_minutes = match.game_duration / 60 %}
-                                    {% if game_duration_minutes > 0 %}
-                                        {{ '%.2f'|format(match.vision_score / game_duration_minutes) }} VSPM
-                                    {% else %}
-                                        0.00 VSPM
-                                    {% endif %}
-                                </span>
-                                <br>
-                                <span class="small-text-stats">
                                     {{ match.get('detector_wards_placed', 0) }} | {{ match.get('wards_placed', 0) }} / {{ match.get('wards_killed', 0) }}
                                 </span>
                             </td>
