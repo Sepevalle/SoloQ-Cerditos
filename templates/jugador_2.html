@@ -723,7 +723,7 @@
                         <p class="{% if soloq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}"> Win Rate: {{ '%.2f'|format(soloq_win_rate) }}% </p>
                         <p> Peak Elo: {% set peak_elo_soloq = perfil.soloq.get('peak_elo', 0) %}
                         {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - peak_elo_soloq %}
-                        <span class="peak-elo {{ 'tier-' + (peak_elo_soloq | format_peak_elo).split(' ')[0] | lower }}">{{ peak_elo_soloq | format_peak_elo }}</span>
+                        <span class="peak-elo">{{ peak_elo_soloq }}</span>
                         {% if diff_peak_soloq < 0 %}
                         <span class="small-text-stats">({{ (diff_peak_soloq * -1) }} LPs por debajo)</span>
                         {% elif diff_peak_soloq > 0 %}
@@ -750,7 +750,7 @@
                                                 <strong style="color: #adb5bd;">Mejor Partida:</strong>
                                                 <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
                                                 <br>
-                                                <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp | format_timestamp }}</span>
+                                                <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -787,7 +787,7 @@
                         <p class="{% if flexq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}"> Win Rate: {{ '%.2f'|format(flexq_win_rate) }}% </p>
                         <p> Peak Elo: {% set peak_elo_flexq = perfil.flexq.get('peak_elo', 0) %}
                         {% set diff_peak_flexq = perfil.flexq.valor_clasificacion - peak_elo_flexq %}
-                        <span class="peak-elo {{ 'tier-' + (peak_elo_flexq | format_peak_elo).split(' ')[0] | lower }}">{{ peak_elo_flexq | format_peak_elo }}</span>
+                        <span class="peak-elo">{{ peak_elo_flexq }}</span>
                         {% if diff_peak_flexq < 0 %}
                         <span class="small-text-stats">({{ (diff_peak_flexq * -1) }} LPs por debajo)</span>
                         {% elif diff_peak_flexq > 0 %}
@@ -814,7 +814,7 @@
                                                 <strong style="color: #adb5bd;">Mejor Partida:</strong>
                                                 <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
                                                 <br>
-                                                <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp | format_timestamp }}</span>
+                                                <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -847,7 +847,7 @@
                     <div class="match-info-main d-flex flex-column gap-1">
                         <span class="match-result-text {{ 'text-success' if match.victoria else 'text-danger' }}">{{ 'Victoria' if match.victoria else 'Derrota' }}</span>
                         <h5 class="mb-0 text-truncate">{{ match.campeon }}</h5>
-                        <div class="match-queue-date">{{ match.tipo_cola }} - {{ match.timestamp | format_timestamp }}</div>
+                        <div class="match-queue-date">{{ match.tipo_cola }}</div>
                     </div>
                 </div>
                 <div class="match-kda-section">
