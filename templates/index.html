@@ -296,15 +296,14 @@
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
 </div>
     
-<div class="container">
+<div class="container-fluid px-md-5">
     <div class="d-flex justify-content-between align-items-center">
         <h3>Lista de Jugadores <span class="small-text"></span></h3>
         <div id="lastUpdated" class="text-end">Actualizado: {{ ultima_actualizacion }} </div>
     </div>
     
-    <div class="container mt-4">
-    <div class="row mb-3">
-        <div class="col text-start">
+    <div class="row my-3">
+        <div class="col-12">
             <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
             <select id="filtro" class="form-select d-inline-block w-auto">
                 <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
@@ -313,9 +312,6 @@
             </select>
         </div>
     </div>
-</div>
-
- 
     
     <div class="table-responsive">
         <table class="table table-hover table-striped" id="jugadoresTable">
