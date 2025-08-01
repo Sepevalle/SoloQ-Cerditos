@@ -894,11 +894,11 @@
                             <td>
                                 {% if match.lp_change_this_game is not none %}
                                     {% if match.lp_change_this_game > 0 %}
-                                        <span class="lp-gain">+{{ match.lp_change_this_game }} LP</span>
+                                        <span class="lp-gain">+{{ match.lp_change_this_game }}</span>
                                     {% elif match.lp_change_this_game < 0 %}
-                                        <span class="lp-loss">{{ match.lp_change_this_game }} LP</span>
+                                        <span class="lp-loss">{{ match.lp_change_this_game }}</span>
                                     {% else %}
-                                        <span>0 LP</span>
+                                        <span>0</span>
                                     {% endif %}
                                 {% else %}
                                     <span>N/A</span>
