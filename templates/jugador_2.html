@@ -640,7 +640,7 @@
 
         <!-- Secciones de clasificatoria dinámicas -->
         <div class="row">
-            {% for cola, datos_rank in perfil.ranks.items() %}
+            {% for cola, datos_rank in perfil.get('ranks', {}).items() %}
             <div class="col-md-6">
                 <div class="card rank-card">
                     <div class="card-header">
@@ -703,7 +703,7 @@
     <script src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Lógica para banners aleatorios (ya estaba en tu código)
+            // Lógica para banners aleatorios
             const bannerImages = [
                 'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner1.png',
                 'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner2.png',
@@ -716,7 +716,7 @@
             const randomBanner = bannerImages[Math.floor(Math.random() * bannerImages.length)];
             document.getElementById('banner-img').src = randomBanner;
 
-            // Controles de audio (ya estaba en tu código)
+            // Controles de audio
             const audio = document.getElementById('backgroundAudio');
             const toggleAudioBtn = document.getElementById('toggleAudio');
             const muteIcon = document.getElementById('muteIcon');
@@ -755,7 +755,7 @@
                 }
             });
 
-            // Lógica para modo oscuro (ya estaba en tu código)
+            // Lógica para modo oscuro
             const toggleModeBtn = document.getElementById('toggle-mode');
             const body = document.body;
             let darkMode = localStorage.getItem('darkMode');
@@ -781,7 +781,7 @@
                 }
             });
 
-            // Banners laterales (ya estaba en tu código)
+            // Banners laterales
             const lateralBanners = [
                 'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg',
                 'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg'
@@ -790,7 +790,7 @@
             document.getElementById('left-banner').src = randomLateralBanner;
             document.getElementById('right-banner').src = randomLateralBanner;
 
-            // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN DE PARTIDAS (Copiado de jugador.html) ---
+            // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN DE PARTIDAS ---
             const allMatchHistory = {{ partidas | tojson }};
             let currentPage = 1;
             const itemsPerPage = 10;
