@@ -1514,6 +1514,19 @@ def actualizar_historial_partidas_en_segundo_plano():
                             post_game_elo_entry.get('leaguePoints', 0)
                         )
                         lp_change = post_game_valor - pre_game_valor
+
+                        # Si el cambio de LP es 0, es muy probable que la API aún no se haya actualizado.
+                        # Omitiremos esta actualización y la reintentaremos en el próximo ciclo,
+                        # a menos que haya estado pendiente durante demasiado tiempo.
+                        if lp_change == 0:
+                            detection_ts = lp_update_data.get('detection_timestamp', 0)
+                            # Si ha estado pendiente por menos de 10 minutos, lo omitimos.
+                            if time.time() - detection_ts < 600: # 600 segundos = 10 minutos
+                                print(f"[{lp_update_data['riot_id']}] [LP Associator] El cambio de LP es 0. Se asume que la API no se ha actualizado. Reintentando en el próximo ciclo.")
+                                continue # No procesar, dejar en la cola de pendientes.
+                            else:
+                                print(f"[{lp_update_data['riot_id']}] [LP Associator] El cambio de LP es 0, pero ha estado pendiente por más de 10 minutos. Se procesará como 0 LP para evitar un bloqueo.")
+
                         print(f"[{lp_update_data['riot_id']}] [LP Associator] LP calculado: {pre_game_valor} -> {post_game_valor} ({lp_change:+d} LP).")
 
                         potential_match = None
