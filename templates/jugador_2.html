@@ -862,17 +862,17 @@
                 <div class="match-stats-summary">
                     <div class="match-stat-item">
                         <i class="fas fa-coins text-warning"></i>
-                        <span class="value">{{ match.oro_ganado | number_format }}</span>
+                        <span class="value">{{ match.oro_ganado }}</span>
                         <span class="label">Oro</span>
                     </div>
                     <div class="match-stat-item">
                         <i class="fas fa-shield-alt text-primary"></i>
-                        <span class="value">{{ match.dano_tanqueado | number_format }}</span>
+                        <span class="value">{{ match.dano_tanqueado }}</span>
                         <span class="label">Daño Tanqueado</span>
                     </div>
                     <div class="match-stat-item">
                         <i class="fas fa-bolt text-danger"></i>
-                        <span class="value">{{ match.dano_campeones | number_format }}</span>
+                        <span class="value">{{ match.dano_campeones }}</span>
                         <span class="label">Daño</span>
                     </div>
                     <div class="match-stat-item">
@@ -925,6 +925,17 @@
                                                 {% endfor %}
                                             {% endfor %}
                                         </div>
+                                        {% set total_damage = player.damage_physical + player.damage_magic + player.damage_true %}
+                                        {% if total_damage > 0 %}
+                                            {% set phys_pct = (player.damage_physical / total_damage) * 100 %}
+                                            {% set magic_pct = (player.damage_magic / total_damage) * 100 %}
+                                            {% set true_pct = (player.damage_true / total_damage) * 100 %}
+                                            <div class="damage-bar mt-2">
+                                                <div class="damage-physical" style="width: {{ phys_pct }}%;"></div>
+                                                <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
+                                                <div class="damage-true" style="width: {{ true_pct }}%;"></div>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 {% endfor %}
                             </div>
@@ -947,6 +958,17 @@
                                                 {% endfor %}
                                             {% endfor %}
                                         </div>
+                                        {% set total_damage = player.damage_physical + player.damage_magic + player.damage_true %}
+                                        {% if total_damage > 0 %}
+                                            {% set phys_pct = (player.damage_physical / total_damage) * 100 %}
+                                            {% set magic_pct = (player.damage_magic / total_damage) * 100 %}
+                                            {% set true_pct = (player.damage_true / total_damage) * 100 %}
+                                            <div class="damage-bar mt-2">
+                                                <div class="damage-physical" style="width: {{ phys_pct }}%;"></div>
+                                                <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
+                                                <div class="damage-true" style="width: {{ true_pct }}%;"></div>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 {% endfor %}
                             </div>
