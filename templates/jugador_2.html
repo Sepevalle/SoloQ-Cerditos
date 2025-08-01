@@ -8,63 +8,53 @@
     <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
-    <!-- Estilos específicos para esta página -->
     <style>
+        /* Estilos generales y de modo oscuro del usuario */
         body {
             transition: background-color 0.3s, color 0.3s;
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
         }
-
         .banner-img {
             margin-top: 40px;
             width: 100%;
             max-height: 600px;
             object-fit: contain;
         }
-
         .small-text {
             font-size: 0.6em;
             font-weight: normal;
             color: #6c757d;
         }
-
         .small-text-stats {
             font-size: 0.8em;
             color: #6c757d;
         }
-
         .win-rate-alto {
             color: #228B22 !important;
         }
-
         .win-rate-bajo {
             color: tomato !important;
         }
-
         .peak-elo {
             color: gold;
             font-weight: bold;
         }
-
         .estado-en-partida {
             color: #007BFF !important;
             font-weight: bold;
         }
-
         .table a {
             color: inherit;
             text-decoration: none;
         }
-
         .link-estado {
             color: #007BFF;
         }
-
-        .link-perfil:hover,
-        .link-estado:hover {
+        .link-perfil:hover, .link-estado:hover {
             text-decoration: underline;
         }
-
         .opgg-link {
             display: inline-block;
             padding: 5px 10px;
@@ -76,53 +66,40 @@
             text-decoration: none;
             transition: background-color 0.2s ease-in-out;
         }
-
         .opgg-link:hover {
             background-color: #004494;
         }
-
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
         }
-
         .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
-
         .dark-mode .navbar-brand {
             color: white !important;
         }
-
-        .dark-mode .table,
-        .dark-mode .card {
+        .dark-mode .table, .dark-mode .card {
             background-color: #343a40 !important;
             color: white;
         }
-
         .dark-mode .nav-link {
             color: white !important;
         }
-
         .dark-mode .navbar-toggler-icon {
             filter: invert(1) grayscale(100%) brightness(2);
         }
-
-        .table td,
-        .table th {
+        .table td, .table th {
             text-align: center;
             vertical-align: middle;
         }
-
         .jugador-columna {
             text-align: left;
         }
-
         .hidden {
             display: none;
         }
-
         .imagen-jugador {
             width: 30px;
             height: 30px;
@@ -132,7 +109,6 @@
             border-radius: 50%;
             object-fit: cover;
         }
-
         .lateral-img {
             position: fixed;
             top: 50%;
@@ -142,27 +118,14 @@
             object-fit: cover;
             display: none;
         }
-
         @media (min-width: 1500px) {
             .lateral-img {
                 display: block;
             }
-
-            body {
-                padding-left: 180px;
-                padding-right: 180px;
-            }
-
-            .navbar.fixed-top {
-                left: 180px;
-                right: 180px;
-            }
         }
-
         .left-img {
             left: 20px;
         }
-
         .right-img {
             right: 20px;
         }
@@ -218,25 +181,15 @@
             background: #fff;
         }
 
-        .lp-gain {
-            color: #228B22;
-            font-weight: bold;
-        }
-
-        .lp-loss {
-            color: #dc3545;
-            font-weight: bold;
-        }
-
         #toggle-mode {
             font-weight: bold;
         }
 
+        /* Estilos específicos para la página de jugador (combinados y mejorados) */
         .profile-header {
             text-align: center;
             margin-bottom: 30px;
         }
-
         .profile-header img {
             width: 100px;
             height: 100px;
@@ -245,13 +198,11 @@
             border: 3px solid #007bff;
             margin-bottom: 15px;
         }
-
         .rank-card {
             margin-bottom: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
         .rank-card .card-header {
             background-color: #007bff;
             color: white;
@@ -259,175 +210,347 @@
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
         }
-
         .rank-card .card-body {
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
         }
-
         .rank-card .elo-image-lg {
             width: 120px;
             height: 120px;
             object-fit: contain;
             margin-bottom: 15px;
         }
-
         .rank-details {
             text-align: center;
             width: 100%;
         }
-
         .rank-details h4 {
             margin-bottom: 5px;
             color: #007bff;
         }
-
         .rank-details p {
             margin-bottom: 3px;
         }
-
         .champion-stats-container {
             margin-top: 20px;
             width: 100%;
         }
-
         .champion-stats-item {
             display: flex;
+            flex-direction: column; /* Cambiado a columna para mejor responsividad */
             align-items: center;
             justify-content: center;
             margin-bottom: 10px;
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
-
+        .dark-mode .champion-stats-item {
+            border-bottom: 1px solid #495057; /* Borde más claro en dark mode */
+        }
         .champion-stats-item:last-child {
             margin-bottom: 0;
             padding-bottom: 0;
             border-bottom: none;
         }
-
         .champion-stats-item img {
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            margin-right: 15px;
+            margin-bottom: 10px; /* Espacio debajo de la imagen */
             object-fit: cover;
         }
-
         .champion-stats-info {
             text-align: center;
         }
-
         .champion-stats-info h5 {
             margin-bottom: 0;
             font-size: 1.1em;
+            color: #212529;
         }
-
+        .dark-mode .champion-stats-info h5 {
+            color: #e2e8f0;
+        }
         .kda-text {
             font-size: 0.9em;
             color: #6c757d;
         }
-
+        .dark-mode .kda-text {
+            color: #adb5bd;
+        }
         .match-history-card {
             margin-top: 40px;
         }
 
-        .match-history-table th,
-        .match-history-table td {
-            vertical-align: middle;
-            padding: 8px;
+        /* --- NUEVOS ESTILOS PARA LAS TARJETAS DE PARTIDA --- */
+        .match-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+            gap: 20px;
         }
 
-        .match-history-table .champion-level-container {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto;
+        .match-card-item {
+            background-color: #ffffff; /* Fondo claro para la tarjeta */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            cursor: pointer;
+            border: 1px solid #e0e0e0;
+        }
+        .dark-mode .match-card-item {
+            background-color: #2d3748; /* Fondo oscuro para la tarjeta */
+            border: 1px solid #4a5568;
         }
 
-        .match-history-table .champion-level {
-            font-size: 0.8em;
-            bottom: -8px;
-            right: -8px;
-            padding: 3px 6px;
-            min-width: 24px;
+        .match-card-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
         }
 
-        .match-history-table .summoner-spells,
-        .match-history-table .runes {
-            gap: 4px;
-            margin: 0 auto;
-        }
-
-        .match-history-table .summoner-spells img,
-        .match-history-table .runes img {
-            width: 25px;
-            height: 25px;
-        }
-
-        .match-history-table .kda-text {
-            font-size: 1.1em;
-            font-weight: bold;
-        }
-
-        .items-layout {
+        .match-header-card {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 5px;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+        .dark-mode .match-header-card {
+            border-bottom: 1px solid #4a5568;
         }
 
-        .items-grid {
+        .match-win-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background-color: #28a745; /* Verde para victoria */
+        }
+        .match-loss-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background-color: #dc3545; /* Rojo para derrota */
+        }
+
+        .match-champion-img {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 2px solid;
+        }
+        .match-win-indicator + .match-champion-img { border-color: #28a745; }
+        .match-loss-indicator + .match-champion-img { border-color: #dc3545; }
+
+        .match-info-main h5 {
+            margin-bottom: 0;
+            font-size: 1.3em;
+            color: #212529;
+        }
+        .dark-mode .match-info-main h5 {
+            color: #e2e8f0;
+        }
+        .match-info-main .match-result-text {
+            font-weight: bold;
+            font-size: 1em;
+        }
+        .match-info-main .match-queue-date {
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+        .dark-mode .match-info-main .match-queue-date {
+            color: #adb5bd;
+        }
+
+        .match-kda-section {
+            text-align: center;
+            padding: 10px 15px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .dark-mode .match-kda-section {
+            background-color: #343a40;
+            border-bottom: 1px solid #4a5568;
+        }
+        .match-kda-section .kda-value {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        .match-kda-section .kda-breakdown {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .dark-mode .match-kda-section .kda-breakdown {
+            color: #adb5bd;
+        }
+
+        .match-stats-summary {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .dark-mode .match-stats-summary {
+            border-bottom: 1px solid #4a5568;
+        }
+        .match-stat-item {
+            text-align: center;
+            font-size: 0.85em;
+            color: #212529;
+        }
+        .dark-mode .match-stat-item {
+            color: #e2e8f0;
+        }
+        .match-stat-item i {
+            margin-right: 5px;
+            color: #007bff;
+        }
+        .match-stat-item .value {
+            font-weight: bold;
+            display: block;
+        }
+        .match-stat-item .label {
+            color: #6c757d;
+        }
+        .dark-mode .match-stat-item .label {
+            color: #adb5bd;
+        }
+
+        .match-runes-spells-items {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 15px;
+            gap: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .dark-mode .match-runes-spells-items {
+            border-bottom: 1px solid #4a5568;
+        }
+        .match-runes-spells-items .rune-spell-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .match-runes-spells-items img {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+        .match-runes-spells-items .rune-main { border: 1px solid gold; }
+        .match-runes-spells-items .rune-sub { border: 1px solid #6c757d; }
+
+        .match-items-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 3px;
-            width: calc(25px * 3 + 3px * 2);
+            width: 100px; /* Ajusta el ancho para 3x2 items */
+        }
+        .match-items-grid img, .match-items-grid .item-placeholder {
+            width: 30px;
+            height: 30px;
+            border-radius: 3px;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .dark-mode .match-items-grid img, .dark-mode .match-items-grid .item-placeholder {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .match-items-grid .trinket-item-img {
+            grid-column: span 1; /* Asegura que el trinket ocupe una celda */
+            width: 30px;
+            height: 30px;
+            border-radius: 3px;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .dark-mode .match-items-grid .trinket-item-img {
+            background-color: rgba(255,255,255,0.1);
         }
 
-        .items-grid img,
-        .items-grid .item-placeholder,
-        .trinket-item img,
-        .trinket-item .item-placeholder {
-            width: 25px;
-            height: 25px;
+        .match-details-expanded {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: none; /* Oculto por defecto */
+        }
+        .dark-mode .match-details-expanded {
+            background-color: #3f4a59;
+            border-top: 1px solid #5a6a7a;
+        }
+        .match-details-expanded .team-section {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .match-details-expanded .team-blue { background-color: rgba(0, 123, 255, 0.1); }
+        .match-details-expanded .team-red { background-color: rgba(220, 53, 69, 0.1); }
+        .dark-mode .match-details-expanded .team-blue { background-color: rgba(0, 123, 255, 0.2); }
+        .dark-mode .match-details-expanded .team-red { background-color: rgba(220, 53, 69, 0.2); }
+
+        .match-details-expanded .participant-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #212529;
+        }
+        .dark-mode .match-details-expanded .participant-row {
+            color: #e2e8f0;
+        }
+        .match-details-expanded .participant-row img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 8px;
+            object-fit: cover;
+        }
+        .match-details-expanded .participant-row .name {
+            flex-grow: 1;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .match-details-expanded .participant-row .stats {
+            margin-left: 10px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .match-details-expanded .participant-row .items-small {
+            display: flex;
+            gap: 2px;
+            margin-left: 10px;
+        }
+        .match-details-expanded .participant-row .items-small img {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+        .match-details-expanded .participant-row .items-small .item-placeholder-small {
+            width: 20px;
+            height: 20px;
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+        .dark-mode .match-details-expanded .participant-row .items-small .item-placeholder-small {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .match-details-expanded .player-highlight {
+            background-color: rgba(255, 193, 7, 0.15); /* Amarillo claro para el jugador actual */
             border-radius: 5px;
+            padding: 5px;
+        }
+        .dark-mode .match-details-expanded .player-highlight {
+            background-color: rgba(255, 193, 7, 0.25);
         }
 
-        .trinket-item .item-placeholder,
-        .items-grid .item-placeholder {
-            border: 1px solid rgba(108, 117, 125, 0.3);
-        }
-
-        .dark-mode .trinket-item .item-placeholder,
-        .dark-mode .items-grid .item-placeholder {
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .match-history-table .match-result {
-            font-size: 1.1em;
-        }
-
-        .match-history-table .match-row-win>td {
-            background-color: rgba(40, 167, 69, 0.08);
-        }
-
-        .match-history-table .match-row-loss>td {
-            background-color: rgba(220, 53, 69, 0.08);
-        }
-
-        .dark-mode .match-history-table .match-row-win>td {
-            background-color: rgba(40, 167, 69, 0.15);
-        }
-
-        .dark-mode .match-history-table .match-row-loss>td {
-            background-color: rgba(220, 53, 69, 0.15);
-        }
-
-        .highlight-performance {
-            border-left: 4px solid #ffc107;
-        }
-
+        /* Multikill badges */
         .multikill-badge {
             display: inline-block;
             padding: 2px 6px;
@@ -438,589 +561,812 @@
             margin-left: 5px;
             vertical-align: middle;
         }
-
-        .penta-kill {
-            background-color: #ff4500;
-        }
-
-        .quadra-kill {
-            background-color: #9400d3;
-        }
-
-        .triple-kill {
-            background-color: #dc143c;
-        }
-
-        .double-kill {
-            background-color: #0056b3;
-        }
+        .penta-kill { background-color: #ff4500; }
+        .quadra-kill { background-color: #9400d3; }
+        .triple-kill { background-color: #dc143c; }
+        .double-kill { background-color: #0056b3; }
 
         .damage-bar {
             display: flex;
             width: 100%;
-            min-width: 80px;
-            height: 12px;
+            height: 10px;
             border-radius: 4px;
             overflow: hidden;
             background-color: #e9ecef;
             border: 1px solid #ccc;
+            margin-top: 5px;
         }
+        .damage-physical { background-color: #ff8c00; }
+        .damage-magic { background-color: #4169e1; }
+        .damage-true { background-color: #f8f9fa; }
+        .dark-mode .damage-bar { background-color: #212529; border-color: #495057; }
 
-        .damage-physical {
-            background-color: #ff8c00;
-        }
+        /* Colores de Elo */
+        .tier-iron { color: #5a5a5a; }
+        .tier-bronze { color: #cd7f32; }
+        .tier-silver { color: #c0c0c0; }
+        .tier-gold { color: #ffd700; }
+        .tier-platinum { color: #e5e4e2; }
+        .tier-emerald { color: #50c878; }
+        .tier-diamond { color: #b9f2ff; }
+        .tier-master { color: #8a2be2; }
+        .tier-grandmaster { color: #ff4500; }
+        .tier-challenger { color: #00bfff; }
 
-        .damage-magic {
-            background-color: #4169e1;
-        }
+        /* Colores KDA */
+        .kda-good { color: #48bb78; }
+        .kda-average { color: #ecc94b; }
+        .kda-bad { color: #f56565; }
 
-        .damage-true {
-            background-color: #f8f9fa;
-        }
-
-        .dark-mode .damage-bar {
-            background-color: #212529;
-            border-color: #495057;
-        }
-
-        .filter-controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .filter-controls label {
-            margin-bottom: 0;
-            font-weight: bold;
-        }
-
-        .filter-controls select {
-            flex-grow: 1;
-            max-width: 200px;
-        }
-
-        .champion-level-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        .champion-level-container img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-        }
-
-        .champion-level {
-            position: absolute;
-            background-color: #343a40;
-            color: white;
-            font-weight: bold;
-            border-radius: 50%;
-            text-align: center;
-            border: 1px solid #6c757d;
-        }
-
-        .summoner-spells {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .summoner-spells img {
-            border-radius: 3px;
-        }
-
-        .runes {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .runes img {
-            border-radius: 50%;
-        }
-
-        .runes img.keystone {
-            border: 1px solid gold;
-        }
-
-        .runes img.sub-rune {
-            border: 1px solid #6c757d;
-        }
-
-        .small-text-stats {
-            color: #6c757d;
-        }
-
-        .dark-mode .small-text-stats,
-        .dark-mode .small-text {
-            color: #adb5bd;
-        }
-
-        .details-content-wrapper {
-            display: grid;
-            grid-template-rows: 0fr;
-            transition: grid-template-rows 0.4s ease-in-out;
-        }
-
-        tr:not(.hidden) .details-content-wrapper {
-            grid-template-rows: 1fr;
-        }
-
-        .details-content-wrapper>div {
+        /* General utility classes for spacing/flex */
+        .d-flex { display: flex; }
+        .align-items-center { align-items: center; }
+        .justify-content-center { justify-content: center; }
+        .flex-column { flex-direction: column; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .p-2 { padding: 0.5rem; }
+        .rounded { border-radius: 0.25rem; }
+        .fw-bold { font-weight: bold; }
+        .text-success { color: #28a745; }
+        .text-danger { color: #dc3545; }
+        .text-primary { color: #007bff; }
+        .text-warning { color: #ffc107; }
+        .text-muted { color: #6c757d; }
+        .text-white { color: #ffffff; }
+        .text-truncate {
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
+        .bg-opacity-25 { background-color: rgba(255, 193, 7, 0.25); } /* Para resaltar jugador en detalles */
+
+        /* --- INICIO: Mejoras de Responsividad para Móviles --- */
+        @media (max-width: 576px) {
+            .profile-header h1 {
+                font-size: 1.5rem; /* Reducir tamaño del nombre en móviles */
+            }
+            .match-card-item {
+                min-width: 0; /* Permitir que las tarjetas sean más pequeñas que 300px */
+            }
+            .match-details-expanded .participant-row {
+                flex-direction: column; /* Apilar los elementos verticalmente */
+                align-items: flex-start; /* Alinear al inicio */
+                gap: 5px; /* Añadir espacio entre elementos apilados */
+            }
+            .match-details-expanded .participant-row .stats,
+            .match-details-expanded .participant-row .items-small {
+                margin-left: 0; /* Eliminar margen izquierdo en móvil */
+            }
+        }
+        /* --- FIN: Mejoras de Responsividad para Móviles --- */
     </style>
 </head>
 
 <body>
 
-    <!-- Banners laterales (ocultos en móvil por la media query) -->
-    <img id="left-banner" class="lateral-img left-img"
-        src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg"
-        alt="Lateral izquierda">
-    <img id="right-banner" class="lateral-img right-img"
-        src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
+<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
+<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
 
-    <!-- Audio de fondo -->
-    <audio id="backgroundAudio" loop>
-        <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3"
-            type="audio/mpeg">
-        Tu navegador no soporta el elemento audio.
-    </audio>
+<audio id="backgroundAudio" loop>
+    <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
+    Tu navegador no soporta el elemento audio.
+</audio>
 
-    <!-- Barra de navegación superior -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo"
-                    style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
-                Cerditos y Valientes
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
-                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+            Cerditos y Valientes
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+            aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
                 </ul>
-                <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
-                    <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
-                    <div class="d-flex align-items-center ms-lg-2">
-                        <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
-                            <i id="muteIcon" class="fas fa-microphone-slash"></i>
-                        </button>
-                        <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
-                    </div>
+            <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
+                <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
+                <div class="d-flex align-items-center ms-lg-2">
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                        <i id="muteIcon" class="fas fa-microphone-slash"></i>
+                    </button>
+                    <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
                 </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Banner principal -->
-    <div class="container my-4 d-flex justify-content-center">
-        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
-            alt="Banner" class="banner-img" id="banner-img">
-    </div>
-
-    <!-- Contenido principal, adaptado para móviles -->
-    <div class="container-fluid mt-5">
-        <div class="profile-header">
-            <!-- Imagen de perfil dinámica -->
-            <img src="{{ perfil.imagen_url }}" alt="Imagen de {{ perfil.nombre }}"
-                onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/placeholder_perfil.png'">
-            <!-- Nombre del jugador y tag dinámicos -->
-            <h1>{{ perfil.nombre }} <span class="small-text">({{ perfil.tag }})</span></h1>
-            <!-- Enlace a OP.GG dinámico -->
-            <a href="https://www.op.gg/summoners/{{ perfil.region }}/{{ perfil.nombre }}-{{ perfil.tag }}" target="_blank"
-                class="opgg-link">Ver en OP.GG</a>
-        </div>
-
-        <!-- Secciones de clasificatoria dinámicas -->
-        <div class="row">
-            {% for cola, datos_rank in perfil.get('ranks', {}).items() %}
-            <div class="col-md-6">
-                <div class="card rank-card">
-                    <div class="card-header">
-                        Clasificatoria {{ cola }}
-                    </div>
-                    <div class="card-body">
-                        {% if datos_rank %}
-                        <img class="elo-image-lg" src="{{ datos_rank.imagen_elo }}"
-                            alt="Imagen de {{ datos_rank.tier }}">
-                        <div class="rank-details">
-                            <h4>{{ datos_rank.tier }} {{ datos_rank.rank }}</h4>
-                            <p>{{ datos_rank.lp }} LP</p>
-                            <p>{{ datos_rank.victorias }} W / {{ datos_rank.derrotas }} L - <span
-                                    class="{{ 'win-rate-alto' if datos_rank.win_rate >= 50 else 'win-rate-bajo' }}">
-                                    {{ datos_rank.win_rate }}% WR</span></p>
-                        </div>
-                        {% else %}
-                        <p>No se encontraron datos de clasificatoria para {{ cola }}.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Historial de Partidas dinámico -->
-        <div class="card match-history-card">
-            <div class="card-header">
-                Historial de Partidas
-            </div>
-            <div class="card-body">
-                {% if partidas %}
-                <div class="filter-controls text-center">
-                    <label for="queueFilter">Filtro por Cola:</label>
-                    <select id="queueFilter" class="form-select form-select-sm"></select>
-                    <label for="championFilter">Filtro por Campeón:</label>
-                    <select id="championFilter" class="form-select form-select-sm"></select>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped match-history-table">
-                        <tbody id="matchHistoryTableBody">
-                            <!-- Contenido de las partidas inyectado por JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-                <nav>
-                    <ul class="pagination justify-content-center" id="paginationControls">
-                        <!-- Controles de paginación inyectados por JavaScript -->
-                    </ul>
-                </nav>
-                {% else %}
-                <p>No hay historial de partidas disponible para este jugador.</p>
-                {% endif %}
             </div>
         </div>
     </div>
+</nav>
 
-    <!-- Enlaces a JS de Bootstrap y script personalizado -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/js/script.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Lógica para banners aleatorios
-            const bannerImages = [
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner1.png',
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner2.png',
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner3.png',
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner4.png',
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner5.png',
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner6.png',
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner7.png'
-            ];
-            const randomBanner = bannerImages[Math.floor(Math.random() * bannerImages.length)];
-            document.getElementById('banner-img').src = randomBanner;
+<div class="container my-4 d-flex justify-content-center">
+    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
+</div>
 
-            // Controles de audio
-            const audio = document.getElementById('backgroundAudio');
-            const toggleAudioBtn = document.getElementById('toggleAudio');
-            const muteIcon = document.getElementById('muteIcon');
-            const volumeSlider = document.getElementById('volumeSlider');
-            let isMuted = true;
-            audio.volume = 0.5;
-            volumeSlider.value = 0.5;
-            toggleAudioBtn.addEventListener('click', function () {
-                if (isMuted) {
-                    audio.play();
-                    muteIcon.classList.remove('fa-microphone-slash');
-                    muteIcon.classList.add('fa-microphone');
-                    toggleAudioBtn.title = "Mutear Música";
-                    isMuted = false;
-                } else {
-                    audio.pause();
-                    muteIcon.classList.remove('fa-microphone');
-                    muteIcon.classList.add('fa-microphone-slash');
-                    toggleAudioBtn.title = "Desmutear Música";
-                    isMuted = true;
-                }
-            });
-            volumeSlider.addEventListener('input', function () {
-                audio.volume = this.value;
-                if (this.value > 0 && isMuted) {
-                    isMuted = false;
-                    muteIcon.classList.remove('fa-microphone-slash');
-                    muteIcon.classList.add('fa-microphone');
-                    toggleAudioBtn.title = "Mutear Música";
-                }
-                if (this.value == 0) {
-                    isMuted = true;
-                    muteIcon.classList.remove('fa-microphone');
-                    muteIcon.classList.add('fa-microphone-slash');
-                    toggleAudioBtn.title = "Desmutear Música";
-                }
-            });
 
-            // Lógica para modo oscuro
-            const toggleModeBtn = document.getElementById('toggle-mode');
-            const body = document.body;
-            let darkMode = localStorage.getItem('darkMode');
-            const enableDarkMode = () => {
-                body.classList.add('dark-mode');
-                toggleModeBtn.textContent = 'Modo Claro';
-                localStorage.setItem('darkMode', 'enabled');
-            };
-            const disableDarkMode = () => {
-                body.classList.remove('dark-mode');
-                toggleModeBtn.textContent = 'Modo Oscuro';
-                localStorage.setItem('darkMode', 'disabled');
-            };
-            if (darkMode === 'enabled') {
-                enableDarkMode();
-            }
-            toggleModeBtn.addEventListener('click', () => {
-                darkMode = localStorage.getItem('darkMode');
-                if (darkMode !== 'enabled') {
-                    enableDarkMode();
-                } else {
-                    disableDarkMode();
-                }
-            });
+<div class="container mt-5">
+    <div class="profile-header">
+        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/profileicon/{{ perfil.perfil_icon_url }}.png"
+             alt="Imagen de {{ perfil.nombre }}"
+             onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png'; if (this.src === 'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png') { this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'white\'/></svg>'; }">
+         <h1>{{ perfil.nombre }} <span class="small-text">({{ perfil.game_name }})</span></h1>
+         <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
+         {% if perfil.soloq and perfil.soloq.en_partida %}
+            <a href="{{ perfil.soloq.url_ingame }}" target="_blank" class="opgg-link link-estado animate-pulse" style="background-color: #dc3545; margin-left: 10px;">
+                <i class="fas fa-gamepad me-1"></i> EN PARTIDA ({{ perfil.soloq.nombre_campeon }})
+            </a>
+         {% endif %}
+    </div>
 
-            // Banners laterales
-            const lateralBanners = [
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg',
-                'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg'
-            ];
-            const randomLateralBanner = lateralBanners[Math.floor(Math.random() * lateralBanners.length)];
-            document.getElementById('left-banner').src = randomLateralBanner;
-            document.getElementById('right-banner').src = randomLateralBanner;
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card rank-card">
+                <div class="card-header">
+                    Clasificatoria Solo/Duo
+                </div>
+                <div class="card-body">
+                    {% if perfil.soloq %}
+                    <img src="https://ddragon.leagueoflegends.com/cdn/img/ranked-emblems/{{ perfil.soloq.tier | capitalize }}.png"
+                         alt="{{ perfil.soloq.tier }}" class="elo-image-lg">
+                    <div class="rank-details">
+                        <h4 class="{{ 'tier-' + perfil.soloq.tier | lower }}">{{ perfil.soloq.tier | capitalize }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
+                        <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
+                        {% set soloq_total_games = perfil.soloq.wins + perfil.soloq.losses %}
+                        {% set soloq_win_rate = (soloq_total_games > 0 and perfil.soloq.wins / soloq_total_games * 100) or 0 %}
+                        <p class="{% if soloq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                            Win Rate: {{ '%.2f'|format(soloq_win_rate) }}%
+                        </p>
+                        <p>
+                            Peak Elo:
+                            {% set peak_elo_soloq = perfil.soloq.get('peak_elo', 0) %}
+                            {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - peak_elo_soloq %}
+                            <span class="peak-elo {{ 'tier-' + (peak_elo_soloq | format_peak_elo).split(' ')[0] | lower }}">{{ peak_elo_soloq | format_peak_elo }}</span>
+                            {% if diff_peak_soloq < 0 %}
+                                <span class="small-text-stats">({{ (diff_peak_soloq * -1) }} LPs por debajo)</span>
+                            {% elif diff_peak_soloq > 0 %}
+                                <span class="small-text-stats text-success">(Nuevo pico!)</span>
+                            {% endif %}
+                        </p>
+                        <p>
+                            Rachas (Max): 
+                            <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
+                        </p>
 
-            // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN DE PARTIDAS ---
-            const allMatchHistory = {{ partidas | tojson }};
-            let currentPage = 1;
-            const itemsPerPage = 10;
-            const tableBody = document.getElementById('matchHistoryTableBody');
-            const paginationControls = document.getElementById('paginationControls');
-            const queueFilter = document.getElementById('queueFilter');
-            const championFilter = document.getElementById('championFilter');
-            let filteredMatches = [];
-
-            function renderMatchHistory() {
-                const startIndex = (currentPage - 1) * itemsPerPage;
-                const endIndex = startIndex + itemsPerPage;
-                const matchesToRender = filteredMatches.slice(startIndex, endIndex);
-
-                tableBody.innerHTML = '';
-                if (matchesToRender.length === 0) {
-                    const noMatchesRow = `<tr><td colspan="10" class="text-center">No se encontraron partidas con los filtros seleccionados.</td></tr>`;
-                    tableBody.innerHTML = noMatchesRow;
-                } else {
-                    matchesToRender.forEach(partida => {
-                        const tr = document.createElement('tr');
-                        tr.className = `match-row-${partida.win_or_loss.toLowerCase()}`;
-                        tr.dataset.matchId = partida.match_id;
-                        tr.innerHTML = `
-                            <td>
-                                <div class="match-result text-white p-2 rounded-3 mb-1 {{ 'bg-success' if partida.win_or_loss == 'WIN' else 'bg-danger' }}">
-                                    {{ 'Victoria' if partida.win_or_loss == 'WIN' else 'Derrota' }}
-                                </div>
-                                <span class="small-text-stats">{{ partida.queue_type }}</span><br>
-                                <span class="small-text-stats">{{ partida.duration }}</span>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <div class="champion-level-container position-relative">
-                                        <img src="{{ partida.champion_icon }}" alt="{{ partida.champion }}" class="img-fluid rounded-circle">
-                                        <span class="champion-level position-absolute translate-middle-x">
-                                            {{ partida.champion_level }}
-                                        </span>
-                                    </div>
-                                    <div class="d-none d-md-block ms-2 text-start">
-                                        <strong>{{ partida.champion }}</strong><br>
-                                        <div class="small-text-stats">{{ partida.summoner_name }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="d-none d-md-table-cell">
-                                <div class="d-flex flex-column align-items-center">
-                                    <div class="summoner-spells mb-1">
-                                        <img src="{{ partida.spell1_icon }}" alt="Spell 1" class="img-fluid rounded">
-                                        <img src="{{ partida.spell2_icon }}" alt="Spell 2" class="img-fluid rounded">
-                                    </div>
-                                    <div class="runes">
-                                        <img src="{{ partida.keystone_icon }}" alt="Keystone Rune" class="img-fluid keystone">
-                                        <img src="{{ partida.sub_rune_icon }}" alt="Sub Rune" class="img-fluid sub-rune">
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <strong class="kda-text">{{ partida.kills }}/{{ partida.deaths }}/{{ partida.assists }}</strong><br>
-                                <span class="small-text-stats">KDA: {{ '%.2f' | format(partida.kda) }}</span><br>
-                                {% if partida.multikill %}
-                                <span class="multikill-badge {{ 'penta-kill' if partida.multikill == 'Penta Kill' else ('quadra-kill' if partida.multikill == 'Quadra Kill' else 'triple-kill') }}">{{ partida.multikill }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="d-none d-lg-table-cell">
-                                <span class="small-text-stats">{{ partida.cs }} CS ({{ '%.1f' | format(partida.cs_per_min) }} /min)</span><br>
-                                <span class="small-text-stats">{{ partida.gold_earned | int / 1000 }}k gold</span>
-                            </td>
-                            <td class="d-none d-md-table-cell">
-                                <div class="items-layout">
-                                    <div class="items-grid">
-                                        {% for item in partida.items %}
-                                        {% if item %}
-                                        <img src="{{ item }}" alt="Item" class="img-fluid">
-                                        {% else %}
-                                        <div class="item-placeholder"></div>
-                                        {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                    <div class="trinket-item ms-2">
-                                        {% if partida.trinket %}
-                                        <img src="{{ partida.trinket }}" alt="Trinket" class="img-fluid">
-                                        {% else %}
-                                        <div class="item-placeholder"></div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="details-row hidden" id="match-{{ partida.match_id }}">
-                            <td colspan="10">
-                                <div class="details-content-wrapper">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            <!-- Damage Chart -->
-                                            <div class="col-12 col-lg-6 mb-3">
-                                                <h6>Daño a campeones</h6>
-                                                <div class="damage-bar">
-                                                    <div class="damage-physical"
-                                                        style="width: {{ '%.2f' | format(partida.damage_chart.physical_percentage) }}%;"></div>
-                                                    <div class="damage-magic"
-                                                        style="width: {{ '%.2f' | format(partida.damage_chart.magic_percentage) }}%;"></div>
-                                                    <div class="damage-true"
-                                                        style="width: {{ '%.2f' | format(partida.damage_chart.true_percentage) }}%;"></div>
-                                                </div>
-                                                <div class="small-text-stats mt-1">
-                                                    <span>Físico: {{ '%.0f' | format(partida.damage_chart.physical_damage) }}</span>,
-                                                    <span>Mágico: {{ '%.0f' | format(partida.damage_chart.magic_damage) }}</span>,
-                                                    <span>Verdadero: {{ '%.0f' | format(partida.damage_chart.true_damage) }}</span>
-                                                </div>
-                                            </div>
-                                            <!-- Players List (example, can be more detailed) -->
-                                            <div class="col-12 col-lg-6 mb-3">
-                                                <h6>Jugadores</h6>
-                                                <div class="row">
-                                                    {% for jugador in partida.players %}
-                                                    <div class="col-6 mb-2 d-flex align-items-center">
-                                                        <img src="{{ jugador.champion_icon }}"
-                                                            alt="{{ jugador.champion_name }}"
-                                                            style="width: 20px; height: 20px; border-radius: 50%; margin-right: 5px;">
-                                                        <a href="/jugador/{{ jugador.summoner_name }}" class="small-text-stats">
-                                                            {{ jugador.summoner_name }}
-                                                        </a>
+                        <div class="champion-stats-container">
+                            {% if perfil.soloq.top_champion_stats %}
+                                {% for champion_stat in perfil.soloq.top_champion_stats %}
+                                    <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
+                                        <div class="champion-stats-info">
+                                            <h5>{{ champion_stat.champion_name }}</h5>
+                                            <p class="kda-text fw-bold {{ 'kda-good' if champion_stat.kda >= 3 else ('kda-average' if champion_stat.kda >= 2 else 'kda-bad') }}">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
+                                            <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
+                                            <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
+                                            <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
+                                            {% if champion_stat.best_kda_match %}
+                                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
+                                                <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
+                                                    <i class="fas fa-star fa-lg" style="color: gold;"></i>
+                                                    <div>
+                                                        <strong style="color: #adb5bd;">Mejor Partida:</strong>
+                                                        <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
+                                                        <br>
+                                                        <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp | format_timestamp }}</span>
                                                     </div>
-                                                    {% endfor %}
                                                 </div>
                                             </div>
+                                            {% endif %}
                                         </div>
                                     </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="small-text-stats">No hay estadísticas de campeones disponibles para SoloQ.</p>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                    {% else %}
+                    <p class="small-text-stats">No se encontraron datos de clasificatoria Solo/Duo.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card rank-card">
+                <div class="card-header">
+                    Clasificatoria Flexible
+                </div>
+                <div class="card-body">
+                    {% if perfil.flexq %}
+                    <img src="https://ddragon.leagueoflegends.com/cdn/img/ranked-emblems/{{ perfil.flexq.tier | capitalize }}.png"
+                         alt="{{ perfil.flexq.tier }}" class="elo-image-lg">
+                    <div class="rank-details">
+                        <h4 class="{{ 'tier-' + perfil.flexq.tier | lower }}">{{ perfil.flexq.tier | capitalize }} {{ perfil.flexq.rank }} ({{ perfil.flexq.league_points }} LPs)</h4>
+                        <p>Wins: {{ perfil.flexq.wins }} | Losses: {{ perfil.flexq.losses }} | Total: {{ perfil.flexq.wins + perfil.flexq.losses }}</p>
+                        {% set flexq_total_games = perfil.flexq.wins + perfil.flexq.losses %}
+                        {% set flexq_win_rate = (flexq_total_games > 0 and perfil.flexq.wins / flexq_total_games * 100) or 0 %}
+                        <p class="{% if flexq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                            Win Rate: {{ '%.2f'|format(flexq_win_rate) }}%
+                        </p>
+                        <p>
+                            Peak Elo:
+                            {% set peak_elo_flexq = perfil.flexq.get('peak_elo', 0) %}
+                            {% set diff_peak_flexq = perfil.flexq.valor_clasificacion - peak_elo_flexq %}
+                            <span class="peak-elo {{ 'tier-' + (peak_elo_flexq | format_peak_elo).split(' ')[0] | lower }}">{{ peak_elo_flexq | format_peak_elo }}</span>
+                            {% if diff_peak_flexq < 0 %}
+                                <span class="small-text-stats">({{ (diff_peak_flexq * -1) }} LPs por debajo)</span>
+                            {% elif diff_peak_flexq > 0 %}
+                                <span class="small-text-stats text-success">(Nuevo pico!)</span>
+                            {% endif %}
+                        </p>
+                        <p>
+                            Rachas (Max): 
+                            <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
+                        </p>
+
+                        <div class="champion-stats-container">
+                            {% if perfil.flexq.top_champion_stats %}
+                                {% for champion_stat in perfil.flexq.top_champion_stats %}
+                                    <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
+                                        <div class="champion-stats-info">
+                                            <h5>{{ champion_stat.champion_name }}</h5>
+                                            <p class="kda-text fw-bold {{ 'kda-good' if champion_stat.kda >= 3 else ('kda-average' if champion_stat.kda >= 2 else 'kda-bad') }}">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
+                                            <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
+                                            <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
+                                            <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
+                                            {% if champion_stat.best_kda_match %}
+                                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
+                                                <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
+                                                    <i class="fas fa-star fa-lg" style="color: gold;"></i>
+                                                    <div>
+                                                        <strong style="color: #adb5bd;">Mejor Partida:</strong>
+                                                        <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
+                                                        <br>
+                                                        <span class="small-text-stats">{{ champion_stat.best_kda_match.timestamp | format_timestamp }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="small-text-stats">No hay estadísticas de campeones disponibles para FlexQ.</p>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                    {% else %}
+                    <p class="small-text-stats">No se encontraron datos de clasificatoria Flexible.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card match-history-card">
+        <div class="card-header">
+            Historial de Partidas
+        </div>
+        <div class="card-body">
+            <div class="filter-controls">
+                <label for="queueFilter">Tipo de Cola:</label>
+                <select id="queueFilter" class="form-select"></select>
+                <label for="championFilter">Campeón:</label>
+                <select id="championFilter" class="form-select">
+                    <option value="all">Todos</option>
+                    </select>
+            </div>
+
+            <div class="match-card-grid" id="match-history-container">
+                {% for match in perfil.historial_partidas %}
+                {% set kda_ratio = ((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 999 %}
+                <div class="match-card-item {{ 'highlight-performance' if kda_ratio >= 5.0 }}"
+                     data-queue-id="{{ match.queue_id }}"
+                     data-champion-name="{{ match.champion_name }}"
+                     data-match-index="{{ loop.index }}"
+                     onclick="toggleMatchDetails('match-details-{{ loop.index }}')">
+                    
+                    <div class="{{ 'match-win-indicator' if match.win else 'match-loss-indicator' }}"></div>
+                    
+                    <div class="match-header-card">
+                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png"
+                             alt="{{ match.champion_name }}" class="match-champion-img">
+                        <div class="match-info-main">
+                            <h5 class="mb-0">{{ match.champion_name }} <span class="small-text-stats">(Lv. {{ match.champion_level }})</span></h5>
+                            <p class="match-result-text {{ 'text-success' if match.win else 'text-danger' }} mb-0">
+                                {{ 'Victoria' if match.win else 'Derrota' }}
+                            </p>
+                            <p class="match-queue-date mb-0">
+                                {{ match.queue_id | get_queue_type }} - {{ match.game_end_timestamp | format_timestamp }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="match-kda-section">
+                        <span class="kda-value {{ 'kda-good' if kda_ratio >= 3 else ('kda-average' if kda_ratio >= 2 else 'kda-bad') }}">
+                            {{ '%.2f'|format(kda_ratio) }} KDA
+                        </span>
+                        <span class="multikill-badge {{ 'penta-kill' if match.get('largestMultiKill', 0) >= 5 else ('quadra-kill' if match.get('largestMultiKill', 0) == 4 else ('triple-kill' if match.get('largestMultiKill', 0) == 3 else ('double-kill' if match.get('largestMultiKill', 0) == 2 else '')))}}">
+                            {% if match.get('largestMultiKill', 0) >= 5 %}PENTA{% elif match.get('largestMultiKill', 0) == 4 %}QUADRA{% elif match.get('largestMultiKill', 0) == 3 %}TRIPLE{% elif match.get('largestMultiKill', 0) == 2 %}DOUBLE{% endif %}
+                            {% if match.get('largestMultiKill', 0) >= 2 and match.get(match.get('largestMultiKill', 0) == 5 and 'pentaKills' or match.get('largestMultiKill', 0) == 4 and 'quadraKills' or match.get('largestMultiKill', 0) == 3 and 'tripleKills' or match.get('largestMultiKill', 0) == 2 and 'doubleKills', 1) > 1 %}
+                                x{{ match.get(match.get('largestMultiKill', 0) == 5 and 'pentaKills' or match.get('largestMultiKill', 0) == 4 and 'quadraKills' or match.get('largestMultiKill', 0) == 3 and 'tripleKills' or match.get('largestMultiKill', 0) == 2 and 'doubleKills') }}
+                            {% endif %}
+                        </span>
+                        <p class="kda-breakdown mb-0">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</p>
+                        <p class="small-text-stats fw-bold mb-0" title="Participación en Asesinatos">{{ '%.0f'|format(match.get('kill_participation', 0)) }}% KP</p>
+                    </div>
+
+                    <div class="match-stats-summary">
+                        <div class="match-stat-item">
+                            <span class="value">{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</span>
+                            <span class="label">Daño</span>
+                        </div>
+                        <div class="match-stat-item">
+                            <span class="value">{{ match.total_minions_killed + match.neutral_minions_killed }}</span>
+                            <span class="label">CS</span>
+                        </div>
+                        <div class="match-stat-item">
+                            <span class="value">{{ match.vision_score }}</span>
+                            <span class="label">Visión</span>
+                        </div>
+                        <div class="match-stat-item">
+                            <span class="value">{{ '{:,.0f}'.format(match.gold_earned) }}</span>
+                            <span class="label">Oro</span>
+                        </div>
+                        {# Nueva sección para LP en la tarjeta de partida #}
+                        <div class="match-stat-item">
+                            {% if match.lp_change_this_game is not none %}
+                                {% if match.lp_change_this_game > 0 %}
+                                    <span class="value lp-gain">+{{ match.lp_change_this_game }}</span>
+                                {% elif match.lp_change_this_game < 0 %}
+                                    <span class="value lp-loss">{{ match.lp_change_this_game }}</span>
+                                {% else %}
+                                    <span class="value">0</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="value">N/A</span>
+                            {% endif %}
+                            <span class="label">LP</span>
+                        </div>
+                    </div>
+
+                    <div class="match-runes-spells-items">
+                        <div class="rune-spell-group">
+                            {% if match.summoner_spell_1_id %}<img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_1_id }}.png" alt="Spell 1">{% endif %}
+                            {% if match.summoner_spell_2_id %}<img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_2_id }}.png" alt="Spell 2">{% endif %}
+                        </div>
+                        <div class="rune-spell-group">
+                            {% if match.perk_main_id %}<img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_main_id }}" alt="Main Rune" class="rune-main">{% endif %}
+                            {% if match.perk_sub_id %}<img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_sub_id }}" alt="Sub Rune" class="rune-sub">{% endif %}
+                        </div>
+                        <div class="match-items-grid">
+                            {% for i in range(6) %}
+                                {% set item_id = match.player_items[i] %}
+                                {% if item_id > 0 %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                {% else %}
+                                    <div class="item-placeholder"></div>
+                                {% endif %}
+                            {% endfor %}
+                            {% set trinket_id = match.player_items[6] %}
+                            {% if trinket_id > 0 %}
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ trinket_id }}.png" alt="Trinket" class="trinket-item-img">
+                            {% else %}
+                                <div class="item-placeholder trinket-item-img"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Detalles expandidos de la partida -->
+                    {% if match.all_participants %}
+                    <div id="match-details-{{ loop.index }}" class="match-details-expanded">
+                        <h6 class="mb-2">Participantes y Estadísticas Detalladas:</h6>
+                        <div class="row">
+                            <!-- Equipo Azul (ID 100) -->
+                            <div class="col-md-6">
+                                <div class="team-section team-blue">
+                                    <h6 class="text-primary fw-bold mb-2">
+                                        {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
+                                        {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
+                                    </h6>
+                                    {% for participante in match.all_participants %}
+                                        {% if participante.team_id == 100 %}
+                                        <div class="participant-row {% if participante.summoner_name == perfil.game_name.split('#')[0] %}player-highlight{% endif %}">
+                                            <!-- Grupo 1: Jugador -->
+                                            <div class="d-flex align-items-center" style="flex-grow: 1;">
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png" alt="{{ participante.champion_name }}">
+                                                <span class="name" title="{{ participante.summoner_name }}">{{ participante.summoner_name }}</span>
+                                            </div>
+                                            <!-- Grupo 2: KDA -->
+                                            <div class="text-center">
+                                                <span class="stats">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                <br>
+                                                {% set p_kda = ((participante.kills + participante.assists) / participante.deaths) if participante.deaths > 0 else 999 %}
+                                                <span class="small-text-stats">({{ '%.2f'|format(p_kda) }} KDA)</span>
+                                            </div>
+                                            <!-- Grupo 3: Objetos -->
+                                            <div class="items-small">
+                                                {% for item_id in participante.get('items', []) %}
+                                                    {% if item_id > 0 %}
+                                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                    {% else %}
+                                                        <div class="item-placeholder-small"></div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
                                 </div>
-                            </td>
-                        </tr>
-                        `;
-                        tableBody.appendChild(tr);
+                            </div>
+                            <!-- Equipo Rojo (ID 200) -->
+                            <div class="col-md-6">
+                                <div class="team-section team-red">
+                                    <h6 class="text-danger fw-bold mb-2">
+                                        {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
+                                        {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
+                                    </h6>
+                                    {% for participante in match.all_participants %}
+                                        {% if participante.team_id == 200 %}
+                                        <div class="participant-row {% if participante.summoner_name == perfil.game_name.split('#')[0] %}player-highlight{% endif %}">
+                                            <!-- Grupo 1: Jugador -->
+                                            <div class="d-flex align-items-center" style="flex-grow: 1;">
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png" alt="{{ participante.champion_name }}">
+                                                <span class="name" title="{{ participante.summoner_name }}">{{ participante.summoner_name }}</span>
+                                            </div>
+                                            <!-- Grupo 2: KDA -->
+                                            <div class="text-center">
+                                                <span class="stats">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                <br>
+                                                {% set p_kda = ((participante.kills + participante.assists) / participante.deaths) if participante.deaths > 0 else 999 %}
+                                                <span class="small-text-stats">({{ '%.2f'|format(p_kda) }} KDA)</span>
+                                            </div>
+                                            <!-- Grupo 3: Objetos -->
+                                            <div class="items-small">
+                                                {% for item_id in participante.get('items', []) %}
+                                                    {% if item_id > 0 %}
+                                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                    {% else %}
+                                                        <div class="item-placeholder-small"></div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6 class="mb-2">Daño Detallado:</h6>
+                            {% set total_damage = match.physical_damage_dealt_to_champions + match.magic_damage_dealt_to_champions + match.true_damage_dealt_to_champions %}
+                            {% if total_damage > 0 %}
+                                {% set physical_pct = (match.physical_damage_dealt_to_champions / total_damage * 100) %}
+                                {% set magic_pct = (match.magic_damage_dealt_to_champions / total_damage * 100) %}
+                                {% set true_pct = (match.true_damage_dealt_to_champions / total_damage * 100) %}
+                                <div class="damage-bar" title="Físico: {{ '{:,.0f}'.format(match.physical_damage_dealt_to_champions) }} | Mágico: {{ '{:,.0f}'.format(match.magic_damage_dealt_to_champions) }} | Verdadero: {{ '{:,.0f}'.format(match.true_damage_dealt_to_champions) }}">
+                                    <div class="damage-physical" style="width: {{ physical_pct }}%;"></div>
+                                    <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
+                                    <div class="damage-true" style="width: {{ true_pct }}%;"></div>
+                                </div>
+                                <div class="small-text-stats mt-1">
+                                    Físico: {{ '%.0f'|format(physical_pct) }}% | Mágico: {{ '%.0f'|format(magic_pct) }}% | Verdadero: {{ '%.0f'|format(true_pct) }}%
+                                </div>
+                            {% else %}
+                                <p class="small-text-stats">No hay datos de daño detallados.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Controles de Paginación -->
+            <nav aria-label="Historial de partidas paginación" class="mt-4">
+                <ul class="pagination justify-content-center" id="pagination-controls">
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<footer class="footer mt-5 py-3 bg-light">
+    <div class="container text-center">
+        <span class="text-muted">Proyecto SoloQ Cerditos - Desarrollado por Sepevalle &copy; 2024</span>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function toggleMatchDetails(matchId) {
+        const detailsDiv = document.getElementById(matchId);
+        if (detailsDiv) {
+            detailsDiv.style.display = detailsDiv.style.display === 'block' ? 'none' : 'block';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const imagenesElo = {
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/PLATINUM.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
+            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/DIAMOND.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/MASTER.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/GRANDMASTER.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/CHALLENGER.png"
+        };
+
+        document.querySelectorAll(".elo-image-lg").forEach(el => {
+            const elo = el.alt.toUpperCase();
+            if (imagenesElo[elo]) el.src = imagenesElo[elo];
+        });
+
+        const toggleModeBtn = document.getElementById('toggle-mode');
+        const body = document.body;
+
+
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            toggleModeBtn.textContent = 'Modo Claro';
+        } else {
+            toggleModeBtn.textContent = 'Modo Oscuro';
+        }
+
+        toggleModeBtn.addEventListener('click', function() {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                toggleModeBtn.textContent = 'Modo Claro';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                toggleModeBtn.textContent = 'Modo Oscuro';
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        });
+
+        const bannerImg = document.getElementById('banner-img');
+        const banners = [
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
+        ];
+        let currentBannerIndex = 0;
+
+        function changeBanner() {
+            currentBannerIndex = (currentBannerIndex + 1) % banners.length;
+            bannerImg.src = banners[currentBannerIndex];
+        }
+        setInterval(changeBanner, 5000);
+
+        const leftBanner = document.getElementById('left-banner');
+        const rightBanner = document.getElementById('right-banner');
+       const lateralBanners = [
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/3.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/4.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/5.jpg"
+        ];
+        let currentLateralBannerIndex = 0;
+
+        function changeLateralBanner() {
+            currentLateralBannerIndex = (currentLateralBannerIndex + 1) % lateralBanners.length;
+            leftBanner.src = lateralBanners[currentLateralBannerIndex];
+            rightBanner.src = lateralBanners[currentLateralBannerIndex];
+        }
+        setInterval(changeLateralBanner, 5000);
+
+
+        const backgroundAudio = document.getElementById('backgroundAudio');
+        const toggleAudioBtn = document.getElementById('toggleAudio');
+        const muteIcon = document.getElementById('muteIcon');
+        const volumeSlider = document.getElementById('volumeSlider');
+
+        const savedVolume = localStorage.getItem('backgroundAudioVolume');
+        if (savedVolume !== null) {
+            backgroundAudio.volume = parseFloat(savedVolume);
+            volumeSlider.value = parseFloat(savedVolume);
+        } else {
+            backgroundAudio.volume = 1.0;
+            volumeSlider.value = 1.0;
+        }
+
+        const savedMuteState = localStorage.getItem('backgroundAudioMuted');
+        if (savedMuteState === 'true') {
+            backgroundAudio.muted = true;
+            muteIcon.classList.remove('fa-volume-up');
+            muteIcon.classList.add('fa-microphone-slash');
+        } else {
+            backgroundAudio.muted = false;
+            const playPromise = backgroundAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Autoplay prevented:", error);
+                    muteIcon.classList.remove('fa-volume-up');
+                    muteIcon.classList.add('fa-microphone-slash');
+                    toggleAudioBtn.title = "Reproducir Música";
+                });
+            }
+        }
+
+        toggleAudioBtn.addEventListener('click', function() {
+            backgroundAudio.muted = !backgroundAudio.muted;
+            if (backgroundAudio.muted) {
+                muteIcon.classList.remove('fa-volume-up');
+                muteIcon.classList.add('fa-microphone-slash');
+                toggleAudioBtn.title = "Desmutear Música";
+                localStorage.setItem('backgroundAudioMuted', 'true');
+            } else {
+                muteIcon.classList.remove('fa-microphone-slash');
+                muteIcon.classList.add('fa-volume-up');
+                toggleAudioBtn.title = "Mutear Música";
+                const playPromise = backgroundAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Play prevented after unmute:", error);
                     });
                 }
-                renderPaginationControls(filteredMatches.length);
+                localStorage.setItem('backgroundAudioMuted', 'false');
             }
+        });
 
-            function renderPaginationControls(totalItems) {
-                const totalPages = Math.ceil(totalItems / itemsPerPage);
-                paginationControls.innerHTML = '';
-                for (let i = 1; i <= totalPages; i++) {
-                    const li = document.createElement('li');
-                    li.className = `page-item ${i === currentPage ? 'active' : ''} ${totalPages <= 1 ? 'd-none' : ''}`;
-                    li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
-                    paginationControls.appendChild(li);
+        volumeSlider.addEventListener('input', function() {
+            backgroundAudio.volume = this.value;
+            localStorage.setItem('backgroundAudioVolume', this.value);
+            if (this.value > 0 && backgroundAudio.muted) {
+                backgroundAudio.muted = false;
+                muteIcon.classList.remove('fa-microphone-slash');
+                muteIcon.classList.add('fa-volume-up');
+                toggleAudioBtn.title = "Mutear Música";
+                localStorage.setItem('backgroundAudioMuted', 'false');
+            } else if (this.value == 0 && !backgroundAudio.muted) {
+                backgroundAudio.muted = true;
+                muteIcon.classList.remove('fa-volume-up');
+                muteIcon.classList.add('fa-microphone-slash');
+                toggleAudioBtn.title = "Desmutear Música";
+                localStorage.setItem('backgroundAudioMuted', 'true');
+            }
+        });
+
+        // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN PARA TARJETAS ---
+        const queueFilter = document.getElementById('queueFilter');
+        const championFilter = document.getElementById('championFilter');
+        const matchHistoryContainer = document.getElementById('match-history-container');
+        const allMatchCards = document.querySelectorAll('.match-card-item'); // Seleccionar las nuevas tarjetas
+        const paginationControls = document.getElementById('pagination-controls');
+        const cardsPerPage = 10;
+
+        let currentPage = 1;
+
+        function populateChampionFilter() {
+            const championNames = new Set();
+            allMatchCards.forEach(card => {
+                if (card.dataset.championName) {
+                    championNames.add(card.dataset.championName);
                 }
-            }
+            });
 
-            function populateQueueFilter() {
-                const queueNames = {
-                    420: "Clasificatoria Solo/Duo",
-                    430: "Clasificatoria Flexible",
-                    450: "ARAM",
-                    900: "URF",
-                    1400: "Ultimate Spellbook",
-                    1900: "URF (ARAM)"
-                };
-                let options = '<option value="">Todos los modos</option>';
-                const uniqueQueues = new Set(allMatchHistory.map(p => p.queue_id));
-                uniqueQueues.forEach(queueId => {
-                    if (queueNames[queueId]) {
-                        options += `<option value="${queueId}">${queueNames[queueId]}</option>`;
+            championFilter.innerHTML = '<option value="all">Todos</option>';
+            const sortedChampionNames = Array.from(championNames).sort();
+            sortedChampionNames.forEach(championName => {
+                championFilter.add(new Option(championName, championName));
+            });
+        }
+
+        function populateQueueFilter() {
+            const queueTypes = new Map();
+            // Necesitamos acceder al nombre de la cola desde los datos de la partida, no del DOM directamente
+            // Esto asume que el `perfil.historial_partidas` está disponible en JS o que podemos obtenerlo.
+            // Para esta demostración, asumiremos que los nombres de cola se obtienen del atributo data-queue-id
+            // y que la función get_queue_type se puede replicar o que los nombres ya están en los datos.
+            // Para simplificar, usaremos un mapeo estático si no hay acceso a la función de Jinja2.
+            const queueNamesMap = {
+                400: "Normal (Blind Pick)", 420: "Clasificatoria Solo/Duo", 430: "Normal (Draft Pick)",
+                440: "Clasificatoria Flexible", 450: "ARAM", 700: "Clash", 800: "Co-op vs. AI (Beginner)",
+                810: "Co-op vs. AI (Intermediate)", 820: "Co-op vs. AI (Intro)", 830: "Co-op vs. AI (Twisted Treeline)",
+                840: "Co-op vs. AI (Summoner's Rift)", 850: "Co-op vs. AI (ARAM)", 900: "URF",
+                1020: "One For All", 1090: "Arena", 1100: "Arena", 1300: "Nexus Blitz",
+                1400: "Ultimate Spellbook", 1700: "Arena", 1900: "URF (ARAM)", 2000: "Tutorial",
+                2010: "Tutorial", 2020: "Tutorial",
+            };
+
+            allMatchCards.forEach(card => {
+                if (card.dataset.queueId) {
+                    const queueId = parseInt(card.dataset.queueId, 10);
+                    const queueName = queueNamesMap[queueId] || "Desconocido";
+                    if (!queueTypes.has(queueId)) {
+                        queueTypes.set(queueId, queueName);
                     }
-                });
-                queueFilter.innerHTML = options;
-            }
+                }
+            });
 
-            function populateChampionFilter() {
-                let options = '<option value="">Todos los campeones</option>';
-                const uniqueChampions = new Set(allMatchHistory.map(p => p.champion));
-                const sortedChampions = Array.from(uniqueChampions).sort();
-                sortedChampions.forEach(champion => {
-                    options += `<option value="${champion}">${champion}</option>`;
-                });
-                championFilter.innerHTML = options;
-            }
+            queueFilter.innerHTML = '<option value="all">Todas</option>';
+            const sortedQueues = Array.from(queueTypes.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+            sortedQueues.forEach(([queueId, queueName]) => queueFilter.add(new Option(queueName, queueId)));
+        }
 
-            function filterMatches() {
-                const selectedQueue = queueFilter.value;
-                const selectedChampion = championFilter.value;
+        function setupPagination(totalCards, page) {
+            paginationControls.innerHTML = "";
+            const pageCount = Math.ceil(totalCards / cardsPerPage) || 1;
+            if (pageCount <= 1) return;
 
-                filteredMatches = allMatchHistory.filter(partida => {
-                    const queueMatch = selectedQueue === "" || partida.queue_id == selectedQueue;
-                    const championMatch = selectedChampion === "" || partida.champion === selectedChampion;
-                    return queueMatch && championMatch;
-                });
-                currentPage = 1;
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${page === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${page - 1}" aria-label="Previous">&laquo; Anterior</a>`;
+            paginationControls.appendChild(prevLi);
+
+            const pageInfoLi = document.createElement('li');
+            pageInfoLi.className = 'page-item disabled';
+            pageInfoLi.innerHTML = `<span class="page-link">Página ${page} de ${pageCount}</span>`;
+            paginationControls.appendChild(pageInfoLi);
+
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${page === pageCount ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${page + 1}" aria-label="Next">Siguiente &raquo;</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        function renderMatchHistory() {
+            const selectedQueue = queueFilter.value;
+            const selectedChampion = championFilter.value;
+
+            const filteredCards = Array.from(allMatchCards).filter(card => {
+                const queueMatch = (selectedQueue === 'all' || card.dataset.queueId === selectedQueue);
+                const championMatch = (selectedChampion === 'all' || card.dataset.championName === selectedChampion);
+                return queueMatch && championMatch;
+            });
+
+            setupPagination(filteredCards.length, currentPage);
+
+            const startIndex = (currentPage - 1) * cardsPerPage;
+            const endIndex = startIndex + cardsPerPage;
+            const cardsForCurrentPage = filteredCards.slice(startIndex, endIndex);
+
+            allMatchCards.forEach(card => {
+                const detailsDiv = card.querySelector('.match-details-expanded');
+                if (cardsForCurrentPage.includes(card)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                    if (detailsDiv) {
+                        detailsDiv.style.display = 'none'; // Asegurarse de que los detalles estén ocultos
+                    }
+                }
+            });
+        }
+
+        queueFilter.addEventListener('change', () => {
+            currentPage = 1;
+            renderMatchHistory();
+        });
+        championFilter.addEventListener('change', () => {
+            currentPage = 1;
+            renderMatchHistory();
+        });
+
+        paginationControls.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = e.target.closest('.page-link');
+            if (!target || target.parentElement.classList.contains('disabled') || target.parentElement.classList.contains('active')) return;
+
+            const newPage = parseInt(target.dataset.page, 10);
+            if (newPage !== currentPage) {
+                currentPage = newPage;
                 renderMatchHistory();
             }
-
-            // Event Listeners para filtros
-            queueFilter.addEventListener('change', filterMatches);
-            championFilter.addEventListener('change', filterMatches);
-
-            // Event Listener para paginación
-            paginationControls.addEventListener('click', (e) => {
-                e.preventDefault();
-                const target = e.target.closest('.page-link');
-                if (!target || target.parentElement.classList.contains('active')) return;
-                const newPage = parseInt(target.dataset.page, 10);
-                if (!isNaN(newPage)) {
-                    currentPage = newPage;
-                    renderMatchHistory();
-                }
-            });
-
-            // Inicialización de la lógica
-            if (allMatchHistory && allMatchHistory.length > 0) {
-                populateQueueFilter();
-                populateChampionFilter();
-                filterMatches(); // Llama a filterMatches para renderizar la tabla inicial
-            }
-            // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN DE PARTIDAS ---
-
-            // Evento para expandir/colapsar detalles de la partida
-            tableBody.addEventListener('click', function (e) {
-                const row = e.target.closest('tr');
-                if (!row || row.classList.contains('details-row')) return;
-
-                const matchId = row.dataset.matchId;
-                const detailsRow = document.getElementById(`match-${matchId}`);
-                if (detailsRow) {
-                    detailsRow.classList.toggle('hidden');
-                }
-            });
-
         });
-    </script>
-</body>
 
+        populateQueueFilter();
+        populateChampionFilter();
+        renderMatchHistory();
+    });
+</script>
+
+</body>
 </html>
