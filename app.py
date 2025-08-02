@@ -426,14 +426,14 @@ def obtener_id_invocador(api_key, puuid):
 
 def obtener_elo(api_key, puuid):
     """Obtiene la información de Elo de un jugador dado su PUUID."""
-    print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
+    #print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
-        print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
+        #print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
         return response.json()
     else:
-        print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
+        #print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
         return None
 
 def esta_en_partida(api_key, puuid):
