@@ -233,8 +233,7 @@ def _api_rate_limiter_worker():
             # Obtener la petición de la cola. Timeout para que el hilo no se bloquee indefinidamente.
             # Añadir logging para el tamaño de la cola
             if not API_REQUEST_QUEUE.empty():
-                return None 
-            #print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
+                print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
             request_id, url, headers, timeout, is_spectator_api = API_REQUEST_QUEUE.get(timeout=1)
             
             # Consumir un token antes de realizar la petición
@@ -275,7 +274,7 @@ def _api_rate_limiter_worker():
         except queue.Empty:
             pass # No hay peticiones en la cola, el hilo sigue esperando
         except Exception as e:
-            return None #print(f"[_api_rate_limiter_worker] Error inesperado en el worker del control de tasa: {e}")
+            print(f"[_api_rate_limiter_worker] Error inesperado en el worker del control de tasa: {e}")
             time.sleep(1) # Espera antes de continuar para evitar bucles de error
 
 # Modificación de make_api_request para usar la cola
@@ -426,14 +425,14 @@ def obtener_id_invocador(api_key, puuid):
 
 def obtener_elo(api_key, puuid):
     """Obtiene la información de Elo de un jugador dado su PUUID."""
-    #print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
+    print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
-        #print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
+        print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
         return response.json()
     else:
-        #print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
+        print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
         return None
 
 def esta_en_partida(api_key, puuid):
