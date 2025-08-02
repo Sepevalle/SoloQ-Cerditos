@@ -232,8 +232,8 @@ def _api_rate_limiter_worker():
         try:
             # Obtener la petición de la cola. Timeout para que el hilo no se bloquee indefinidamente.
             # Añadir logging para el tamaño de la cola
-            if not API_REQUEST_QUEUE.empty():
-                print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
+            # not API_REQUEST_QUEUE.empty():
+            #    print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
             request_id, url, headers, timeout, is_spectator_api = API_REQUEST_QUEUE.get(timeout=1)
             
             # Consumir un token antes de realizar la petición
@@ -274,7 +274,7 @@ def _api_rate_limiter_worker():
         except queue.Empty:
             pass # No hay peticiones en la cola, el hilo sigue esperando
         except Exception as e:
-            print(f"[_api_rate_limiter_worker] Error inesperado en el worker del control de tasa: {e}")
+            #print(f"[_api_rate_limiter_worker] Error inesperado en el worker del control de tasa: {e}")
             time.sleep(1) # Espera antes de continuar para evitar bucles de error
 
 # Modificación de make_api_request para usar la cola
