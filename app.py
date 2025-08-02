@@ -787,14 +787,14 @@ def guardar_peak_elo_en_github(peak_elo_dict):
 def leer_historial_jugador_github(puuid):
     """Lee el historial de partidas de un jugador desde GitHub."""
     url = f"https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/match_history/{puuid}.json"
-    print(f"[leer_historial_jugador_github] Leyendo historial para PUUID: {puuid} desde: {url}")
+    #print(f"[leer_historial_jugador_github] Leyendo historial para PUUID: {puuid} desde: {url}")
     try:
         resp = requests.get(url, timeout=30) # Aumentado timeout
         if resp.status_code == 200:
-            print(f"[leer_historial_jugador_github] Historial para {puuid} leído exitosamente.")
+            #print(f"[leer_historial_jugador_github] Historial para {puuid} leído exitosamente.")
             return resp.json()
         elif resp.status_code == 404:
-            print(f"[leer_historial_jugador_github] No se encontró historial para {puuid}. Se creará uno nuevo.")
+            #print(f"[leer_historial_jugador_github] No se encontró historial para {puuid}. Se creará uno nuevo.")
             return {}
     except Exception as e:
         print(f"[leer_historial_jugador_github] Error leyendo el historial para {puuid}: {e}")
@@ -854,7 +854,7 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
     target_queue_id = queue_id_map.get(queue_type_api_name)
 
     if not target_queue_id:
-        print(f"[_calculate_lp_change_for_player] Tipo de cola '{queue_type_api_name}' no reconocido. Retornando 0 LP.")
+        #print(f"[_calculate_lp_change_for_player] Tipo de cola '{queue_type_api_name}' no reconocido. Retornando 0 LP.")
         return 0
 
     for match in all_matches_for_player:
@@ -866,7 +866,7 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
         if match_timestamp_utc >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
             if match.get('lp_change_this_game') is not None:
                 lp_change_24h += match['lp_change_this_game']
-    print(f"[_calculate_lp_change_for_player] Cambio de LP en 24h para {puuid} en {queue_type_api_name}: {lp_change_24h} LP.")
+    #print(f"[_calculate_lp_change_for_player] Cambio de LP en 24h para {puuid} en {queue_type_api_name}: {lp_change_24h} LP.")
     return lp_change_24h
 
 
