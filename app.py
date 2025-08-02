@@ -878,16 +878,16 @@ def procesar_jugador(args_tuple):
     """
     cuenta, puuid, api_key_main, api_key_spectator, old_data_list, check_in_game_this_update = args_tuple
     riot_id, jugador_nombre = cuenta
-    print(f"[procesar_jugador] Procesando jugador: {riot_id}")
+    #print(f"[procesar_jugador] Procesando jugador: {riot_id}")
 
     if not puuid:
-        print(f"[procesar_jugador] ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID.")
+        #print(f"[procesar_jugador] ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID.")
         return []
 
     # Obtener la información de Elo actual del jugador (used for general display and 'needs_full_update' logic)
     elo_info = obtener_elo(api_key_main, puuid)
     if not elo_info:
-        print(f"[procesar_jugador] No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP ni actualizar datos.")
+        #print(f"[procesar_jugador] No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP ni actualizar datos.")
         return old_data_list if old_data_list else []
 
     # 1. Sondeo ligero: usar la clave secundaria para esta llamada frecuente.
@@ -958,12 +958,12 @@ def procesar_jugador(args_tuple):
     needs_full_update = not old_data_list or is_currently_in_game or was_in_game_before
 
     if not needs_full_update:
-        print(f"[procesar_jugador] Jugador {riot_id} inactivo. Omitiendo actualización de Elo.")
+        #print(f"[procesar_jugador] Jugador {riot_id} inactivo. Omitiendo actualización de Elo.")
         for data in old_data_list:
             data['en_partida'] = False
         return old_data_list
 
-    print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
+    #print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
     
     riot_id_modified = riot_id.replace("#", "-")
     url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
@@ -1001,7 +1001,7 @@ def procesar_jugador(args_tuple):
             "champion_id": current_champion_id if current_champion_id else "Desconocido"
         }
         datos_jugador_list.append(datos_jugador)
-    print(f"[procesar_jugador] Datos de {riot_id} procesados y listos para caché.")
+    #print(f"[procesar_jugador] Datos de {riot_id} procesados y listos para caché.")
     return datos_jugador_list
 
 def actualizar_cache():
@@ -1596,7 +1596,8 @@ def actualizar_historial_partidas_en_segundo_plano():
                     #print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
                     guardar_historial_jugador_github(puuid, historial_existente)
                 else:
-                    print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
+                    return None 
+                #print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
 
             #print("[actualizar_historial_partidas_en_segundo_plano] Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
             time.sleep(600)
