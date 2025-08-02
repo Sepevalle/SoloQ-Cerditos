@@ -440,7 +440,7 @@ def esta_en_partida(api_key, puuid):
     Comprueba si un jugador está en una partida activa.
     Retorna los datos completos de la partida si está en una, None si no.
     """
-    print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
+    #print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
     try:
         url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
         # Usar make_api_request con is_spectator_api=True para control de tasa específico si es necesario
@@ -450,21 +450,21 @@ def esta_en_partida(api_key, puuid):
             game_data = response.json()
             for participant in game_data.get("participants", []):
                 if participant["puuid"] == puuid:
-                    print(f"[esta_en_partida] Jugador {puuid} está en partida activa.")
+                    #print(f"[esta_en_partida] Jugador {puuid} está en partida activa.")
                     return game_data
-            print(f"[esta_en_partida] Advertencia: Jugador {puuid} está en partida pero no se encontró en la lista de participantes.")
+            #print(f"[esta_en_partida] Advertencia: Jugador {puuid} está en partida pero no se encontró en la lista de participantes.")
             return None
         elif response and response.status_code == 404:  # Player not in game (expected response)
-            print(f"[esta_en_partida] Jugador {puuid} no está en partida activa (404 Not Found).")
+            #print(f"[esta_en_partida] Jugador {puuid} no está en partida activa (404 Not Found).")
             return None
         elif response is None: # make_api_request returned None due to timeout or persistent error
-            print(f"[esta_en_partida] make_api_request devolvió None para {puuid}. Posible timeout o error persistente.")
+            #print(f"[esta_en_partida] make_api_request devolvió None para {puuid}. Posible timeout o error persistente.")
             return None
         else:  # Unexpected error
-            print(f"[esta_en_partida] Error inesperado al verificar partida para {puuid}. Status: {response.status_code}")
+            #print(f"[esta_en_partida] Error inesperado al verificar partida para {puuid}. Status: {response.status_code}")
             response.raise_for_status() # Esto lanzará una excepción si el status no es 2xx
     except requests.exceptions.RequestException as e:
-        print(f"[esta_en_partida] Error al verificar si el jugador {puuid} está en partida: {e}")
+        #print(f"[esta_en_partida] Error al verificar si el jugador {puuid} está en partida: {e}")
         return None
 
 def obtener_info_partida(args):
