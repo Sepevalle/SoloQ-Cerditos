@@ -640,13 +640,13 @@ def leer_cuentas(url):
                     riot_id = partes[0].strip()
                     jugador = partes[1].strip()
                     cuentas.append((riot_id, jugador))
-            print(f"[leer_cuentas] {len(cuentas)} cuentas leídas exitosamente.")
+            #print(f"[leer_cuentas] {len(cuentas)} cuentas leídas exitosamente.")
             return cuentas
         else:
-            print(f"[leer_cuentas] Error al leer el archivo de cuentas: {response.status_code}")
+            #print(f"[leer_cuentas] Error al leer el archivo de cuentas: {response.status_code}")
             return []
     except Exception as e:
-        print(f"[leer_cuentas] Error al leer las cuentas: {e}")
+        #print(f"[leer_cuentas] Error al leer las cuentas: {e}")
         return []
 
 def calcular_valor_clasificacion(tier, rank, league_points):
@@ -683,7 +683,7 @@ def leer_peak_elo():
     try:
         resp = requests.get(url, timeout=30) # Aumentado timeout
         resp.raise_for_status()
-        print("[leer_peak_elo] Peak elo leído exitosamente.")
+        #print("[leer_peak_elo] Peak elo leído exitosamente.")
         return True, resp.json()
     except Exception as e:
         print(f"[leer_peak_elo] Error leyendo peak elo: {e}")
@@ -1608,11 +1608,11 @@ def actualizar_historial_partidas_en_segundo_plano():
 
 def keep_alive():
     """Envía una solicitud periódica a la propia aplicación para mantenerla activa en servicios como Render."""
-    print("[keep_alive] Hilo de keep_alive iniciado.")
+    #print("[keep_alive] Hilo de keep_alive iniciado.")
     while True:
         try:
             requests.get('https://soloq-cerditos-34kd.onrender.com/')
-            print("[keep_alive] Manteniendo la aplicación activa con una solicitud.")
+            #print("[keep_alive] Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"[keep_alive] Error en keep_alive: {e}")
         time.sleep(200)
