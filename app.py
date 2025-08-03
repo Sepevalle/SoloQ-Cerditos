@@ -1009,13 +1009,13 @@ def actualizar_cache():
     Esta función realiza el trabajo pesado: obtiene todos los datos de la API
     y actualiza la caché global. Está diseñada para ser ejecutada en segundo plano.
     """
-    print("[actualizar_cache] Iniciando actualización de la caché principal...")
+    #print("[actualizar_cache] Iniciando actualización de la caché principal...")
     api_key_main = os.environ.get('RIOT_API_KEY')
     api_key_spectator = os.environ.get('RIOT_API_KEY_2', api_key_main)
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     
     if not api_key_main:
-        print("[actualizar_cache] ERROR CRÍTICO: La variable de entorno RIOT_API_KEY no está configurada. La aplicación no puede funcionar correctamente.")
+        #print("[actualizar_cache] ERROR CRÍTICO: La variable de entorno RIOT_API_KEY no está configurada. La aplicación no puede funcionar correctamente.")
         return
     
     with cache_lock:
@@ -1034,20 +1034,20 @@ def actualizar_cache():
     with cache_lock:
         cache['update_count'] = cache.get('update_count', 0) + 1
     check_in_game_this_update = cache['update_count'] % 2 == 1
-    print(f"[actualizar_cache] Check de partida activa en este ciclo: {check_in_game_this_update}")
+    #print(f"[actualizar_cache] Check de partida activa en este ciclo: {check_in_game_this_update}")
 
     puuid_dict = leer_puuids()
     puuids_actualizados = False
 
     for riot_id, _ in cuentas:
         if riot_id not in puuid_dict:
-            print(f"[actualizar_cache] No se encontró PUUID para {riot_id}. Obteniéndolo de la API...")
+            #print(f"[actualizar_cache] No se encontró PUUID para {riot_id}. Obteniéndolo de la API...")
             game_name, tag_line = riot_id.split('#')[0], riot_id.split('#')[1]
             puuid_info = obtener_puuid(api_key_main, game_name, tag_line)
             if puuid_info and 'puuid' in puuid_info:
                 puuid_dict[riot_id] = puuid_info['puuid']
                 puuids_actualizados = True
-                print(f"[actualizar_cache] PUUID {puuid_info['puuid']} obtenido y añadido para {riot_id}.")
+                #print(f"[actualizar_cache] PUUID {puuid_info['puuid']} obtenido y añadido para {riot_id}.")
             else:
                 print(f"[actualizar_cache] Fallo al obtener PUUID para {riot_id}.")
 
@@ -1063,7 +1063,7 @@ def actualizar_cache():
         tareas.append((cuenta, puuid, api_key_main, api_key_spectator, 
                       old_data_for_player, check_in_game_this_update))
 
-    print(f"[actualizar_cache] Procesando {len(tareas)} jugadores en paralelo.")
+    #print(f"[actualizar_cache] Procesando {len(tareas)} jugadores en paralelo.")
     with ThreadPoolExecutor(max_workers=5) as executor:
         resultados = executor.map(procesar_jugador, tareas)
 
@@ -1071,7 +1071,7 @@ def actualizar_cache():
         if datos_jugador_list:
             todos_los_datos.extend(datos_jugador_list)
 
-    print(f"[actualizar_cache] Calculando estadísticas de campeones y LP en 24h para {len(todos_los_datos)} entradas de jugador.")
+    #print(f"[actualizar_cache] Calculando estadísticas de campeones y LP en 24h para {len(todos_los_datos)} entradas de jugador.")
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
     for jugador in todos_los_datos:
         puuid = jugador.get('puuid')
@@ -1166,7 +1166,7 @@ def actualizar_cache():
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = time.time()
-    print("[actualizar_cache] Actualización de la caché principal completada.")
+    #print("[actualizar_cache] Actualización de la caché principal completada.")
 
 def obtener_datos_jugadores():
     """Obtiene los datos cacheados de los jugadores."""
@@ -1182,7 +1182,7 @@ def calcular_rachas(partidas):
     Calcula las rachas de victorias y derrotas más largas de una lista de partidas.
     Las partidas deben estar ordenadas por fecha, de más reciente a más antigua.
     """
-    print(f"[calcular_rachas] Calculando rachas para {len(partidas)} partidas.")
+    #print(f"[calcular_rachas] Calculando rachas para {len(partidas)} partidas.")
     if not partidas:
         return {'max_win_streak': 0, 'max_loss_streak': 0}
 
@@ -1204,7 +1204,7 @@ def calcular_rachas(partidas):
         if current_loss_streak > max_loss_streak:
             max_loss_streak = current_loss_streak
             
-    print(f"[calcular_rachas] Rachas calculadas: Max V: {max_win_streak}, Max D: {max_loss_streak}.")
+    #print(f"[calcular_rachas] Rachas calculadas: Max V: {max_win_streak}, Max D: {max_loss_streak}.")
     return {'max_win_streak': max_win_streak, 'max_loss_streak': max_loss_streak}
 
 @app.route('/')
@@ -1276,12 +1276,12 @@ def _get_player_profile_data(game_name):
     todos los datos de un perfil de jugador.
     Devuelve el diccionario 'perfil' o None si no se encuentra el jugador.
     """
-    print(f"[_get_player_profile_data] Obteniendo datos de perfil para: {game_name}")
+    #print(f"[_get_player_profile_data] Obteniendo datos de perfil para: {game_name}")
     todos_los_datos, _ = obtener_datos_jugadores()
     datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
     
     if not datos_del_jugador:
-        print(f"[_get_player_profile_data] No se encontraron datos para el jugador {game_name} en la caché.")
+        #print(f"[_get_player_profile_data] No se encontraron datos para el jugador {game_name} en la caché.")
         return None
     
     primer_perfil = datos_del_jugador[0]
@@ -1293,7 +1293,7 @@ def _get_player_profile_data(game_name):
         for match in historial_partidas_completo.get('matches', []):
             if 'lp_change_this_game' not in match:
                 match['lp_change_this_game'] = None
-                print(f"[_get_player_profile_data] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} del jugador {puuid}.")
+                #print(f"[_get_player_profile_data] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} del jugador {puuid}.")
 
     perfil = {
         'nombre': primer_perfil.get('jugador', 'N/A'),
@@ -1320,16 +1320,16 @@ def _get_player_profile_data(game_name):
         partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
         rachas_soloq = calcular_rachas(partidas_soloq)
         perfil['soloq'].update(rachas_soloq)
-        print(f"[_get_player_profile_data] Rachas SoloQ calculadas para {game_name}.")
+        #print(f"[_get_player_profile_data] Rachas SoloQ calculadas para {game_name}.")
 
     if 'flexq' in perfil:
         partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
         rachas_flexq = calcular_rachas(partidas_flexq)
         perfil['flexq'].update(rachas_flexq)
-        print(f"[_get_player_profile_data] Rachas FlexQ calculadas para {game_name}.")
+        #print(f"[_get_player_profile_data] Rachas FlexQ calculadas para {game_name}.")
 
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-    print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
+    #print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
     return perfil
 
 
