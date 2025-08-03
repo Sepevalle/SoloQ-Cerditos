@@ -226,7 +226,7 @@ riot_api_limiter = RateLimiter(
 
 def _api_rate_limiter_worker():
     """Hilo de trabajo que procesa las peticiones de la cola respetando el límite de tasa."""
-    #print("[_api_rate_limiter_worker] Hilo de control de tasa de API iniciado.")
+    print("[_api_rate_limiter_worker] Hilo de control de tasa de API iniciado.")
     session = requests.Session() # Usar una sesión persistente para el worker
     while True:
         try:
@@ -239,7 +239,7 @@ def _api_rate_limiter_worker():
             # Consumir un token antes de realizar la petición
             riot_api_limiter.consume_token()
 
-            #print(f"[_api_rate_limiter_worker] Procesando petición {request_id} a: {url}")
+            print(f"[_api_rate_limiter_worker] Procesando petición {request_id} a: {url}")
             response = None
             for i in range(3): # Reintentos para la petición HTTP real
                 try:
@@ -247,19 +247,19 @@ def _api_rate_limiter_worker():
                     
                     # Si es una API de espectador y devuelve 404, no reintentar
                     if is_spectator_api and response.status_code == 404:
-                        #print(f"[_api_rate_limiter_worker] Petición {request_id} a la API de espectador devolvió 404. No se reintentará.")
+                        print(f"[_api_rate_limiter_worker] Petición {request_id} a la API de espectador devolvió 404. No se reintentará.")
                         break # Salir del bucle de reintentos inmediatamente
 
                     if response.status_code == 429:
                         retry_after = int(response.headers.get('Retry-After', 5))
-                        #print(f"[_api_rate_limiter_worker] Rate limit excedido. Esperando {retry_after} segundos... (Intento {i + 1}/3)")
+                        print(f"[_api_rate_limiter_worker] Rate limit excedido. Esperando {retry_after} segundos... (Intento {i + 1}/3)")
                         time.sleep(retry_after)
                         continue # Reintentar la petición después de esperar
                     response.raise_for_status() # Lanza una excepción para códigos de error HTTP
-                    #print(f"[_api_rate_limiter_worker] Petición {request_id} exitosa. Status: {response.status_code}")
+                    print(f"[_api_rate_limiter_worker] Petición {request_id} exitosa. Status: {response.status_code}")
                     break # Salir del bucle de reintentos si es exitoso
                 except requests.exceptions.RequestException as e:
-                    #print(f"[_api_rate_limiter_worker] Error en petición {request_id} a {url}: {e}. Intento {i + 1}/3")
+                    print(f"[_api_rate_limiter_worker] Error en petición {request_id} a {url}: {e}. Intento {i + 1}/3")
                     if i < 2: # Si no es el último intento, espera y reintenta
                         time.sleep(0.5 * (2 ** i)) # Backoff exponencial
             
@@ -274,7 +274,7 @@ def _api_rate_limiter_worker():
         except queue.Empty:
             pass # No hay peticiones en la cola, el hilo sigue esperando
         except Exception as e:
-            #print(f"[_api_rate_limiter_worker] Error inesperado en el worker del control de tasa: {e}")
+            print(f"[_api_rate_limiter_worker] Error inesperado en el worker del control de tasa: {e}")
             time.sleep(1) # Espera antes de continuar para evitar bucles de error
 
 # Modificación de make_api_request para usar la cola
@@ -292,13 +292,13 @@ def make_api_request(url, retries=3, backoff_factor=0.5, is_spectator_api=False)
     # Pone la petición en la cola. El worker la procesará cuando haya tokens disponibles.
     API_REQUEST_QUEUE.put((request_id, url, headers, 10, is_spectator_api)) # 10 segundos de timeout para la petición HTTP
 
-    #print(f"[make_api_request] Petición {request_id} encolada para {url}. Esperando respuesta...")
+    print(f"[make_api_request] Petición {request_id} encolada para {url}. Esperando respuesta...")
     
     # Esperar con un timeout para evitar bloqueos indefinidos
     # El timeout aquí es para la espera de la respuesta del worker, no de la API en sí.
     # Aumentado de 60 a 120 segundos
     if not API_RESPONSE_EVENTS[request_id].wait(timeout=120): 
-        #print(f"[make_api_request] Timeout esperando respuesta para la petición {request_id} a {url}.")
+        print(f"[make_api_request] Timeout esperando respuesta para la petición {request_id} a {url}.")
         with REQUEST_ID_COUNTER_LOCK:
             if request_id in API_RESPONSE_EVENTS:
                 del API_RESPONSE_EVENTS[request_id]
@@ -425,14 +425,14 @@ def obtener_id_invocador(api_key, puuid):
 
 def obtener_elo(api_key, puuid):
     """Obtiene la información de Elo de un jugador dado su PUUID."""
-    #print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
+    print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
-        #print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
+        print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
         return response.json()
     else:
-        #print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
+        print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
         return None
 
 def esta_en_partida(api_key, puuid):
@@ -440,7 +440,7 @@ def esta_en_partida(api_key, puuid):
     Comprueba si un jugador está en una partida activa.
     Retorna los datos completos de la partida si está en una, None si no.
     """
-    #print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
+    print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
     try:
         url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
         # Usar make_api_request con is_spectator_api=True para control de tasa específico si es necesario
@@ -450,21 +450,21 @@ def esta_en_partida(api_key, puuid):
             game_data = response.json()
             for participant in game_data.get("participants", []):
                 if participant["puuid"] == puuid:
-                    #print(f"[esta_en_partida] Jugador {puuid} está en partida activa.")
+                    print(f"[esta_en_partida] Jugador {puuid} está en partida activa.")
                     return game_data
-            #print(f"[esta_en_partida] Advertencia: Jugador {puuid} está en partida pero no se encontró en la lista de participantes.")
+            print(f"[esta_en_partida] Advertencia: Jugador {puuid} está en partida pero no se encontró en la lista de participantes.")
             return None
         elif response and response.status_code == 404:  # Player not in game (expected response)
-            #print(f"[esta_en_partida] Jugador {puuid} no está en partida activa (404 Not Found).")
+            print(f"[esta_en_partida] Jugador {puuid} no está en partida activa (404 Not Found).")
             return None
         elif response is None: # make_api_request returned None due to timeout or persistent error
-            #print(f"[esta_en_partida] make_api_request devolvió None para {puuid}. Posible timeout o error persistente.")
+            print(f"[esta_en_partida] make_api_request devolvió None para {puuid}. Posible timeout o error persistente.")
             return None
         else:  # Unexpected error
-            #print(f"[esta_en_partida] Error inesperado al verificar partida para {puuid}. Status: {response.status_code}")
+            print(f"[esta_en_partida] Error inesperado al verificar partida para {puuid}. Status: {response.status_code}")
             response.raise_for_status() # Esto lanzará una excepción si el status no es 2xx
     except requests.exceptions.RequestException as e:
-        #print(f"[esta_en_partida] Error al verificar si el jugador {puuid} está en partida: {e}")
+        print(f"[esta_en_partida] Error al verificar si el jugador {puuid} está en partida: {e}")
         return None
 
 def obtener_info_partida(args):
@@ -628,7 +628,7 @@ def obtener_info_partida(args):
 
 def leer_cuentas(url):
     """Lee las cuentas de jugadores desde un archivo de texto alojado en GitHub."""
-    #print(f"[leer_cuentas] Leyendo cuentas desde: {url}")
+    print(f"[leer_cuentas] Leyendo cuentas desde: {url}")
     try:
         response = requests.get(url)
         if response.status_code == 200:
@@ -787,14 +787,14 @@ def guardar_peak_elo_en_github(peak_elo_dict):
 def leer_historial_jugador_github(puuid):
     """Lee el historial de partidas de un jugador desde GitHub."""
     url = f"https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/match_history/{puuid}.json"
-    #print(f"[leer_historial_jugador_github] Leyendo historial para PUUID: {puuid} desde: {url}")
+    print(f"[leer_historial_jugador_github] Leyendo historial para PUUID: {puuid} desde: {url}")
     try:
         resp = requests.get(url, timeout=30) # Aumentado timeout
         if resp.status_code == 200:
-            #print(f"[leer_historial_jugador_github] Historial para {puuid} leído exitosamente.")
+            print(f"[leer_historial_jugador_github] Historial para {puuid} leído exitosamente.")
             return resp.json()
         elif resp.status_code == 404:
-            #print(f"[leer_historial_jugador_github] No se encontró historial para {puuid}. Se creará uno nuevo.")
+            print(f"[leer_historial_jugador_github] No se encontró historial para {puuid}. Se creará uno nuevo.")
             return {}
     except Exception as e:
         print(f"[leer_historial_jugador_github] Error leyendo el historial para {puuid}: {e}")
@@ -854,7 +854,7 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
     target_queue_id = queue_id_map.get(queue_type_api_name)
 
     if not target_queue_id:
-        #print(f"[_calculate_lp_change_for_player] Tipo de cola '{queue_type_api_name}' no reconocido. Retornando 0 LP.")
+        print(f"[_calculate_lp_change_for_player] Tipo de cola '{queue_type_api_name}' no reconocido. Retornando 0 LP.")
         return 0
 
     for match in all_matches_for_player:
@@ -866,7 +866,7 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
         if match_timestamp_utc >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
             if match.get('lp_change_this_game') is not None:
                 lp_change_24h += match['lp_change_this_game']
-    #print(f"[_calculate_lp_change_for_player] Cambio de LP en 24h para {puuid} en {queue_type_api_name}: {lp_change_24h} LP.")
+    print(f"[_calculate_lp_change_for_player] Cambio de LP en 24h para {puuid} en {queue_type_api_name}: {lp_change_24h} LP.")
     return lp_change_24h
 
 
@@ -878,16 +878,16 @@ def procesar_jugador(args_tuple):
     """
     cuenta, puuid, api_key_main, api_key_spectator, old_data_list, check_in_game_this_update = args_tuple
     riot_id, jugador_nombre = cuenta
-    #print(f"[procesar_jugador] Procesando jugador: {riot_id}")
+    print(f"[procesar_jugador] Procesando jugador: {riot_id}")
 
     if not puuid:
-        #print(f"[procesar_jugador] ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID.")
+        print(f"[procesar_jugador] ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID.")
         return []
 
     # Obtener la información de Elo actual del jugador (used for general display and 'needs_full_update' logic)
     elo_info = obtener_elo(api_key_main, puuid)
     if not elo_info:
-        #print(f"[procesar_jugador] No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP ni actualizar datos.")
+        print(f"[procesar_jugador] No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP ni actualizar datos.")
         return old_data_list if old_data_list else []
 
     # 1. Sondeo ligero: usar la clave secundaria para esta llamada frecuente.
@@ -958,12 +958,12 @@ def procesar_jugador(args_tuple):
     needs_full_update = not old_data_list or is_currently_in_game or was_in_game_before
 
     if not needs_full_update:
-        #print(f"[procesar_jugador] Jugador {riot_id} inactivo. Omitiendo actualización de Elo.")
+        print(f"[procesar_jugador] Jugador {riot_id} inactivo. Omitiendo actualización de Elo.")
         for data in old_data_list:
             data['en_partida'] = False
         return old_data_list
 
-    #print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
+    print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
     
     riot_id_modified = riot_id.replace("#", "-")
     url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
@@ -1001,7 +1001,7 @@ def procesar_jugador(args_tuple):
             "champion_id": current_champion_id if current_champion_id else "Desconocido"
         }
         datos_jugador_list.append(datos_jugador)
-    #print(f"[procesar_jugador] Datos de {riot_id} procesados y listos para caché.")
+    print(f"[procesar_jugador] Datos de {riot_id} procesados y listos para caché.")
     return datos_jugador_list
 
 def actualizar_cache():
@@ -1403,7 +1403,7 @@ def actualizar_historial_partidas_en_segundo_plano():
     print("[actualizar_historial_partidas_en_segundo_plano] Iniciando hilo de actualización de historial de partidas.")
     api_key = os.environ.get('RIOT_API_KEY')
     if not api_key:
-        #print("[actualizar_historial_partidas_en_segundo_plano] ERROR: RIOT_API_KEY no configurada. No se puede actualizar el historial de partidas.")
+        print("[actualizar_historial_partidas_en_segundo_plano] ERROR: RIOT_API_KEY no configurada. No se puede actualizar el historial de partidas.")
         return
 
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
@@ -1412,7 +1412,7 @@ def actualizar_historial_partidas_en_segundo_plano():
     while True:
         try:
             if not ALL_CHAMPIONS or not ALL_RUNES or not ALL_SUMMONER_SPELLS:
-                #print("[actualizar_historial_partidas_en_segundo_plano] Datos de DDragon no cargados, intentando actualizar.")
+                print("[actualizar_historial_partidas_en_segundo_plano] Datos de DDragon no cargados, intentando actualizar.")
                 actualizar_ddragon_data()
 
             cuentas = leer_cuentas(url_cuentas)
@@ -1421,15 +1421,15 @@ def actualizar_historial_partidas_en_segundo_plano():
             for riot_id, jugador_nombre in cuentas:
                 puuid = puuid_dict.get(riot_id)
                 if not puuid:
-                    #print(f"[actualizar_historial_partidas_en_segundo_plano] Saltando actualización de historial para {riot_id}: PUUID no encontrado.")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] Saltando actualización de historial para {riot_id}: PUUID no encontrado.")
                     continue
 
-                #print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
+                print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
                 historial_existente = leer_historial_jugador_github(puuid)
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
                 remakes_guardados = set(historial_existente.get('remakes', []))
                 
-                #print(f"[actualizar_historial_partidas_en_segundo_plano] Historial existente para {riot_id}: {len(ids_partidas_guardadas)} partidas guardadas, {len(remakes_guardados)} remakes.")
+                print(f"[actualizar_historial_partidas_en_segundo_plano] Historial existente para {riot_id}: {len(ids_partidas_guardadas)} partidas guardadas, {len(remakes_guardados)} remakes.")
 
                 all_match_ids_season = []
                 for queue_id in queue_map.values():
@@ -1438,36 +1438,36 @@ def actualizar_historial_partidas_en_segundo_plano():
                         url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
                         response_matches = make_api_request(url_matches)
                         if not response_matches: 
-                            #print(f"[actualizar_historial_partidas_en_segundo_plano] No más partidas o error para cola {queue_id} y PUUID {puuid}. Response: {response_matches}")
+                            print(f"[actualizar_historial_partidas_en_segundo_plano] No más partidas o error para cola {queue_id} y PUUID {puuid}. Response: {response_matches}")
                             break
                         match_ids_page = response_matches.json()
                         if not match_ids_page: 
-                            #print(f"[actualizar_historial_partidas_en_segundo_plano] No se encontraron más IDs de partida para cola {queue_id} y PUUID {puuid}.")
+                            print(f"[actualizar_historial_partidas_en_segundo_plano] No se encontraron más IDs de partida para cola {queue_id} y PUUID {puuid}.")
                             break
                         all_match_ids_season.extend(match_ids_page)
-                        #print(f"[actualizar_historial_partidas_en_segundo_plano] Obtenidos {len(match_ids_page)} IDs de partida para {riot_id} (cola {queue_id}). Total de IDs de temporada hasta ahora: {len(all_match_ids_season)}.")
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Obtenidos {len(match_ids_page)} IDs de partida para {riot_id} (cola {queue_id}). Total de IDs de temporada hasta ahora: {len(all_match_ids_season)}.")
                         if len(match_ids_page) < 100: break
                         start_index += 100
                 
-                #print(f"[actualizar_historial_partidas_en_segundo_plano] Total de IDs de partida de la temporada para {riot_id} obtenidos de la API: {len(all_match_ids_season)}.")
+                print(f"[actualizar_historial_partidas_en_segundo_plano] Total de IDs de partida de la temporada para {riot_id} obtenidos de la API: {len(all_match_ids_season)}.")
 
                 nuevos_match_ids = [
                     mid for mid in all_match_ids_season 
                     if mid not in ids_partidas_guardadas and mid not in remakes_guardados
                 ]
 
-                #print(f"[actualizar_historial_partidas_en_segundo_plano] Se detectaron {len(nuevos_match_ids)} IDs de partida realmente nuevas para {riot_id}.")
+                print(f"[actualizar_historial_partidas_en_segundo_plano] Se detectaron {len(nuevos_match_ids)} IDs de partida realmente nuevas para {riot_id}.")
 
                 # Initialize these variables to empty lists outside the if/else block
                 nuevas_partidas_validas = []
                 nuevos_remakes = []
 
                 if not nuevos_match_ids:
-                    #print(f"[actualizar_historial_partidas_en_segundo_plano] No hay partidas nuevas para {riot_id}. Omitiendo procesamiento de partidas.")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] No hay partidas nuevas para {riot_id}. Omitiendo procesamiento de partidas.")
                     # Still need to process pending LP updates even if no new matches
                     pass
                 else:
-                    #print(f"[actualizar_historial_partidas_en_segundo_plano] Se encontraron {len(nuevos_match_ids)} partidas nuevas para {riot_id}. Procesando...")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] Se encontraron {len(nuevos_match_ids)} partidas nuevas para {riot_id}. Procesando...")
 
                     tareas = [(match_id, puuid, api_key) for match_id in nuevos_match_ids]
                     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -1478,11 +1478,11 @@ def actualizar_historial_partidas_en_segundo_plano():
                         match_id for i, match_id in enumerate(nuevos_match_ids)
                         if nuevas_partidas_info[i] is None
                     ]
-                    #print(f"[actualizar_historial_partidas_en_segundo_plano] {len(nuevas_partidas_validas)} partidas válidas y {len(nuevos_remakes)} remakes procesados para {riot_id}.")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] {len(nuevas_partidas_validas)} partidas válidas y {len(nuevos_remakes)} remakes procesados para {riot_id}.")
 
                     if nuevas_partidas_validas:
                         historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
-                        #print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidas {len(nuevas_partidas_validas)} partidas válidas al historial de {riot_id}.")
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidas {len(nuevas_partidas_validas)} partidas válidas al historial de {riot_id}.")
 
                 # --- LÓGICA DE ASOCIACIÓN DE LP MEJORADA ---
                 with pending_lp_updates_lock:
@@ -1570,7 +1570,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 for match in historial_existente.get('matches', []):
                     if 'lp_change_this_game' not in match:
                         match['lp_change_this_game'] = None
-                        #print(f"[actualizar_historial_partidas_en_segundo_plano] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} antes de guardar.")
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} antes de guardar.")
 
                 # Recalcular y guardar el LP change en 24h para este jugador en el historial
                 current_soloq_lp_change_24h = _calculate_lp_change_for_player(
@@ -1581,25 +1581,25 @@ def actualizar_historial_partidas_en_segundo_plano():
                 )
                 historial_existente['soloq_lp_change_24h'] = current_soloq_lp_change_24h
                 historial_existente['flexq_lp_change_24h'] = current_flexq_lp_change_24h
-                #print(f"[actualizar_historial_partidas_en_segundo_plano] LP change 24h calculado para {riot_id}: SoloQ={current_soloq_lp_change_24h}, FlexQ={current_flexq_lp_change_24h}.")
+                print(f"[actualizar_historial_partidas_en_segundo_plano] LP change 24h calculado para {riot_id}: SoloQ={current_soloq_lp_change_24h}, FlexQ={current_flexq_lp_change_24h}.")
 
                 # Only save if there were new valid matches, new remakes, or pending LP updates were cleared
                 if nuevas_partidas_validas or nuevos_remakes or keys_to_clear_from_pending:
                     historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
-                    #print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
 
                     if nuevos_remakes:
                         remakes_guardados.update(nuevos_remakes)
                         historial_existente['remakes'] = list(remakes_guardados)
-                        #print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidos {len(nuevos_remakes)} remakes al historial de {riot_id}.")
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidos {len(nuevos_remakes)} remakes al historial de {riot_id}.")
                     
-                    #print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
                     guardar_historial_jugador_github(puuid, historial_existente)
                 else:
                     return None 
-                #print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
+                print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
 
-            #print("[actualizar_historial_partidas_en_segundo_plano] Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
+            print("[actualizar_historial_partidas_en_segundo_plano] Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
             time.sleep(600)
 
         except Exception as e:
