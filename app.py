@@ -679,7 +679,7 @@ def calcular_valor_clasificacion(tier, rank, league_points):
 def leer_peak_elo():
     """Lee los datos de peak Elo desde un archivo JSON en GitHub."""
     url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
-    print(f"[leer_peak_elo] Leyendo peak elo desde: {url}")
+    #print(f"[leer_peak_elo] Leyendo peak elo desde: {url}")
     try:
         resp = requests.get(url, timeout=30) # Aumentado timeout
         resp.raise_for_status()
@@ -1210,7 +1210,7 @@ def calcular_rachas(partidas):
 @app.route('/')
 def index():
     """Renderiza la página principal con la lista de jugadores."""
-    print("[index] Petición recibida para la página principal.")
+    #print("[index] Petición recibida para la página principal.")
     datos_jugadores, timestamp = obtener_datos_jugadores()
     
     lectura_exitosa, peak_elo_dict = leer_peak_elo()
@@ -1226,20 +1226,20 @@ def index():
                 peak_elo_dict[key] = valor
                 peak = valor
                 actualizado = True
-                print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
+                #print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
             jugador["peak_elo"] = peak
 
         if actualizado:
             guardar_peak_elo_en_github(peak_elo_dict)
     else:
-        print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
+        #print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
         for jugador in datos_jugadores:
             jugador["peak_elo"] = jugador["valor_clasificacion"]
 
     split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
     ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
     
-    print("[index] Renderizando index.html.")
+    #print("[index] Renderizando index.html.")
     return render_template('index.html', datos_jugadores=datos_jugadores,
                            ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=DDRAGON_VERSION, 
