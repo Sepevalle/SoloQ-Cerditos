@@ -232,8 +232,8 @@ def _api_rate_limiter_worker():
         try:
             # Obtener la petición de la cola. Timeout para que el hilo no se bloquee indefinidamente.
             # Añadir logging para el tamaño de la cola
-            # not API_REQUEST_QUEUE.empty():
-            #    print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
+            if not API_REQUEST_QUEUE.empty():
+                print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
             request_id, url, headers, timeout, is_spectator_api = API_REQUEST_QUEUE.get(timeout=1)
             
             # Consumir un token antes de realizar la petición
@@ -1596,8 +1596,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
                     guardar_historial_jugador_github(puuid, historial_existente)
                 else:
-                    return None 
-                print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
 
             print("[actualizar_historial_partidas_en_segundo_plano] Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
             time.sleep(600)
