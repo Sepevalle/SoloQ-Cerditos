@@ -425,14 +425,14 @@ def obtener_id_invocador(api_key, puuid):
 
 def obtener_elo(api_key, puuid):
     """Obtiene la información de Elo de un jugador dado su PUUID."""
-    #print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
+    print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
-        #print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
+        print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
         return response.json()
     else:
-        #print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
+        print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
         return None
 
 def esta_en_partida(api_key, puuid):
@@ -640,13 +640,13 @@ def leer_cuentas(url):
                     riot_id = partes[0].strip()
                     jugador = partes[1].strip()
                     cuentas.append((riot_id, jugador))
-            #print(f"[leer_cuentas] {len(cuentas)} cuentas leídas exitosamente.")
+            print(f"[leer_cuentas] {len(cuentas)} cuentas leídas exitosamente.")
             return cuentas
         else:
-            #print(f"[leer_cuentas] Error al leer el archivo de cuentas: {response.status_code}")
+            print(f"[leer_cuentas] Error al leer el archivo de cuentas: {response.status_code}")
             return []
     except Exception as e:
-        #print(f"[leer_cuentas] Error al leer las cuentas: {e}")
+        print(f"[leer_cuentas] Error al leer las cuentas: {e}")
         return []
 
 def calcular_valor_clasificacion(tier, rank, league_points):
@@ -679,11 +679,11 @@ def calcular_valor_clasificacion(tier, rank, league_points):
 def leer_peak_elo():
     """Lee los datos de peak Elo desde un archivo JSON en GitHub."""
     url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
-    #print(f"[leer_peak_elo] Leyendo peak elo desde: {url}")
+    print(f"[leer_peak_elo] Leyendo peak elo desde: {url}")
     try:
         resp = requests.get(url, timeout=30) # Aumentado timeout
         resp.raise_for_status()
-        #print("[leer_peak_elo] Peak elo leído exitosamente.")
+        print("[leer_peak_elo] Peak elo leído exitosamente.")
         return True, resp.json()
     except Exception as e:
         print(f"[leer_peak_elo] Error leyendo peak elo: {e}")
@@ -1009,13 +1009,13 @@ def actualizar_cache():
     Esta función realiza el trabajo pesado: obtiene todos los datos de la API
     y actualiza la caché global. Está diseñada para ser ejecutada en segundo plano.
     """
-    #print("[actualizar_cache] Iniciando actualización de la caché principal...")
+    print("[actualizar_cache] Iniciando actualización de la caché principal...")
     api_key_main = os.environ.get('RIOT_API_KEY')
     api_key_spectator = os.environ.get('RIOT_API_KEY_2', api_key_main)
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     
     if not api_key_main:
-        #print("[actualizar_cache] ERROR CRÍTICO: La variable de entorno RIOT_API_KEY no está configurada. La aplicación no puede funcionar correctamente.")
+        print("[actualizar_cache] ERROR CRÍTICO: La variable de entorno RIOT_API_KEY no está configurada. La aplicación no puede funcionar correctamente.")
         return
     
     with cache_lock:
@@ -1034,20 +1034,20 @@ def actualizar_cache():
     with cache_lock:
         cache['update_count'] = cache.get('update_count', 0) + 1
     check_in_game_this_update = cache['update_count'] % 2 == 1
-    #print(f"[actualizar_cache] Check de partida activa en este ciclo: {check_in_game_this_update}")
+    print(f"[actualizar_cache] Check de partida activa en este ciclo: {check_in_game_this_update}")
 
     puuid_dict = leer_puuids()
     puuids_actualizados = False
 
     for riot_id, _ in cuentas:
         if riot_id not in puuid_dict:
-            #print(f"[actualizar_cache] No se encontró PUUID para {riot_id}. Obteniéndolo de la API...")
+            print(f"[actualizar_cache] No se encontró PUUID para {riot_id}. Obteniéndolo de la API...")
             game_name, tag_line = riot_id.split('#')[0], riot_id.split('#')[1]
             puuid_info = obtener_puuid(api_key_main, game_name, tag_line)
             if puuid_info and 'puuid' in puuid_info:
                 puuid_dict[riot_id] = puuid_info['puuid']
                 puuids_actualizados = True
-                #print(f"[actualizar_cache] PUUID {puuid_info['puuid']} obtenido y añadido para {riot_id}.")
+                print(f"[actualizar_cache] PUUID {puuid_info['puuid']} obtenido y añadido para {riot_id}.")
             else:
                 print(f"[actualizar_cache] Fallo al obtener PUUID para {riot_id}.")
 
@@ -1063,7 +1063,7 @@ def actualizar_cache():
         tareas.append((cuenta, puuid, api_key_main, api_key_spectator, 
                       old_data_for_player, check_in_game_this_update))
 
-    #print(f"[actualizar_cache] Procesando {len(tareas)} jugadores en paralelo.")
+    print(f"[actualizar_cache] Procesando {len(tareas)} jugadores en paralelo.")
     with ThreadPoolExecutor(max_workers=5) as executor:
         resultados = executor.map(procesar_jugador, tareas)
 
@@ -1071,7 +1071,7 @@ def actualizar_cache():
         if datos_jugador_list:
             todos_los_datos.extend(datos_jugador_list)
 
-    #print(f"[actualizar_cache] Calculando estadísticas de campeones y LP en 24h para {len(todos_los_datos)} entradas de jugador.")
+    print(f"[actualizar_cache] Calculando estadísticas de campeones y LP en 24h para {len(todos_los_datos)} entradas de jugador.")
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
     for jugador in todos_los_datos:
         puuid = jugador.get('puuid')
@@ -1166,7 +1166,7 @@ def actualizar_cache():
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
         cache['timestamp'] = time.time()
-    #print("[actualizar_cache] Actualización de la caché principal completada.")
+    print("[actualizar_cache] Actualización de la caché principal completada.")
 
 def obtener_datos_jugadores():
     """Obtiene los datos cacheados de los jugadores."""
@@ -1182,7 +1182,7 @@ def calcular_rachas(partidas):
     Calcula las rachas de victorias y derrotas más largas de una lista de partidas.
     Las partidas deben estar ordenadas por fecha, de más reciente a más antigua.
     """
-    #print(f"[calcular_rachas] Calculando rachas para {len(partidas)} partidas.")
+    print(f"[calcular_rachas] Calculando rachas para {len(partidas)} partidas.")
     if not partidas:
         return {'max_win_streak': 0, 'max_loss_streak': 0}
 
@@ -1204,13 +1204,13 @@ def calcular_rachas(partidas):
         if current_loss_streak > max_loss_streak:
             max_loss_streak = current_loss_streak
             
-    #print(f"[calcular_rachas] Rachas calculadas: Max V: {max_win_streak}, Max D: {max_loss_streak}.")
+    print(f"[calcular_rachas] Rachas calculadas: Max V: {max_win_streak}, Max D: {max_loss_streak}.")
     return {'max_win_streak': max_win_streak, 'max_loss_streak': max_loss_streak}
 
 @app.route('/')
 def index():
     """Renderiza la página principal con la lista de jugadores."""
-    #print("[index] Petición recibida para la página principal.")
+    print("[index] Petición recibida para la página principal.")
     datos_jugadores, timestamp = obtener_datos_jugadores()
     
     lectura_exitosa, peak_elo_dict = leer_peak_elo()
@@ -1226,20 +1226,20 @@ def index():
                 peak_elo_dict[key] = valor
                 peak = valor
                 actualizado = True
-                #print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
+                print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
             jugador["peak_elo"] = peak
 
         if actualizado:
             guardar_peak_elo_en_github(peak_elo_dict)
     else:
-        #print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
+        print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
         for jugador in datos_jugadores:
             jugador["peak_elo"] = jugador["valor_clasificacion"]
 
     split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
     ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
     
-    #print("[index] Renderizando index.html.")
+    print("[index] Renderizando index.html.")
     return render_template('index.html', datos_jugadores=datos_jugadores,
                            ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=DDRAGON_VERSION, 
@@ -1276,12 +1276,12 @@ def _get_player_profile_data(game_name):
     todos los datos de un perfil de jugador.
     Devuelve el diccionario 'perfil' o None si no se encuentra el jugador.
     """
-    #print(f"[_get_player_profile_data] Obteniendo datos de perfil para: {game_name}")
+    print(f"[_get_player_profile_data] Obteniendo datos de perfil para: {game_name}")
     todos_los_datos, _ = obtener_datos_jugadores()
     datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
     
     if not datos_del_jugador:
-        #print(f"[_get_player_profile_data] No se encontraron datos para el jugador {game_name} en la caché.")
+        print(f"[_get_player_profile_data] No se encontraron datos para el jugador {game_name} en la caché.")
         return None
     
     primer_perfil = datos_del_jugador[0]
@@ -1293,7 +1293,7 @@ def _get_player_profile_data(game_name):
         for match in historial_partidas_completo.get('matches', []):
             if 'lp_change_this_game' not in match:
                 match['lp_change_this_game'] = None
-                #print(f"[_get_player_profile_data] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} del jugador {puuid}.")
+                print(f"[_get_player_profile_data] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} del jugador {puuid}.")
 
     perfil = {
         'nombre': primer_perfil.get('jugador', 'N/A'),
@@ -1320,16 +1320,16 @@ def _get_player_profile_data(game_name):
         partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
         rachas_soloq = calcular_rachas(partidas_soloq)
         perfil['soloq'].update(rachas_soloq)
-        #print(f"[_get_player_profile_data] Rachas SoloQ calculadas para {game_name}.")
+        print(f"[_get_player_profile_data] Rachas SoloQ calculadas para {game_name}.")
 
     if 'flexq' in perfil:
         partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
         rachas_flexq = calcular_rachas(partidas_flexq)
         perfil['flexq'].update(rachas_flexq)
-        #print(f"[_get_player_profile_data] Rachas FlexQ calculadas para {game_name}.")
+        print(f"[_get_player_profile_data] Rachas FlexQ calculadas para {game_name}.")
 
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-    #print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
+    print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
     return perfil
 
 
@@ -1608,11 +1608,11 @@ def actualizar_historial_partidas_en_segundo_plano():
 
 def keep_alive():
     """Envía una solicitud periódica a la propia aplicación para mantenerla activa en servicios como Render."""
-    #print("[keep_alive] Hilo de keep_alive iniciado.")
+    print("[keep_alive] Hilo de keep_alive iniciado.")
     while True:
         try:
             requests.get('https://soloq-cerditos-34kd.onrender.com/')
-            #print("[keep_alive] Manteniendo la aplicación activa con una solicitud.")
+            print("[keep_alive] Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"[keep_alive] Error en keep_alive: {e}")
         time.sleep(200)
