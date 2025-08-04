@@ -9,6 +9,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
+    <!-- Chart.js para los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         body {
             transition: background-color 0.3s, color 0.3s;
@@ -704,6 +707,66 @@
             </div>
         </div>
     </div>
+    
+    <!-- NUEVA SECCIÓN DE GRÁFICOS -->
+    <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header fw-bold text-white" style="background-color: #007bff;">Evolución de ELO (SoloQ)</div>
+                <div class="card-body">
+                    {% if perfil.elo_history_soloq and perfil.elo_history_soloq | length > 1 %}
+                        <canvas id="eloChartSoloQ"></canvas>
+                    {% else %}
+                        <p class="text-center text-muted mt-5">No hay suficientes datos para mostrar el gráfico de evolución de ELO.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header fw-bold text-white" style="background-color: #007bff;">Campeones más Jugados (SoloQ)</div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    {% if perfil.soloq and perfil.soloq.top_champion_stats %}
+                        <div style="position: relative; height:250px; width:250px">
+                            <canvas id="championsChartSoloQ"></canvas>
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">No hay datos de campeones para mostrar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header fw-bold text-white" style="background-color: #007bff;">Evolución de ELO (Flex)</div>
+                <div class="card-body">
+                    {% if perfil.elo_history_flexq and perfil.elo_history_flexq | length > 1 %}
+                        <canvas id="eloChartFlexQ"></canvas>
+                    {% else %}
+                        <p class="text-center text-muted mt-5">No hay suficientes datos para mostrar el gráfico de evolución de ELO.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header fw-bold text-white" style="background-color: #007bff;">Campeones más Jugados (Flex)</div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    {% if perfil.flexq and perfil.flexq.top_champion_stats %}
+                         <div style="position: relative; height:250px; width:250px">
+                            <canvas id="championsChartFlexQ"></canvas>
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">No hay datos de campeones para mostrar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FIN DE LA NUEVA SECCIÓN DE GRÁFICOS -->
 
     <div class="card match-history-card">
         <div class="card-header">
@@ -1139,7 +1202,7 @@
             leftBanner.src = lateralBanners[currentLateralBannerIndex];
             rightBanner.src = lateralBanners[currentLateralBannerIndex];
         }
-        setInterval(changeLateralBanner, 5000); // Change lateral banners every 5 seconds
+        setInterval(changeLateralBanner, 5000);
 
 
         // Audio control
@@ -1357,6 +1420,176 @@
         populateChampionFilter();
         renderMatchHistory();
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
+        
+        // --- INICIO: LÓGICA DE GRÁFICOS ---
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const textColor = isDarkMode ? '#ffffff' : '#212529';
+        const titleColor = isDarkMode ? '#ffffff' : '#007bff';
+
+        Chart.defaults.color = textColor;
+        Chart.defaults.borderColor = gridColor;
+
+        function formatElo(valor) {
+            if (valor === null || valor === undefined) return "N/A";
+            valor = parseInt(valor);
+
+            if (valor >= 2800) {
+                const lps = valor - 2800;
+                if (valor >= 3200) return `CHALLENGER (${lps} LPs)`;
+                if (valor >= 3000) return `GRANDMASTER (${lps} LPs)`;
+                return `MASTER (${lps} LPs)`;
+            }
+
+            const tierMap = { 6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD", 2: "SILVER", 1: "BRONZE", 0: "IRON" };
+            const rankMap = { 3: "I", 2: "II", 1: "III", 0: "IV" };
+
+            const leaguePoints = valor % 100;
+            const valorWithoutLps = valor - leaguePoints;
+            const rankValue = Math.floor(valorWithoutLps / 100) % 4;
+            const tierValue = Math.floor(Math.floor(valorWithoutLps / 100) / 4);
+
+            const tierName = tierMap[tierValue] || "UNKNOWN";
+            const rankName = rankMap[rankValue] || "";
+            return `${tierName} ${rankName} (${leaguePoints} LPs)`;
+        }
+
+        // Gráfico de ELO SoloQ
+        {% if perfil.elo_history_soloq and perfil.elo_history_soloq | length > 1 %}
+        const eloHistorySoloQ = {{ perfil.elo_history_soloq | tojson }};
+        const eloDataSoloQ = {
+            labels: eloHistorySoloQ.map(d => new Date(d.timestamp)),
+            datasets: [{
+                label: 'ELO',
+                data: eloHistorySoloQ.map(d => d.elo),
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                fill: true,
+                tension: 0.2
+            }]
+        };
+        new Chart(document.getElementById('eloChartSoloQ'), {
+            type: 'line',
+            data: eloDataSoloQ,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd MMM yyyy' }, grid: { color: gridColor } },
+                    y: { grid: { color: gridColor } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: context => `ELO: ${formatElo(context.parsed.y)}`
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+
+        // Gráfico de Campeones SoloQ
+        {% if perfil.soloq and perfil.soloq.top_champion_stats %}
+        const championStatsSoloQ = {{ perfil.soloq.top_champion_stats | tojson }};
+        new Chart(document.getElementById('championsChartSoloQ'), {
+            type: 'doughnut',
+            data: {
+                labels: championStatsSoloQ.map(c => c.champion_name),
+                datasets: [{
+                    label: 'Partidas',
+                    data: championStatsSoloQ.map(c => c.games_played),
+                    backgroundColor: ['#0d6efd', '#6c757d', '#198754', '#dc3545', '#ffc107'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: textColor } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const champ = championStatsSoloQ[context.dataIndex];
+                                return `${champ.champion_name}: ${champ.games_played} partidas (${champ.win_rate.toFixed(1)}% WR)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Gráfico de ELO FlexQ
+        {% if perfil.elo_history_flexq and perfil.elo_history_flexq | length > 1 %}
+        const eloHistoryFlexQ = {{ perfil.elo_history_flexq | tojson }};
+        const eloDataFlexQ = {
+            labels: eloHistoryFlexQ.map(d => new Date(d.timestamp)),
+            datasets: [{
+                label: 'ELO',
+                data: eloHistoryFlexQ.map(d => d.elo),
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                fill: true,
+                tension: 0.2
+            }]
+        };
+        new Chart(document.getElementById('eloChartFlexQ'), {
+            type: 'line',
+            data: eloDataFlexQ,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd MMM yyyy' }, grid: { color: gridColor } },
+                    y: { grid: { color: gridColor } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: context => `ELO: ${formatElo(context.parsed.y)}`
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+
+        // Gráfico de Campeones FlexQ
+        {% if perfil.flexq and perfil.flexq.top_champion_stats %}
+        const championStatsFlexQ = {{ perfil.flexq.top_champion_stats | tojson }};
+        new Chart(document.getElementById('championsChartFlexQ'), {
+            type: 'doughnut',
+            data: {
+                labels: championStatsFlexQ.map(c => c.champion_name),
+                datasets: [{
+                    label: 'Partidas',
+                    data: championStatsFlexQ.map(c => c.games_played),
+                    backgroundColor: ['#0d6efd', '#6c757d', '#198754', '#dc3545', '#ffc107'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: textColor } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const champ = championStatsFlexQ[context.dataIndex];
+                                return `${champ.champion_name}: ${champ.games_played} partidas (${champ.win_rate.toFixed(1)}% WR)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+        // --- FIN: LÓGICA DE GRÁFICOS ---
     });
 </script>
 
