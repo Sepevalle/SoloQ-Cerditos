@@ -44,7 +44,14 @@ def get_queue_type_filter(queue_id):
 
 @app.template_filter('format_timestamp')
 def format_timestamp_filter(timestamp):
-    return datetime.fromtimestamp(timestamp / 1000).strftime("%d/%m/%Y %H:%M")
+    # Ajuste para sumar 2 horas al timestamp antes de formatear
+    if timestamp is None:
+        return "N/A"
+    # El timestamp viene en milisegundos, lo convertimos a segundos
+    timestamp_sec = timestamp / 1000
+    # Creamos el objeto datetime y le sumamos 2 horas
+    dt_object = datetime.fromtimestamp(timestamp_sec) + timedelta(hours=2)
+    return dt_object.strftime("%d/%m/%Y %H:%M")
 
 
 @app.template_filter('format_peak_elo')
@@ -858,11 +865,7 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
         return 0
 
     for match in all_matches_for_player:
-        # El timestamp guardado tiene un desfase de +2h (7200000ms).
-        # Lo restamos aquí para compararlo de forma consistente con el timestamp
-        # del servidor, que probablemente esté en UTC.
-        match_timestamp_utc = match.get('game_end_timestamp', 0) - 7200000
-        # Ensure match is for the correct queue and within the last 24 hours
+        match_timestamp_utc = match.get('game_end_timestamp', 0)
         if match_timestamp_utc >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
             if match.get('lp_change_this_game') is not None:
                 lp_change_24h += match['lp_change_this_game']
@@ -1316,6 +1319,59 @@ def _get_player_profile_data(game_name):
 
     historial_total = perfil.get('historial_partidas', [])
     
+    # --- START of new ELO History Logic ---
+    perfil['elo_history_soloq'] = []
+    perfil['elo_history_flexq'] = []
+
+    if 'soloq' in perfil and perfil['soloq']:
+        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420 and p.get('lp_change_this_game') is not None]
+        partidas_soloq.sort(key=lambda x: x.get('game_end_timestamp', 0)) # Sort from oldest to newest
+        
+        if partidas_soloq:
+            current_elo = perfil['soloq']['valor_clasificacion']
+            elo_at_time = current_elo
+            history_points = []
+            # Work backwards from current ELO
+            for match in reversed(partidas_soloq):
+                history_points.append({
+                    'timestamp': match.get('game_end_timestamp'),
+                    'elo': elo_at_time
+                })
+                elo_at_time -= match.get('lp_change_this_game', 0)
+            
+            # Add a starting point before the first recorded match for a cleaner graph
+            history_points.append({
+                'timestamp': partidas_soloq[0].get('game_end_timestamp') - 3600000, # an hour before
+                'elo': elo_at_time
+            })
+
+            perfil['elo_history_soloq'] = list(reversed(history_points)) # Reverse back to chronological order
+
+    if 'flexq' in perfil and perfil['flexq']:
+        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440 and p.get('lp_change_this_game') is not None]
+        partidas_flexq.sort(key=lambda x: x.get('game_end_timestamp', 0))
+
+        if partidas_flexq:
+            current_elo = perfil['flexq']['valor_clasificacion']
+            elo_at_time = current_elo
+            history_points = []
+            for match in reversed(partidas_flexq):
+                history_points.append({
+                    'timestamp': match.get('game_end_timestamp'),
+                    'elo': elo_at_time
+                })
+                elo_at_time -= match.get('lp_change_this_game', 0)
+
+            history_points.append({
+                'timestamp': partidas_flexq[0].get('game_end_timestamp') - 3600000, # an hour before
+                'elo': elo_at_time
+            })
+            
+            perfil['elo_history_flexq'] = list(reversed(history_points))
+
+    # --- END of new ELO History Logic ---
+
+
     if 'soloq' in perfil:
         partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
         rachas_soloq = calcular_rachas(partidas_soloq)
@@ -1544,8 +1600,6 @@ def actualizar_historial_partidas_en_segundo_plano():
                             )
 
                             if is_candidate:
-                                # Calculate time difference in seconds
-                                # The match timestamp is already adjusted by +2h, so no need to adjust again here.
                                 match_end_ts_sec = match.get('game_end_timestamp', 0) / 1000 
                                 time_diff = detection_ts_sec - match_end_ts_sec
 
