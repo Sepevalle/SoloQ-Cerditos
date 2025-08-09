@@ -137,351 +137,350 @@
             right: 20px;
         }
 
-        #volumeSlider {
-            width: 100px;
-            margin-left: 10px;
-            vertical-align: middle;
-            height: 20px;
-            padding: 0;
-        }
+    #volumeSlider {
+        width: 100px;
+        margin-left: 10px;
+        vertical-align: middle;
+        height: 20px;
+        padding: 0;
+    }
 
-        #volumeSlider::-webkit-slider-runnable-track {
-            background: #6c757d;
-            height: 0.2em;
-            border-radius: 1em;
-        }
+    #volumeSlider::-webkit-slider-runnable-track {
+        background: #6c757d;
+        height: 0.2em;
+        border-radius: 1em;
+    }
 
-        #volumeSlider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 15px;
-            height: 15px;
-            background: #333;
-            border-radius: 50%;
-            margin-top: -6.5px;
-        }
+    #volumeSlider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 15px;
+        height: 15px;
+        background: #333;
+        border-radius: 50%;
+        margin-top: -6.5px;
+    }
 
-        #volumeSlider::-moz-range-track {
-            background: #6c757d;
-            height: 0.2em;
-            border-radius: 1em;
-        }
+    #volumeSlider::-moz-range-track {
+        background: #6c757d;
+        height: 0.2em;
+        border-radius: 1em;
+    }
 
-        #volumeSlider::-moz-range-thumb {
-            width: 15px;
-            height: 15px;
-            background: #333;
-            border: none;
-            border-radius: 50px;
-        }
+    #volumeSlider::-moz-range-thumb {
+        width: 15px;
+        height: 15px;
+        background: #333;
+        border: none;
+        border-radius: 50px;
+    }
 
-        .dark-mode #volumeSlider::-webkit-slider-runnable-track,
-        .dark-mode #volumeSlider::-moz-range-track {
-            background: #495057;
-        }
+    .dark-mode #volumeSlider::-webkit-slider-runnable-track,
+    .dark-mode #volumeSlider::-moz-range-track {
+        background: #495057;
+    }
 
-        .dark-mode #volumeSlider::-webkit-slider-thumb {
-            background: #fff;
-        }
+    .dark-mode #volumeSlider::-webkit-slider-thumb {
+        background: #fff;
+    }
 
-        .dark-mode #volumeSlider::-moz-range-thumb {
-            background: #fff;
-        }
+    .dark-mode #volumeSlider::-moz-range-thumb {
+        background: #fff;
+    }
 
-        .lp-gain {
-            color: #228B22; /* Green for positive LP */
-            font-weight: bold;
-        }
-        .lp-loss {
-            color: #dc3545; /* Red for negative LP */
-            font-weight: bold;
-        }
+    .lp-gain {
+        color: #228B22; /* Green for positive LP */
+        font-weight: bold;
+    }
+    .lp-loss {
+        color: #dc3545; /* Red for negative LP */
+        font-weight: bold;
+    }
 
-        #toggle-mode {
-            font-weight: bold;
-        }
+    #toggle-mode {
+        font-weight: bold;
+    }
 
-        /* Estilos específicos para la página de jugador */
-        .profile-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .profile-header img {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #007bff;
-            margin-bottom: 15px;
-        }
-        .rank-card {
-            margin-bottom: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .rank-card .card-header {
-            background-color: #007bff;
-            color: white;
-            font-weight: bold;
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
-        }
-        .rank-card .card-body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-        .rank-card .elo-image-lg {
-            width: 120px;
-            height: 120px;
-            object-fit: contain;
-            margin-bottom: 15px;
-        }
-        .rank-details {
-            text-align: center;
-            width: 100%;
-        }
-        .rank-details h4 {
-            margin-bottom: 5px;
-            color: #007bff;
-        }
-        .rank-details p {
-            margin-bottom: 3px;
-        }
-        .champion-stats-container {
-            margin-top: 20px;
-            width: 100%;
-        }
-        .champion-stats-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .champion-stats-item:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-        .champion-stats-item img {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin-right: 15px;
-            object-fit: cover;
-        }
-        .champion-stats-info {
-            text-align: center;
-        }
-        .champion-stats-info h5 {
-            margin-bottom: 0;
-            font-size: 1.1em;
-        }
-        .kda-text {
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-        .match-history-card {
-            margin-top: 40px;
-        }
-        /* Styles for the new table structure */
-        .match-history-table th, .match-history-table td {
-            vertical-align: middle;
-            padding: 8px; /* Adjust padding for table cells */
-        }
-        .match-history-table .champion-level-container {
-            width: 60px; /* Larger champion image */
-            height: 60px;
-            margin: 0 auto; /* Center the champion image */
-        }
-        .match-history-table .champion-level {
-            font-size: 0.8em; /* Slightly larger level text */
-            bottom: -8px;
-            right: -8px;
-            padding: 3px 6px;
-            min-width: 24px;
-        }
-        .match-history-table .summoner-spells,
-        .match-history-table .runes {
-            gap: 4px; /* Larger gap for spells/runes */
-            margin: 0 auto; /* Center spells/runes */
-        }
-        .match-history-table .summoner-spells img,
-        .match-history-table .runes img {
-            width: 25px; /* Larger spells/runes images */
-            height: 25px;
-        }
-        .match-history-table .kda-text {
-            font-size: 1.1em; /* Larger KDA text */
-            font-weight: bold;
-        }
-        .items-layout {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-        .items-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 3px;
-            width: calc(25px * 3 + 3px * 2); /* 3 items + 2 gaps */
-        }
-        .items-grid img, .items-grid .item-placeholder,
-        .trinket-item img, .trinket-item .item-placeholder {
-            width: 25px;
-            height: 25px;
-            border-radius: 5px;
-        }
-        .trinket-item .item-placeholder, .items-grid .item-placeholder {
-            border: 1px solid rgba(108, 117, 125, 0.3);
-        }
-        .dark-mode .trinket-item .item-placeholder, .dark-mode .items-grid .item-placeholder {
-            border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border in dark mode */
-        }
-        .match-history-table .match-result {
-            font-size: 1.1em; /* Larger result text */
-        }
-        /* --- INICIO: Mejoras de visualización del historial --- */
-        .match-history-table .match-row-win > td {
-            background-color: rgba(40, 167, 69, 0.08);
-        }
-        .match-history-table .match-row-loss > td {
-            background-color: rgba(220, 53, 69, 0.08);
-        }
-        .dark-mode .match-history-table .match-row-win > td {
-            background-color: rgba(40, 167, 69, 0.15);
-        }
-        .dark-mode .match-history-table .match-row-loss > td {
-            background-color: rgba(220, 53, 69, 0.15);
-        }
-        .highlight-performance {
-            border-left: 4px solid #ffc107; /* Borde dorado para partidas destacadas */
-        }
-        .multikill-badge {
-            display: inline-block;
-            padding: 2px 6px;
-            font-size: 0.75em;
-            font-weight: bold;
-            color: white;
-            border-radius: 4px;
-            margin-left: 5px;
-            vertical-align: middle;
-        }
-        .penta-kill { background-color: #ff4500; } /* NaranjaRojo */
-        .quadra-kill { background-color: #9400d3; } /* Violeta Oscuro */
-        .triple-kill { background-color: #dc143c; } /* Carmesí */
-        .double-kill { background-color: #0056b3; } /* Azul */
+    /* Estilos específicos para la página de jugador */
+    .profile-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .profile-header img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #007bff;
+        margin-bottom: 15px;
+    }
+    .rank-card {
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .rank-card .card-header {
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+    .rank-card .card-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+    }
+    .rank-card .elo-image-lg {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        margin-bottom: 15px;
+    }
+    .rank-details {
+        text-align: center;
+        width: 100%;
+    }
+    .rank-details h4 {
+        margin-bottom: 5px;
+        color: #007bff;
+    }
+    .rank-details p {
+        margin-bottom: 3px;
+    }
+    .champion-stats-container {
+        margin-top: 20px;
+        width: 100%;
+    }
+    .champion-stats-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .champion-stats-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .champion-stats-item img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 15px;
+        object-fit: cover;
+    }
+    .champion-stats-info {
+        text-align: center;
+    }
+    .champion-stats-info h5 {
+        margin-bottom: 0;
+        font-size: 1.1em;
+    }
+    .kda-text {
+        font-size: 0.9em;
+        color: #6c757d;
+    }
+    .match-history-card {
+        margin-top: 40px;
+    }
+    /* Styles for the new table structure */
+    .match-history-table th, .match-history-table td {
+        vertical-align: middle;
+        padding: 8px; /* Adjust padding for table cells */
+    }
+    .match-history-table .champion-level-container {
+        width: 60px; /* Larger champion image */
+        height: 60px;
+        margin: 0 auto; /* Center the champion image */
+    }
+    .match-history-table .champion-level {
+        font-size: 0.8em; /* Slightly larger level text */
+        bottom: -8px;
+        right: -8px;
+        padding: 3px 6px;
+        min-width: 24px;
+    }
+    .match-history-table .summoner-spells,
+    .match-history-table .runes {
+        gap: 4px; /* Larger gap for spells/runes */
+        margin: 0 auto; /* Center spells/runes */
+    }
+    .match-history-table .summoner-spells img,
+    .match-history-table .runes img {
+        width: 25px; /* Larger spells/runes images */
+        height: 25px;
+    }
+    .match-history-table .kda-text {
+        font-size: 1.1em; /* Larger KDA text */
+        font-weight: bold;
+    }
+    .items-layout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3px;
+        width: calc(25px * 3 + 3px * 2); /* 3 items + 2 gaps */
+    }
+    .items-grid img, .items-grid .item-placeholder,
+    .trinket-item img, .trinket-item .item-placeholder {
+        width: 25px;
+        height: 25px;
+        border-radius: 5px;
+    }
+    .trinket-item .item-placeholder, .items-grid .item-placeholder {
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+    .dark-mode .trinket-item .item-placeholder, .dark-mode .items-grid .item-placeholder {
+        border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border in dark mode */
+    }
+    .match-history-table .match-result {
+        font-size: 1.1em; /* Larger result text */
+    }
+    /* --- INICIO: Mejoras de visualización del historial --- */
+    .match-history-table .match-row-win > td {
+        background-color: rgba(40, 167, 69, 0.08);
+    }
+    .match-history-table .match-row-loss > td {
+        background-color: rgba(220, 53, 69, 0.08);
+    }
+    .dark-mode .match-history-table .match-row-win > td {
+        background-color: rgba(40, 167, 69, 0.15);
+    }
+    .dark-mode .match-history-table .match-row-loss > td {
+        background-color: rgba(220, 53, 69, 0.15);
+    }
+    .highlight-performance {
+        border-left: 4px solid #ffc107; /* Borde dorado para partidas destacadas */
+    }
+    .multikill-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 0.75em;
+        font-weight: bold;
+        color: white;
+        border-radius: 4px;
+        margin-left: 5px;
+        vertical-align: middle;
+    }
+    .penta-kill { background-color: #ff4500; } /* NaranjaRojo */
+    .quadra-kill { background-color: #9400d3; } /* Violeta Oscuro */
+    .triple-kill { background-color: #dc143c; } /* Carmesí */
+    .double-kill { background-color: #0056b3; } /* Azul */
 
-        .damage-bar {
-            display: flex;
-            width: 100%;
-            min-width: 80px; /* Ancho mínimo ajustado */
-            height: 12px; /* Altura reducida para una barra más fina */
-            border-radius: 4px;
-            overflow: hidden;
-            background-color: #e9ecef;
-            border: 1px solid #ccc;
-        }
-        .damage-physical { background-color: #ff8c00; } /* Naranja */
-        .damage-magic { background-color: #4169e1; } /* Azul Royal */
-        .damage-true { background-color: #f8f9fa; } /* Casi blanco */
-        .dark-mode .damage-bar { background-color: #212529; border-color: #495057; }
+    .damage-bar {
+        display: flex;
+        width: 100%;
+        min-width: 80px; /* Ancho mínimo ajustado */
+        height: 12px; /* Altura reducida para una barra más fina */
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #e9ecef;
+        border: 1px solid #ccc;
+    }
+    .damage-physical { background-color: #ff8c00; } /* Naranja */
+    .damage-magic { background-color: #4169e1; } /* Azul Royal */
+    .damage-true { background-color: #f8f9fa; } /* Casi blanco */
+    .dark-mode .damage-bar { background-color: #212529; border-color: #495057; }
 
-        /* --- FIN: Mejoras de visualización del historial --- */
+    /* --- FIN: Mejoras de visualización del historial --- */
 
-        /* Styles for filter controls */
-        .filter-controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
-            justify-content: center; /* Center filters */
-            align-items: center;
-        }
-        .filter-controls label {
-            margin-bottom: 0; /* Remove default label margin */
-            font-weight: bold;
-        }
-        .filter-controls select {
-            flex-grow: 1; /* Allow select boxes to grow */
-            max-width: 200px; /* Max width for select boxes */
-        }
+    /* Styles for filter controls */
+    .filter-controls {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        justify-content: center; /* Center filters */
+        align-items: center;
+    }
+    .filter-controls label {
+        margin-bottom: 0; /* Remove default label margin */
+        font-weight: bold;
+    }
+    .filter-controls select {
+        flex-grow: 1; /* Allow select boxes to grow */
+        max-width: 200px; /* Max width for select boxes */
+    }
 
-        /* Styles for champion level overlay */
-        .champion-level-container {
-            position: relative;
-            display: inline-block;
-        }
-        .champion-level-container img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-        }
-        .champion-level {
-            position: absolute;
-            background-color: #343a40;
-            color: white;
-            font-weight: bold;
-            border-radius: 50%;
-            text-align: center;
-            border: 1px solid #6c757d;
-        }
+    /* Styles for champion level overlay */
+    .champion-level-container {
+        position: relative;
+        display: inline-block;
+    }
+    .champion-level-container img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+    }
+    .champion-level {
+        position: absolute;
+        background-color: #343a40;
+        color: white;
+        font-weight: bold;
+        border-radius: 50%;
+        text-align: center;
+        border: 1px solid #6c757d;
+    }
 
-        /* Styles for summoner spells */
-        .summoner-spells {
-            display: flex;
-            flex-direction: column;
-        }
-        .summoner-spells img {
-            border-radius: 3px;
-        }
+    /* Styles for summoner spells */
+    .summoner-spells {
+        display: flex;
+        flex-direction: column;
+    }
+    .summoner-spells img {
+        border-radius: 3px;
+    }
 
-        /* Styles for runes */
-        .runes {
-            display: flex;
-            flex-direction: column;
-        }
-        .runes img {
-            border-radius: 50%;
-        }
-        .runes img.keystone {
-            border: 1px solid gold;
-        }
-        .runes img.sub-rune {
-            border: 1px solid #6c757d;
-        }
+    /* Styles for runes */
+    .runes {
+        display: flex;
+        flex-direction: column;
+    }
+    .runes img {
+        border-radius: 50%;
+    }
+    .runes img.keystone {
+        border: 1px solid gold;
+    }
+    .runes img.sub-rune {
+        border: 1px solid #6c757d;
+    }
 
-        /* Dark mode specific text color for small-text-stats */
-        .small-text-stats {
-            color: #6c757d; /* Default light mode color */
-        }
-        .dark-mode .small-text-stats, .dark-mode .small-text {
-            color: #adb5bd; /* Lighter gray for better contrast in dark mode */
-        }
+    /* Dark mode specific text color for small-text-stats */
+    .small-text-stats {
+        color: #6c757d; /* Default light mode color */
+    }
+    .dark-mode .small-text-stats, .dark-mode .small-text {
+        color: #adb5bd; /* Lighter gray for better contrast in dark mode */
+    }
 
-        /* --- INICIO: Animación para desplegar detalles de partida --- */
-        .details-content-wrapper {
-            display: grid;
-            grid-template-rows: 0fr; /* Colapsado por defecto */
-            transition: grid-template-rows 0.4s ease-in-out;
-        }
+    /* --- INICIO: Animación para desplegar detalles de partida --- */
+    .details-content-wrapper {
+        display: grid;
+        grid-template-rows: 0fr; /* Colapsado por defecto */
+        transition: grid-template-rows 0.4s ease-in-out;
+    }
 
-        /* Cuando la fila contenedora (tr) NO tiene la clase 'hidden', se expande */
-        tr:not(.hidden) .details-content-wrapper {
-            grid-template-rows: 1fr;
-        }
+    /* Cuando la fila contenedora (tr) NO tiene la clase 'hidden', se expande */
+    tr:not(.hidden) .details-content-wrapper {
+        grid-template-rows: 1fr;
+    }
 
-        .details-content-wrapper > div {
-            overflow: hidden; /* Esencial para que la animación de grid funcione */
-        }
-        /* --- FIN: Animación para desplegar detalles de partida --- */
-    </style>
-</head>
+    .details-content-wrapper > div {
+        overflow: hidden; /* Esencial para que la animación de grid funcione */
+    }
+    /* --- FIN: Animación para desplegar detalles de partida --- */
+</style></head>
 
 <body>
 
@@ -522,8 +521,6 @@
 <div class="container my-4 d-flex justify-content-center">
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
 </div>
-
-
 <div class="container-fluid mt-5">
     <div class="profile-header">
         <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png"
@@ -533,523 +530,534 @@
          <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
     </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card rank-card">
-                <div class="card-header">
-                    Clasificatoria Solo/Duo
-                </div>
-                <div class="card-body">
-                    {% if perfil.soloq %}
-                    <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg">
-                    <div class="rank-details">
-                        <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
-                        <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
-                        {% set soloq_total_games = perfil.soloq.wins + perfil.soloq.losses %}
-                        {% set soloq_win_rate = (perfil.soloq.wins / soloq_total_games * 100) if soloq_total_games > 0 else 0 %}
-                        <p class="{% if soloq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                            Win Rate: {{ '%.2f'|format(soloq_win_rate) }}%
-                        </p>
-                        <p>
-                            Peak Elo:
-                            {% set peak_elo_soloq = perfil.soloq.get('peak_elo', 0) %}
-                            {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - peak_elo_soloq %}
-                            {% if diff_peak_soloq == 0 %}
-                                <span class="peak-elo">{{ peak_elo_soloq | format_peak_elo }}</span>
-                            {% else %}
-                                {{ peak_elo_soloq | format_peak_elo }}
-                                <span class="small-text-stats">({{ (diff_peak_soloq * -1) }} LPs por debajo)</span>
-                            {% endif %}
-                        </p>
-                        <p>
-                            Rachas (Max): 
-                            <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
-                        </p>
-                        {# Nuevo campo para LP en 24h #}
-                        {% if perfil.soloq.lp_change_24h is not none %}
-                            <p>
-                                LP en 24h: 
-                                {% if perfil.soloq.lp_change_24h > 0 %}
-                                    <span class="lp-gain">+{{ perfil.soloq.lp_change_24h }} LP</span>
-                                {% elif perfil.soloq.lp_change_24h < 0 %}
-                                    <span class="lp-loss">{{ perfil.soloq.lp_change_24h }} LP</span>
-                                {% else %}
-                                    <span>0 LP</span>
-                                {% endif %}
-                            </p>
-                        {% endif %}
-
-                        <div class="champion-stats-container">
-                            {% if perfil.soloq.top_champion_stats %}
-                                {% for champion_stat in perfil.soloq.top_champion_stats %}
-                                    <div class="champion-stats-item">
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
-                                        <div class="champion-stats-info">
-                                            <h5>{{ champion_stat.champion_name }}</h5>
-                                            <p class="kda-text fw-bold">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
-                                            <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
-                                            <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
-                                            <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
-                                            {% if champion_stat.best_kda_match %}
-                                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
-                                                <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
-                                                    <i class="fas fa-star fa-lg" style="color: gold;"></i>
-                                                    <div>
-                                                        <strong style="color: #adb5bd;">Mejor Partida:</strong>
-                                                        <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
-                                                        <br>
-                                                        <span class="small-text-stats">{{ (champion_stat.best_kda_match.timestamp + 2 * 60 * 60 * 1000) | format_timestamp }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <p>No hay estadísticas de campeones disponibles para SoloQ.</p>
-                            {% endif %}
-                        </div>
-
-                    </div>
-                    {% else %}
-                    <p>No se encontraron datos de clasificatoria Solo/Duo.</p>
-                    {% endif %}
-                </div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card rank-card">
+            <div class="card-header">
+                Clasificatoria Solo/Duo
             </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card rank-card">
-                <div class="card-header">
-                    Clasificatoria Flexible
-                </div>
-                <div class="card-body">
-                    {% if perfil.flexq %}
-                    <img src="" alt="{{ perfil.flexq.tier }}" class="elo-image-lg">
-                    <div class="rank-details">
-                        <h4>{{ perfil.flexq.tier }} {{ perfil.flexq.rank }} ({{ perfil.flexq.league_points }} LPs)</h4>
-                        <p>Wins: {{ perfil.flexq.wins }} | Losses: {{ perfil.flexq.losses }} | Total: {{ perfil.flexq.wins + perfil.flexq.losses }}</p>
-                        {% set flexq_total_games = perfil.flexq.wins + perfil.flexq.losses %}
-                        {% set flexq_win_rate = (perfil.flexq.wins / flexq_total_games * 100) if flexq_total_games > 0 else 0 %}
-                        <p class="{% if flexq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
-                            Win Rate: {{ '%.2f'|format(flexq_win_rate) }}%
-                        </p>
+            <div class="card-body">
+                {% if perfil.soloq %}
+                <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg">
+                <div class="rank-details">
+                    <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
+                    <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
+                    {% set soloq_total_games = perfil.soloq.wins + perfil.soloq.losses %}
+                    {% set soloq_win_rate = (perfil.soloq.wins / soloq_total_games * 100) if soloq_total_games > 0 else 0 %}
+                    <p class="{% if soloq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                        Win Rate: {{ '%.2f'|format(soloq_win_rate) }}%
+                    </p>
+                    <p>
+                        Peak Elo:
+                        {% set peak_elo_soloq = perfil.soloq.get('peak_elo', 0) %}
+                        {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - peak_elo_soloq %}
+                        {% if diff_peak_soloq == 0 %}
+                            <span class="peak-elo">{{ peak_elo_soloq | format_peak_elo }}</span>
+                        {% else %}
+                            {{ peak_elo_soloq | format_peak_elo }}
+                            <span class="small-text-stats">({{ (diff_peak_soloq * -1) }} LPs por debajo)</span>
+                        {% endif %}
+                    </p>
+                    <p>
+                        Rachas (Max): 
+                        <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
+                    </p>
+                    {# Nuevo campo para LP en 24h #}
+                    {% if perfil.soloq.lp_change_24h is not none %}
                         <p>
-                            Peak Elo:
-                            {% set peak_elo_flexq = perfil.flexq.get('peak_elo', 0) %}
-                            {% set diff_peak_flexq = perfil.flexq.valor_clasificacion - peak_elo_flexq %}
-                            {% if diff_peak_flexq == 0 %}
-                                <span class="peak-elo">{{ peak_elo_flexq | format_peak_elo }}</span>
+                            LP en 24h: 
+                            {% if perfil.soloq.lp_change_24h > 0 %}
+                                <span class="lp-gain">+{{ perfil.soloq.lp_change_24h }} LP</span>
+                            {% elif perfil.soloq.lp_change_24h < 0 %}
+                                <span class="lp-loss">{{ perfil.soloq.lp_change_24h }} LP</span>
                             {% else %}
-                                {{ peak_elo_flexq | format_peak_elo }}
-                                <span class="small-text-stats">({{ (diff_peak_flexq * -1) }} LPs por debajo)</span>
+                                <span>0 LP</span>
                             {% endif %}
                         </p>
-                        <p>
-                            Rachas (Max): 
-                            <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
-                        </p>
-                        {# Nuevo campo para LP en 24h #}
-                        {% if perfil.flexq.lp_change_24h is not none %}
-                            <p>
-                                LP en 24h: 
-                                {% if perfil.flexq.lp_change_24h > 0 %}
-                                    <span class="lp-gain">+{{ perfil.flexq.lp_change_24h }} LP</span>
-                                {% elif perfil.flexq.lp_change_24h < 0 %}
-                                    <span class="lp-loss">{{ perfil.flexq.lp_change_24h }} LP</span>
-                                {% else %}
-                                    <span>0 LP</span>
-                                {% endif %}
-                            </p>
-                        {% endif %}
+                    {% endif %}
 
-                        <div class="champion-stats-container">
-                            {% if perfil.flexq.top_champion_stats %}
-                                {% for champion_stat in perfil.flexq.top_champion_stats %}
-                                    <div class="champion-stats-item">
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
-                                        <div class="champion-stats-info">
-                                            <h5>{{ champion_stat.champion_name }}</h5>
-                                            <p class="kda-text fw-bold">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
-                                            <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
-                                            <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
-                                            <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
-                                            {% if champion_stat.best_kda_match %}
-                                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
-                                                <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
-                                                    <i class="fas fa-star fa-lg" style="color: gold;"></i>
-                                                    <div>
-                                                        <strong style="color: #adb5bd;">Mejor Partida:</strong>
-                                                        <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
-                                                        <br>
-                                                        <span class="small-text-stats">{{ (champion_stat.best_kda_match.timestamp+ 2 * 60 * 60 * 1000) | format_timestamp }}</span>
-                                                    </div>
+                    <div class="champion-stats-container">
+                        {% if perfil.soloq.top_champion_stats %}
+                            {% for champion_stat in perfil.soloq.top_champion_stats %}
+                                <div class="champion-stats-item">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
+                                    <div class="champion-stats-info">
+                                        <h5>{{ champion_stat.champion_name }}</h5>
+                                        <p class="kda-text fw-bold">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
+                                        <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
+                                        <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
+                                        <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
+                                        {% if champion_stat.best_kda_match %}
+                                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
+                                            <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
+                                                <i class="fas fa-star fa-lg" style="color: gold;"></i>
+                                                <div>
+                                                    <strong style="color: #adb5bd;">Mejor Partida:</strong>
+                                                    <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
+                                                    
+
+                                                    <span class="small-text-stats">{{ (champion_stat.best_kda_match.timestamp + 2 * 60 * 60 * 1000) | format_timestamp }}</span>
                                                 </div>
                                             </div>
-                                            {% endif %}
                                         </div>
+                                        {% endif %}
                                     </div>
-                                {% endfor %}
-                            {% else %}
-                                <p>No hay estadísticas de campeones disponibles para FlexQ.</p>
-                            {% endif %}
-                        </div>
-
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>No hay estadísticas de campeones disponibles para SoloQ.</p>
+                        {% endif %}
                     </div>
-                    {% else %}
-                    <p>No se encontraron datos de clasificatoria Flexible.</p>
-                    {% endif %}
+
                 </div>
+                {% else %}
+                <p>No se encontraron datos de clasificatoria Solo/Duo.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="card match-history-card">
-        <div class="card-header">
-            Historial de Partidas
-        </div>
-        <div class="card-body">
-            <div class="filter-controls">
-                <label for="queueFilter">Tipo de Cola:</label>
-                <select id="queueFilter" class="form-select"></select>
-                <label for="championFilter">Campeón:</label>
-                <select id="championFilter" class="form-select">
-                    <option value="all">Todos</option>
-                    </select>
+    <div class="col-md-6">
+        <div class="card rank-card">
+            <div class="card-header">
+                Clasificatoria Flexible
             </div>
+            <div class="card-body">
+                {% if perfil.flexq %}
+                <img src="" alt="{{ perfil.flexq.tier }}" class="elo-image-lg">
+                <div class="rank-details">
+                    <h4>{{ perfil.flexq.tier }} {{ perfil.flexq.rank }} ({{ perfil.flexq.league_points }} LPs)</h4>
+                    <p>Wins: {{ perfil.flexq.wins }} | Losses: {{ perfil.flexq.losses }} | Total: {{ perfil.flexq.wins + perfil.flexq.losses }}</p>
+                    {% set flexq_total_games = perfil.flexq.wins + perfil.flexq.losses %}
+                    {% set flexq_win_rate = (perfil.flexq.wins / flexq_total_games * 100) if flexq_total_games > 0 else 0 %}
+                    <p class="{% if flexq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
+                        Win Rate: {{ '%.2f'|format(flexq_win_rate) }}%
+                    </p>
+                    <p>
+                        Peak Elo:
+                        {% set peak_elo_flexq = perfil.flexq.get('peak_elo', 0) %}
+                        {% set diff_peak_flexq = perfil.flexq.valor_clasificacion - peak_elo_flexq %}
+                        {% if diff_peak_flexq == 0 %}
+                            <span class="peak-elo">{{ peak_elo_flexq | format_peak_elo }}</span>
+                        {% else %}
+                            {{ peak_elo_flexq | format_peak_elo }}
+                            <span class="small-text-stats">({{ (diff_peak_flexq * -1) }} LPs por debajo)</span>
+                        {% endif %}
+                    </p>
+                    <p>
+                        Rachas (Max): 
+                        <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
+                    </p>
+                    {# Nuevo campo para LP en 24h #}
+                    {% if perfil.flexq.lp_change_24h is not none %}
+                        <p>
+                            LP en 24h: 
+                            {% if perfil.flexq.lp_change_24h > 0 %}
+                                <span class="lp-gain">+{{ perfil.flexq.lp_change_24h }} LP</span>
+                            {% elif perfil.flexq.lp_change_24h < 0 %}
+                                <span class="lp-loss">{{ perfil.flexq.lp_change_24h }} LP</span>
+                            {% else %}
+                                <span>0 LP</span>
+                            {% endif %}
+                        </p>
+                    {% endif %}
 
-            <div class="table-responsive">
-                <table class="table table-striped table-hover match-history-table">
-                    <thead>
-                        <tr>
-                            <th>Tipo de Partida</th>
-                            <th>Campeón</th>
-                            <th>KDA</th>
-                            <th>Daño a Campeones</th>
-                            <th>Daño a Objetivos</th>
-                            <th>Oro Ganado</th>
-                            <th>Súbditos</th>
-                            <th>Visión</th>
-                            <th>Hechizos</th>
-                            <th>Runas</th>
-                            <th>Objetos</th>
-                            <th>LP</th> {# Nueva columna para LP #}
-                            <th>Duración</th>
-                            <th>Resultado / Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for match in perfil.historial_partidas %}
-                        {% set kda_ratio = ((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 999 %}
-                        <tr 
-                            data-queue-id="{{ match.queue_id }}" 
-                            data-champion-name="{{ match.champion_name }}"
-                            class="{{ 'match-row-win' if match.win else 'match-row-loss' }} {{ 'highlight-performance' if kda_ratio >= 5.0 }}"
-                            style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-{{ loop.index }}')"
-                        >
-                            <td>{{ match.queue_id | get_queue_type }}</td>
-                            <td>
-                                <div class="champion-level-container">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png" alt="{{ match.champion_name }}">
-                                    <span class="champion-level">{{ match.champion_level }}</span>
-                                </div>
-                                <div>{{ match.champion_name }}</div>
-                            </td>
-                            <td>
-                                <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span>
-                                {% set largest_multi_kill = match.get('largestMultiKill', 0) %}
-                                {% if largest_multi_kill >= 5 %}
-                                    {% set count = match.get('pentaKills', 1) %}
-                                    <span class="multikill-badge penta-kill">PENTA{% if count > 1 %} x{{ count }}{% endif %}</span>
-                                {% elif largest_multi_kill == 4 %}
-                                    {% set count = match.get('quadraKills', 1) %}
-                                    <span class="multikill-badge quadra-kill">QUADRA{% if count > 1 %} x{{ count }}{% endif %}</span>
-                                {% elif largest_multi_kill == 3 %}
-                                    {% set count = match.get('tripleKills', 1) %}
-                                    <span class="multikill-badge triple-kill">TRIPLE{% if count > 1 %} x{{ count }}{% endif %}</span>
-                                {% elif largest_multi_kill == 2 %}
-                                    {% set count = match.get('doubleKills', 1) %}
-                                    <span class="multikill-badge double-kill">DOUBLE{% if count > 1 %} x{{ count }}{% endif %}</span>
-                                {% endif %}
-                                <br>
-                                <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>
-                                <br>
-                                <span class="small-text-stats fw-bold" title="Participación en Asesinatos">{{ '%.0f'|format(match.get('kill_participation', 0)) }}% KP</span>
-                            </td>
-                            <td>
-                                <div>{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</div>
-                                <div>
-                                    <span class="small-text-stats">
-                                        {% set game_duration_minutes = match.game_duration / 60 %}
-                                        {% if game_duration_minutes > 0 %}
-                                            {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions / game_duration_minutes) }} DPM
-                                        {% else %}
-                                            0 DPM
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                {% set total_damage = match.physical_damage_dealt_to_champions + match.magic_damage_dealt_to_champions + match.true_damage_dealt_to_champions %}
-                                {% if total_damage > 0 %}
-                                    {% set physical_pct = (match.physical_damage_dealt_to_champions / total_damage * 100) %}
-                                    {% set magic_pct = (match.magic_damage_dealt_to_champions / total_damage * 100) %}
-                                    {% set true_pct = (match.true_damage_dealt_to_champions / total_damage * 100) %}
-                                    <div class="damage-bar mt-1" title="Físico: {{ '{:,.0f}'.format(match.physical_damage_dealt_to_champions) }} | Mágico: {{ '{:,.0f}'.format(match.magic_damage_dealt_to_champions) }} | Verdadero: {{ '{:,.0f}'.format(match.true_damage_dealt_to_champions) }}">
-                                        <div class="damage-physical" style="width: {{ physical_pct }}%;"></div>
-                                        <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
-                                        <div class="damage-true" style="width: {{ true_pct }}%;"></div>
-                                    </div>
-                                {% else %}
-                                    <div class="mt-1"><span>N/A</span></div>
-                                {% endif %}
-                            </td>
-                            <td title="Daño a Objetivos / Torretas / Inhibidores / Objetivos Robados">
-                                <div>{{ '{:,.0f}'.format(match.get('damage_dealt_to_objectives', 0)) }}</div>
-                                <span class="small-text-stats">
-                                    <i class="fas fa-chess-rook"></i> {{ match.get('turret_kills', 0) }}
-                                </span>
-                                <span class="small-text-stats">
-                                    <i class="fas fa-monument"></i> {{ match.get('inhibitor_kills', 0) }}
-                                </span>
-                                {% if match.get('objectives_stolen', 0) > 0 %}
-                                    <span class="small-text-stats text-warning fw-bold">
-                                        <i class="fas fa-hand-lizard"></i> {{ match.get('objectives_stolen', 0) }} Robados
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ '{:,.0f}'.format(match.gold_earned) }}
-                                <br>
-                                <span class="small-text-stats">
-                                    {% set game_duration_minutes = match.game_duration / 60 %}
-                                    {% if game_duration_minutes > 0 %}
-                                        {{ '{:,.0f}'.format(match.gold_earned / game_duration_minutes) }} GPM
-                                    {% else %}
-                                        0 GPM
-                                    {% endif %}
-                                </span>
-                            </td>
-                            <td>
-                                {{ match.total_minions_killed + match.neutral_minions_killed }}
-                                <br>
-                                <span class="small-text-stats">
-                                    {% set game_duration_minutes = match.game_duration / 60 %}
-                                    {% if game_duration_minutes > 0 %}
-                                        {{ '%.1f'|format((match.total_minions_killed + match.neutral_minions_killed) / game_duration_minutes) }} CS/min
-                                    {% else %}
-                                        0.0 CS/min
-                                    {% endif %}
-                                </span>
-                            </td>
-                            <td title="Puntuación de Visión (por minuto) | Wards de Control | Wards Colocados / Destruidos">
-                                <span class="fw-bold">{{ match.vision_score }}</span>
-                                <br>
-                                <span class="small-text-stats">
-                                    {{ match.get('detector_wards_placed', 0) }} | {{ match.get('wards_placed', 0) }} / {{ match.get('wards_killed', 0) }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="summoner-spells">
-                                    {% if match.summoner_spell_1_id %}
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_1_id }}.png" alt="Spell 1">
-                                    {% endif %}
-                                    {% if match.summoner_spell_2_id %}
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_2_id }}.png" alt="Spell 2">
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="runes">
-                                    {% if match.perk_main_id %}
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_main_id }}" alt="Main Rune" class="keystone">
-                                    {% endif %}
-                                    {% if match.perk_sub_id %}
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_sub_id }}" alt="Sub Rune" class="sub-rune">
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="items-layout">
-                                    <div class="items-grid">
-                                        {% for i in range(6) %}
-                                            {% set item_id = match.player_items[i] %}
-                                            {% if item_id > 0 %}
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
-                                            {% else %}
-                                                <div class="item-placeholder"></div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                    <div class="trinket-item">
-                                        {% set trinket_id = match.player_items[6] %}
-                                        {% if trinket_id > 0 %}
-                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ trinket_id }}.png" alt="Trinket">
-                                        {% else %}
-                                            <div class="item-placeholder"></div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if match.lp_change_this_game is not none %}
-                                    {% if match.lp_change_this_game > 0 %}
-                                        <span class="lp-gain">+{{ match.lp_change_this_game }}</span>
-                                    {% elif match.lp_change_this_game < 0 %}
-                                        <span class="lp-loss">{{ match.lp_change_this_game }}</span>
-                                    {% else %}
-                                        <span>0</span>
-                                    {% endif %}
-                                {% else %}
-                                    <span>N/A</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s</td>
-                            <td class="{{ 'text-success' if match.win else 'text-danger' }}">
-                                {{ 'Victoria' if match.win else 'Derrota' }}
-                                <br>
-                                <span class="small-text-stats">{{ (match.game_end_timestamp + 2 * 60 * 60 * 1000) | format_timestamp }}</span>
-                            </td>
-                        </tr>
-                        {% if match.all_participants %}
-                        <tr id="match-{{ loop.index }}" class="hidden">
-                            <td colspan="14" class="p-0"> {# Colspan ajustado para la nueva columna LP #}
-                                <div class="details-content-wrapper">
-                                    <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
-                                        <div class="row g-2">
-                                            <!-- Equipo Azul (ID 100) -->
-                                            <div class="col-md-6">
-                                                <div class="p-2 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
-                                                    <h6 class="text-primary fw-bold mb-2">
-                                                        {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
-                                                        {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
-                                                    </h6>
-                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
-                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
-                                                        <div class="text-start" style="width: 110px;">KDA</div>
-                                                        <div class="text-start" style="width: 80px;">Daño</div>
-                                                        <div class="text-start" style="width: 80px;">CS</div>
-                                                        <div class="text-start" style="width: 50px;">Visión</div>
-                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
-                                                    </div>
-                                                    <ul class="list-unstyled mb-0">
-                                                        {% for participante in match.all_participants %}
-                                                            {% if participante.team_id == 100 %}
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
-                                                                    <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
-                                                                    <br>
-                                                                    {% set game_duration_minutes = match.game_duration / 60 %}
-                                                                    {% if game_duration_minutes > 0 %}
-                                                                    <span class="small-text-stats">({{ '%.1f'|format(participante.get('total_cs', 0) / game_duration_minutes) }}/m)</span>
-                                                                    {% endif %}
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    {% for item_id in participante.get('items', []) %}
-                                                                        {% if item_id > 0 %}
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
-                                                                        {% else %}
-                                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
-                                                                        {% endif %}
-                                                                    {% endfor %}
-                                                                </div>
-                                                            </li>                                                            
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                            <!-- Equipo Rojo (ID 200) -->
-                                            <div class="col-md-6">
-                                                <div class="p-2 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
-                                                    <h6 class="text-danger fw-bold mb-2">
-                                                        {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
-                                                        {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
-                                                    </h6>
-                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
-                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
-                                                        <div class="text-start" style="width: 110px;">KDA</div>
-                                                        <div class="text-start" style="width: 80px;">Daño</div>
-                                                        <div class="text-start" style="width: 80px;">CS</div>
-                                                        <div class="text-start" style="width: 50px;">Visión</div>
-                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
-                                                    </div>
-                                                    <ul class="list-unstyled mb-0">
-                                                        {% for participante in match.all_participants %}
-                                                            {% if participante.team_id == 200 %}
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
-                                                                    <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
-                                                                    <br>
-                                                                    {% set game_duration_minutes = match.game_duration / 60 %}
-                                                                    {% if game_duration_minutes > 0 %}
-                                                                    <span class="small-text-stats">({{ '%.1f'|format(participante.get('total_cs', 0) / game_duration_minutes) }}/m)</span>
-                                                                    {% endif %}
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    {% for item_id in participante.get('items', []) %}
-                                                                        {% if item_id > 0 %}
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
-                                                                        {% else %}
-                                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
-                                                                        {% endif %}
-                                                                    {% endfor %}
-                                                                </div>
-                                                            </li>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    </ul>
+                    <div class="champion-stats-container">
+                        {% if perfil.flexq.top_champion_stats %}
+                            {% for champion_stat in perfil.flexq.top_champion_stats %}
+                                <div class="champion-stats-item">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
+                                    <div class="champion-stats-info">
+                                        <h5>{{ champion_stat.champion_name }}</h5>
+                                        <p class="kda-text fw-bold">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
+                                        <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
+                                        <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
+                                        <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
+                                        {% if champion_stat.best_kda_match %}
+                                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
+                                            <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
+                                                <i class="fas fa-star fa-lg" style="color: gold;"></i>
+                                                <div>
+                                                    <strong style="color: #adb5bd;">Mejor Partida:</strong>
+                                                    <span class="small-text-stats">{{ "%.2f"|format(champion_stat.best_kda_match.kda) }} KDA ({{ champion_stat.best_kda_match.kills }}/{{ champion_stat.best_kda_match.deaths }}/{{ champion_stat.best_kda_match.assists }})</span>
+                                                    
+
+                                                    <span class="small-text-stats">{{ (champion_stat.best_kda_match.timestamp+ 2 * 60 * 60 * 1000) | format_timestamp }}</span>
                                                 </div>
                                             </div>
                                         </div>
+                                        {% endif %}
                                     </div>
                                 </div>
-                            </td>
-                        </tr>
+                            {% endfor %}
+                        {% else %}
+                            <p>No hay estadísticas de campeones disponibles para FlexQ.</p>
                         {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                    </div>
 
-            <!-- Controles de Paginación -->
-            <nav aria-label="Historial de partidas paginación" class="mt-4">
-                <ul class="pagination justify-content-center" id="pagination-controls">
-                </ul>
-            </nav>
+                </div>
+                {% else %}
+                <p>No se encontraron datos de clasificatoria Flexible.</p>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
+
+<div class="card match-history-card">
+    <div class="card-header">
+        Historial de Partidas
+    </div>
+    <div class="card-body">
+        <div class="filter-controls">
+            <label for="queueFilter">Tipo de Cola:</label>
+            <select id="queueFilter" class="form-select"></select>
+            <label for="championFilter">Campeón:</label>
+            <select id="championFilter" class="form-select">
+                <option value="all">Todos</option>
+                </select>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover match-history-table">
+                <thead>
+                    <tr>
+                        <th>Tipo de Partida</th>
+                        <th>Campeón</th>
+                        <th>KDA</th>
+                        <th>Daño a Campeones</th>
+                        <th>Daño a Objetivos</th>
+                        <th>Oro Ganado</th>
+                        <th>Súbditos</th>
+                        <th>Visión</th>
+                        <th>Hechizos</th>
+                        <th>Runas</th>
+                        <th>Objetos</th>
+                        <th>LP</th> {# Nueva columna para LP #}
+                        <th>Duración</th>
+                        <th>Resultado / Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in perfil.historial_partidas %}
+                    {% set kda_ratio = ((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 999 %}
+                    <tr 
+                        data-queue-id="{{ match.queue_id }}" 
+                        data-champion-name="{{ match.champion_name }}"
+                        class="{{ 'match-row-win' if match.win else 'match-row-loss' }} {{ 'highlight-performance' if kda_ratio >= 5.0 }}"
+                        style="cursor: pointer;"
+                        onclick="toggleMatchDetails('match-{{ loop.index }}')"
+                    >
+                        <td>{{ match.queue_id | get_queue_type }}</td>
+                        <td>
+                            <div class="champion-level-container">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png" alt="{{ match.champion_name }}">
+                                <span class="champion-level">{{ match.champion_level }}</span>
+                            </div>
+                            <div>{{ match.champion_name }}</div>
+                        </td>
+                        <td>
+                            <span class="kda-text">{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</span>
+                            {% set largest_multi_kill = match.get('largestMultiKill', 0) %}
+                            {% if largest_multi_kill >= 5 %}
+                                {% set count = match.get('pentaKills', 1) %}
+                                <span class="multikill-badge penta-kill">PENTA{% if count > 1 %} x{{ count }}{% endif %}</span>
+                            {% elif largest_multi_kill == 4 %}
+                                {% set count = match.get('quadraKills', 1) %}
+                                <span class="multikill-badge quadra-kill">QUADRA{% if count > 1 %} x{{ count }}{% endif %}</span>
+                            {% elif largest_multi_kill == 3 %}
+                                {% set count = match.get('tripleKills', 1) %}
+                                <span class="multikill-badge triple-kill">TRIPLE{% if count > 1 %} x{{ count }}{% endif %}</span>
+                            {% elif largest_multi_kill == 2 %}
+                                {% set count = match.get('doubleKills', 1) %}
+                                <span class="multikill-badge double-kill">DOUBLE{% if count > 1 %} x{{ count }}{% endif %}</span>
+                            {% endif %}
+                            
+
+                            <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>
+                            
+
+                            <span class="small-text-stats fw-bold" title="Participación en Asesinatos">{{ '%.0f'|format(match.get('kill_participation', 0)) }}% KP</span>
+                        </td>
+                        <td>
+                            <div>{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</div>
+                            <div>
+                                <span class="small-text-stats">
+                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                    {% if game_duration_minutes > 0 %}
+                                        {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions / game_duration_minutes) }} DPM
+                                    {% else %}
+                                        0 DPM
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% set total_damage = match.physical_damage_dealt_to_champions + match.magic_damage_dealt_to_champions + match.true_damage_dealt_to_champions %}
+                            {% if total_damage > 0 %}
+                                {% set physical_pct = (match.physical_damage_dealt_to_champions / total_damage * 100) %}
+                                {% set magic_pct = (match.magic_damage_dealt_to_champions / total_damage * 100) %}
+                                {% set true_pct = (match.true_damage_dealt_to_champions / total_damage * 100) %}
+                                <div class="damage-bar mt-1" title="Físico: {{ '{:,.0f}'.format(match.physical_damage_dealt_to_champions) }} | Mágico: {{ '{:,.0f}'.format(match.magic_damage_dealt_to_champions) }} | Verdadero: {{ '{:,.0f}'.format(match.true_damage_dealt_to_champions) }}">
+                                    <div class="damage-physical" style="width: {{ physical_pct }}%;"></div>
+                                    <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
+                                    <div class="damage-true" style="width: {{ true_pct }}%;"></div>
+                                </div>
+                            {% else %}
+                                <div class="mt-1"><span>N/A</span></div>
+                            {% endif %}
+                        </td>
+                        <td title="Daño a Objetivos / Torretas / Inhibidores / Objetivos Robados">
+                            <div>{{ '{:,.0f}'.format(match.get('damage_dealt_to_objectives', 0)) }}</div>
+                            <span class="small-text-stats">
+                                <i class="fas fa-chess-rook"></i> {{ match.get('turret_kills', 0) }}
+                            </span>
+                            <span class="small-text-stats">
+                                <i class="fas fa-monument"></i> {{ match.get('inhibitor_kills', 0) }}
+                            </span>
+                            {% if match.get('objectives_stolen', 0) > 0 %}
+                                <span class="small-text-stats text-warning fw-bold">
+                                    <i class="fas fa-hand-lizard"></i> {{ match.get('objectives_stolen', 0) }} Robados
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ '{:,.0f}'.format(match.gold_earned) }}
+                            
+
+                            <span class="small-text-stats">
+                                {% set game_duration_minutes = match.game_duration / 60 %}
+                                {% if game_duration_minutes > 0 %}
+                                    {{ '{:,.0f}'.format(match.gold_earned / game_duration_minutes) }} GPM
+                                {% else %}
+                                    0 GPM
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {{ match.total_minions_killed + match.neutral_minions_killed }}
+                            
+
+                            <span class="small-text-stats">
+                                {% set game_duration_minutes = match.game_duration / 60 %}
+                                {% if game_duration_minutes > 0 %}
+                                    {{ '%.1f'|format((match.total_minions_killed + match.neutral_minions_killed) / game_duration_minutes) }} CS/min
+                                {% else %}
+                                    0.0 CS/min
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td title="Puntuación de Visión (por minuto) | Wards de Control | Wards Colocados / Destruidos">
+                            <span class="fw-bold">{{ match.vision_score }}</span>
+                            
+
+                            <span class="small-text-stats">
+                                {{ match.get('detector_wards_placed', 0) }} | {{ match.get('wards_placed', 0) }} / {{ match.get('wards_killed', 0) }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="summoner-spells">
+                                {% if match.summoner_spell_1_id %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_1_id }}.png" alt="Spell 1">
+                                {% endif %}
+                                {% if match.summoner_spell_2_id %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ match.summoner_spell_2_id }}.png" alt="Spell 2">
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="runes">
+                                {% if match.perk_main_id %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_main_id }}" alt="Main Rune" class="keystone">
+                                {% endif %}
+                                {% if match.perk_sub_id %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.perk_sub_id }}" alt="Sub Rune" class="sub-rune">
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="items-layout">
+                                <div class="items-grid">
+                                    {% for i in range(6) %}
+                                        {% set item_id = match.player_items[i] %}
+                                        {% if item_id > 0 %}
+                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                        {% else %}
+                                            <div class="item-placeholder"></div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div class="trinket-item">
+                                    {% set trinket_id = match.player_items[6] %}
+                                    {% if trinket_id > 0 %}
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ trinket_id }}.png" alt="Trinket">
+                                    {% else %}
+                                        <div class="item-placeholder"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if match.lp_change_this_game is not none %}
+                                {% if match.lp_change_this_game > 0 %}
+                                    <span class="lp-gain">+{{ match.lp_change_this_game }}</span>
+                                {% elif match.lp_change_this_game < 0 %}
+                                    <span class="lp-loss">{{ match.lp_change_this_game }}</span>
+                                {% else %}
+                                    <span>0</span>
+                                {% endif %}
+                            {% else %}
+                                <span>N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s</td>
+                        <td class="{{ 'text-success' if match.win else 'text-danger' }}">
+                            {{ 'Victoria' if match.win else 'Derrota' }}
+                            
+
+                            <span class="small-text-stats">{{ (match.game_end_timestamp + 2 * 60 * 60 * 1000) | format_timestamp }}</span>
+                        </td>
+                    </tr>
+                    {% if match.all_participants %}
+                    <tr id="match-{{ loop.index }}" class="hidden">
+                        <td colspan="14" class="p-0"> {# Colspan ajustado para la nueva columna LP #}
+                            <div class="details-content-wrapper">
+                                <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
+                                    <div class="row g-2">
+                                        <!-- Equipo Azul (ID 100) -->
+                                        <div class="col-md-6">
+                                            <div class="p-2 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
+                                                <h6 class="text-primary fw-bold mb-2">
+                                                    {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
+                                                    {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
+                                                </h6>
+                                                <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                    <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                    <div class="text-start" style="width: 110px;">KDA</div>
+                                                    <div class="text-start" style="width: 80px;">Daño</div>
+                                                    <div class="text-start" style="width: 80px;">CS</div>
+                                                    <div class="text-start" style="width: 50px;">Visión</div>
+                                                    <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                </div>
+                                                <ul class="list-unstyled mb-0">
+                                                    {% for participante in match.all_participants %}
+                                                        {% if participante.team_id == 100 %}
+                                                        <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
+                                                            <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
+                                                                <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
+                                                            </div>
+                                                            <div class="text-start" style="width: 110px;">
+                                                                <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                                
+
+                                                                <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
+                                                            </div>
+                                                            <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
+                                                            </div>
+                                                            <div class="text-start" style="width: 80px;">
+                                                                <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
+                                                                
+
+                                                                {% set game_duration_minutes = match.game_duration / 60 %}
+                                                                {% if game_duration_minutes > 0 %}
+                                                                <span class="small-text-stats">({{ '%.1f'|format(participante.get('total_cs', 0) / game_duration_minutes) }}/m)</span>
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                {% for item_id in participante.get('items', []) %}
+                                                                    {% if item_id > 0 %}
+                                                                        <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                                    {% else %}
+                                                                        <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                            </div>
+                                                        </li>                                                            
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <!-- Equipo Rojo (ID 200) -->
+                                        <div class="col-md-6">
+                                            <div class="p-2 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
+                                                <h6 class="text-danger fw-bold mb-2">
+                                                    {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
+                                                    {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
+                                                </h6>
+                                                <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                    <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                    <div class="text-start" style="width: 110px;">KDA</div>
+                                                    <div class="text-start" style="width: 80px;">Daño</div>
+                                                    <div class="text-start" style="width: 80px;">CS</div>
+                                                    <div class="text-start" style="width: 50px;">Visión</div>
+                                                    <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                </div>
+                                                <ul class="list-unstyled mb-0">
+                                                    {% for participante in match.all_participants %}
+                                                        {% if participante.team_id == 200 %}
+                                                        <li class="d-flex align-items-center justify-content-between small p-1 rounded {% if participante.summoner_name == perfil.game_name.split('#')[0] %}bg-warning bg-opacity-25{% endif %}">
+                                                            <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png">
+                                                                <span class="fw-bold text-truncate">{{ participante.summoner_name }}</span>
+                                                            </div>
+                                                            <div class="text-start" style="width: 110px;">
+                                                                <span class="fw-bold font-monospace">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</span>
+                                                                
+
+                                                                <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
+                                                            </div>
+                                                            <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
+                                                            </div>
+                                                            <div class="text-start" style="width: 80px;">
+                                                                <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
+                                                                
+
+                                                                {% set game_duration_minutes = match.game_duration / 60 %}
+                                                                {% if game_duration_minutes > 0 %}
+                                                                <span class="small-text-stats">({{ '%.1f'|format(participante.get('total_cs', 0) / game_duration_minutes) }}/m)</span>
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                {% for item_id in participante.get('items', []) %}
+                                                                    {% if item_id > 0 %}
+                                                                        <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                                    {% else %}
+                                                                        <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                            </div>
+                                                        </li>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Controles de Paginación -->
+        <nav aria-label="Historial de partidas paginación" class="mt-4">
+            <ul class="pagination justify-content-center" id="pagination-controls">
+            </ul>
+        </nav>
+    </div>
+</div></div>
 
 <footer class="footer mt-5 py-3 bg-light">
     <div class="container text-center">
@@ -1089,8 +1097,6 @@
 
         const toggleModeBtn = document.getElementById('toggle-mode');
         const body = document.body;
-
-
         if (localStorage.getItem('darkMode') === 'enabled') {
             body.classList.add('dark-mode');
             toggleModeBtn.textContent = 'Modo Claro';
@@ -1140,8 +1146,6 @@
             rightBanner.src = lateralBanners[currentLateralBannerIndex];
         }
         setInterval(changeLateralBanner, 5000); // Change lateral banners every 5 seconds
-
-
         // Audio control
         const backgroundAudio = document.getElementById('backgroundAudio');
         const toggleAudioBtn = document.getElementById('toggleAudio');
@@ -1359,7 +1363,6 @@
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
 </script>
-
-
 </body>
 </html>
+
