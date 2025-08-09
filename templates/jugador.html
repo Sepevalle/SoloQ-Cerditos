@@ -614,6 +614,18 @@
                             {% endif %}
                         </div>
 
+                        <p>
+                            <!-- NUEVO: Mostrar ELO final del split/temporada -->
+                            <span class="small-text-stats">
+                                ELO final del split: 
+                                {% if perfil.soloq.final_elo_split is not none %}
+                                    {{ perfil.soloq.final_elo_split | format_peak_elo }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </p>
+
                     </div>
                     {% else %}
                     <p>No se encontraron datos de clasificatoria Solo/Duo.</p>
@@ -698,6 +710,18 @@
                                 <p>No hay estadísticas de campeones disponibles para FlexQ.</p>
                             {% endif %}
                         </div>
+
+                        <p>
+                            <!-- NUEVO: Mostrar ELO final del split/temporada -->
+                            <span class="small-text-stats">
+                                ELO final del split: 
+                                {% if perfil.flexq.final_elo_split is not none %}
+                                    {{ perfil.flexq.final_elo_split | format_peak_elo }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </p>
 
                     </div>
                     {% else %}

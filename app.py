@@ -87,7 +87,7 @@ def format_peak_elo_filter(valor):
     rank_name = rank_map.get(rank_value, "")
     return f"{tier_name} {rank_name} ({league_points} LPs)"
 
-    
+
     try:
         valor = int(valor)
     except (ValueError, TypeError) as e:
@@ -113,7 +113,9 @@ def format_peak_elo_filter(valor):
         6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD", 
         2: "SILVER", 1: "BRONZE", 0: "IRON"
     }
-    rank_map = {"I": 3, "II": 2, "III": 1, "IV": 0}
+    rank_map = {
+        3: "I", 2: "II", 1: "III", 0: "IV"
+    }
 
     # Calcular LPs primero (el resto al dividir por 100)
     league_points = valor % 100
@@ -165,22 +167,46 @@ pending_lp_updates_lock = threading.Lock()
 
 # --- CONFIGURACIÓN DE SPLITS ---
 SPLITS = {
+    "s14_split1": {
+        "name": "Temporada 2024 - Split 1",
+        "start_date": datetime(2024, 1, 10),
+    },
+    "s14_split2": {
+        "name": "Temporada 2024 - Split 2",
+        "start_date": datetime(2024, 5, 15),
+    },
+    "s14_split3": {
+        "name": "Temporada 2024 - Split 3",
+        "start_date": datetime(2024, 9, 25),
+    },
     "s15_split1": {
         "name": "Temporada 2025 - Split 1",
         "start_date": datetime(2025, 1, 9),
     },
     "s15_split2": {
         "name": "Temporada 2025 - Split 2",
-        "start_date": datetime(2025, 5, 15),
+        "start_date": datetime(2025, 4, 30),
     },
     "s15_split3": {
         "name": "Temporada 2025 - Split 3",
-        "start_date": datetime(2025, 9, 10),
+        "start_date": datetime(2025, 8, 13),
     }
 }
 
-ACTIVE_SPLIT_KEY = "s15_split1"
-SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())
+def get_active_split_key(current_date=None):
+    if current_date is None:
+        current_date = datetime.now()
+    
+    active_key = None
+    for key in reversed(list(SPLITS.keys())):  # Check from latest to earliest
+        if current_date >= SPLITS[key]['start_date']:
+            active_key = key
+            break
+    
+    return active_key or "s15_split1"  # Fallback to split1 if none match
+
+ACTIVE_SPLIT_KEY = get_active_split_key()
+SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())  # Ahora usa el inicio del split activo
 
 # --- CONFIGURACIÓN DEL CONTROL DE TASA DE API ---
 API_REQUEST_QUEUE = queue.Queue() # Cola para todas las peticiones a la API
@@ -567,6 +593,15 @@ def obtener_info_partida(args):
                 perk_sub_id = perks['styles'][1]['style']
 
         print(f"[obtener_info_partida] Información de partida {match_id} procesada para {puuid}.")
+        # --- NUEVO: calcular valor_clasificacion al final de la partida ---
+        tier = p.get('individualPosition', None)  # Not always available, fallback below
+        # Usar el tier/rank/LP del jugador en la partida si está disponible, si no, dejar None
+        valor_clasificacion = None
+        if 'rank' in p and 'tier' in p and 'leaguePoints' in p:
+            valor_clasificacion = calcular_valor_clasificacion(
+                p.get('tier', ''), p.get('rank', ''), p.get('leaguePoints', 0)
+            )
+
         return {
             "match_id": match_id,
             "puuid": puuid,
@@ -593,7 +628,7 @@ def obtener_info_partida(args):
             "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
             "physical_damage_dealt_to_champions": p.get('physicalDamageDealtToChampions', 0),
             "magic_damage_dealt_to_champions": p.get('magicDamageDealtToChampions', 0),
-            "true_damage_dealt_to_champions": p.get('true_damage_dealt_to_champions', 0),
+            "true_damage_dealt_to_champions": p.get('trueDamageDealtToChampions', 0),
             "damage_self_mitigated": p.get('damageSelfMitigated', 0),
             "damage_dealt_to_buildings": p.get('damageDealtToBuildings', 0),
             "damage_dealt_to_objectives": p.get('damageDealtToObjectives', 0),
@@ -625,6 +660,7 @@ def obtener_info_partida(args):
             "objectives_stolen": p.get('objectivesStolen', 0),
             "kill_participation": kill_participation,
             "lp_change_this_game": None, # Initialize LP change to None for new matches
+            "valor_clasificacion": valor_clasificacion,  # <-- Añadido aquí
 
             # --- AÑADIMOS LA LISTA DE TODOS LOS PARTICIPANTES ---
             "all_participants": all_participants_details
@@ -885,7 +921,7 @@ def procesar_jugador(args_tuple):
 
     if not puuid:
         print(f"[procesar_jugador] ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID.")
-        return []
+        return [] 
 
     # Obtener la información de Elo actual del jugador (used for general display and 'needs_full_update' logic)
     elo_info = obtener_elo(api_key_main, puuid)
@@ -1073,98 +1109,18 @@ def actualizar_cache():
     for datos_jugador_list in resultados:
         if datos_jugador_list:
             todos_los_datos.extend(datos_jugador_list)
-
-    print(f"[actualizar_cache] Calculando estadísticas de campeones y LP en 24h para {len(todos_los_datos)} entradas de jugador.")
-    queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
+    
+    # El cálculo de LP en 24h y las estadísticas de campeones se ha movido.
+    # Aquí solo nos aseguramos de que el campo 'lp_change_24h' exista.
     for jugador in todos_los_datos:
-        puuid = jugador.get('puuid')
         queue_type = jugador.get('queue_type')
-        queue_id = queue_map.get(queue_type)
-
-        jugador['top_champion_stats'] = []
-        jugador['lp_change_24h'] = 0
-
-        if not puuid or not queue_id:
-            continue
-        
-        historial = leer_historial_jugador_github(puuid)
-        all_matches_for_player = historial.get('matches', [])
-
-        # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
+        historial = leer_historial_jugador_github(jugador.get('puuid'))
         if queue_type == "RANKED_SOLO_5x5":
             jugador['lp_change_24h'] = historial.get('soloq_lp_change_24h', 0)
         elif queue_type == "RANKED_FLEX_SR":
             jugador['lp_change_24h'] = historial.get('flexq_lp_change_24h', 0)
         else:
-            jugador['lp_change_24h'] = 0 # Default for non-ranked queues
-
-        partidas_jugador = [
-            p for p in all_matches_for_player
-            if p.get('queue_id') == queue_id and
-               p.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
-        ]
-
-        if not partidas_jugador:
-            continue
-
-        contador_campeones = Counter(p['champion_name'] for p in partidas_jugador)
-        if not contador_campeones:
-            continue
-        
-        top_3_campeones = contador_campeones.most_common(3)
-
-        for campeon_nombre, _ in top_3_campeones:
-            partidas_del_campeon = [p for p in partidas_jugador if p['champion_name'] == campeon_nombre]
-            
-            total_partidas = len(partidas_del_campeon)
-            wins = sum(1 for p in partidas_del_campeon if p.get('win'))
-            win_rate = (wins / total_partidas * 100) if total_partidas > 0 else 0
-
-            total_kills = sum(p.get('kills', 0) for p in partidas_del_campeon)
-            total_deaths = sum(p.get('deaths', 0) for p in partidas_del_campeon)
-            total_assists = sum(p.get('assists', 0) for p in partidas_del_campeon)
-            
-            avg_kills = total_kills / total_partidas if total_partidas > 0 else 0
-            avg_deaths = total_deaths / total_partidas if total_partidas > 0 else 0
-            avg_assists = total_assists / total_partidas if total_partidas > 0 else 0
-
-            kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
-
-            best_kda_match_info = None
-            if partidas_del_campeon:
-                def get_kda_for_match(p):
-                    k = p.get('kills', 0)
-                    d = p.get('deaths', 0)
-                    a = p.get('assists', 0)
-                    return (k + a) / d if d > 0 else float(k + a)
-
-                best_match = max(partidas_del_campeon, key=get_kda_for_match)
-                
-                best_kda_value = get_kda_for_match(best_match)
-
-                best_kda_match_info = {
-                    "kda": best_kda_value,
-                    "kills": best_match.get('kills', 0),
-                    "deaths": best_match.get('deaths', 0),
-                    "assists": best_match.get('assists', 0),
-                    "timestamp": best_match.get('game_end_timestamp')
-                }
-
-            jugador['top_champion_stats'].append({
-                "champion_name": campeon_nombre,
-                "win_rate": win_rate,
-                "games_played": total_partidas,
-                "kda": kda,
-                "kills": total_kills,
-                "deaths": total_deaths,
-                "assists": total_assists,
-                "wins": wins,
-                "losses": total_partidas - wins,
-                "avg_kills": avg_kills,
-                "avg_deaths": avg_deaths,
-                "avg_assists": avg_assists,
-                "best_kda_match": best_kda_match_info
-            })
+            jugador['lp_change_24h'] = 0
 
     with cache_lock:
         cache['datos_jugadores'] = todos_los_datos
@@ -1255,7 +1211,11 @@ def perfil_jugador(game_name):
     el tipo de dispositivo para renderizar la plantilla adecuada.
     """
     print(f"[perfil_jugador] Petición recibida para el perfil de jugador: {game_name}")
-    perfil = _get_player_profile_data(game_name)
+    selected_split_key = request.args.get('split', ACTIVE_SPLIT_KEY)
+    if selected_split_key not in SPLITS:
+        selected_split_key = ACTIVE_SPLIT_KEY
+
+    perfil = _get_player_profile_data(game_name, selected_split_key)
     if not perfil:
         print(f"[perfil_jugador] Perfil de jugador {game_name} no encontrado. Retornando 404.")
         return render_template('404.html'), 404
@@ -1270,14 +1230,17 @@ def perfil_jugador(game_name):
     return render_template(template_name,
                            perfil=perfil,
                            ddragon_version=DDRAGON_VERSION,
+                           splits=SPLITS,
+                           selected_split_key=selected_split_key,
                            datetime=datetime,
                            now=datetime.now())
 
-def _get_player_profile_data(game_name):
+def _get_player_profile_data(game_name, selected_split_key):
     """
     Función auxiliar que encapsula la lógica para obtener y procesar
     todos los datos de un perfil de jugador.
     Devuelve el diccionario 'perfil' o None si no se encuentra el jugador.
+    Ahora también acepta el split seleccionado para filtrar los datos.
     """
     print(f"[_get_player_profile_data] Obteniendo datos de perfil para: {game_name}")
     todos_los_datos, _ = obtener_datos_jugadores()
@@ -1319,72 +1282,50 @@ def _get_player_profile_data(game_name):
 
     historial_total = perfil.get('historial_partidas', [])
     
-    # --- START of new ELO History Logic ---
-    perfil['elo_history_soloq'] = []
-    perfil['elo_history_flexq'] = []
+    # --- Lógica para filtrar por Split ---
+    start_timestamp_split_ms = SPLITS[selected_split_key]["start_date"].timestamp() * 1000
 
+    split_keys = list(SPLITS.keys())
+    current_index = split_keys.index(selected_split_key)
+    if current_index + 1 < len(split_keys):
+        # El final del split es el comienzo del siguiente
+        end_timestamp_split_ms = SPLITS[split_keys[current_index + 1]]["start_date"].timestamp() * 1000
+    else:
+        # Es el último split, usamos una fecha en el futuro
+        end_timestamp_split_ms = datetime(2099, 12, 31).timestamp() * 1000
+
+    partidas_del_split = [p for p in historial_total if start_timestamp_split_ms <= p.get('game_end_timestamp', 0) < end_timestamp_split_ms]
+
+    # --- NUEVO: Cálculo de ELO final de cada split usando valor_clasificacion de la última partida del split ---
+    perfil['elo_final_por_split'] = {}
+    for split_key, split_info in SPLITS.items():
+        split_start = split_info['start_date'].timestamp() * 1000
+        # Determinar el final del split
+        idx = split_keys.index(split_key)
+        if idx + 1 < len(split_keys):
+            split_end = SPLITS[split_keys[idx + 1]]['start_date'].timestamp() * 1000
+        else:
+            split_end = datetime(2099, 12, 31).timestamp() * 1000
+        # Buscar la última partida del split para SoloQ y FlexQ
+        for queue_id, queue_name in [(420, 'soloq'), (440, 'flexq')]:
+            partidas_split = [p for p in historial_total if split_start <= p.get('game_end_timestamp', 0) < split_end and p.get('queue_id') == queue_id]
+            if partidas_split:
+                # Tomar la partida más reciente del split
+                partida_final = max(partidas_split, key=lambda x: x.get('game_end_timestamp', 0))
+                valor_final = partida_final.get('valor_clasificacion')
+            else:
+                # Si no hay partidas en el split, usar el valor previo (del split anterior o None)
+                valor_final = None
+            perfil['elo_final_por_split'][f"{queue_name}_{split_key}"] = valor_final
+
+    # --- Lógica para mostrar el ELO final del split seleccionado en el perfil ---
     if 'soloq' in perfil and perfil['soloq']:
-        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420 and p.get('lp_change_this_game') is not None]
-        partidas_soloq.sort(key=lambda x: x.get('game_end_timestamp', 0)) # Sort from oldest to newest
-        
-        if partidas_soloq:
-            current_elo = perfil['soloq']['valor_clasificacion']
-            elo_at_time = current_elo
-            history_points = []
-            # Work backwards from current ELO
-            for match in reversed(partidas_soloq):
-                history_points.append({
-                    'timestamp': match.get('game_end_timestamp'),
-                    'elo': elo_at_time
-                })
-                elo_at_time -= match.get('lp_change_this_game', 0)
-            
-            # Add a starting point before the first recorded match for a cleaner graph
-            history_points.append({
-                'timestamp': partidas_soloq[0].get('game_end_timestamp') - 3600000, # an hour before
-                'elo': elo_at_time
-            })
-
-            perfil['elo_history_soloq'] = list(reversed(history_points)) # Reverse back to chronological order
-
+        # ELO final del split seleccionado
+        perfil['soloq']['final_elo_split'] = perfil['elo_final_por_split'].get(f"soloq_{selected_split_key}")
     if 'flexq' in perfil and perfil['flexq']:
-        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440 and p.get('lp_change_this_game') is not None]
-        partidas_flexq.sort(key=lambda x: x.get('game_end_timestamp', 0))
+        perfil['flexq']['final_elo_split'] = perfil['elo_final_por_split'].get(f"flexq_{selected_split_key}")
 
-        if partidas_flexq:
-            current_elo = perfil['flexq']['valor_clasificacion']
-            elo_at_time = current_elo
-            history_points = []
-            for match in reversed(partidas_flexq):
-                history_points.append({
-                    'timestamp': match.get('game_end_timestamp'),
-                    'elo': elo_at_time
-                })
-                elo_at_time -= match.get('lp_change_this_game', 0)
-
-            history_points.append({
-                'timestamp': partidas_flexq[0].get('game_end_timestamp') - 3600000, # an hour before
-                'elo': elo_at_time
-            })
-            
-            perfil['elo_history_flexq'] = list(reversed(history_points))
-
-    # --- END of new ELO History Logic ---
-
-
-    if 'soloq' in perfil:
-        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
-        rachas_soloq = calcular_rachas(partidas_soloq)
-        perfil['soloq'].update(rachas_soloq)
-        print(f"[_get_player_profile_data] Rachas SoloQ calculadas para {game_name}.")
-
-    if 'flexq' in perfil:
-        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
-        rachas_flexq = calcular_rachas(partidas_flexq)
-        perfil['flexq'].update(rachas_flexq)
-        print(f"[_get_player_profile_data] Rachas FlexQ calculadas para {game_name}.")
-
-    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+    historial_total.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
     print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
     return perfil
 
@@ -1453,14 +1394,15 @@ def perfil_jugador_original(game_name):
 
 def actualizar_historial_partidas_en_segundo_plano():
     """
-    Función que se ejecuta en un hilo separado para actualizar el historial de partidas
-    de todos los jugadores de forma periódica.
+    Función que se ejecuta en un hilo separado para actualizar el historial de partidas de todos los jugadores de forma periódica.
     """
     print("[actualizar_historial_partidas_en_segundo_plano] Iniciando hilo de actualización de historial de partidas.")
     api_key = os.environ.get('RIOT_API_KEY')
     if not api_key:
         print("[actualizar_historial_partidas_en_segundo_plano] ERROR: RIOT_API_KEY no configurada. No se puede actualizar el historial de partidas.")
         return
+
+   
 
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
     url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
@@ -1484,7 +1426,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 historial_existente = leer_historial_jugador_github(puuid)
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
                 remakes_guardados = set(historial_existente.get('remakes', []))
-                
+
                 print(f"[actualizar_historial_partidas_en_segundo_plano] Historial existente para {riot_id}: {len(ids_partidas_guardadas)} partidas guardadas, {len(remakes_guardados)} remakes.")
 
                 all_match_ids_season = []
@@ -1624,8 +1566,9 @@ def actualizar_historial_partidas_en_segundo_plano():
                 for match in historial_existente.get('matches', []):
                     if 'lp_change_this_game' not in match:
                         match['lp_change_this_game'] = None
-                        print(f"[actualizar_historial_partidas_en_segundo_plano] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} antes de guardar.")
-
+                    # --- NUEVO: Asegurar que todas las partidas tengan valor_clasificacion ---
+                    if 'valor_clasificacion' not in match:
+                        match['valor_clasificacion'] = None
                 # Recalcular y guardar el LP change en 24h para este jugador en el historial
                 current_soloq_lp_change_24h = _calculate_lp_change_for_player(
                     puuid, "RANKED_SOLO_5x5", historial_existente.get('matches', [])
