@@ -1530,12 +1530,11 @@
         function createCharts(preloadedImages) {
             // Gráfico de ELO SoloQ
             {% if perfil.elo_history_soloq and perfil.elo_history_soloq | length > 1 %}
-            const eloHistorySoloQ = {{ perfil.elo_history_soloq | tojson }};
-            const eloDataSoloQ = {
-                labels: eloHistorySoloQ.map(d => new Date(d.timestamp)),
+            const eloHistorySoloQ = {{ perfil.elo_history_soloq | tojson }};;
+            const eloDataSoloQ = { 
                 datasets: [{
                     label: 'ELO',
-                    data: eloHistorySoloQ.map(d => d.elo),
+                    data: eloHistorySoloQ.map(d => ({ x: d.timestamp, y: d.elo })),
                     borderColor: '#007bff',
                     backgroundColor: 'rgba(0, 123, 255, 0.1)',
                     fill: true,
@@ -1598,12 +1597,11 @@
             
             // Gráfico de ELO FlexQ
             {% if perfil.elo_history_flexq and perfil.elo_history_flexq | length > 1 %}
-            const eloHistoryFlexQ = {{ perfil.elo_history_flexq | tojson }};
-            const eloDataFlexQ = {
-                labels: eloHistoryFlexQ.map(d => new Date(d.timestamp)),
+            const eloHistoryFlexQ = {{ perfil.elo_history_flexq | tojson }};;
+            const eloDataFlexQ = { 
                 datasets: [{
                     label: 'ELO',
-                    data: eloHistoryFlexQ.map(d => d.elo),
+                    data: eloHistoryFlexQ.map(d => ({ x: d.timestamp, y: d.elo })),
                     borderColor: '#198754',
                     backgroundColor: 'rgba(25, 135, 84, 0.1)',
                     fill: true,
