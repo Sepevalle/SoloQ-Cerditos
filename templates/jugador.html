@@ -1500,34 +1500,7 @@
             }
         };
 
-        const horizontalLinesPlugin = {
-            id: 'horizontalLinesPlugin',
-            afterDraw(chart, args, options) {
-                const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-                
-                ctx.save();
-                ctx.strokeStyle = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
-                ctx.lineWidth = 1;
-                ctx.setLineDash([3, 3]); // Línea discontinua
-
-                for (let eloValue = 0; eloValue <= y.max + 100; eloValue += 100) {
-                    // No dibujar líneas para las divisiones principales (cada 400)
-                    if (eloValue % 400 !== 0) {
-                        const yPos = y.getPixelForValue(eloValue);
-                        if (yPos >= top && yPos <= bottom) {
-                            ctx.beginPath();
-                            ctx.moveTo(left, yPos);
-                            ctx.lineTo(right, yPos);
-                            ctx.stroke();
-                        }
-                    }
-                }
-                ctx.restore();
-            }
-        };
-
-        Chart.register(yAxisImagePlugin, horizontalLinesPlugin);
-
+        Chart.register(yAxisImagePlugin);
 
         function formatEloTooltip(valor) {
             if (valor === null || valor === undefined) return "N/A";
@@ -1566,7 +1539,7 @@
                     borderColor: '#007bff',
                     backgroundColor: 'rgba(0, 123, 255, 0.1)',
                     fill: true,
-                    tension: 0.2
+                    tension: 0 // Líneas rectas para el efecto escalón
                 }]
             };
             new Chart(document.getElementById('eloChartSoloQ'), {
@@ -1577,14 +1550,35 @@
                     maintainAspectRatio: false,
                     layout: { padding: { left: 35 } }, // Espacio para las imágenes
                     scales: {
-                        x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd MMM yyyy' }, grid: { color: gridColor } },
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'dd MMM yyyy',
+                                displayFormats: {
+                                    day: 'dd MMM' // Formato para las etiquetas del eje
+                                }
+                            },
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                display: true, // Asegurarse de que las etiquetas se muestren
+                                color: textColor,
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 7 // Limitar para evitar saturación
+                            }
+                        },
                         y: { 
                             grid: { 
-                                // Dibujar solo las líneas principales (cada 400)
-                                color: context => (context.tick.value % 400 === 0) ? gridColor : 'transparent',
+                                color: context => {
+                                    if (context.tick.value % 400 === 0) return gridColor; // Línea principal
+                                    return isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'; // Línea secundaria
+                                }
                              },
                             ticks: {
-                                stepSize: 400,
+                                stepSize: 100,
                                 callback: () => '' // Ocultar etiquetas de texto
                             }
                          }
@@ -1613,7 +1607,7 @@
                     borderColor: '#198754',
                     backgroundColor: 'rgba(25, 135, 84, 0.1)',
                     fill: true,
-                    tension: 0.2
+                    tension: 0 // Líneas rectas para el efecto escalón
                 }]
             };
             new Chart(document.getElementById('eloChartFlexQ'), {
@@ -1624,14 +1618,35 @@
                     maintainAspectRatio: false,
                     layout: { padding: { left: 35 } }, // Espacio para las imágenes
                     scales: {
-                        x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd MMM yyyy' }, grid: { color: gridColor } },
-                        y: { 
-                            grid: { 
-                                // Dibujar solo las líneas principales (cada 400)
-                                color: context => (context.tick.value % 400 === 0) ? gridColor : 'transparent',
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'dd MMM yyyy',
+                                displayFormats: {
+                                    day: 'dd MMM' // Formato para las etiquetas del eje
+                                }
+                            },
+                            grid: {
+                                color: gridColor
                             },
                             ticks: {
-                               stepSize: 400,
+                                display: true, // Asegurarse de que las etiquetas se muestren
+                                color: textColor,
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 7 // Limitar para evitar saturación
+                            }
+                        },
+                        y: { 
+                            grid: { 
+                                color: context => {
+                                    if (context.tick.value % 400 === 0) return gridColor; // Línea principal
+                                    return isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'; // Línea secundaria
+                                }
+                            },
+                            ticks: {
+                               stepSize: 100,
                                callback: () => '' // Ocultar etiquetas de texto
                             }
                         }
