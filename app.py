@@ -5,12 +5,16 @@ import time
 import threading
 import json
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 import queue # Import for the queue
 
 app = Flask(__name__)
+
+# --- CONFIGURACIÓN DE ZONA HORARIA ---
+# Define la zona horaria de visualización (UTC+2) para asegurar consistencia.
+TARGET_TIMEZONE = timezone(timedelta(hours=2))
 
 # Custom Jinja2 filters
 @app.template_filter('get_queue_type')
@@ -44,14 +48,16 @@ def get_queue_type_filter(queue_id):
 
 @app.template_filter('format_timestamp')
 def format_timestamp_filter(timestamp):
-    # Ajuste para sumar 2 horas al timestamp antes de formatear
+    """Filtro para formatear timestamps UTC a la zona horaria local (UTC+2)."""
     if timestamp is None:
         return "N/A"
-    # El timestamp viene en milisegundos, lo convertimos a segundos
+    # El timestamp de la API viene en milisegundos (UTC)
     timestamp_sec = timestamp / 1000
-    # Creamos el objeto datetime y le sumamos 2 horas
-    dt_object = datetime.fromtimestamp(timestamp_sec) + timedelta(hours=2)
-    return dt_object.strftime("%d/%m/%Y %H:%M")
+    # 1. Crear un objeto datetime consciente de la zona horaria (aware) en UTC
+    dt_utc = datetime.fromtimestamp(timestamp_sec, tz=timezone.utc)
+    # 2. Convertir a la zona horaria de visualización deseada (TARGET_TIMEZONE)
+    dt_target = dt_utc.astimezone(TARGET_TIMEZONE)
+    return dt_target.strftime("%d/%m/%Y %H:%M")
 
 
 @app.template_filter('format_peak_elo')
@@ -852,8 +858,9 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
     """
     Calcula el cambio total de LP para un jugador en una cola específica en las últimas 24 horas.
     """
-    now_timestamp_ms = int(datetime.now().timestamp() * 1000)
-    one_day_ago_timestamp_ms = now_timestamp_ms - (24 * 60 * 60 * 1000)
+    now_utc = datetime.now(timezone.utc)
+    one_day_ago_utc = now_utc - timedelta(days=1)
+    one_day_ago_timestamp_ms = int(one_day_ago_utc.timestamp() * 1000)
     
     lp_change_24h = 0
     
@@ -1240,7 +1247,11 @@ def index():
             jugador["peak_elo"] = jugador["valor_clasificacion"]
 
     split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
-    ultima_actualizacion = (datetime.fromtimestamp(timestamp) + timedelta(hours=2)).strftime("%d/%m/%Y %H:%M:%S")
+    # El timestamp de la caché está en segundos UTC (de time.time())
+    dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    # Convertir a la zona horaria de visualización deseada (UTC+2)
+    dt_target = dt_utc.astimezone(TARGET_TIMEZONE)
+    ultima_actualizacion = dt_target.strftime("%d/%m/%Y %H:%M:%S")
     
     print("[index] Renderizando index.html.")
     return render_template('index.html', datos_jugadores=datos_jugadores,
