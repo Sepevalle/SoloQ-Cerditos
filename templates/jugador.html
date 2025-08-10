@@ -1530,7 +1530,7 @@
         function createCharts(preloadedImages) {
             // Gráfico de ELO SoloQ
             {% if perfil.elo_history_soloq and perfil.elo_history_soloq | length > 1 %}
-            const eloHistorySoloQ = {{ perfil.elo_history_soloq | tojson }};;
+            const eloHistorySoloQ = {{ perfil.elo_history_soloq | tojson }};
             const eloDataSoloQ = { 
                 datasets: [{
                     label: 'ELO',
@@ -1597,7 +1597,7 @@
             
             // Gráfico de ELO FlexQ
             {% if perfil.elo_history_flexq and perfil.elo_history_flexq | length > 1 %}
-            const eloHistoryFlexQ = {{ perfil.elo_history_flexq | tojson }};;
+            const eloHistoryFlexQ = {{ perfil.elo_history_flexq | tojson }};
             const eloDataFlexQ = { 
                 datasets: [{
                     label: 'ELO',
