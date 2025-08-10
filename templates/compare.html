@@ -71,7 +71,41 @@
         </div>
     </div>
 
-    <div id="comparisonResult" class="mt-5"></div>
+    <div id="comparisonResult" class="mt-5" style="display: none;">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h3 id="player1_name"></h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="player1_stats"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h3 id="player2_name"></h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="player2_stats"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h4>Comparación de Estadísticas</h4>
+                    </div>
+                    <div class="card-body" id="comparison_bars">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -98,15 +132,47 @@
                 fetch(`/api/compare/${player1}/${player2}`)
                     .then(response => response.json())
                     .then(data => {
-                        const resultDiv = document.getElementById('comparisonResult');
-                        let table = `<table class="table table-bordered"><thead><tr><th>Estadística</th><th>${player1}</th><th>${player2}</th></tr></thead><tbody>`;
-                        
+                        document.getElementById('player1_name').innerText = player1;
+                        document.getElementById('player2_name').innerText = player2;
+
+                        let player1_stats_html = '';
                         for (const key in data.player1) {
-                            table += `<tr><td>${key}</td><td>${data.player1[key]}</td><td>${data.player2[key]}</td></tr>`;
+                            player1_stats_html += `<p><strong>${key}:</strong> ${data.player1[key]}</p>`;
                         }
+                        document.getElementById('player1_stats').innerHTML = player1_stats_html;
+
+                        let player2_stats_html = '';
+                        for (const key in data.player2) {
+                            player2_stats_html += `<p><strong>${key}:</strong> ${data.player2[key]}</p>`;
+                        }
+                        document.getElementById('player2_stats').innerHTML = player2_stats_html;
                         
-                        table += `</tbody></table>`;
-                        resultDiv.innerHTML = table;
+                        let comparison_bars_html = '';
+                        for (const key in data.player1) {
+                            if (typeof data.player1[key] === 'string' && data.player1[key].includes('%')) {
+                                const val1 = parseFloat(data.player1[key]);
+                                const val2 = parseFloat(data.player2[key]);
+                                const total = val1 + val2;
+                                const p1_width = total > 0 ? (val1 / total * 100) : 50;
+                                const p2_width = total > 0 ? (val2 / total * 100) : 50;
+
+                                comparison_bars_html += `
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span>${data.player1[key]}</span>
+                                            <strong>${key}</strong>
+                                            <span>${data.player2[key]}</span>
+                                        </div>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" style="width: ${p1_width}%" aria-valuenow="${p1_width}" aria-valuemin="0" aria-valuemax="100">${player1}</div>
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: ${p2_width}%" aria-valuenow="${p2_width}" aria-valuemin="0" aria-valuemax="100">${player2}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }
+                        document.getElementById('comparison_bars').innerHTML = comparison_bars_html;
+                        document.getElementById('comparisonResult').style.display = 'block';
                     });
             }
         });

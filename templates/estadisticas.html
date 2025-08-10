@@ -118,10 +118,13 @@
         <div class="tab-pane fade" id="global-stats" role="tabpanel" aria-labelledby="global-stats-tab">
             <div class="row">
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
+                    <div class="card h-100 text-center">
+                        <div class="card-header">
+                            <i class="fas fa-chart-line me-2"></i>Rendimiento General
+                        </div>
+                        <div class="card-body">
                             <h5 class="card-title">Win Rate Global</h5>
-                            <p class="card-text fs-4 {% if global_stats.overall_win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">
+                            <p class="card-text fs-2 fw-bold {% if global_stats.overall_win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">
                                 {{ '%.2f' % global_stats.overall_win_rate }}%
                             </p>
                             <small class="text-muted">({{ global_stats.total_games }} partidas en total)</small>
@@ -129,17 +132,22 @@
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
+                    <div class="card h-100 text-center">
+                        <div class="card-header">
+                            <i class="fas fa-gamepad me-2"></i>Más Actividad
+                        </div>
+                        <div class="card-body">
                             <h5 class="card-title">Jugador con Más Partidas</h5>
-                            <p class="card-text fs-4">{{ global_stats.player_with_most_games }}</p>
+                            <p class="card-text fs-4 fw-bold">{{ global_stats.player_with_most_games }}</p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
+                        <div class="card-header text-center">
+                            <i class="fas fa-chess-queen me-2"></i>Campeones Populares
+                        </div>
                         <div class="card-body">
-                            <h5 class="card-title text-center">Campeones Más Jugados</h5>
                             <ul class="list-group list-group-flush">
                                 {% for champion, count in global_stats.most_played_champions %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -154,6 +162,26 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h3 class="text-center mb-4">Récords de la Temporada</h3>
+                </div>
+                {% for record_name, record_data in global_stats.records.items() %}
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-header">
+                            <i class="{{ record_data.icon }} me-2"></i>{{ record_name }}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ record_data.player }}</h5>
+                            <p class="card-text fs-4 fw-bold">{{ record_data.value }}</p>
+                            <small class="text-muted">con {{ record_data.champion }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>

@@ -1771,12 +1771,60 @@ def estadisticas_globales():
             max_games = total_games
             player_with_most_games = j.get('jugador')
 
+    # New global records
+    records = {
+        'Más Asesinatos': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-skull-crossbones'},
+        'Más Muertes': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-skull'},
+        'Más Asistencias': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-hands-helping'},
+        'Mejor KDA': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-star'},
+        'Más CS': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-tractor'},
+        'Mayor Puntuación de Visión': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-eye'}
+    }
+
+    for j in datos_jugadores:
+        puuid = j.get('puuid')
+        if puuid:
+            historial = leer_historial_jugador_github(puuid)
+            for match in historial.get('matches', []):
+                if match.get('kills') > records['Más Asesinatos']['value']:
+                    records['Más Asesinatos']['value'] = match.get('kills')
+                    records['Más Asesinatos']['player'] = j.get('jugador')
+                    records['Más Asesinatos']['champion'] = match.get('champion_name')
+                
+                if match.get('deaths') > records['Más Muertes']['value']:
+                    records['Más Muertes']['value'] = match.get('deaths')
+                    records['Más Muertes']['player'] = j.get('jugador')
+                    records['Más Muertes']['champion'] = match.get('champion_name')
+
+                if match.get('assists') > records['Más Asistencias']['value']:
+                    records['Más Asistencias']['value'] = match.get('assists')
+                    records['Más Asistencias']['player'] = j.get('jugador')
+                    records['Más Asistencias']['champion'] = match.get('champion_name')
+
+                kda = (match.get('kills', 0) + match.get('assists', 0)) / max(1, match.get('deaths', 0))
+                if kda > records['Mejor KDA']['value']:
+                    records['Mejor KDA']['value'] = kda
+                    records['Mejor KDA']['player'] = j.get('jugador')
+                    records['Mejor KDA']['champion'] = match.get('champion_name')
+
+                total_cs = match.get('total_minions_killed', 0) + match.get('neutral_minions_killed', 0)
+                if total_cs > records['Más CS']['value']:
+                    records['Más CS']['value'] = total_cs
+                    records['Más CS']['player'] = j.get('jugador')
+                    records['Más CS']['champion'] = match.get('champion_name')
+
+                if match.get('vision_score') > records['Mayor Puntuación de Visión']['value']:
+                    records['Mayor Puntuación de Visión']['value'] = match.get('vision_score')
+                    records['Mayor Puntuación de Visión']['player'] = j.get('jugador')
+                    records['Mayor Puntuación de Visión']['champion'] = match.get('champion_name')
+
 
     global_stats = {
         'overall_win_rate': overall_win_rate,
         'total_games': total_games_global,
         'most_played_champions': most_played_champions,
-        'player_with_most_games': player_with_most_games
+        'player_with_most_games': player_with_most_games,
+        'records': records
     }
 
     return render_template('estadisticas.html', stats=stats_por_jugador, global_stats=global_stats, ddragon_version=DDRAGON_VERSION)
@@ -1805,12 +1853,32 @@ def compare_players_api(player1_name, player2_name):
     def get_player_stats(player_data):
         total_games = player_data.get('wins', 0) + player_data.get('losses', 0)
         win_rate = (player_data.get('wins', 0) / total_games * 100) if total_games > 0 else 0
+        
+        puuid = player_data.get('puuid')
+        historial = leer_historial_jugador_github(puuid) if puuid else {'matches': []}
+        
+        total_kills = sum(m.get('kills', 0) for m in historial['matches'])
+        total_deaths = sum(m.get('deaths', 0) for m in historial['matches'])
+        total_assists = sum(m.get('assists', 0) for m in historial['matches'])
+        
+        avg_kda = (total_kills + total_assists) / max(1, total_deaths)
+        
+        total_cs = sum(m.get('total_minions_killed', 0) + m.get('neutral_minions_killed', 0) for m in historial['matches'])
+        total_duration_minutes = sum(m.get('game_duration', 0) for m in historial['matches']) / 60
+        avg_cs_per_min = total_cs / total_duration_minutes if total_duration_minutes > 0 else 0
+        
+        total_vision_score = sum(m.get('vision_score', 0) for m in historial['matches'])
+        avg_vision_score_per_min = total_vision_score / total_duration_minutes if total_duration_minutes > 0 else 0
+
         return {
             "Elo": f"{player_data.get('tier')} {player_data.get('rank')} ({player_data.get('league_points')} LPs)",
             "Victorias": player_data.get('wins', 0),
             "Derrotas": player_data.get('losses', 0),
             "Total de Partidas": total_games,
-            "Win Rate": f"{win_rate:.2f}%"
+            "Win Rate": f"{win_rate:.2f}%",
+            "KDA Promedio": f"{avg_kda:.2f}",
+            "CS/min Promedio": f"{avg_cs_per_min:.1f}",
+            "Vision Score/min Promedio": f"{avg_vision_score_per_min:.1f}"
         }
 
     comparison = {
