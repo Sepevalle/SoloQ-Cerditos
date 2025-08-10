@@ -1355,64 +1355,25 @@ def _get_player_profile_data(game_name):
     perfil['elo_history_soloq'] = []
     perfil['elo_history_flexq'] = []    
 
-    # --- Lógica de Gráfico Híbrida y Robusta ---
-    # Esta lógica combina partidas con datos completos (pre/post ELO) y parciales (solo post ELO)
-    
-    # 1. Separar partidas de SoloQ por tipo de datos de ELO disponibles
-    partidas_elo_completo_soloq = sorted(
-        [p for p in historial_total if p.get('queue_id') == 420 and p.get('pre_game_valor_clasificacion') is not None and p.get('post_game_valor_clasificacion') is not None],
+    # --- Lógica de Gráfico de Evolución (Línea Suave) ---
+    # Filtra partidas que tienen el dato de ELO post-partida y las ordena cronológicamente.
+    partidas_con_elo_soloq = sorted(
+        [p for p in historial_total if p.get('queue_id') == 420 and p.get('post_game_valor_clasificacion') is not None],
         key=lambda x: x.get('game_end_timestamp', 0)
     )
-    partidas_elo_parcial_soloq = sorted(
-        [p for p in historial_total if p.get('queue_id') == 420 and p.get('pre_game_valor_clasificacion') is None and p.get('post_game_valor_clasificacion') is not None],
+    perfil['elo_history_soloq'] = [
+        {'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']}
+        for p in partidas_con_elo_soloq
+    ]
+
+    partidas_con_elo_flexq = sorted(
+        [p for p in historial_total if p.get('queue_id') == 440 and p.get('post_game_valor_clasificacion') is not None],
         key=lambda x: x.get('game_end_timestamp', 0)
     )
-    
-    elo_history_soloq_points = []
-    
-    # 2. Procesar partidas con datos completos (efecto escalón)
-    for p in partidas_elo_completo_soloq:
-        elo_history_soloq_points.append({'timestamp': p['game_end_timestamp'] - 1, 'elo': p['pre_game_valor_clasificacion']})
-        elo_history_soloq_points.append({'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']})
-
-    # 3. Procesar partidas con datos parciales (un solo punto)
-    for p in partidas_elo_parcial_soloq:
-        elo_history_soloq_points.append({'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']})
-
-    # 4. Ordenar todos los puntos y añadir punto de partida si hay datos
-    if elo_history_soloq_points:
-        elo_history_soloq_points.sort(key=lambda x: x['timestamp'])
-        first_point_elo = elo_history_soloq_points[0]['elo']
-        start_timestamp = elo_history_soloq_points[0]['timestamp'] - (3600 * 1000) # Una hora antes
-        elo_history_soloq_points.insert(0, {'timestamp': start_timestamp, 'elo': first_point_elo})
-
-    perfil['elo_history_soloq'] = elo_history_soloq_points
-
-    # Repetir la misma lógica para FlexQ
-    partidas_elo_completo_flexq = sorted(
-        [p for p in historial_total if p.get('queue_id') == 440 and p.get('pre_game_valor_clasificacion') is not None and p.get('post_game_valor_clasificacion') is not None],
-        key=lambda x: x.get('game_end_timestamp', 0)
-    )
-    partidas_elo_parcial_flexq = sorted(
-        [p for p in historial_total if p.get('queue_id') == 440 and p.get('pre_game_valor_clasificacion') is None and p.get('post_game_valor_clasificacion') is not None],
-        key=lambda x: x.get('game_end_timestamp', 0)
-    )
-
-    elo_history_flexq_points = []
-    for p in partidas_elo_completo_flexq:
-        elo_history_flexq_points.append({'timestamp': p['game_end_timestamp'] - 1, 'elo': p['pre_game_valor_clasificacion']})
-        elo_history_flexq_points.append({'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']})
-    
-    for p in partidas_elo_parcial_flexq:
-        elo_history_flexq_points.append({'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']})
-
-    if elo_history_flexq_points:
-        elo_history_flexq_points.sort(key=lambda x: x['timestamp'])
-        first_point_elo = elo_history_flexq_points[0]['elo']
-        start_timestamp = elo_history_flexq_points[0]['timestamp'] - (3600 * 1000)
-        elo_history_flexq_points.insert(0, {'timestamp': start_timestamp, 'elo': first_point_elo})
-
-    perfil['elo_history_flexq'] = elo_history_flexq_points
+    perfil['elo_history_flexq'] = [
+        {'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']}
+        for p in partidas_con_elo_flexq
+    ]
 
     # --- END of new ELO History Logic ---
 
