@@ -631,6 +631,8 @@ def obtener_info_partida(args):
             "objectives_stolen": p.get('objectivesStolen', 0),
             "kill_participation": kill_participation,
             "lp_change_this_game": None, # Initialize LP change to None for new matches
+            "post_game_valor_clasificacion": None, # Initialize post-game ELO to None
+            "pre_game_valor_clasificacion": None, # Initialize pre-game ELO to None
 
             # --- AÑADIMOS LA LISTA DE TODOS LOS PARTICIPANTES ---
             "all_participants": all_participants_details
@@ -1332,53 +1334,46 @@ def _get_player_profile_data(game_name):
     
     # --- START of new ELO History Logic ---
     perfil['elo_history_soloq'] = []
-    perfil['elo_history_flexq'] = []
+    perfil['elo_history_flexq'] = []    
 
-    if 'soloq' in perfil and perfil['soloq']:
-        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420 and p.get('lp_change_this_game') is not None]
-        partidas_soloq.sort(key=lambda x: x.get('game_end_timestamp', 0)) # Sort from oldest to newest
-        
-        if partidas_soloq:
-            current_elo = perfil['soloq']['valor_clasificacion']
-            elo_at_time = current_elo
-            history_points = []
-            # Work backwards from current ELO
-            for match in reversed(partidas_soloq):
-                history_points.append({
-                    'timestamp': match.get('game_end_timestamp'),
-                    'elo': elo_at_time
-                })
-                elo_at_time -= match.get('lp_change_this_game', 0)
-            
-            # Add a starting point before the first recorded match for a cleaner graph
-            history_points.append({
-                'timestamp': partidas_soloq[0].get('game_end_timestamp') - 3600000, # an hour before
-                'elo': elo_at_time
-            })
+    # --- Lógica de Gráfico Mejorada (Efecto Escalón) ---
+    # Filtra partidas que tienen datos pre y post-partida y las ordena cronológicamente.
+    partidas_con_elo_soloq = sorted(
+        [p for p in historial_total if p.get('queue_id') == 420 and p.get('pre_game_valor_clasificacion') is not None and p.get('post_game_valor_clasificacion') is not None],
+        key=lambda x: x.get('game_end_timestamp', 0)
+    )
+    
+    elo_history_soloq_points = []
+    if partidas_con_elo_soloq:
+        # Añadir un punto de partida para que el gráfico no empiece de forma abrupta.
+        # Usamos el ELO pre-partida del primer juego registrado.
+        first_game = partidas_con_elo_soloq[0]
+        start_elo = first_game['pre_game_valor_clasificacion']
+        start_timestamp = first_game['game_end_timestamp'] - (3600 * 1000) # Una hora antes
+        elo_history_soloq_points.append({'timestamp': start_timestamp, 'elo': start_elo})
 
-            perfil['elo_history_soloq'] = list(reversed(history_points)) # Reverse back to chronological order
+        for p in partidas_con_elo_soloq:
+            elo_history_soloq_points.append({'timestamp': p['game_end_timestamp'] - 1, 'elo': p['pre_game_valor_clasificacion']})
+            elo_history_soloq_points.append({'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']})
+    perfil['elo_history_soloq'] = elo_history_soloq_points
 
-    if 'flexq' in perfil and perfil['flexq']:
-        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440 and p.get('lp_change_this_game') is not None]
-        partidas_flexq.sort(key=lambda x: x.get('game_end_timestamp', 0))
+    partidas_con_elo_flexq = sorted(
+        [p for p in historial_total if p.get('queue_id') == 440 and p.get('pre_game_valor_clasificacion') is not None and p.get('post_game_valor_clasificacion') is not None],
+        key=lambda x: x.get('game_end_timestamp', 0)
+    )
 
-        if partidas_flexq:
-            current_elo = perfil['flexq']['valor_clasificacion']
-            elo_at_time = current_elo
-            history_points = []
-            for match in reversed(partidas_flexq):
-                history_points.append({
-                    'timestamp': match.get('game_end_timestamp'),
-                    'elo': elo_at_time
-                })
-                elo_at_time -= match.get('lp_change_this_game', 0)
+    elo_history_flexq_points = []
+    if partidas_con_elo_flexq:
+        # Añadir un punto de partida para que el gráfico no empiece de forma abrupta.
+        first_game = partidas_con_elo_flexq[0]
+        start_elo = first_game['pre_game_valor_clasificacion']
+        start_timestamp = first_game['game_end_timestamp'] - (3600 * 1000) # Una hora antes
+        elo_history_flexq_points.append({'timestamp': start_timestamp, 'elo': start_elo})
 
-            history_points.append({
-                'timestamp': partidas_flexq[0].get('game_end_timestamp') - 3600000, # an hour before
-                'elo': elo_at_time
-            })
-            
-            perfil['elo_history_flexq'] = list(reversed(history_points))
+        for p in partidas_con_elo_flexq:
+            elo_history_flexq_points.append({'timestamp': p['game_end_timestamp'] - 1, 'elo': p['pre_game_valor_clasificacion']})
+            elo_history_flexq_points.append({'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']})
+    perfil['elo_history_flexq'] = elo_history_flexq_points
 
     # --- END of new ELO History Logic ---
 
@@ -1620,6 +1615,15 @@ def actualizar_historial_partidas_en_segundo_plano():
                                     potential_match = match
 
                         if potential_match:
+                            # --- VALIDACIÓN DE COHERENCIA ---
+                            if (pre_game_valor + lp_change) != post_game_valor:
+                                # Esta situación es matemáticamente improbable ya que los valores son enteros, pero es una buena salvaguarda.
+                                print(f"[{lp_update_data['riot_id']}] [LP Validator] ADVERTENCIA: Inconsistencia matemática detectada. Pre({pre_game_valor}) + Cambio({lp_change}) != Post({post_game_valor})")
+                            else:
+                                print(f"[{lp_update_data['riot_id']}] [LP Validator] Coherencia de LP validada: {pre_game_valor} + ({lp_change:+d}) = {post_game_valor}")
+
+                            potential_match['pre_game_valor_clasificacion'] = pre_game_valor
+                            potential_match['post_game_valor_clasificacion'] = post_game_valor
                             potential_match['lp_change_this_game'] = lp_change
                             print(f"[{lp_update_data['riot_id']}] [LP Associator] Cambio de LP {lp_change} asociado a la partida {potential_match['match_id']}.")
                             keys_to_clear_from_pending.append(lp_update_key)
@@ -1635,8 +1639,11 @@ def actualizar_historial_partidas_en_segundo_plano():
                 for match in historial_existente.get('matches', []):
                     if 'lp_change_this_game' not in match:
                         match['lp_change_this_game'] = None
-                        print(f"[actualizar_historial_partidas_en_segundo_plano] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} antes de guardar.")
-
+                    # Asegurarse de que los nuevos campos también existan en partidas antiguas para evitar errores
+                    if 'post_game_valor_clasificacion' not in match:
+                        match['post_game_valor_clasificacion'] = None
+                    if 'pre_game_valor_clasificacion' not in match:
+                        match['pre_game_valor_clasificacion'] = None
                 # Recalcular y guardar el LP change en 24h para este jugador en el historial
                 current_soloq_lp_change_24h = _calculate_lp_change_for_player(
                     puuid, "RANKED_SOLO_5x5", historial_existente.get('matches', [])
