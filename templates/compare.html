@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparar Jugadores - Cerditos y Valientes</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; }
+        .dark-mode { background-color: #121212; color: #ffffff; }
+        .dark-mode .navbar { background-color: #343a40 !important; color: white; }
+        .dark-mode .navbar-brand, .dark-mode .nav-link { color: white !important; }
+        .dark-mode .table, .dark-mode .card { background-color: #343a40 !important; color: white; }
+        .dark-mode .navbar-toggler-icon { filter: invert(1) grayscale(100%) brightness(2); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+            Cerditos y Valientes
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('estadisticas_globales') }}">Estadísticas Globales</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="{{ url_for('compare_players') }}">Comparar Jugadores</a>
+                </li>
+            </ul>
+            <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
+                <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5 pt-5">
+    <h1 class="text-center mb-4">Comparar Jugadores</h1>
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <select id="player1" class="form-select">
+                <option selected>Selecciona un jugador...</option>
+                {% for player in players %}
+                <option value="{{ player }}">{{ player }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5">
+            <select id="player2" class="form-select">
+                <option selected>Selecciona un jugador...</option>
+                {% for player in players %}
+                <option value="{{ player }}">{{ player }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button id="compareBtn" class="btn btn-primary w-100">Comparar</button>
+        </div>
+    </div>
+
+    <div id="comparisonResult" class="mt-5"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleModeBtn = document.getElementById('toggle-mode');
+        const body = document.body;
+
+        toggleModeBtn.addEventListener('click', function() {
+            body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+
+        if (localStorage.getItem('theme') === 'dark') {
+            body.classList.add('dark-mode');
+        }
+
+        const compareBtn = document.getElementById('compareBtn');
+        compareBtn.addEventListener('click', function() {
+            const player1 = document.getElementById('player1').value;
+            const player2 = document.getElementById('player2').value;
+
+            if (player1 && player2 && player1 !== player2) {
+                fetch(`/api/compare/${player1}/${player2}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultDiv = document.getElementById('comparisonResult');
+                        let table = `<table class="table table-bordered"><thead><tr><th>Estadística</th><th>${player1}</th><th>${player2}</th></tr></thead><tbody>`;
+                        
+                        for (const key in data.player1) {
+                            table += `<tr><td>${key}</td><td>${data.player1[key]}</td><td>${data.player2[key]}</td></tr>`;
+                        }
+                        
+                        table += `</tbody></table>`;
+                        resultDiv.innerHTML = table;
+                    });
+            }
+        });
+    });
+</script>
+</body>
+</html>

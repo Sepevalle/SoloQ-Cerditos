@@ -288,6 +288,15 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="{{ url_for('index') }}">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('estadisticas_globales') }}">Estadísticas Globales</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('compare_players') }}">Comparar Jugadores</a>
+                </li>
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
                 <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
@@ -704,5 +713,6 @@
     });
 </script>
 
+</body>
 </body>
 </html>

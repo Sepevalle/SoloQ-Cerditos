@@ -738,6 +738,54 @@
         </div>
     </div>
     
+    </div>
+        </div>
+    </div>
+
+    <!-- Champion Stats Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    Estadísticas por Campeón
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Campeón</th>
+                                    <th>Partidas</th>
+                                    <th>Win Rate</th>
+                                    <th>KDA</th>
+                                    <th>Kills (Promedio)</th>
+                                    <th>Deaths (Promedio)</th>
+                                    <th>Assists (Promedio)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for champ_name, stats in perfil.champion_stats %}
+                                <tr>
+                                    <td>
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champ_name }}.png" alt="{{ champ_name }}" class="imagen-jugador">
+                                        {{ champ_name }}
+                                    </td>
+                                    <td>{{ stats.games_played }}</td>
+                                    <td class="{% if stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.2f' % stats.win_rate }}%</td>
+                                    <td>{{ '%.2f' % stats.kda }}</td>
+                                    <td>{{ '%.1f' % (stats.kills / stats.games_played) }}</td>
+                                    <td>{{ '%.1f' % (stats.deaths / stats.games_played) }}</td>
+                                    <td>{{ '%.1f' % (stats.assists / stats.games_played) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- NUEVA SECCIÓN DE GRÁFICOS DE ELO -->
     <div class="row mt-4">
         <div class="col-md-6 mb-4">

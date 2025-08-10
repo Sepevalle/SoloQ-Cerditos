@@ -848,6 +848,31 @@
         </div>
     </div>
 
+    <!-- Champion Stats Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    Estadísticas por Campeón
+                </div>
+                <div class="card-body">
+                    {% for champ_name, stats in perfil.champion_stats %}
+                    <div class="champion-stats-item">
+                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champ_name }}.png" alt="{{ champ_name }}">
+                        <div class="champion-stats-info">
+                            <h5>{{ champ_name }}</h5>
+                            <p class="kda-text fw-bold">{{ '%.2f' % stats.kda }} KDA</p>
+                            <p class="small-text-stats">Promedio: {{ '%.1f' % (stats.kills / stats.games_played) }} / {{ '%.1f' % (stats.deaths / stats.games_played) }} / {{ '%.1f' % (stats.assists / stats.games_played) }}</p>
+                            <p class="fw-bold {% if stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f' % stats.win_rate }}% Win Rate</p>
+                            <p class="small-text-stats">({{ stats.wins }}V / {{ stats.losses }}D) - {{ stats.games_played }} partidas</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card match-history-card">
         <div class="card-header">
             Historial de Partidas

@@ -1390,6 +1390,38 @@ def _get_player_profile_data(game_name):
         perfil['flexq'].update(rachas_flexq)
         print(f"[_get_player_profile_data] Rachas FlexQ calculadas para {game_name}.")
 
+    # --- Champion Specific Stats ---
+    champion_stats = {}
+    for match in historial_total:
+        champion_name = match.get('champion_name')
+        if champion_name and champion_name != "Desconocido":
+            if champion_name not in champion_stats:
+                champion_stats[champion_name] = {
+                    'games_played': 0,
+                    'wins': 0,
+                    'losses': 0,
+                    'kills': 0,
+                    'deaths': 0,
+                    'assists': 0
+                }
+            
+            stats = champion_stats[champion_name]
+            stats['games_played'] += 1
+            if match.get('win'):
+                stats['wins'] += 1
+            else:
+                stats['losses'] += 1
+            
+            stats['kills'] += match.get('kills', 0)
+            stats['deaths'] += match.get('deaths', 0)
+            stats['assists'] += match.get('assists', 0)
+
+    for champ, stats in champion_stats.items():
+        stats['win_rate'] = (stats['wins'] / stats['games_played'] * 100) if stats['games_played'] > 0 else 0
+        stats['kda'] = (stats['kills'] + stats['assists']) / max(1, stats['deaths'])
+
+    perfil['champion_stats'] = sorted(champion_stats.items(), key=lambda x: x[1]['games_played'], reverse=True)
+
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
     print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
     return perfil
@@ -1694,6 +1726,99 @@ def actualizar_cache_periodicamente():
     while True:
         actualizar_cache()
         time.sleep(CACHE_TIMEOUT)
+
+@app.route('/estadisticas')
+def estadisticas_globales():
+    """Renderiza la página de estadísticas globales."""
+    print("[estadisticas_globales] Petición recibida para la página de estadísticas globales.")
+    
+    datos_jugadores, _ = obtener_datos_jugadores()
+    
+    # Stats for the first tab (by player)
+    stats_por_jugador = []
+    for jugador in datos_jugadores:
+        total_games = jugador.get('wins', 0) + jugador.get('losses', 0)
+        win_rate = (jugador.get('wins', 0) / total_games * 100) if total_games > 0 else 0
+        
+        stats_por_jugador.append({
+            'summonerName': jugador.get('jugador'),
+            'queueType': jugador.get('queue_type'),
+            'total_partidas': total_games,
+            'win_rate': win_rate
+        })
+    
+    stats_por_jugador.sort(key=lambda x: x['total_partidas'], reverse=True)
+
+    # Stats for the second tab (global)
+    total_wins = sum(j.get('wins', 0) for j in datos_jugadores)
+    total_losses = sum(j.get('losses', 0) for j in datos_jugadores)
+    total_games_global = total_wins + total_losses
+    overall_win_rate = (total_wins / total_games_global * 100) if total_games_global > 0 else 0
+
+    all_champions = []
+    for j in datos_jugadores:
+        if 'top_champion_stats' in j:
+            for champ in j['top_champion_stats']:
+                all_champions.append(champ['champion_name'])
+    
+    most_played_champions = Counter(all_champions).most_common(5)
+
+    player_with_most_games = None
+    max_games = -1
+    for j in datos_jugadores:
+        total_games = j.get('wins', 0) + j.get('losses', 0)
+        if total_games > max_games:
+            max_games = total_games
+            player_with_most_games = j.get('jugador')
+
+
+    global_stats = {
+        'overall_win_rate': overall_win_rate,
+        'total_games': total_games_global,
+        'most_played_champions': most_played_champions,
+        'player_with_most_games': player_with_most_games
+    }
+
+    return render_template('estadisticas.html', stats=stats_por_jugador, global_stats=global_stats, ddragon_version=DDRAGON_VERSION)
+
+@app.route('/compare')
+def compare_players():
+    """Renderiza la página de comparación de jugadores."""
+    print("[compare_players] Petición recibida para la página de comparación.")
+    datos_jugadores, _ = obtener_datos_jugadores()
+    player_names = sorted(list(set(j.get('jugador') for j in datos_jugadores)))
+    return render_template('compare.html', players=player_names)
+
+@app.route('/api/compare/<player1_name>/<player2_name>')
+def compare_players_api(player1_name, player2_name):
+    """API endpoint para comparar dos jugadores."""
+    print(f"[compare_players_api] Petición de API para comparar a {player1_name} y {player2_name}.")
+    
+    datos_jugadores, _ = obtener_datos_jugadores()
+    
+    player1_data = next((j for j in datos_jugadores if j.get('jugador') == player1_name), None)
+    player2_data = next((j for j in datos_jugadores if j.get('jugador') == player2_name), None)
+
+    if not player1_data or not player2_data:
+        return jsonify({'error': 'No se encontraron datos para uno o ambos jugadores.'}), 404
+
+    def get_player_stats(player_data):
+        total_games = player_data.get('wins', 0) + player_data.get('losses', 0)
+        win_rate = (player_data.get('wins', 0) / total_games * 100) if total_games > 0 else 0
+        return {
+            "Elo": f"{player_data.get('tier')} {player_data.get('rank')} ({player_data.get('league_points')} LPs)",
+            "Victorias": player_data.get('wins', 0),
+            "Derrotas": player_data.get('losses', 0),
+            "Total de Partidas": total_games,
+            "Win Rate": f"{win_rate:.2f}%"
+        }
+
+    comparison = {
+        'player1': get_player_stats(player1_data),
+        'player2': get_player_stats(player2_data)
+    }
+    
+    return jsonify(comparison)
 
 if __name__ == "__main__":
     print("[main] Iniciando la aplicación Flask.")
