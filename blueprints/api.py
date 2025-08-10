@@ -3,7 +3,7 @@ from services.data_processing import obtener_datos_jugadores, leer_historial_jug
 
 api_bp = Blueprint('api', __name__)
 
-@api_bp.route('/api/compare/<player1_name>/<player2_name>')
+@api_bp.route('/compare/<player1_name>/<player2_name>')
 def compare_players_api(player1_name, player2_name):
     """API endpoint para comparar dos jugadores."""
     print(f"[compare_players_api] Petición de API para comparar a {player1_name} y {player2_name}.")
@@ -35,6 +35,15 @@ def compare_players_api(player1_name, player2_name):
         
         total_vision_score = sum(m.get('vision_score', 0) for m in historial['matches'])
         avg_vision_score_per_min = total_vision_score / total_duration_minutes if total_duration_minutes > 0 else 0
+        
+        total_damage_to_champions = sum(m.get('totalDamageDealtToChampions', 0) for m in historial['matches'])
+        avg_dpm = total_damage_to_champions / total_duration_minutes if total_duration_minutes > 0 else 0
+        
+        total_gold = sum(m.get('goldEarned', 0) for m in historial['matches'])
+        avg_gpm = total_gold / total_duration_minutes if total_duration_minutes > 0 else 0
+
+        top_champion = player_data.get('top_champion_stats', [{}])[0].get('champion_name', 'N/A')
+        top_champion_wr = player_data.get('top_champion_stats', [{}])[0].get('win_rate', 0)
 
         return {
             "Elo": f"{player_data.get('tier')} {player_data.get('rank')} ({player_data.get('league_points')} LPs)",
@@ -44,7 +53,10 @@ def compare_players_api(player1_name, player2_name):
             "Win Rate": f"{win_rate:.2f}%",
             "KDA Promedio": f"{avg_kda:.2f}",
             "CS/min Promedio": f"{avg_cs_per_min:.1f}",
-            "Vision Score/min Promedio": f"{avg_vision_score_per_min:.1f}"
+            "Vision Score/min Promedio": f"{avg_vision_score_per_min:.1f}",
+            "DPM Promedio": f"{avg_dpm:.0f}",
+            "GPM Promedio": f"{avg_gpm:.0f}",
+            f"Win Rate con {top_champion}": f"{top_champion_wr:.2f}%"
         }
 
     comparison = {
