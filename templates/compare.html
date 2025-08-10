@@ -31,13 +31,13 @@
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
+                    <a class="nav-link" href="{{ url_for('main.index') }}">Inicio</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('estadisticas_globales') }}">Estadísticas Globales</a>
+                    <a class="nav-link" href="{{ url_for('stats.estadisticas_globales') }}">Estadísticas Globales</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="{{ url_for('compare_players') }}">Comparar Jugadores</a>
+                    <a class="nav-link active" aria-current="page" href="{{ url_for('stats.compare_players') }}">Comparar Jugadores</a>
                 </li>
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
@@ -150,6 +150,26 @@
                         let comparison_bars_html = '';
                         for (const key in data.player1) {
                             if (typeof data.player1[key] === 'string' && data.player1[key].includes('%')) {
+                                const val1 = parseFloat(data.player1[key]);
+                                const val2 = parseFloat(data.player2[key]);
+                                const total = val1 + val2;
+                                const p1_width = total > 0 ? (val1 / total * 100) : 50;
+                                const p2_width = total > 0 ? (val2 / total * 100) : 50;
+
+                                comparison_bars_html += `
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span>${data.player1[key]}</span>
+                                            <strong>${key}</strong>
+                                            <span>${data.player2[key]}</span>
+                                        </div>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" style="width: ${p1_width}%" aria-valuenow="${p1_width}" aria-valuemin="0" aria-valuemax="100">${player1}</div>
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: ${p2_width}%" aria-valuenow="${p2_width}" aria-valuemin="0" aria-valuemax="100">${player2}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            } else if (!isNaN(parseFloat(data.player1[key])) && !isNaN(parseFloat(data.player2[key]))) {
                                 const val1 = parseFloat(data.player1[key]);
                                 const val2 = parseFloat(data.player2[key]);
                                 const total = val1 + val2;
