@@ -1196,28 +1196,47 @@ def calcular_rachas(partidas):
     """
     print(f"[calcular_rachas] Calculando rachas para {len(partidas)} partidas.")
     if not partidas:
-        return {'max_win_streak': 0, 'max_loss_streak': 0}
+        return {
+            'max_win_streak': 0, 
+            'max_loss_streak': 0,
+            'current_win_streak': 0,
+            'current_loss_streak': 0
+        }
 
     max_win_streak = 0
     max_loss_streak = 0
     current_win_streak = 0
     current_loss_streak = 0
 
-    for partida in reversed(partidas):
+    # Calcular rachas máximas (iterando de la más antigua a la más nueva)
+    for partida in reversed(partidas): # reversed() itera de la más antigua a la más nueva
         if partida.get('win'):
             current_win_streak += 1
             current_loss_streak = 0
         else:
             current_loss_streak += 1
             current_win_streak = 0
-        
+
         if current_win_streak > max_win_streak:
             max_win_streak = current_win_streak
         if current_loss_streak > max_loss_streak:
             max_loss_streak = current_loss_streak
-            
-    print(f"[calcular_rachas] Rachas calculadas: Max V: {max_win_streak}, Max D: {max_loss_streak}.")
-    return {'max_win_streak': max_win_streak, 'max_loss_streak': max_loss_streak}
+
+    # Calcular racha actual (iterando de la más nueva a la más antigua)
+    current_streak_type = 'win' if partidas[0].get('win') else 'loss'
+    current_streak_count = 0
+    for partida in partidas: # La lista ya viene de más nueva a más antigua
+        is_win = partida.get('win')
+        if (is_win and current_streak_type == 'win') or (not is_win and current_streak_type == 'loss'):
+            current_streak_count += 1
+        else:
+            break # La racha se rompió
+
+    final_current_win_streak = current_streak_count if current_streak_type == 'win' else 0
+    final_current_loss_streak = current_streak_count if current_streak_type == 'loss' else 0
+
+    print(f"[calcular_rachas] Rachas calculadas: Max V: {max_win_streak}, Max D: {max_loss_streak}, Actual: {final_current_win_streak}V/{final_current_loss_streak}D.")
+    return {'max_win_streak': max_win_streak, 'max_loss_streak': max_loss_streak, 'current_win_streak': final_current_win_streak, 'current_loss_streak': final_current_loss_streak}
 
 @app.route('/')
 def index():

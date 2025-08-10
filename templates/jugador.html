@@ -568,6 +568,21 @@
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
                         </p>
+                        {# --- INICIO: Visualización de Racha Actual --- #}
+                        {% set current_win_streak = perfil.soloq.get('current_win_streak', 0) %}
+                        {% set current_loss_streak = perfil.soloq.get('current_loss_streak', 0) %}
+                        {% if current_win_streak > 1 %}
+                            <p>
+                                Racha Actual: 
+                                <span class="text-success fw-bold"><i class="fas fa-fire-alt me-1"></i>{{ current_win_streak }} Victorias</span>
+                            </p>
+                        {% elif current_loss_streak > 1 %}
+                            <p>
+                                Racha Actual: 
+                                <span class="text-danger fw-bold"><i class="fas fa-snowflake me-1"></i>{{ current_loss_streak }} Derrotas</span>
+                            </p>
+                        {% endif %}
+                        {# --- FIN: Visualización de Racha Actual --- #}
                         {# Nuevo campo para LP en 24h #}
                         {% if perfil.soloq.lp_change_24h is not none %}
                             <p>
@@ -653,6 +668,21 @@
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
                         </p>
+                        {# --- INICIO: Visualización de Racha Actual --- #}
+                        {% set current_win_streak_flex = perfil.flexq.get('current_win_streak', 0) %}
+                        {% set current_loss_streak_flex = perfil.flexq.get('current_loss_streak', 0) %}
+                        {% if current_win_streak_flex > 1 %}
+                            <p>
+                                Racha Actual: 
+                                <span class="text-success fw-bold"><i class="fas fa-fire-alt me-1"></i>{{ current_win_streak_flex }} Victorias</span>
+                            </p>
+                        {% elif current_loss_streak_flex > 1 %}
+                            <p>
+                                Racha Actual: 
+                                <span class="text-danger fw-bold"><i class="fas fa-snowflake me-1"></i>{{ current_loss_streak_flex }} Derrotas</span>
+                            </p>
+                        {% endif %}
+                        {# --- FIN: Visualización de Racha Actual --- #}
                         {# Nuevo campo para LP en 24h #}
                         {% if perfil.flexq.lp_change_24h is not none %}
                             <p>
