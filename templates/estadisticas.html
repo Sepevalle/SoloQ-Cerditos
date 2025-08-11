@@ -7,7 +7,7 @@
     <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
     <style>
         body { transition: background-color 0.3s, color 0.3s; }
         .dark-mode { background-color: #121212; color: #ffffff; }
@@ -28,9 +28,15 @@
         #statsTable th[data-sortable="true"]::after { content: ' \2195'; opacity: 0.4; }
         #statsTable th.th-sort-asc::after { content: ' \25B2'; opacity: 1; }
         #statsTable th.th-sort-desc::after { content: ' \25BC'; opacity: 1; }
+        .card-title i { margin-right: 8px; }
     </style>
 </head>
 <body>
+
+<audio id="backgroundAudio" loop>
+    <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
+    Tu navegador no soporta el elemento audio.
+</audio>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
     <div class="container-fluid">
@@ -44,17 +50,26 @@
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.index') }}">Inicio</a>
+                    <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="{{ url_for('stats.estadisticas_globales') }}">Estadísticas Globales</a>
+                    <a class="nav-link active" aria-current="page" href="{{ url_for('estadisticas_globales') }}">Estadísticas Globales</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('stats.compare_players') }}">Comparar Jugadores</a>
+                    <a class="nav-link" href="{{ url_for('records_personales') }}">Récords Personales</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('compare_players') }}">Comparar Jugadores</a>
                 </li>
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
                 <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
+                <div class="d-flex align-items-center ms-lg-2">
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                        <i id="muteIcon" class="fas fa-microphone-slash"></i>
+                    </button>
+                    <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1" style="width: 100px; margin-left: 10px;">
+                </div>
             </div>
         </div>
     </div>
@@ -65,78 +80,29 @@
 
     <ul class="nav nav-tabs" id="statsTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="player-stats-tab" data-bs-toggle="tab" data-bs-target="#player-stats" type="button" role="tab" aria-controls="player-stats" aria-selected="true">Estadísticas por Jugador</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="global-stats-tab" data-bs-toggle="tab" data-bs-target="#global-stats" type="button" role="tab" aria-controls="global-stats" aria-selected="false">Estadísticas Globales</button>
+            <button class="nav-link active" id="global-stats-tab" data-bs-toggle="tab" data-bs-target="#global-stats" type="button" role="tab" aria-controls="global-stats" aria-selected="true">Récords Globales</button>
         </li>
     </ul>
 
     <div class="tab-content" id="statsTabsContent">
-        <div class="tab-pane fade show active" id="player-stats" role="tabpanel" aria-labelledby="player-stats-tab">
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="statsTable">
-                            <thead>
-                                <tr>
-                                    <th scope="col" data-sortable="true" class="jugador-columna">Jugador</th>
-                                    <th scope="col" data-sortable="true">Tipo de Cola</th>
-                                    <th scope="col" data-sortable="true">Partidas</th>
-                                    <th scope="col" data-sortable="true">Win Rate</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for stat in stats %}
-                                <tr>
-                                    <td class="jugador-columna">
-                                        <img src="{{ url_for('static', filename='img_perfil/' + stat.summonerName + '.png') }}" alt="Imagen de {{ stat.summonerName }}" class="imagen-jugador" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/a.png';">
-                                        <a href="{{ url_for('player.perfil_jugador', game_name=stat.summonerName) }}">{{ stat.summonerName }}</a>
-                                    </td>
-                                    <td>{{ stat.queueType.replace('_', ' ').title() }}</td>
-                                    <td>{{ stat.total_partidas }}</td>
-                                    <td class="win-rate-{{ 'alto' if stat.win_rate >= 50 else 'bajo' }}">{{ '%.2f' % stat.win_rate }}%</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="tab-pane fade" id="global-stats" role="tabpanel" aria-labelledby="global-stats-tab">
-            <div class="row">
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 text-center">
-                        <div class="card-header">
-                            <i class="fas fa-chart-line me-2"></i>Rendimiento General
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Win Rate Global</h5>
-                            <p class="card-text fs-2 fw-bold {% if global_stats.overall_win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">
+        <div class="tab-pane fade show active" id="global-stats" role="tabpanel" aria-labelledby="global-stats-tab">
+            <div class="row mb-4">
+                <!-- Global Stats Summary -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title"><i class="fas fa-chart-pie"></i>Win Rate Global</h5>
+                            <p class="card-text fs-4 {% if global_stats.overall_win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">
                                 {{ '%.2f' % global_stats.overall_win_rate }}%
                             </p>
-                            <small class="text-muted">({{ global_stats.total_games }} partidas en total)</small>
+                            <small class="text-muted">({{ global_stats.total_games | thousands_separator }} partidas en total)</small>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 text-center">
-                        <div class="card-header">
-                            <i class="fas fa-gamepad me-2"></i>Más Actividad
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Jugador con Más Partidas</h5>
-                            <p class="card-text fs-4 fw-bold">{{ global_stats.player_with_most_games }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
+                <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card h-100">
-                        <div class="card-header text-center">
-                            <i class="fas fa-chess-queen me-2"></i>Campeones Populares
-                        </div>
                         <div class="card-body">
+                            <h5 class="card-title text-center"><i class="fas fa-chess-queen"></i>Campeones Más Jugados</h5>
                             <ul class="list-group list-group-flush">
                                 {% for champion, count in global_stats.most_played_champions %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -144,29 +110,107 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion }}.png" alt="{{ champion }}" class="imagen-jugador">
                                         {{ champion }}
                                     </span>
-                                    <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                                    <span class="badge bg-primary rounded-pill">{{ count | thousands_separator }}</span>
                                 </li>
                                 {% endfor %}
                             </ul>
                         </div>
                     </div>
                 </div>
+                 <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title"><i class="fas fa-bolt"></i>Mayor Multikill</h5>
+                            <p class="card-text fs-4">
+                                {% if global_stats.global_records.largest_multikill.value == 5 %}PENTAKILL{% elif global_stats.global_records.largest_multikill.value == 4 %}Quadra Kill{% elif global_stats.global_records.largest_multikill.value == 3 %}Triple Kill{% elif global_stats.global_records.largest_multikill.value == 2 %}Double Kill{% else %}Ninguno{% endif %}
+                            </p>
+                            <small class="text-muted">
+                                Jugador: {{ global_stats.global_records.largest_multikill.player }} ({{ global_stats.global_records.largest_multikill.riot_id }})<br>
+                                {% if global_stats.global_records.largest_multikill.champion_id and global_stats.global_records.largest_multikill.champion_id != 'N/A' and global_stats.global_records.largest_multikill.champion_name and global_stats.global_records.largest_multikill.champion_name != 'N/A' %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ global_stats.global_records.largest_multikill.champion_name }}.png" alt="{{ global_stats.global_records.largest_multikill.champion_name }}" class="imagen-jugador">
+                                    {{ global_stats.global_records.largest_multikill.champion_name }}<br>
+                                {% elif global_stats.global_records.largest_multikill.champion_id and global_stats.global_records.largest_multikill.champion_id != 'N/A' %}
+                                    ID Campeón: {{ global_stats.global_records.largest_multikill.champion_id | thousands_separator }}<br>
+                                {% else %}
+                                    Campeón: N/A<br>
+                                {% endif %}
+                                KDA: {{ global_stats.global_records.largest_multikill.kills | thousands_separator }}/{{ global_stats.global_records.largest_multikill.deaths | thousands_separator }}/{{ global_stats.global_records.largest_multikill.assists | thousands_separator }} ({{ '%.2f' % global_stats.global_records.largest_multikill.kda }})<br>
+                                Fecha: {{ global_stats.global_records.largest_multikill.game_date | format_timestamp }}
+                                {% if global_stats.global_records.largest_multikill.value > 0 and global_stats.global_records.largest_multikill.game_date > 0 and global_stats.global_records.largest_multikill.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="row mt-4">
-                <div class="col-12">
-                    <h3 class="text-center mb-4">Récords de la Temporada</h3>
-                </div>
-                {% for record_name, record_data in global_stats.records.items() %}
-                <div class="col-md-4 col-lg-3 mb-4">
-                    <div class="card h-100 text-center">
-                        <div class="card-header">
-                            <i class="{{ record_data.icon }} me-2"></i>{{ record_name }}
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">{{ record_data.player }}</h5>
-                            <p class="card-text fs-4 fw-bold">{{ '%.2f' % record_data.value if record_name == 'Mejor KDA' else record_data.value }}</p>
-                            <small class="text-muted">con {{ record_data.champion }}</small>
+            <div class="row">
+                <!-- Individual Record Cards -->
+                {% set records = global_stats.global_records %}
+                {% for key, record in records.items() %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                {% if key == 'longest_game' %}<i class="fas fa-clock"></i>Partida Más Larga
+                                {% elif key == 'most_kills' %}<i class="fas fa-crosshairs"></i>Más Kills
+                                {% elif key == 'most_deaths' %}<i class="fas fa-skull"></i>Más Muertes
+                                {% elif key == 'most_assists' %}<i class="fas fa-hands-helping"></i>Más Asistencias
+                                {% elif key == 'highest_kda' %}<i class="fas fa-star"></i>KDA Más Alto
+                                {% elif key == 'most_cs' %}<i class="fas fa-coins"></i>Más CS
+                                {% elif key == 'most_damage_dealt' %}<i class="fas fa-bomb"></i>Más Daño a Campeones
+                                {% elif key == 'most_gold_earned' %}<i class="fas fa-sack-dollar"></i>Más Oro Ganado
+                                {% elif key == 'most_vision_score' %}<i class="fas fa-eye"></i>Más Puntuación de Visión
+                                {% elif key == 'largest_killing_spree' %}<i class="fas fa-fire"></i>Mayor Racha de Asesinatos
+                                {% elif key == 'largest_multikill' %}<i class="fas fa-bolt"></i>Mayor Multikill
+                                {% elif key == 'most_time_spent_dead' %}<i class="fas fa-bed"></i>Más Tiempo Muerto
+                                {% elif key == 'most_wards_placed' %}<i class="fas fa-map-pin"></i>Más Wards Colocados
+                                {% elif key == 'most_wards_killed' %}<i class="fas fa-broom"></i>Más Wards Destruidos
+                                {% elif key == 'most_turret_kills' %}<i class="fas fa-chess-rook"></i>Más Torretas Destruidas
+                                {% elif key == 'most_inhibitor_kills' %}<i class="fas fa-building-shield"></i>Más Inhibidores Destruidos
+                                {% elif key == 'most_baron_kills' %}<i class="fas fa-dragon" style="color: #a970ff;"></i>Más Barons Asesinados
+                                {% elif key == 'most_dragon_kills' %}<i class="fas fa-dragon" style="color: #ff4747;"></i>Más Dragones Asesinados
+                                {% elif key == 'most_damage_taken' %}<i class="fas fa-shield-halved"></i>Más Daño Recibido
+                                {% elif key == 'most_total_heal' %}<i class="fas fa-heart-pulse"></i>Más Curación Total
+                                {% elif key == 'most_damage_shielded_on_teammates' %}<i class="fas fa-user-shield"></i>Más Escudo a Aliados
+                                {% elif key == 'most_time_ccing_others' %}<i class="fas fa-hourglass-half"></i>Más Tiempo de CC
+                                {% elif key == 'most_objectives_stolen' %}<i class="fas fa-hand-lizard"></i>Más Objetivos Robados
+                                {% elif key == 'highest_kill_participation' %}<i class="fas fa-people-group"></i>Mayor Participación en Kills
+                                {% elif key == 'most_double_kills' %}<i class="fas fa-2"></i>Más Asesinatos Dobles
+                                {% elif key == 'most_triple_kills' %}<i class="fas fa-3"></i>Más Asesinatos Triples
+                                {% elif key == 'most_quadra_kills' %}<i class="fas fa-4"></i>Más Asesinatos Cuádruples
+                                {% elif key == 'most_penta_kills' %}<i class="fas fa-5"></i>Más Asesinatos Quíntuples
+                                {% endif %}
+                            </h5>
+                            <p class="card-text fs-4">
+                                {# Apply formatting for time-based records #}
+                                {% if key in ['longest_game', 'most_time_spent_dead', 'most_time_ccing_others'] %}
+                                    {{ (record.value / 60) | int }}m {{ (record.value % 60) | int }}s
+                                {# Apply formatting for percentage/KDA records #}
+                                {% elif key in ['highest_kda', 'highest_kill_participation'] %}
+                                    {{ '%.2f' % record.value }}{% if key == 'highest_kill_participation' %}%{% endif %}
+                                {# Handle multikill display #}
+                                {% elif key == 'largest_multikill' %}
+                                     {% if record.value == 5 %}PENTAKILL{% elif record.value == 4 %}Quadra Kill{% elif record.value == 3 %}Triple Kill{% elif record.value == 2 %}Double Kill{% else %}Individual{% endif %}
+                                {# For all other records, apply the thousands_separator filter #}
+                                {% else %}
+                                    {{ record.value | thousands_separator }}
+                                {% endif %}
+                            </p>
+                            <small class="text-muted">
+                                Jugador: {{ record.player }} ({{ record.riot_id }})<br>
+                                {% if record.champion_id and record.champion_id != 'N/A' and record.champion_name and record.champion_name != 'N/A' %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ record.champion_name }}.png" alt="{{ record.champion_name }}" class="imagen-jugador">
+                                    {{ record.champion_name }}<br>
+                                {% elif record.champion_id and record.champion_id != 'N/A' %}
+                                    ID Campeón: {{ record.champion_id | thousands_separator }}<br>
+                                {% else %}
+                                    Campeón: N/A<br>
+                                {% endif %}
+                                KDA: {{ record.kills | thousands_separator }}/{{ record.deaths | thousands_separator }}/{{ record.assists | thousands_separator }} ({{ '%.2f' % record.kda }})<br>
+                                Fecha: {{ record.game_date | format_timestamp }}<br>
+                                Duración: {{ (record.game_duration / 60) | int }}m {{ (record.game_duration % 60) | int }}s
+                                {% if record.value > 0 and record.game_date > 0 and record.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -190,6 +234,45 @@
         if (localStorage.getItem('theme') === 'dark') {
             body.classList.add('dark-mode');
         }
+
+        const audio = document.getElementById('backgroundAudio');
+        const toggleAudioBtn = document.getElementById('toggleAudio');
+        const muteIcon = document.getElementById('muteIcon');
+        const volumeSlider = document.getElementById('volumeSlider');
+
+        // Restore audio state from localStorage
+        const isMuted = localStorage.getItem('audioMuted') === 'true';
+        audio.muted = isMuted;
+        muteIcon.className = isMuted ? 'fas fa-microphone-slash' : 'fas fa-microphone';
+        toggleAudioBtn.title = isMuted ? 'Desmutear Música' : 'Mutear Música';
+
+        const savedVolume = localStorage.getItem('audioVolume');
+        if (savedVolume !== null) {
+            audio.volume = savedVolume;
+            volumeSlider.value = savedVolume;
+        } else {
+            audio.volume = 1; // Default volume
+            volumeSlider.value = 1;
+        }
+
+
+        toggleAudioBtn.addEventListener('click', function() {
+            audio.muted = !audio.muted;
+            localStorage.setItem('audioMuted', audio.muted);
+            if (audio.muted) {
+                muteIcon.className = 'fas fa-microphone-slash';
+                toggleAudioBtn.title = 'Mutear Música';
+            } else {
+                muteIcon.className = 'fas fa-microphone';
+                toggleAudioBtn.title = 'Desmutear Música';
+                audio.play().catch(e => console.log("La reproducción automática fue bloqueada por el navegador."));
+            }
+        });
+
+        volumeSlider.addEventListener('input', function() {
+            audio.volume = this.value;
+            localStorage.setItem('audioVolume', this.value);
+        });
     });
 </script>
 </body>
