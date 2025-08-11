@@ -483,6 +483,9 @@
             overflow: hidden; /* Esencial para que la animación de grid funcione */
         }
         /* --- FIN: Animación para desplegar detalles de partida --- */
+    .hidden-row {
+            display: none;
+        }
     </style>
 </head>
 
@@ -763,9 +766,9 @@
                                     <th>Assists (Promedio)</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="championStatsTableBody">
                                 {% for champ_name, stats in perfil.champion_stats %}
-                                <tr>
+                                <tr {% if loop.index > 5 %}class="hidden-row"{% endif %}>
                                     <td>
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champ_name }}.png" alt="{{ champ_name }}" class="imagen-jugador">
                                         {{ champ_name }}
@@ -780,6 +783,9 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button id="toggleChampionStats" class="btn btn-primary">Mostrar más campeones</button>
                     </div>
                 </div>
             </div>
@@ -1722,6 +1728,34 @@
                 createCharts({}); 
             });
         // --- FIN: LÓGICA DE GRÁFICOS ---
+    // Logic for Champion Stats Table
+        const toggleChampionStatsBtn = document.getElementById('toggleChampionStats');
+        const championStatsTableBody = document.getElementById('championStatsTableBody');
+        const hiddenChampionRows = championStatsTableBody.querySelectorAll('.hidden-row');
+
+        if (hiddenChampionRows.length > 0) {
+            toggleChampionStatsBtn.style.display = 'block'; // Show button only if there are hidden rows
+        } else {
+            toggleChampionStatsBtn.style.display = 'none'; // Hide button if no hidden rows
+        }
+
+        toggleChampionStatsBtn.addEventListener('click', function() {
+            let allHidden = true;
+            hiddenChampionRows.forEach(row => {
+                if (row.style.display === 'none' || row.style.display === '') {
+                    allHidden = false;
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (allHidden) {
+                toggleChampionStatsBtn.textContent = 'Mostrar más campeones';
+            } else {
+                toggleChampionStatsBtn.textContent = 'Mostrar menos campeones';
+            }
+        });
     });
 </script>
 
