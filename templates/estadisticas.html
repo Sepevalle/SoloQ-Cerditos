@@ -205,8 +205,8 @@
                                 {% endif %}
                             </h5>
                             <p class="card-text fs-4">
-                                {# Apply formatting for time-based records #}
-                                {% if key in ['longest_game', 'most_time_spent_dead', 'most_time_ccing_others'] %}
+                                {% if record.value is none %}N/A
+                                {% elif key in ['longest_game', 'most_time_spent_dead', 'most_time_ccing_others'] %}
                                     {{ (record.value / 60) | int }}m {{ (record.value % 60) | int }}s
                                 {# Apply formatting for percentage/KDA records #}
                                 {% elif key in ['highest_kda', 'highest_kill_participation'] %}

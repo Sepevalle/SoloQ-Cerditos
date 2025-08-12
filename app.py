@@ -1939,8 +1939,20 @@ def _create_record_dict(match, value, record_type):
 
     print(f"[_create_record_dict] Final champion_name: {champion_name}, actual_champion_id: {actual_champion_id}")
 
+    # Records where 0 should be displayed as N/A
+    na_if_zero_records = [
+        'largest_killing_spree', 'largest_multikill', 'most_turret_kills',
+        'most_inhibitor_kills', 'most_baron_kills', 'most_dragon_kills',
+        'most_objectives_stolen', 'most_double_kills', 'most_triple_kills',
+        'most_quadra_kills', 'most_penta_kills'
+    ]
+
+    final_value = value
+    if record_type in na_if_zero_records and value == 0:
+        final_value = None # Set to None if 0 and should be N/A
+
     return {
-        'value': value,
+        'value': final_value,
         'player': match.get('jugador_nombre', 'N/A'), # Ensure player name also has default
         'riot_id': match.get('riot_id', 'N/A'), # Ensure riot_id also has default
         'match_id': match.get('match_id', 'N/A'),
