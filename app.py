@@ -2260,13 +2260,49 @@ def _get_player_personal_records(puuid, player_display_name, riot_id):
     print(f"[_get_player_personal_records] Récords personales calculados para PUUID: {puuid}.")
     return personal_records
 
+@app.route('/api/personal_records/<puuid>')
+def get_personal_records_api(puuid):
+    """
+    API endpoint para obtener los récords personales de un jugador dado su PUUID.
+    """
+    print(f"[get_personal_records_api] Petición recibida para PUUID: {puuid}.")
+    
+    player_display_name = "Desconocido"
+    riot_id = "Desconocido"
+
+    # Buscar el nombre del jugador y riot_id en la caché de datos de jugadores
+    datos_jugadores, _ = obtener_datos_jugadores()
+    for jugador_info in datos_jugadores:
+        if jugador_info.get('puuid') == puuid:
+            player_display_name = jugador_info.get('jugador', "Desconocido")
+            riot_id = jugador_info.get('game_name', "Desconocido")
+            break
+
+    if not puuid:
+        print("[get_personal_records_api] Error: PUUID no proporcionado.")
+        return jsonify({"error": "PUUID no proporcionado"}), 400
+
+    personal_records = _get_player_personal_records(puuid, player_display_name, riot_id)
+    
+    if personal_records:
+        print(f"[get_personal_records_api] Récords personales cargados para PUUID: {puuid}.")
+        # Convertir el diccionario de récords a una lista de diccionarios para facilitar el consumo en JS
+        records_list = []
+        for record_type, record_data in personal_records.items():
+            # Añadir el tipo de récord a los datos para que JS pueda identificarlo
+            record_data['record_type_key'] = record_type 
+            records_list.append(record_data)
+        return jsonify(records_list)
+    else:
+        print(f"[get_personal_records_api] No se encontraron récords personales para PUUID: {puuid}.")
+        return jsonify({"message": "No se encontraron récords personales para esta cuenta."}), 404
+
 @app.route('/records_personales')
-def records_personales():
+def records_personales_page():
     """
-    Renderiza la página de récords personales.
-    Si se proporciona un game_name, intenta cargar y mostrar los récords de ese jugador.
+    Renderiza la página de récords personales con los selectores.
     """
-    print("[records_personales] Petición recibida para la página de récords personales.")
+    print("[records_personales_page] Petición recibida para la página de récords personales.")
     
     # Obtener la lista de todos los jugadores para el selector
     cuentas = leer_cuentas("https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt")
@@ -2280,32 +2316,8 @@ def records_personales():
             'puuid': puuid_dict.get(riot_id) # Asegúrate de tener el PUUID para cada jugador
         })
 
-    selected_game_name = request.args.get('game_name')
-    selected_puuid = None
-    personal_records = None
-    player_display_name = None
-
-    if selected_game_name:
-        # Find the PUUID, display name, and riot ID for the selected game_name
-        for player_info in player_options:
-            if player_info['riot_id'] == selected_game_name:
-                selected_puuid = player_info['puuid']
-                player_display_name = player_info['jugador_nombre']
-                selected_riot_id = player_info['riot_id'] # Guardar el riot_id para pasarlo
-                break
-        
-        if selected_puuid:
-            # Ahora pasamos el nombre de visualización del jugador y el riot_id a _get_player_personal_records
-            personal_records = _get_player_personal_records(selected_puuid, player_display_name, selected_riot_id)
-            print(f"[records_personales] Récords personales cargados para {selected_game_name}.")
-        else:
-            print(f"[records_personales] PUUID no encontrado para el jugador seleccionado: {selected_game_name}.")
-
     return render_template('records_personales.html',
                            player_options=player_options,
-                           selected_game_name=selected_game_name,
-                           personal_records=personal_records,
-                           player_display_name=player_display_name,
                            ddragon_version=DDRAGON_VERSION)
 
 
