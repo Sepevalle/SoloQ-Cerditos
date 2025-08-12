@@ -1009,12 +1009,13 @@ def guardar_historial_jugador_github(puuid, historial_data):
 def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_player):
     """
     Calcula el cambio total de LP para un jugador en una cola específica en las últimas 24 horas.
+    Retorna 0 si no hay partidas para la cola especificada en las últimas 24 horas.
     """
     now_utc = datetime.now(timezone.utc)
     one_day_ago_utc = now_utc - timedelta(days=1)
     one_day_ago_timestamp_ms = int(one_day_ago_utc.timestamp() * 1000)
     
-    lp_change_24h = 0
+    lp_change_24h = 0 # Inicializado a 0. Será 0 si no hay partidas recientes.
     
     queue_id_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
     target_queue_id = queue_id_map.get(queue_type_api_name)
@@ -1025,6 +1026,7 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
 
     for match in all_matches_for_player:
         match_timestamp_utc = match.get('game_end_timestamp', 0)
+        # Solo considera partidas que terminaron en las últimas 24 horas
         if match_timestamp_utc >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
             if match.get('lp_change_this_game') is not None:
                 lp_change_24h += match['lp_change_this_game']
@@ -1260,6 +1262,9 @@ def actualizar_cache():
         all_matches_for_player = historial.get('matches', [])
 
         # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
+        # Esta lógica asigna el valor pre-calculado para cada cola.
+        # Si _calculate_lp_change_for_player (que se ejecuta en el hilo de historial de partidas)
+        # determinó que no hay partidas en las últimas 24h para esa cola, este valor será 0.
         if queue_type == "RANKED_SOLO_5x5":
             jugador['lp_change_24h'] = historial.get('soloq_lp_change_24h', 0)
         elif queue_type == "RANKED_FLEX_SR":
@@ -1531,6 +1536,9 @@ def _get_player_profile_data(game_name):
     }
     
     # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
+    # Estos valores ya fueron calculados y almacenados en el caché de historial por
+    # el hilo 'actualizar_historial_partidas_en_segundo_plano'.
+    # Si no hubo partidas en las últimas 24h para una cola, el valor será 0.
     lp_change_soloq_24h = historial_partidas_completo.get('soloq_lp_change_24h', 0)
     lp_change_flexq_24h = historial_partidas_completo.get('flexq_lp_change_24h', 0)
 
@@ -1892,7 +1900,10 @@ def actualizar_historial_partidas_en_segundo_plano():
                         match['post_game_valor_clasificacion'] = None
                     if 'pre_game_valor_clasificacion' not in match:
                         match['pre_game_valor_clasificacion'] = None
-                # Recalcular y guardar el LP change en 24h para este jugador en el historial
+                
+                # Recalcular el LP change en 24h para este jugador en el historial.
+                # Aquí es donde se garantiza que 'soloq_lp_change_24h' y 'flexq_lp_change_24h'
+                # se actualicen a 0 si no hay partidas recientes en las últimas 24h.
                 current_soloq_lp_change_24h = _calculate_lp_change_for_player(
                     puuid, "RANKED_SOLO_5x5", historial_existente.get('matches', [])
                 )
