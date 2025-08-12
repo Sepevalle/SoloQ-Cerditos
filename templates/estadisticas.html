@@ -388,6 +388,11 @@
                 let iconClass = '';
                 let titleText = '';
 
+                // Helper function for thousands separator
+                function formatNumberWithThousandsSeparator(num) {
+                    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                }
+
                 // Determine icon and format value based on record_type_key
                 switch (record.record_type_key) {
                     case 'longest_game':
@@ -400,13 +405,14 @@
                         titleText = 'Partida Más Larga';
                         break;
                     case 'highest_kda':
-                    case 'highest_kill_participation':
                         valueDisplay = record.value.toFixed(2);
-                        if (record.record_type_key === 'highest_kill_participation') {
-                            valueDisplay += '%';
-                        }
                         iconClass = 'fas fa-star';
                         titleText = 'KDA Más Alto';
+                        break;
+                    case 'highest_kill_participation':
+                        valueDisplay = record.value.toFixed(2) + '%';
+                        iconClass = 'fas fa-people-group';
+                        titleText = 'Mayor Participación en Kills';
                         break;
                     case 'largest_multikill':
                         if (record.value === 5) {
@@ -423,31 +429,33 @@
                         iconClass = 'fas fa-bolt';
                         titleText = 'Mayor Multikill';
                         break;
-                    case 'most_kills': iconClass = 'fas fa-crosshairs'; titleText = 'Más Kills'; break;
-                    case 'most_deaths': iconClass = 'fas fa-skull'; titleText = 'Más Muertes'; break;
-                    case 'most_assists': iconClass = 'fas fa-hands-helping'; titleText = 'Más Asistencias'; break;
-                    case 'most_cs': iconClass = 'fas fa-coins'; titleText = 'Más CS'; break;
-                    case 'most_damage_dealt': iconClass = 'fas fa-bomb'; titleText = 'Más Daño a Campeones'; break;
-                    case 'most_gold_earned': iconClass = 'fas fa-sack-dollar'; titleText = 'Más Oro Ganado'; break;
-                    case 'most_vision_score': iconClass = 'fas fa-eye'; titleText = 'Más Puntuación de Visión'; break;
-                    case 'largest_killing_spree': iconClass = 'fas fa-fire'; titleText = 'Mayor Racha de Asesinatos'; break;
-                    case 'most_wards_placed': iconClass = 'fas fa-map-pin'; titleText = 'Más Wards Colocados'; break;
-                    case 'most_wards_killed': iconClass = 'fas fa-broom'; titleText = 'Más Wards Destruidos'; break;
-                    case 'most_turret_kills': iconClass = 'fas fa-chess-rook'; titleText = 'Más Torretas Destruidas'; break;
-                    case 'most_inhibitor_kills': iconClass = 'fas fa-building-shield'; titleText = 'Más Inhibidores Destruidos'; break;
-                    case 'most_baron_kills': iconClass = 'fas fa-dragon'; titleText = 'Más Barons Asesinados'; break;
-                    case 'most_dragon_kills': iconClass = 'fas fa-dragon'; titleText = 'Más Dragones Asesinados'; break;
-                    case 'most_damage_taken': iconClass = 'fas fa-shield-halved'; titleText = 'Más Daño Recibido'; break;
-                    case 'most_total_heal': iconClass = 'fas fa-heart-pulse'; titleText = 'Más Curación Total'; break;
-                    case 'most_damage_shielded_on_teammates': iconClass = 'fas fa-user-shield'; titleText = 'Más Escudo a Aliados'; break;
-                    case 'most_objectives_stolen': iconClass = 'fas fa-hand-lizard'; titleText = 'Más Objetivos Robados'; break;
-                    case 'most_double_kills': iconClass = 'fas fa-2'; titleText = 'Más Asesinatos Dobles'; break;
-                    case 'most_triple_kills': iconClass = 'fas fa-3'; titleText = 'Más Asesinatos Triples'; break;
-                    case 'most_quadra_kills': iconClass = 'fas fa-4'; titleText = 'Más Asesinatos Cuádruples'; break;
-                    case 'most_penta_kills': iconClass = 'fas fa-5'; titleText = 'Más Asesinatos Quíntuples'; break;
+                    case 'most_kills': iconClass = 'fas fa-crosshairs'; titleText = 'Más Kills'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_deaths': iconClass = 'fas fa-skull'; titleText = 'Más Muertes'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_assists': iconClass = 'fas fa-hands-helping'; titleText = 'Más Asistencias'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_cs': iconClass = 'fas fa-coins'; titleText = 'Más CS'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_damage_dealt': iconClass = 'fas fa-bomb'; titleText = 'Más Daño a Campeones'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_gold_earned': iconClass = 'fas fa-sack-dollar'; titleText = 'Más Oro Ganado'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_vision_score': iconClass = 'fas fa-eye'; titleText = 'Más Puntuación de Visión'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'largest_killing_spree': iconClass = 'fas fa-fire'; titleText = 'Mayor Racha de Asesinatos'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_wards_placed': iconClass = 'fas fa-map-pin'; titleText = 'Más Wards Colocados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_wards_killed': iconClass = 'fas fa-broom'; titleText = 'Más Wards Destruidos'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_turret_kills': iconClass = 'fas fa-chess-rook'; titleText = 'Más Torretas Destruidas'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_inhibitor_kills': iconClass = 'fas fa-building-shield'; titleText = 'Más Inhibidores Destruidos'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_baron_kills': iconClass = 'fas fa-dragon'; titleText = 'Más Barons Asesinados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_dragon_kills': iconClass = 'fas fa-dragon'; titleText = 'Más Dragones Asesinados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_damage_taken': iconClass = 'fas fa-shield-halved'; titleText = 'Más Daño Recibido'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_total_heal': iconClass = 'fas fa-heart-pulse'; titleText = 'Más Curación Total'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_damage_shielded_on_teammates': iconClass = 'fas fa-user-shield'; titleText = 'Más Escudo a Aliados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_time_ccing_others': iconClass = 'fas fa-hourglass-half'; titleText = 'Más Tiempo de CC'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_objectives_stolen': iconClass = 'fas fa-hand-lizard'; titleText = 'Más Objetivos Robados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_double_kills': iconClass = 'fas fa-2'; titleText = 'Más Asesinatos Dobles'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_triple_kills': iconClass = 'fas fa-3'; titleText = 'Más Asesinatos Triples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_quadra_kills': iconClass = 'fas fa-4'; titleText = 'Más Asesinatos Cuádruples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_penta_kills': iconClass = 'fas fa-5'; titleText = 'Más Asesinatos Quíntuples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
                     default:
                         iconClass = 'fas fa-trophy';
                         titleText = record.record_type_key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Basic formatting
+                        valueDisplay = formatNumberWithThousandsSeparator(record.value);
                         break;
                 }
 
