@@ -202,15 +202,15 @@ BASE_URL_EUW = "https://euw1.api.riotgames.com"
 BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 
 
-# Caché para almacenar los datos de los jugadores
+# Caché para almacenar los datos de los jugadores principales (resumen de ELO)
 cache = {
     "datos_jugadores": [],
     "timestamp": 0
 }
-CACHE_TIMEOUT = 130  # 2 minutos
+CACHE_TIMEOUT = 130  # 2 minutos para el resumen principal de jugadores
 cache_lock = threading.Lock()
 
-# Global storage for LP tracking
+# Global storage for LP tracking (in-game status)
 # Stores { (puuid, queue_type_string): {'pre_game_valor_clasificacion': int, 'game_start_timestamp': float, 'riot_id': str, 'queue_type': str} }
 player_in_game_lp = {}
 player_in_game_lp_lock = threading.Lock()
@@ -235,6 +235,13 @@ PERSONAL_RECORDS_CACHE = {
 }
 PERSONAL_RECORDS_LOCK = threading.Lock()
 PERSONAL_RECORDS_UPDATE_INTERVAL = 3600 # Update personal records every hour (3600 seconds)
+
+# --- NUEVA CACHÉ EN MEMORIA PARA EL HISTORIAL DE PARTIDAS DE LOS JUGADORES ---
+# Almacena el historial completo de partidas por PUUID en memoria.
+# { puuid: { 'data': historial_json, 'timestamp': last_update_time } }
+PLAYER_MATCH_HISTORY_CACHE = {}
+PLAYER_MATCH_HISTORY_LOCK = threading.Lock()
+PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 300 # 5 minutos para el historial de partidas individual
 
 # --- CONFIGURACIÓN DE SPLITS ---
 SPLITS = {
@@ -917,21 +924,43 @@ def guardar_peak_elo_en_github(peak_elo_dict):
     except Exception as e:
         print(f"[guardar_peak_elo_en_github] Error al actualizar el archivo peak_elo.json: {e}")
 
-def leer_historial_jugador_github(puuid):
-    """Lee el historial de partidas de un jugador desde GitHub."""
+def _read_player_match_history_from_github(puuid):
+    """Lee el historial de partidas de un jugador directamente desde GitHub."""
     url = f"https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/match_history/{puuid}.json"
-    print(f"[leer_historial_jugador_github] Leyendo historial para PUUID: {puuid} desde: {url}")
+    print(f"[_read_player_match_history_from_github] Leyendo historial para PUUID: {puuid} desde: {url}")
     try:
         resp = requests.get(url, timeout=30) # Aumentado timeout
         if resp.status_code == 200:
-            print(f"[leer_historial_jugador_github] Historial para {puuid} leído exitosamente.")
+            print(f"[_read_player_match_history_from_github] Historial para {puuid} leído exitosamente de GitHub.")
             return resp.json()
         elif resp.status_code == 404:
-            print(f"[leer_historial_jugador_github] No se encontró historial para {puuid}. Se creará uno nuevo.")
+            print(f"[_read_player_match_history_from_github] No se encontró historial para {puuid} en GitHub. Se creará uno nuevo.")
             return {}
     except Exception as e:
-        print(f"[leer_historial_jugador_github] Error leyendo el historial para {puuid}: {e}")
+        print(f"[_read_player_match_history_from_github] Error leyendo el historial para {puuid} de GitHub: {e}")
     return {}
+
+def get_player_match_history(puuid):
+    """
+    Obtiene el historial de partidas de un jugador, usando la caché en memoria primero.
+    Si no está en caché o está expirado, lo lee desde GitHub y lo cachea.
+    """
+    with PLAYER_MATCH_HISTORY_LOCK:
+        cached_data = PLAYER_MATCH_HISTORY_CACHE.get(puuid)
+        
+        if cached_data and (time.time() - cached_data['timestamp'] < PLAYER_MATCH_HISTORY_CACHE_TIMEOUT):
+            print(f"[get_player_match_history] Devolviendo historial cacheados para PUUID: {puuid}.")
+            return cached_data['data']
+        
+        print(f"[get_player_match_history] Historial para PUUID: {puuid} no cacheados o estancados. Leyendo de GitHub.")
+        historial = _read_player_match_history_from_github(puuid)
+        PLAYER_MATCH_HISTORY_CACHE[puuid] = {
+            'data': historial,
+            'timestamp': time.time()
+        }
+        print(f"[get_player_match_history] Historial para PUUID: {puuid} leído de GitHub y cacheado.")
+        return historial
+
 
 def guardar_historial_jugador_github(puuid, historial_data):
     """Guarda o actualiza el historial de partidas de un jugador en GitHub."""
@@ -944,6 +973,9 @@ def guardar_historial_jugador_github(puuid, historial_data):
     headers = {"Authorization": f"token {token}"}
     sha = None
     try:
+        # Aquí se usa _read_player_match_history_from_github para obtener el SHA, 
+        # porque necesitamos la versión actual del archivo en GitHub para actualizarlo correctamente.
+        # No usamos get_player_match_history aquí ya que queremos el SHA del archivo en el repositorio.
         response = requests.get(url, headers=headers, timeout=30) # Aumentado timeout
         if response.status_code == 200:
             sha = response.json().get('sha')
@@ -1223,7 +1255,8 @@ def actualizar_cache():
         if not puuid or not queue_id:
             continue
         
-        historial = leer_historial_jugador_github(puuid)
+        # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
+        historial = get_player_match_history(puuid) 
         all_matches_for_player = historial.get('matches', [])
 
         # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
@@ -1478,7 +1511,8 @@ def _get_player_profile_data(game_name):
 
     historial_partidas_completo = {}
     if puuid:
-        historial_partidas_completo = leer_historial_jugador_github(puuid)
+        # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
+        historial_partidas_completo = get_player_match_history(puuid) 
         for match in historial_partidas_completo.get('matches', []):
             if 'lp_change_this_game' not in match:
                 match['lp_change_this_game'] = None
@@ -1606,7 +1640,8 @@ def perfil_jugador_original(game_name):
 
     historial_partidas_completo = {}
     if puuid:
-        historial_partidas_completo = leer_historial_jugador_github(puuid)
+        # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
+        historial_partidas_completo = get_player_match_history(puuid)
         for match in historial_partidas_completo.get('matches', []):
             if 'lp_change_this_game' not in match:
                 match['lp_change_this_game'] = None
@@ -1682,7 +1717,8 @@ def actualizar_historial_partidas_en_segundo_plano():
                     continue
 
                 print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
-                historial_existente = leer_historial_jugador_github(puuid)
+                # Leer el historial existente (directamente de GitHub, ya que es el hilo de escritura)
+                historial_existente = _read_player_match_history_from_github(puuid) 
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
                 remakes_guardados = set(historial_existente.get('remakes', []))
                 
@@ -1831,11 +1867,6 @@ def actualizar_historial_partidas_en_segundo_plano():
                             # y post_game_valor es el valor numérico (ej: 1956),
                             # entonces lp_change es simplemente la resta.
                             
-                            # La inconsistencia matemática se daría si la API de Riot nos diera un LP post-partida que no corresponde
-                            # al LP pre-partida + el cambio que acabamos de calcular.
-                            # Este chequeo puede ser complicado porque 'calcular_valor_clasificacion' devuelve un valor absoluto.
-                            # Es más fácil si solo rastreamos los leaguePoints puros para el cambio de LP.
-                            
                             # Simplificamos la validación a un log informativo, ya que la lógica de cálculo es robusta.
                             print(f"[{lp_update_data['riot_id']}] [LP Validator] Coherencia de LP calculada: Pre-juego Valor({pre_game_valor}) -> Post-juego Valor({post_game_valor}) (Cambio: {lp_change:+d})")
 
@@ -1884,6 +1915,15 @@ def actualizar_historial_partidas_en_segundo_plano():
                     
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
                     guardar_historial_jugador_github(puuid, historial_existente)
+
+                    # --- ACTUALIZAR LA CACHÉ EN MEMORIA DESPUÉS DE GUARDAR EN GITHUB ---
+                    with PLAYER_MATCH_HISTORY_LOCK:
+                        PLAYER_MATCH_HISTORY_CACHE[puuid] = {
+                            'data': historial_existente,
+                            'timestamp': time.time()
+                        }
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {puuid} actualizado y cacheado en memoria.")
+
 
                     # Invalidate personal records cache for this player
                     with PERSONAL_RECORDS_LOCK:
@@ -2098,7 +2138,8 @@ def _calculate_and_cache_global_stats():
             print(f"[_calculate_and_cache_global_stats] Saltando jugador {riot_id}: PUUID no encontrado.")
             continue
 
-        historial = leer_historial_jugador_github(puuid)
+        # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
+        historial = get_player_match_history(puuid) 
         matches = historial.get('matches', [])
         
         for match in matches:
@@ -2251,7 +2292,8 @@ def _get_player_personal_records(puuid, player_display_name, riot_id):
             return cached_data
 
     print(f"[_get_player_personal_records] Calculando récords personales para PUUID: {puuid} (no cacheados o estancados).")
-    historial = leer_historial_jugador_github(puuid)
+    # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
+    historial = get_player_match_history(puuid) 
     all_matches_for_player = historial.get('matches', [])
 
     # Initialize personal records with default values
