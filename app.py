@@ -226,6 +226,14 @@ GLOBAL_STATS_CACHE = {
 GLOBAL_STATS_LOCK = threading.Lock()
 GLOBAL_STATS_UPDATE_INTERVAL = 3600 # Update global stats every hour (3600 seconds)
 
+# Cache for pre-calculated personal records
+PERSONAL_RECORDS_CACHE = {
+    "data": {},
+    "timestamp": 0
+}
+PERSONAL_RECORDS_LOCK = threading.Lock()
+PERSONAL_RECORDS_UPDATE_INTERVAL = 3600 # Update personal records every hour (3600 seconds)
+
 # --- CONFIGURACIÓN DE SPLITS ---
 SPLITS = {
     "s15_split1": {
@@ -1850,6 +1858,12 @@ def actualizar_historial_partidas_en_segundo_plano():
                     
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
                     guardar_historial_jugador_github(puuid, historial_existente)
+
+                    # Invalidate personal records cache for this player
+                    with PERSONAL_RECORDS_LOCK:
+                        if puuid in PERSONAL_RECORDS_CACHE['data']:
+                            del PERSONAL_RECORDS_CACHE['data'][puuid]
+                            print(f"[actualizar_historial_partidas_en_segundo_plano] Récords personales cacheados para {puuid} invalidados.")
                 else:
                     print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
 
@@ -2196,8 +2210,21 @@ def estadisticas_globales():
 
 # Se ha modificado la firma de la función para aceptar `player_display_name` y `riot_id`.
 def _get_player_personal_records(puuid, player_display_name, riot_id):
-    """Calcula y devuelve los récords personales de un jugador."""
-    print(f"[_get_player_personal_records] Calculando récords personales para PUUID: {puuid}, Jugador: {player_display_name}, Riot ID: {riot_id}")
+    """Calcula y devuelve los récords personales de un jugador.
+    Utiliza caché para minimizar el consumo de CPU.
+    """
+    print(f"[_get_player_personal_records] Solicitud de récords personales para PUUID: {puuid}, Jugador: {player_display_name}, Riot ID: {riot_id}")
+
+    with PERSONAL_RECORDS_LOCK:
+        cached_data = PERSONAL_RECORDS_CACHE['data'].get(puuid)
+        cache_timestamp = PERSONAL_RECORDS_CACHE['timestamp']
+
+        # Check if cached data exists and is not stale
+        if cached_data and (time.time() - cache_timestamp < PERSONAL_RECORDS_UPDATE_INTERVAL):
+            print(f"[_get_player_personal_records] Devolviendo récords personales cacheados para PUUID: {puuid}.")
+            return cached_data
+
+    print(f"[_get_player_personal_records] Calculando récords personales para PUUID: {puuid} (no cacheados o estancados).")
     historial = leer_historial_jugador_github(puuid)
     all_matches_for_player = historial.get('matches', [])
 
@@ -2336,6 +2363,26 @@ def records_personales_page():
                            ddragon_version=DDRAGON_VERSION)
 
 
+def _calculate_and_cache_personal_records_periodically():
+    """Hilo para calcular y cachear los récords personales periódicamente."""
+    print("[_calculate_and_cache_personal_records_periodically] Hilo de cálculo de récords personales iniciado.")
+    while True:
+        try:
+            cuentas = leer_cuentas("https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt")
+            puuid_dict = leer_puuids()
+
+            for riot_id, jugador_nombre in cuentas:
+                puuid = puuid_dict.get(riot_id)
+                if puuid:
+                    # Calling _get_player_personal_records will calculate and cache if needed
+                    _get_player_personal_records(puuid, jugador_nombre, riot_id)
+                    print(f"[_calculate_and_cache_personal_records_periodically] Récords personales actualizados para {riot_id}.")
+                else:
+                    print(f"[_calculate_and_cache_personal_records_periodically] PUUID no encontrado para {riot_id}. Saltando.")
+            print(f"[_calculate_and_cache_personal_records_periodically] Próximo cálculo en {PERSONAL_RECORDS_UPDATE_INTERVAL / 60} minutos.")
+        except Exception as e:
+            print(f"[_calculate_and_cache_personal_records_periodically] ERROR en el hilo de cálculo de récords personales: {e}")
+        time.sleep(PERSONAL_RECORDS_UPDATE_INTERVAL)
 
 
 # --- New function for background global stats calculation ---
@@ -2377,6 +2424,18 @@ if __name__ == "__main__":
     # Iniciar el hilo de cálculo de estadísticas globales
     global_stats_calc_thread = threading.Thread(target=_calculate_and_cache_global_stats_periodically)
     global_stats_calc_thread.daemon = True
+    global_stats_calc_thread.start()
+    print("[main] Hilo 'actualizar_estadisticas_globales_periodicamente' iniciado.")
+
+    # Iniciar el hilo de cálculo de récords personales
+    personal_records_calc_thread = threading.Thread(target=_calculate_and_cache_personal_records_periodically)
+    personal_records_calc_thread.daemon = True
+    personal_records_calc_thread.start()
+    print("[main] Hilo 'actualizar_records_personales_periodicamente' iniciado.")
+
+    port = int(os.environ.get("PORT", 5000))
+    print(f"[main] Aplicación Flask ejecutándose en http://0.0.0.0:{port}")
+    app.run(host='0.0.0.0', port=port)
     global_stats_calc_thread.start()
     print("[main] Hilo 'actualizar_estadisticas_globales_periodicamente' iniciado.")
 
