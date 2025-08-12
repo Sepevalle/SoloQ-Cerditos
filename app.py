@@ -1982,10 +1982,13 @@ def _update_record(current_record, new_value, new_match, record_type):
     # 1. Si el nuevo valor es estrictamente mayor, siempre actualiza.
     # 2. Si los valores son iguales, prefiere la partida más antigua (timestamp más pequeño).
     # 3. Si el récord actual es el valor por defecto (no inicializado), y el nuevo valor es >= 0, actualiza.
-    if new_record_data['value'] > current_record['value'] or \
-       (new_record_data['value'] == current_record['value'] and
+    current_value_for_comparison = current_record['value'] if current_record['value'] is not None else -1
+    new_value_for_comparison = new_record_data['value'] if new_record_data['value'] is not None else -1
+
+    if new_value_for_comparison > current_value_for_comparison or \
+       (new_value_for_comparison == current_value_for_comparison and
         new_record_data['achieved_timestamp'] < current_record['achieved_timestamp']) or \
-       (is_current_record_default and new_record_data['value'] >= 0): 
+       (is_current_record_default and new_value_for_comparison >= 0): 
         return new_record_data
     return current_record
 
