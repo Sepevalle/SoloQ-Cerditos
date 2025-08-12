@@ -1397,6 +1397,33 @@ def index():
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
 
+@app.route('/api/players_and_accounts')
+def get_players_and_accounts():
+    print("[get_players_and_accounts] Petición recibida para obtener jugadores y cuentas.")
+    datos_jugadores, _ = obtener_datos_jugadores()
+    
+    players_data = {}
+    for jugador_info in datos_jugadores:
+        player_name = jugador_info.get('jugador')
+        riot_id = jugador_info.get('game_name')
+        puuid = jugador_info.get('puuid')
+
+        if player_name and riot_id and puuid:
+            if player_name not in players_data:
+                players_data[player_name] = []
+            
+            # Check if this specific riot_id/puuid pair is already added for this player
+            # This handles cases where a player might have multiple entries in datos_jugadores
+            # for different queue types but the same riot_id/puuid.
+            if not any(acc['puuid'] == puuid for acc in players_data[player_name]):
+                players_data[player_name].append({
+                    'riot_id': riot_id,
+                    'puuid': puuid
+                })
+    
+    print(f"[get_players_and_accounts] Devolviendo {len(players_data)} jugadores con sus cuentas.")
+    return jsonify(players_data)
+
 @app.route('/jugador/<path:game_name>')
 def perfil_jugador(game_name):
     """
