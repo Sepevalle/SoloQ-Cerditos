@@ -106,10 +106,3 @@ def estadisticas_globales():
 
     return render_template('estadisticas.html', stats=stats_por_jugador, global_stats=global_stats, ddragon_version="14.9.1")
 
-@stats_bp.route('/compare')
-def compare_players():
-    """Renderiza la página de comparación de jugadores."""
-    print("[compare_players] Petición recibida para la página de comparación.")
-    datos_jugadores, _ = obtener_datos_jugadores()
-    player_names = sorted(list(set(j.get('jugador') for j in datos_jugadores)))
-    return render_template('compare.html', players=player_names)

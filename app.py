@@ -2282,44 +2282,7 @@ def records_personales():
                            ddragon_version=DDRAGON_VERSION)
 
 
-@app.route('/compare')
-def compare_players():
-    """Renderiza la página de comparación de jugadores."""
-    print("[compare_players] Petición recibida para la página de comparación.")
-    datos_jugadores, _ = obtener_datos_jugadores()
-    player_names = sorted(list(set(j.get('jugador') for j in datos_jugadores)))
-    return render_template('compare.html', players=player_names)
 
-@app.route('/api/compare/<player1_name>/<player2_name>')
-def compare_players_api(player1_name, player2_name):
-    """API endpoint para comparar dos jugadores."""
-    print(f"[compare_players_api] Petición de API para comparar a {player1_name} y {player2_name}.")
-    
-    datos_jugadores, _ = obtener_datos_jugadores()
-    
-    player1_data = next((j for j in datos_jugadores if j.get('jugador') == player1_name), None)
-    player2_data = next((j for j in datos_jugadores if j.get('jugador') == player2_name), None)
-
-    if not player1_data or not player2_data:
-        return jsonify({'error': 'No se encontraron datos para uno o ambos jugadores.'}), 404
-
-    def get_player_stats(player_data):
-        total_games = player_data.get('wins', 0) + player_data.get('losses', 0)
-        win_rate = (player_data.get('wins', 0) / total_games * 100) if total_games > 0 else 0
-        return {
-            "Elo": f"{player_data.get('tier')} {player_data.get('rank')} ({player_data.get('league_points')} LPs)",
-            "Victorias": player_data.get('wins', 0),
-            "Derrotas": player_data.get('losses', 0),
-            "Total de Partidas": total_games,
-            "Win Rate": f"{win_rate:.2f}%"
-        }
-
-    comparison = {
-        'player1': get_player_stats(player1_data),
-        'player2': get_player_stats(player2_data)
-    }
-    
-    return jsonify(comparison)
 
 # --- New function for background global stats calculation ---
 def _calculate_and_cache_global_stats_periodically():
