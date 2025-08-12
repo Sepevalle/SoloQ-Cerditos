@@ -1,5 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 import requests
+from blueprints.api import api_bp
 import os
 import time
 import threading
@@ -12,6 +13,7 @@ import queue # Import for the queue
 import locale # Import for locale formatting
 
 app = Flask(__name__)
+app.register_blueprint(api_bp, url_prefix='/api')
 
 # --- CONFIGURACIÓN DE ZONA HORARIA Y LOCALIZACIÓN ---
 # Define la zona horaria de visualización (UTC+2) para asegurar consistencia.

@@ -55,9 +55,7 @@
                 <li class="nav-item">
                     <a class="nav-link active" aria-current="page" href="{{ url_for('estadisticas_globales') }}">Estadísticas Globales</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('records_personales') }}">Récords Personales</a>
-                </li>
+                
                 
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
@@ -80,9 +78,36 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="global-stats-tab" data-bs-toggle="tab" data-bs-target="#global-stats" type="button" role="tab" aria-controls="global-stats" aria-selected="true">Récords Globales</button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="personal-records-tab" data-bs-toggle="tab" data-bs-target="#personal-records" type="button" role="tab" aria-controls="personal-records" aria-selected="false">Récords Personales</button>
+        </li>
     </ul>
 
     <div class="tab-content" id="statsTabsContent">
+        <div class="tab-pane fade" id="personal-records" role="tabpanel" aria-labelledby="personal-records-tab">
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label for="playerSelect" class="form-label">Seleccionar Jugador:</label>
+                    <select class="form-select" id="playerSelect">
+                        <option value="">-- Selecciona un jugador --</option>
+                        {# Options will be populated by JavaScript #}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="accountSelect" class="form-label">Seleccionar Cuenta:</label>
+                    <select class="form-select" id="accountSelect" disabled>
+                        <option value="">-- Selecciona una cuenta --</option>
+                        {# Options will be populated by JavaScript #}
+                    </select>
+                </div>
+            </div>
+            <div class="d-grid gap-2 mt-3">
+                <button class="btn btn-primary" id="showPersonalRecordsBtn" disabled>Mostrar Récords Personales</button>
+            </div>
+            <div id="personalRecordsDisplay" class="row mt-4">
+                {# Personal records will be displayed here #}
+            </div>
+        </div>
         <div class="tab-pane fade show active" id="global-stats" role="tabpanel" aria-labelledby="global-stats-tab">
             <div class="row mb-4">
                 <!-- Global Stats Summary -->
@@ -271,6 +296,186 @@
             audio.volume = this.value;
             localStorage.setItem('audioVolume', this.value);
         });
+
+        // --- Personal Records Tab Logic ---
+        const playerSelect = document.getElementById('playerSelect');
+        const accountSelect = document.getElementById('accountSelect');
+        const showPersonalRecordsBtn = document.getElementById('showPersonalRecordsBtn');
+        const personalRecordsDisplay = document.getElementById('personalRecordsDisplay');
+
+        let allPlayersData = {}; // To store players and their accounts/PUUIDs
+
+        // Function to fetch players and accounts
+        async function fetchPlayersAndAccounts() {
+            try {
+                const response = await fetch('/api/players_and_accounts');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                allPlayersData = await response.json();
+                
+                // Populate playerSelect dropdown
+                for (const playerName in allPlayersData) {
+                    const option = document.createElement('option');
+                    option.value = playerName;
+                    option.textContent = playerName;
+                    playerSelect.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Error fetching players and accounts:', error);
+                personalRecordsDisplay.innerHTML = '<p class="text-danger">Error al cargar la lista de jugadores.</p>';
+            }
+        }
+
+        // Function to populate accountSelect based on player selection
+        playerSelect.addEventListener('change', function() {
+            accountSelect.innerHTML = '<option value="">-- Selecciona una cuenta --</option>'; // Clear previous options
+            accountSelect.disabled = true;
+            showPersonalRecordsBtn.disabled = true;
+            personalRecordsDisplay.innerHTML = ''; // Clear displayed records
+
+            const selectedPlayerName = playerSelect.value;
+            if (selectedPlayerName && allPlayersData[selectedPlayerName]) {
+                allPlayersData[selectedPlayerName].forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.puuid; // Use PUUID as value
+                    option.textContent = account.riot_id; // Display Riot ID
+                    accountSelect.appendChild(option);
+                });
+                accountSelect.disabled = false;
+            }
+        });
+
+        // Enable show button when an account is selected
+        accountSelect.addEventListener('change', function() {
+            showPersonalRecordsBtn.disabled = !accountSelect.value;
+            personalRecordsDisplay.innerHTML = ''; // Clear displayed records
+        });
+
+        // Function to fetch and display personal records
+        showPersonalRecordsBtn.addEventListener('click', async function() {
+            const selectedPuuid = accountSelect.value;
+            if (!selectedPuuid) {
+                personalRecordsDisplay.innerHTML = '<p class="text-warning">Por favor, selecciona una cuenta.</p>';
+                return;
+            }
+
+            personalRecordsDisplay.innerHTML = '<p class="text-info">Cargando récords personales...</p>';
+            try {
+                const response = await fetch(`/api/personal_records/${selectedPuuid}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const records = await response.json();
+                displayPersonalRecords(records);
+            } catch (error) {
+                console.error('Error fetching personal records:', error);
+                personalRecordsDisplay.innerHTML = '<p class="text-danger">Error al cargar los récords personales.</p>';
+            }
+        });
+
+        // Function to display personal records
+        function displayPersonalRecords(records) {
+            personalRecordsDisplay.innerHTML = ''; // Clear previous records
+
+            if (records.length === 0) {
+                personalRecordsDisplay.innerHTML = '<p class="text-muted">No se encontraron récords personales para esta cuenta en la temporada actual.</p>';
+                return;
+            }
+
+            records.forEach(record => {
+                let valueDisplay = record.value;
+                let iconClass = '';
+                let titleText = '';
+
+                // Determine icon and format value based on record_type_key
+                switch (record.record_type_key) {
+                    case 'longest_game':
+                    case 'most_time_spent_dead':
+                    case 'most_time_ccing_others':
+                        const minutes = Math.floor(record.value / 60);
+                        const seconds = record.value % 60;
+                        valueDisplay = `${minutes}m ${seconds}s`;
+                        iconClass = 'fas fa-clock';
+                        titleText = 'Partida Más Larga';
+                        break;
+                    case 'highest_kda':
+                    case 'highest_kill_participation':
+                        valueDisplay = record.value.toFixed(2);
+                        if (record.record_type_key === 'highest_kill_participation') {
+                            valueDisplay += '%';
+                        }
+                        iconClass = 'fas fa-star';
+                        titleText = 'KDA Más Alto';
+                        break;
+                    case 'largest_multikill':
+                        if (record.value === 5) {
+                            valueDisplay = 'PENTAKILL';
+                        } else if (record.value === 4) {
+                            valueDisplay = 'Quadra Kill';
+                        } else if (record.value === 3) {
+                            valueDisplay = 'Triple Kill';
+                        } else if (record.value === 2) {
+                            valueDisplay = 'Double Kill';
+                        } else {
+                            valueDisplay = 'Individual';
+                        }
+                        iconClass = 'fas fa-bolt';
+                        titleText = 'Mayor Multikill';
+                        break;
+                    case 'most_kills': iconClass = 'fas fa-crosshairs'; titleText = 'Más Kills'; break;
+                    case 'most_deaths': iconClass = 'fas fa-skull'; titleText = 'Más Muertes'; break;
+                    case 'most_assists': iconClass = 'fas fa-hands-helping'; titleText = 'Más Asistencias'; break;
+                    case 'most_cs': iconClass = 'fas fa-coins'; titleText = 'Más CS'; break;
+                    case 'most_damage_dealt': iconClass = 'fas fa-bomb'; titleText = 'Más Daño a Campeones'; break;
+                    case 'most_gold_earned': iconClass = 'fas fa-sack-dollar'; titleText = 'Más Oro Ganado'; break;
+                    case 'most_vision_score': iconClass = 'fas fa-eye'; titleText = 'Más Puntuación de Visión'; break;
+                    case 'largest_killing_spree': iconClass = 'fas fa-fire'; titleText = 'Mayor Racha de Asesinatos'; break;
+                    case 'most_wards_placed': iconClass = 'fas fa-map-pin'; titleText = 'Más Wards Colocados'; break;
+                    case 'most_wards_killed': iconClass = 'fas fa-broom'; titleText = 'Más Wards Destruidos'; break;
+                    case 'most_turret_kills': iconClass = 'fas fa-chess-rook'; titleText = 'Más Torretas Destruidas'; break;
+                    case 'most_inhibitor_kills': iconClass = 'fas fa-building-shield'; titleText = 'Más Inhibidores Destruidos'; break;
+                    case 'most_baron_kills': iconClass = 'fas fa-dragon'; titleText = 'Más Barons Asesinados'; break;
+                    case 'most_dragon_kills': iconClass = 'fas fa-dragon'; titleText = 'Más Dragones Asesinados'; break;
+                    case 'most_damage_taken': iconClass = 'fas fa-shield-halved'; titleText = 'Más Daño Recibido'; break;
+                    case 'most_total_heal': iconClass = 'fas fa-heart-pulse'; titleText = 'Más Curación Total'; break;
+                    case 'most_damage_shielded_on_teammates': iconClass = 'fas fa-user-shield'; titleText = 'Más Escudo a Aliados'; break;
+                    case 'most_objectives_stolen': iconClass = 'fas fa-hand-lizard'; titleText = 'Más Objetivos Robados'; break;
+                    case 'most_double_kills': iconClass = 'fas fa-2'; titleText = 'Más Asesinatos Dobles'; break;
+                    case 'most_triple_kills': iconClass = 'fas fa-3'; titleText = 'Más Asesinatos Triples'; break;
+                    case 'most_quadra_kills': iconClass = 'fas fa-4'; titleText = 'Más Asesinatos Cuádruples'; break;
+                    case 'most_penta_kills': iconClass = 'fas fa-5'; titleText = 'Más Asesinatos Quíntuples'; break;
+                    default:
+                        iconClass = 'fas fa-trophy';
+                        titleText = record.record_type_key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Basic formatting
+                        break;
+                }
+
+                const recordHtml = `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title"><i class="${iconClass}"></i>${titleText}</h5>
+                                <p class="card-text fs-4">${valueDisplay}</p>
+                                <small class="text-muted">
+                                    Jugador: ${record.player} (${record.riot_id})<br>
+                                    ${record.champion_name && record.champion_name !== 'N/A' ? 
+                                        `<img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/${record.champion_name}.png" alt="${record.champion_name}" class="imagen-jugador">
+                                        ${record.champion_name}<br>` : 'Campeón: N/A<br>'}
+                                    KDA: ${record.kills}/${record.deaths}/${record.assists} (${record.kda.toFixed(2)})<br>
+                                    Fecha: ${new Date(record.game_date).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}<br>
+                                    Duración: ${Math.floor(record.game_duration / 60)}m ${record.game_duration % 60}s
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                personalRecordsDisplay.insertAdjacentHTML('beforeend', recordHtml);
+            });
+        }
+
+        // Initial fetch
+        fetchPlayersAndAccounts();
     });
 </script>
 </body>
