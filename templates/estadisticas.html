@@ -396,13 +396,25 @@
                 // Determine icon and format value based on record_type_key
                 switch (record.record_type_key) {
                     case 'longest_game':
-                    case 'most_time_spent_dead':
-                    case 'most_time_ccing_others':
                         const minutes = Math.floor(record.value / 60);
                         const seconds = record.value % 60;
                         valueDisplay = `${minutes}m ${seconds}s`;
                         iconClass = 'fas fa-clock';
                         titleText = 'Partida Más Larga';
+                        break;
+                    case 'most_time_spent_dead':
+                        const minutesDead = Math.floor(record.value / 60);
+                        const secondsDead = record.value % 60;
+                        valueDisplay = `${minutesDead}m ${secondsDead}s`;
+                        iconClass = 'fas fa-bed';
+                        titleText = 'Más Tiempo Muerto';
+                        break;
+                    case 'most_time_ccing_others':
+                        const minutesCC = Math.floor(record.value / 60);
+                        const secondsCC = record.value % 60;
+                        valueDisplay = `${minutesCC}m ${secondsCC}s`;
+                        iconClass = 'fas fa-hourglass-half';
+                        titleText = 'Más Tiempo de CC';
                         break;
                     case 'highest_kda':
                         valueDisplay = record.value.toFixed(2);
