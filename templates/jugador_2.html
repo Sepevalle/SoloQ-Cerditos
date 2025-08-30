@@ -640,6 +640,9 @@
             .match-details-expanded .participant-row .items-small {
                 margin-left: 0; /* Eliminar margen izquierdo en móvil */
             }
+            .hidden-on-mobile {
+                display: none !important;
+            }
         }
         /* --- FIN: Mejoras de Responsividad para Móviles --- */
     </style>
@@ -737,7 +740,7 @@
                         <div class="champion-stats-container">
                             {% if perfil.soloq.top_champion_stats %}
                                 {% for champion_stat in perfil.soloq.top_champion_stats %}
-                                    <div class="champion-stats-item">
+                                    <div class="champion-stats-item {% if loop.index > 3 %}hidden-on-mobile{% endif %}">
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
                                         <div class="champion-stats-info">
                                             <h5>{{ champion_stat.champion_name }}</h5>
@@ -810,7 +813,7 @@
                         <div class="champion-stats-container">
                             {% if perfil.flexq.top_champion_stats %}
                                 {% for champion_stat in perfil.flexq.top_champion_stats %}
-                                    <div class="champion-stats-item">
+                                    <div class="champion-stats-item {% if loop.index > 3 %}hidden-on-mobile{% endif %}">
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
                                         <div class="champion-stats-info">
                                             <h5>{{ champion_stat.champion_name }}</h5>
@@ -856,8 +859,8 @@
                     Estadísticas por Campeón
                 </div>
                 <div class="card-body">
-                    {% for champ_name, stats in perfil.champion_stats %}
-                    <div class="champion-stats-item">
+                    {% for champ_name, stats in perfil.champion_stats.items() %}
+                    <div class="champion-stats-item {% if loop.index > 3 %}hidden-on-mobile{% endif %}">
                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champ_name }}.png" alt="{{ champ_name }}">
                         <div class="champion-stats-info">
                             <h5>{{ champ_name }}</h5>
