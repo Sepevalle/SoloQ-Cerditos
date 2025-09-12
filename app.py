@@ -1351,8 +1351,8 @@ def obtener_datos_jugadores():
         return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
 
 def get_peak_elo_key(jugador):
-    """Genera una clave para el peak ELO usando el nombre del jugador y su Riot ID."""
-    return f"{jugador['queue_type']}|{jugador['jugador']}|{jugador['game_name']}"
+    """Genera una clave para el peak ELO usando el PUUID del jugador."""
+    return f"{jugador['queue_type']}|{jugador['puuid']}"
 
 def calcular_rachas(partidas):
     """
