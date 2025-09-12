@@ -645,6 +645,7 @@ def obtener_info_partida(args):
         game_duration = info.get('gameDuration', 0)
         
         p = main_player_data
+        riot_id_from_match = f"{p.get('riotIdGameName')}#{p.get('riotIdTagline')}"
         raw_champion_id_from_api = p.get('championId')
         champion_name_from_api = p.get('championName') # Nombre del campeón desde la API
 
@@ -700,6 +701,7 @@ def obtener_info_partida(args):
         return {
             "match_id": match_id,
             "puuid": puuid,
+            "riot_id": riot_id_from_match,
             "champion_name": final_champion_name, # Usar el nombre derivado
             "championId": actual_champion_id, # Usar el ID derivado/asegurado
             "win": p.get('win', False),
@@ -1717,11 +1719,16 @@ def actualizar_historial_partidas_en_segundo_plano():
 
             cuentas = leer_cuentas(url_cuentas)
             puuid_dict = leer_puuids()
+            # Crear un mapa inverso para buscar Riot IDs por PUUID eficientemente
+            puuid_to_riot_id = {v: k for k, v in puuid_dict.items()}
+            puuids_actualizados = False
 
             for riot_id, jugador_nombre in cuentas:
+                # Usar el mapa inverso para encontrar el PUUID si el riot_id de cuentas.txt es antiguo
                 puuid = puuid_dict.get(riot_id)
                 if not puuid:
-                    print(f"[actualizar_historial_partidas_en_segundo_plano] Saltando actualización de historial para {riot_id}: PUUID no encontrado.")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] PUUID para {riot_id} no encontrado directamente. El nombre puede haber cambiado.")
+                    # Este es un fallback, la lógica principal de detección de cambio de nombre está más abajo
                     continue
 
                 print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
@@ -1782,6 +1789,22 @@ def actualizar_historial_partidas_en_segundo_plano():
                     print(f"[actualizar_historial_partidas_en_segundo_plano] {len(nuevas_partidas_validas)} partidas válidas y {len(nuevos_remakes)} remakes procesados para {riot_id}.")
 
                     if nuevas_partidas_validas:
+                        # --- DETECCIÓN DE CAMBIO DE NOMBRE (SIN LLAMADAS EXTRA A LA API) ---
+                        for partida in nuevas_partidas_validas:
+                            nuevo_riot_id = partida.get('riot_id')
+                            puuid_partida = partida.get('puuid')
+                            antiguo_riot_id = puuid_to_riot_id.get(puuid_partida)
+
+                            if antiguo_riot_id and nuevo_riot_id and antiguo_riot_id != nuevo_riot_id:
+                                print(f"¡CAMBIO DE NOMBRE DETECTADO! PUUID {puuid_partida}: '{antiguo_riot_id}' -> '{nuevo_riot_id}'")
+                                # Actualizar el diccionario principal (puuid_dict) y el inverso (puuid_to_riot_id)
+                                if antiguo_riot_id in puuid_dict:
+                                    del puuid_dict[antiguo_riot_id]
+                                puuid_dict[nuevo_riot_id] = puuid_partida
+                                puuid_to_riot_id[puuid_partida] = nuevo_riot_id
+                                puuids_actualizados = True
+                                break # Solo necesitamos detectar el cambio una vez por jugador en este ciclo de actualización
+                        
                         historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
                         print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidas {len(nuevas_partidas_validas)} partidas válidas al historial de {riot_id}.")
 
