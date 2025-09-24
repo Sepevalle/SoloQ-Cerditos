@@ -486,6 +486,29 @@
     .hidden-row {
             display: none;
         }
+            /* Responsive adjustments for match history table on small screens */
+        @media (max-width: 767.98px) { /* Bootstrap's breakpoint for small devices */
+            .match-history-table th:nth-child(4), /* Daño a Campeones */
+            .match-history-table td:nth-child(4),
+            .match-history-table th:nth-child(5), /* Daño a Objetivos */
+            .match-history-table td:nth-child(5),
+            .match-history-table th:nth-child(6), /* Oro Ganado */
+            .match-history-table td:nth-child(6),
+            .match-history-table th:nth-child(7), /* Súbditos */
+            .match-history-table td:nth-child(7),
+            .match-history-table th:nth-child(8), /* Visión */
+            .match-history-table td:nth-child(8),
+            .match-history-table th:nth-child(9), /* Hechizos */
+            .match-history-table td:nth-child(9),
+            .match-history-table th:nth-child(10), /* Runas */
+            .match-history-table td:nth-child(10),
+            .match-history-table th:nth-child(11), /* Objetos */
+            .match-history-table td:nth-child(11),
+            .match-history-table th:nth-child(12), /* LP */
+            .match-history-table td:nth-child(12) {
+                display: none;
+            }
+        }
     </style>
 </head>
 
