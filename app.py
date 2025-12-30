@@ -1980,7 +1980,7 @@ def keep_alive():
     while True:
         try:
             # Reemplaza con la URL de tu aplicación desplegada
-            requests.get('https://soloq-cerditos-34kd.onrender.com/')
+            requests.get('https://soloq-cerditos.onrender.com/')
             print("[keep_alive] Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"[keep_alive] Error en keep_alive: {e}")
