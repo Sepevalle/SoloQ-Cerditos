@@ -176,6 +176,14 @@ GLOBAL_STATS_CACHE = {
 GLOBAL_STATS_LOCK = threading.Lock()
 GLOBAL_STATS_UPDATE_INTERVAL = 3600 # Update global stats every hour (3600 seconds)
 
+# --- CACHÉ PARA PEAK ELO ---
+PEAK_ELO_CACHE = {
+    "data": {},
+    "timestamp": 0
+}
+PEAK_ELO_LOCK = threading.Lock()
+PEAK_ELO_TTL = 300 # 5 minutos de caché para evitar saturar la API
+
 # Cache for pre-calculated personal records
 PERSONAL_RECORDS_CACHE = {
     "data": {},
@@ -204,10 +212,14 @@ SPLITS = {
     "s15_split3": {
         "name": "Temporada 2025 - Split 3",
         "start_date": datetime(2025, 9, 10),
+    },
+    "s16_split1": {
+        "name": "Temporada 2026 - Split 1",
+        "start_date": datetime(2026, 1, 6),
     }
 }
 
-ACTIVE_SPLIT_KEY = "s15_split1"
+ACTIVE_SPLIT_KEY = "s16_split1"
 SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())
 
 # --- CONFIGURACIÓN DEL CONTROL DE TASA DE API ---
@@ -715,13 +727,21 @@ def obtener_info_partida(args):
         print(f"[obtener_info_partida] Error procesando los detalles de la partida {match_id}: {e}")
     return None
 
-def leer_cuentas(url):
-    """Lee las cuentas de jugadores desde un archivo de texto alojado en GitHub."""
-    print(f"[leer_cuentas] Leyendo cuentas desde: {url}")
+def leer_cuentas():
+    """Lee las cuentas de jugadores desde la API de GitHub para evitar caché."""
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/cuentas.txt"
+    token = os.environ.get('GITHUB_TOKEN')
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    print(f"[leer_cuentas] Leyendo cuentas desde API: {url}")
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers, timeout=30)
         if response.status_code == 200:
-            contenido = response.text.strip().split(';')
+            content = response.json()
+            file_content = base64.b64decode(content['content']).decode('utf-8')
+            contenido = file_content.strip().split(';')
             cuentas = []
             for linea in contenido:
                 partes = linea.split(',')
@@ -729,10 +749,10 @@ def leer_cuentas(url):
                     riot_id = partes[0].strip()
                     jugador = partes[1].strip()
                     cuentas.append((riot_id, jugador))
-            print(f"[leer_cuentas] {len(cuentas)} cuentas leídas exitosamente.")
+            print(f"[leer_cuentas] {len(cuentas)} cuentas leídas exitosamente desde API.")
             return cuentas
         else:
-            print(f"[leer_cuentas] Error al leer el archivo de cuentas: {response.status_code}")
+            print(f"[leer_cuentas] Error al leer cuentas desde API: {response.status_code}")
             return []
     except Exception as e:
         print(f"[leer_cuentas] Error al leer las cuentas: {e}")
@@ -766,32 +786,76 @@ def calcular_valor_clasificacion(tier, rank, league_points):
     return valor_base_tier + valor_division + league_points
 
 def leer_peak_elo():
-    """Lee los datos de peak Elo desde un archivo JSON en GitHub."""
-    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/peak_elo.json"
-    print(f"[leer_peak_elo] Leyendo peak elo desde: {url}")
+    """Lee los datos de peak Elo desde la API de GitHub para evitar caché de CDN."""
+    # 1. Intentar leer de la caché local primero
+    with PEAK_ELO_LOCK:
+        if PEAK_ELO_CACHE['data'] and (time.time() - PEAK_ELO_CACHE['timestamp'] < PEAK_ELO_TTL):
+            return True, PEAK_ELO_CACHE['data']
+
+    # 2. Si no está en caché, leer de la API de GitHub
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    print(f"[leer_peak_elo] Leyendo peak elo desde API: {url}")
     try:
-        resp = requests.get(url, timeout=30) # Aumentado timeout
-        resp.raise_for_status()
-        print("[leer_peak_elo] Peak elo leído exitosamente.")
-        return True, resp.json()
+        resp = requests.get(url, headers=headers, timeout=30)
+        if resp.status_code == 200:
+            content = resp.json()
+            # El contenido viene en base64, hay que decodificarlo
+            file_content = base64.b64decode(content['content']).decode('utf-8')
+            data = json.loads(file_content)
+            
+            # Actualizar caché
+            with PEAK_ELO_LOCK:
+                PEAK_ELO_CACHE['data'] = data
+                PEAK_ELO_CACHE['timestamp'] = time.time()
+                
+            print("[leer_peak_elo] Peak elo leído exitosamente desde API.")
+            return True, data
+        elif resp.status_code == 404:
+            print("[leer_peak_elo] Archivo no encontrado en API. Retornando vacío.")
+            return True, {}
+        else:
+            print(f"[leer_peak_elo] Error API: {resp.status_code}")
+            resp.raise_for_status()
     except Exception as e:
         print(f"[leer_peak_elo] Error leyendo peak elo: {e}")
+        
+        # Si falla la API, intentar devolver caché antigua si existe como fallback
+        with PEAK_ELO_LOCK:
+            if PEAK_ELO_CACHE['data']:
+                print("[leer_peak_elo] Retornando caché antigua debido a error en API.")
+                return True, PEAK_ELO_CACHE['data']
+
     return False, {}
 
 def leer_puuids():
-    """Lee el archivo de PUUIDs desde GitHub."""
-    url = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/puuids.json"
-    print(f"[leer_puuids] Leyendo PUUIDs desde: {url}")
+    """Lee el archivo de PUUIDs desde la API de GitHub para evitar caché de CDN."""
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/puuids.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    print(f"[leer_puuids] Leyendo PUUIDs desde API: {url}")
     try:
-        resp = requests.get(url, timeout=30) # Aumentado timeout
+        resp = requests.get(url, headers=headers, timeout=30)
         if resp.status_code == 200:
-            print("[leer_puuids] PUUIDs leídos exitosamente.")
-            return resp.json()
+            content = resp.json()
+            file_content = base64.b64decode(content['content']).decode('utf-8')
+            print("[leer_puuids] PUUIDs leídos exitosamente desde API.")
+            return json.loads(file_content)
         elif resp.status_code == 404:
-            print("[leer_puuids] El archivo puuids.json no existe, se creará uno nuevo.")
+            print("[leer_puuids] El archivo puuids.json no existe en API, se creará uno nuevo.")
             return {}
+        else:
+            print(f"[leer_puuids] Error API: {resp.status_code}")
+            resp.raise_for_status()
     except Exception as e:
-        print(f"[leer_puuids] Error leyendo puuids.json: {e}")
+        print(f"[leer_puuids] Error leyendo puuids.json de API: {e}")
     return {}
 
 def guardar_puuids_en_github(puuid_dict):
@@ -874,19 +938,29 @@ def guardar_peak_elo_en_github(peak_elo_dict):
         print(f"[guardar_peak_elo_en_github] Error al actualizar el archivo peak_elo.json: {e}")
 
 def _read_player_match_history_from_github(puuid):
-    """Lee el historial de partidas de un jugador directamente desde GitHub."""
-    url = f"https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/match_history/{puuid}.json"
-    print(f"[_read_player_match_history_from_github] Leyendo historial para PUUID: {puuid} desde: {url}")
+    """Lee el historial de partidas de un jugador directamente desde la API de GitHub."""
+    url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/match_history/{puuid}.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    print(f"[_read_player_match_history_from_github] Leyendo historial para PUUID: {puuid} desde API: {url}")
     try:
-        resp = requests.get(url, timeout=30) # Aumentado timeout
+        resp = requests.get(url, headers=headers, timeout=30)
         if resp.status_code == 200:
-            print(f"[_read_player_match_history_from_github] Historial para {puuid} leído exitosamente de GitHub.")
-            return resp.json()
+            content = resp.json()
+            file_content = base64.b64decode(content['content']).decode('utf-8')
+            print(f"[_read_player_match_history_from_github] Historial para {puuid} leído exitosamente de API GitHub.")
+            return json.loads(file_content)
         elif resp.status_code == 404:
-            print(f"[_read_player_match_history_from_github] No se encontró historial para {puuid} en GitHub. Se creará uno nuevo.")
+            print(f"[_read_player_match_history_from_github] No se encontró historial para {puuid} en API GitHub. Se creará uno nuevo.")
             return {}
+        else:
+            print(f"[_read_player_match_history_from_github] Error API: {resp.status_code}")
+            resp.raise_for_status()
     except Exception as e:
-        print(f"[_read_player_match_history_from_github] Error leyendo el historial para {puuid} de GitHub: {e}")
+        print(f"[_read_player_match_history_from_github] Error leyendo el historial para {puuid} de API GitHub: {e}")
     return {}
 
 def get_player_match_history(puuid):
@@ -1134,7 +1208,6 @@ def actualizar_cache():
     print("[actualizar_cache] Iniciando actualización de la caché principal...")
     api_key_main = os.environ.get('RIOT_API_KEY')
     api_key_spectator = os.environ.get('RIOT_API_KEY_2', api_key_main)
-    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
     
     if not api_key_main:
         print("[actualizar_cache] ERROR CRÍTICO: La variable de entorno RIOT_API_KEY no está configurada. La aplicación no puede funcionar correctamente.")
@@ -1151,7 +1224,7 @@ def actualizar_cache():
                 old_data_map_by_puuid[puuid] = []
             old_data_map_by_puuid[puuid].append(d)
 
-    cuentas = leer_cuentas(url_cuentas)
+    cuentas = leer_cuentas()
 
     with cache_lock:
         cache['update_count'] = cache.get('update_count', 0) + 1
@@ -1656,7 +1729,6 @@ def actualizar_historial_partidas_en_segundo_plano():
         return
 
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-    url_cuentas = "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt"
 
     while True:
         try:
@@ -1664,7 +1736,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 print("[actualizar_historial_partidas_en_segundo_plano] Datos de DDragon no cargados, intentando actualizar.")
                 actualizar_ddragon_data()
 
-            cuentas = leer_cuentas(url_cuentas)
+            cuentas = leer_cuentas()
             puuid_dict = leer_puuids()
             # Crear un mapa inverso para buscar Riot IDs por PUUID eficientemente
             puuid_to_riot_id = {v: k for k, v in puuid_dict.items()}
@@ -2106,7 +2178,7 @@ def _calculate_and_cache_global_stats():
     tied_counts = {key: 0 for key in global_records.keys()}
 
     puuid_dict = leer_puuids()
-    cuentas = leer_cuentas("https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt")
+    cuentas = leer_cuentas()
 
     total_wins = 0
     total_losses = 0
@@ -2396,7 +2468,7 @@ def records_personales_page():
     print("[records_personales_page] Petición recibida para la página de récords personales.")
     
     # Obtener la lista de todos los jugadores para el selector
-    cuentas = leer_cuentas("https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt")
+    cuentas = leer_cuentas()
     puuid_dict = leer_puuids()
     
     player_options = []
@@ -2417,7 +2489,7 @@ def _calculate_and_cache_personal_records_periodically():
     print("[_calculate_and_cache_personal_records_periodically] Hilo de cálculo de récords personales iniciado.")
     while True:
         try:
-            cuentas = leer_cuentas("https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/cuentas.txt")
+            cuentas = leer_cuentas()
             puuid_dict = leer_puuids()
 
             for riot_id, jugador_nombre in cuentas:
