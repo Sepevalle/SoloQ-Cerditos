@@ -215,7 +215,7 @@ SPLITS = {
     },
     "s16_split1": {
         "name": "Temporada 2026 - Split 1",
-        "start_date": datetime(2026, 1, 6),
+        "start_date": datetime(2026, 1, 8),
     }
 }
 
