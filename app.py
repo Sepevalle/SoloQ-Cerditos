@@ -6,7 +6,7 @@ import threading
 import json
 import base64
 from datetime import datetime, timedelta, timezone
-from collections import Counter
+from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 import queue # Import for the queue
 import locale # Import for locale formatting
@@ -300,11 +300,11 @@ def _api_rate_limiter_worker():
             
             # Almacenar la respuesta y notificar al hilo que la solicitó
             with REQUEST_ID_COUNTER_LOCK:
-                API_RESPONSE_DATA[request_id] = response
                 if request_id in API_RESPONSE_EVENTS:
+                    API_RESPONSE_DATA[request_id] = response
                     API_RESPONSE_EVENTS[request_id].set() # Notificar que la respuesta está lista
                 else:
-                    print(f"[_api_rate_limiter_worker] Advertencia: Evento para request_id {request_id} no encontrado.")
+                    print(f"[_api_rate_limiter_worker] Advertencia: Petición {request_id} expiró o fue abandonada. Descartando respuesta.")
 
         except queue.Empty:
             pass # No hay peticiones en la cola, el hilo sigue esperando
@@ -539,7 +539,7 @@ def obtener_info_partida(args):
 
         all_participants_details = []
         main_player_data = None
-        team_kills = {100: 0, 200: 0}
+        team_kills = defaultdict(int)
 
         for p in participants:
             # Obtener el nombre del campeón primero, ya que es más probable que esté presente
@@ -568,8 +568,7 @@ def obtener_info_partida(args):
             all_participants_details.append(participant_summary)
 
             team_id = p.get('teamId')
-            if team_id in team_kills:
-                team_kills[team_id] += p.get('kills', 0)
+            team_kills[team_id] += p.get('kills', 0)
 
             if p.get('puuid') == puuid:
                 main_player_data = p
@@ -1928,7 +1927,7 @@ def keep_alive():
     while True:
         try:
             # Reemplaza con la URL de tu aplicación desplegada
-            requests.get('https://soloq-cerditos.onrender.com/')
+            requests.get('https://soloq-cerditos.onrender.com/', timeout=60)
             print("[keep_alive] Manteniendo la aplicación activa con una solicitud.")
         except requests.exceptions.RequestException as e:
             print(f"[keep_alive] Error en keep_alive: {e}")
