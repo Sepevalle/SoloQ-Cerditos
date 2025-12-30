@@ -1300,6 +1300,11 @@ def actualizar_cache():
                p.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
         ]
 
+        # Sobrescribir victorias y derrotas con los datos calculados localmente para la temporada actual.
+        # Esto fuerza que se muestren a 0 si no hay partidas nuevas, ignorando los datos "viejos" de la API de Riot.
+        jugador['wins'] = sum(1 for p in partidas_jugador if p.get('win'))
+        jugador['losses'] = len(partidas_jugador) - jugador['wins']
+
         if not partidas_jugador:
             continue
 
