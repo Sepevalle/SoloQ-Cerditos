@@ -987,11 +987,12 @@ def get_player_match_history(puuid):
 
 def guardar_historial_jugador_github(puuid, historial_data):
     """Guarda o actualiza el historial de partidas de un jugador en GitHub."""
+    success = False
     url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/match_history/{puuid}.json"
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
         print(f"[guardar_historial_jugador_github] ERROR: Token de GitHub no encontrado para guardar historial de {puuid}. No se guardará el archivo.")
-        return
+        return False
 
     headers = {"Authorization": f"token {token}"}
     sha = None
@@ -1007,10 +1008,10 @@ def guardar_historial_jugador_github(puuid, historial_data):
             print(f"[guardar_historial_jugador_github] Archivo {puuid}.json no existe en GitHub, se creará uno nuevo.")
         else:
             print(f"[guardar_historial_jugador_github] Error al obtener SHA del historial de {puuid}: {response.status_code} - {response.text}")
-            return # Salir si no se puede obtener el SHA
+            return False # Salir si no se puede obtener el SHA
     except Exception as e:
         print(f"[guardar_historial_jugador_github] Excepción al obtener SHA del historial de {puuid}: {e}")
-        return # Salir si hay una excepción
+        return False # Salir si hay una excepción
 
     contenido_json = json.dumps(historial_data, indent=2, ensure_ascii=False) # Añadido ensure_ascii=False
     contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
@@ -1024,10 +1025,12 @@ def guardar_historial_jugador_github(puuid, historial_data):
         response = requests.put(url, headers=headers, json=data, timeout=30) # Aumentado timeout
         if response.status_code in (200, 201):
             print(f"[guardar_historial_jugador_github] Historial de {puuid}.json actualizado correctamente en GitHub. Status: {response.status_code}")
+            success = True
         else:
             print(f"[guardar_historial_jugador_github] ERROR: Fallo al actualizar historial de {puuid}.json: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"[guardar_historial_jugador_github] ERROR: Excepción en la petición PUT a GitHub para el historial de {puuid}: {e}")
+    return success
 
 def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_player):
     """
@@ -1933,10 +1936,6 @@ def actualizar_historial_partidas_en_segundo_plano():
                         else:
                             print(f"[{lp_update_data['riot_id']}] [LP Associator] No se encontró una partida adecuada para asociar el cambio de LP {lp_change} (cola: {update_queue_type}).")
 
-                    for key in keys_to_clear_from_pending:
-                        if key in pending_lp_updates:
-                            del pending_lp_updates[key]
-                            print(f"[{puuid}] [LP Associator] Actualización de LP pendiente eliminada para {key}.")
                 
                 # Ensure all matches have the 'lp_change_this_game' field before saving
                 for match in historial_existente.get('matches', []):
@@ -1972,7 +1971,13 @@ def actualizar_historial_partidas_en_segundo_plano():
                         print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidos {len(nuevos_remakes)} remakes al historial de {riot_id}.")
                     
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
-                    guardar_historial_jugador_github(puuid, historial_existente)
+                    if guardar_historial_jugador_github(puuid, historial_existente):
+                        # Solo eliminar de pendientes si el guardado fue exitoso
+                        with pending_lp_updates_lock:
+                            for key in keys_to_clear_from_pending:
+                                if key in pending_lp_updates:
+                                    del pending_lp_updates[key]
+                                    print(f"[{puuid}] [LP Associator] Actualización de LP pendiente eliminada tras guardado exitoso para {key}.")
 
                     # --- ACTUALIZAR LA CACHÉ EN MEMORIA DESPUÉS DE GUARDAR EN GITHUB ---
                     with PLAYER_MATCH_HISTORY_LOCK:

@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             transition: background-color 0.3s, color 0.3s;
@@ -569,6 +570,11 @@
                             </p>
                         {% endif %}
 
+                        {# Contenedor para el gráfico de Elo #}
+                        <div class="mt-3 w-100" style="height: 200px;">
+                            <canvas id="soloqEloChart"></canvas>
+                        </div>
+
                         <div class="champion-stats-container">
                             {% if perfil.soloq.top_champion_stats %}
                                 {% for champion_stat in perfil.soloq.top_champion_stats %}
@@ -1060,6 +1066,81 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // --- INICIO: Gráfico de Elo ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('soloqEloChart');
+        if (ctx) {
+            // Obtener datos pasados desde Flask
+            const eloHistory = {{ perfil.elo_history_soloq | tojson }};
+            
+            if (eloHistory && eloHistory.length > 1) {
+                const labels = eloHistory.map(entry => {
+                    const date = new Date(entry.timestamp);
+                    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                });
+                const dataPoints = eloHistory.map(entry => entry.elo);
+
+                // Detectar modo oscuro para colores
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                const textColor = isDarkMode ? '#adb5bd' : '#666';
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Elo (Valor Clasificación)',
+                            data: dataPoints,
+                            borderColor: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            fill: true,
+                            tension: 0.3 // Suavizado de línea
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false, // Ocultar fechas en eje X para limpieza
+                                grid: { display: false }
+                            },
+                            y: {
+                                grid: { color: gridColor },
+                                ticks: { color: textColor }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            } else {
+                // Si no hay suficientes datos, mostrar mensaje o ocultar
+                ctx.style.display = 'none';
+                const container = ctx.parentElement;
+                const msg = document.createElement('p');
+                msg.textContent = "Insuficientes datos para el gráfico de Elo.";
+                msg.className = "text-muted small text-center mt-4";
+                container.appendChild(msg);
+            }
+        }
+    });
+    // --- FIN: Gráfico de Elo ---
+
     // Esta función debe estar en el ámbito global para que la llame el `onclick`
     function toggleMatchDetails(matchId) {
         const detailsRow = document.getElementById(matchId);
