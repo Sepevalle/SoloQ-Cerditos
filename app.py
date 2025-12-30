@@ -105,76 +105,24 @@ def format_peak_elo_filter(valor):
     rank_name = rank_map.get(rank_value, "")
     return f"{tier_name} {rank_name} ({league_points} LPs)"
 
-    
-    try:
-        valor = int(valor)
-    except (ValueError, TypeError) as e:
-        print(f"[format_peak_elo_filter] Error al convertir valor a int: {valor}, Error: {e}. Retornando 'N/A'.")
-        return "N/A"
-
-    # Master, Grandmaster, Challenger
-    if valor >= 2800:
-        lps = valor - 2800
-        # Para estos tiers, no tenemos rank (I, II, III, IV) sino solo LPs.
-        # No podemos reconstruir perfectamente Maestro, GM, Aspirante solo del valor de LP,
-        # así que usaremos un genérico "Maestro+" y los LPs.
-        # Puedes ajustar los umbrales si tienes una forma más precisa de distinguirlos.
-        if valor >= 3200: # Ejemplo de umbral para Aspirante, ajustar según sea necesario
-            return f"CHALLENGER ({lps} LPs)"
-        elif valor >= 3000: # Ejemplo de umbral para Gran Maestro
-            return f"GRANDMASTER ({lps} LPs)"
-        else:
-            return f"MASTER ({lps} LPs)"
-
-    # Para tiers inferiores (Hierro a Diamante)
-    tier_map = {
-        6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD", 
-        2: "SILVER", 1: "BRONZE", 0: "IRON"
-    }
-    # Segunda definición de rank_map, eliminada en la primera parte, pero aquí está corregida
-    rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"} # Corregido para que coincida con la lógica de calculo de valor_clasificacion
-
-    # Calcular LPs primero (el resto al dividir por 100)
-    league_points = valor % 100
-    
-    # Calcular el valor sin LPs
-    valor_without_lps = valor - league_points
-    
-    # Calcular el valor de la división (0 para IV, 1 para III, 2 para II, 3 para I)
-    # Es el resto de (valor_without_lps / 100) dividido por 4
-    rank_value = (valor_without_lps // 100) % 4
-    
-    # Calcular el valor del tier
-    tier_value = (valor_without_lps // 100) // 4
-
-    tier_name = tier_map.get(tier_value, "UNKNOWN")
-    rank_name = rank_map.get(rank_value, "")
-
-    return f"{tier_name} {rank_name} ({league_points} LPs)"
-
 @app.template_filter('thousands_separator')
 def thousands_separator_filter(value):
     """
     Filtro de Jinja2 para formatear números con separador de miles (punto para locale español).
     No añade decimales para enteros.
     """
-    print(f"[thousands_separator_filter] Input value: {value} (type: {type(value)})")
     try:
         if isinstance(value, (int, float)):
             # Manual formatting for thousands separator (dot) and decimal separator (comma)
             if isinstance(value, int):
                 manual_formatted = "{:,.0f}".format(value).replace(",", "X").replace(".", ",").replace("X", ".")
-                print(f"[thousands_separator_filter] Manual formatted (int): {manual_formatted}")
                 return manual_formatted
             else:
                 manual_formatted = "{:,.2f}".format(value).replace(",", "X").replace(".", ",").replace("X", ".")
-                print(f"[thousands_separator_filter] Manual formatted (float): {manual_formatted}")
                 return manual_formatted
-        print(f"[thousands_separator_filter] Value is not int/float, returning original: {value}")
         return value # Retorna el valor original si no es un número
     except Exception as e:
-        print(f"[thousands_separator_filter] Error al formatear número con separador de miles: {value}, Error: {e}")
-        print(f"[thousands_separator_filter] Error, returning original as string: {value}")
+        # En caso de error silencioso para no romper la vista, se podría loguear si es crítico
         return str(value) # Retorna como string si hay error
 
 @app.template_filter('format_number')
