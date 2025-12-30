@@ -2196,6 +2196,10 @@ def _calculate_and_cache_global_stats():
         matches = historial.get('matches', [])
         
         for match in matches:
+            # Filtrar partidas para que solo cuenten las de la temporada actual
+            if match.get('game_end_timestamp', 0) / 1000 < SEASON_START_TIMESTAMP:
+                continue
+
             # Añadir el nombre del jugador a cada partida para referencia
             match['jugador_nombre'] = jugador_nombre
             match['riot_id'] = riot_id
