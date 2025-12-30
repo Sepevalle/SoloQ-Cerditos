@@ -215,7 +215,7 @@ SPLITS = {
     },
     "s16_split1": {
         "name": "Temporada 2026 - Split 1",
-        "start_date": datetime(2026, 1, 8),
+        "start_date": datetime(2026, 1, 8, tzinfo=timezone.utc),
     }
 }
 
@@ -1381,8 +1381,8 @@ def obtener_datos_jugadores():
         return cache.get('datos_jugadores', []), cache.get('timestamp', 0)
 
 def get_peak_elo_key(jugador):
-    """Genera una clave para el peak ELO usando el PUUID del jugador."""
-    return f"{jugador['queue_type']}|{jugador['puuid']}"
+    """Genera una clave para el peak ELO usando el PUUID del jugador y la temporada actual."""
+    return f"{ACTIVE_SPLIT_KEY}|{jugador['queue_type']}|{jugador['puuid']}"
 
 def calcular_rachas(partidas):
     """
@@ -1543,6 +1543,17 @@ def _get_player_profile_data(game_name):
     
     primer_perfil = datos_del_jugador[0]
     puuid = primer_perfil.get('puuid')
+
+    # --- Cargar Peak Elo para el perfil ---
+    lectura_exitosa, peak_elo_dict = leer_peak_elo()
+    if lectura_exitosa:
+        for item in datos_del_jugador:
+            key = get_peak_elo_key(item)
+            peak = peak_elo_dict.get(key, 0)
+            # Si el valor actual es mayor que el peak guardado (caso borde), mostrar el actual
+            if item['valor_clasificacion'] > peak:
+                peak = item['valor_clasificacion']
+            item['peak_elo'] = peak
 
     historial_partidas_completo = {}
     if puuid:
