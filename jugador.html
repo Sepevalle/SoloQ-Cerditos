@@ -769,12 +769,12 @@
                                 <span class="small-text-stats fw-bold" title="Participación en Asesinatos">{{ '%.0f'|format(match.get('kill_participation', 0)) }}% KP</span>
                             </td>
                             <td>
-                                <div>{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</div>
+                                <div>{{ match.total_damage_dealt_to_champions | thousands_separator }}</div>
                                 <div>
                                     <span class="small-text-stats">
                                         {% set game_duration_minutes = match.game_duration / 60 %}
                                         {% if game_duration_minutes > 0 %}
-                                            {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions / game_duration_minutes) }} DPM
+                                            {{ (match.total_damage_dealt_to_champions / game_duration_minutes) | thousands_separator }} DPM
                                         {% else %}
                                             0 DPM
                                         {% endif %}
@@ -785,7 +785,7 @@
                                     {% set physical_pct = (match.physical_damage_dealt_to_champions / total_damage * 100) %}
                                     {% set magic_pct = (match.magic_damage_dealt_to_champions / total_damage * 100) %}
                                     {% set true_pct = (match.true_damage_dealt_to_champions / total_damage * 100) %}
-                                    <div class="damage-bar mt-1" title="Físico: {{ '{:,.0f}'.format(match.physical_damage_dealt_to_champions) }} | Mágico: {{ '{:,.0f}'.format(match.magic_damage_dealt_to_champions) }} | Verdadero: {{ '{:,.0f}'.format(match.true_damage_dealt_to_champions) }}">
+                                    <div class="damage-bar mt-1" title="Físico: {{ match.physical_damage_dealt_to_champions | thousands_separator }} | Mágico: {{ match.magic_damage_dealt_to_champions | thousands_separator }} | Verdadero: {{ match.true_damage_dealt_to_champions | thousands_separator }}">
                                         <div class="damage-physical" style="width: {{ physical_pct }}%;"></div>
                                         <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
                                         <div class="damage-true" style="width: {{ true_pct }}%;"></div>
@@ -795,7 +795,7 @@
                                 {% endif %}
                             </td>
                             <td title="Daño a Objetivos / Torretas / Inhibidores / Objetivos Robados">
-                                <div>{{ '{:,.0f}'.format(match.get('damage_dealt_to_objectives', 0)) }}</div>
+                                <div>{{ match.get('damage_dealt_to_objectives', 0) | thousands_separator }}</div>
                                 <span class="small-text-stats">
                                     <i class="fas fa-chess-rook"></i> {{ match.get('turret_kills', 0) }}
                                 </span>
@@ -809,12 +809,12 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {{ '{:,.0f}'.format(match.gold_earned) }}
+                                {{ match.gold_earned | thousands_separator }}
                                 <br>
                                 <span class="small-text-stats">
                                     {% set game_duration_minutes = match.game_duration / 60 %}
                                     {% if game_duration_minutes > 0 %}
-                                        {{ '{:,.0f}'.format(match.gold_earned / game_duration_minutes) }} GPM
+                                        {{ (match.gold_earned / game_duration_minutes) | thousands_separator }} GPM
                                     {% else %}
                                         0 GPM
                                     {% endif %}
@@ -920,8 +920,9 @@
                                             <div class="col-md-6">
                                                 <div class="p-2 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
                                                     <h6 class="text-primary fw-bold mb-2">
-                                                        {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
-                                                        {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
+                                                        {% set team100_participants = match.all_participants | selectattr('team_id', 'equalto', 100) | list %}
+                                                        {% set team100_won = team100_participants[0].win if team100_participants else false %}
+                                                        {% if team100_participants %}{% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul){% else %}Equipo Azul (N/A){% endif %}
                                                     </h6>
                                                     <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
                                                         <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
@@ -945,7 +946,7 @@
                                                                     <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
                                                                 </div>
                                                                 <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
+                                                                    <span class="fw-bold">{{ participante.get('total_damage_dealt_to_champions', 0) | thousands_separator }}</span>
                                                                 </div>
                                                                 <div class="text-start" style="width: 80px;">
                                                                     <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
@@ -977,8 +978,9 @@
                                             <div class="col-md-6">
                                                 <div class="p-2 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
                                                     <h6 class="text-danger fw-bold mb-2">
-                                                        {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
-                                                        {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
+                                                        {% set team200_participants = match.all_participants | selectattr('team_id', 'equalto', 200) | list %}
+                                                        {% set team200_won = team200_participants[0].win if team200_participants else false %}
+                                                        {% if team200_participants %}{% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo){% else %}Equipo Rojo (N/A){% endif %}
                                                     </h6>
                                                     <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
                                                         <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
@@ -1002,7 +1004,7 @@
                                                                     <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
                                                                 </div>
                                                                 <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
+                                                                    <span class="fw-bold">{{ participante.get('total_damage_dealt_to_champions', 0) | thousands_separator }}</span>
                                                                 </div>
                                                                 <div class="text-start" style="width: 80px;">
                                                                     <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
