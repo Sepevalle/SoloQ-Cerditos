@@ -8,13 +8,11 @@
     <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Estilos generales y de modo oscuro del usuario */
         body {
             transition: background-color 0.3s, color 0.3s;
-            font-family: 'Inter', sans-serif;
-            background-color: #f8f9fa;
-            color: #212529;
         }
         .banner-img {
             margin-top: 40px;
@@ -61,13 +59,13 @@
             font-size: 0.9em;
             font-weight: bold;
             color: white !important;
-            background-color: #0056b3;
-            border-radius: 50px;
+            background-color: #0056b3; /* Un azul estándar */
+            border-radius: 50px; /* Changed to 50px for pill shape */
             text-decoration: none;
             transition: background-color 0.2s ease-in-out;
         }
         .opgg-link:hover {
-            background-color: #004494;
+            background-color: #004494; /* Un azul más oscuro al pasar el ratón */
         }
         .dark-mode {
             background-color: #121212;
@@ -116,7 +114,7 @@
             width: 150px;
             height: auto;
             object-fit: cover;
-            display: none;
+            display: none; /* Ocultas por defecto para evitar superposiciones */
         }
         @media (min-width: 1500px) {
             .lateral-img {
@@ -181,11 +179,20 @@
             background: #fff;
         }
 
+        .lp-gain {
+            color: #228B22; /* Green for positive LP */
+            font-weight: bold;
+        }
+        .lp-loss {
+            color: #dc3545; /* Red for negative LP */
+            font-weight: bold;
+        }
+
         #toggle-mode {
             font-weight: bold;
         }
 
-        /* Estilos específicos para la página de jugador (combinados y mejorados) */
+        /* Estilos específicos para la página de jugador */
         .profile-header {
             text-align: center;
             margin-bottom: 30px;
@@ -239,15 +246,11 @@
         }
         .champion-stats-item {
             display: flex;
-            flex-direction: column; /* Cambiado a columna para mejor responsividad */
             align-items: center;
             justify-content: center;
             margin-bottom: 10px;
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
-        }
-        .dark-mode .champion-stats-item {
-            border-bottom: 1px solid #495057; /* Borde más claro en dark mode */
         }
         .champion-stats-item:last-child {
             margin-bottom: 0;
@@ -258,7 +261,7 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            margin-bottom: 10px; /* Espacio debajo de la imagen */
+            margin-right: 15px;
             object-fit: cover;
         }
         .champion-stats-info {
@@ -267,290 +270,88 @@
         .champion-stats-info h5 {
             margin-bottom: 0;
             font-size: 1.1em;
-            color: #212529;
-        }
-        .dark-mode .champion-stats-info h5 {
-            color: #e2e8f0;
         }
         .kda-text {
             font-size: 0.9em;
             color: #6c757d;
         }
-        .dark-mode .kda-text {
-            color: #adb5bd;
-        }
         .match-history-card {
             margin-top: 40px;
         }
-
-        /* --- NUEVOS ESTILOS PARA LAS TARJETAS DE PARTIDA --- */
-        .match-card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
-            gap: 20px;
+        /* Styles for the new table structure */
+        .match-history-table th, .match-history-table td {
+            vertical-align: middle;
+            padding: 8px; /* Adjust padding for table cells */
         }
-
-        .match-card-item {
-            background-color: #ffffff; /* Fondo claro para la tarjeta */
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            cursor: pointer;
-            border: 1px solid #e0e0e0;
+        .match-history-table .champion-level-container {
+            width: 60px; /* Larger champion image */
+            height: 60px;
+            margin: 0 auto; /* Center the champion image */
         }
-        .dark-mode .match-card-item {
-            background-color: #2d3748; /* Fondo oscuro para la tarjeta */
-            border: 1px solid #4a5568;
+        .match-history-table .champion-level {
+            font-size: 0.8em; /* Slightly larger level text */
+            bottom: -8px;
+            right: -8px;
+            padding: 3px 6px;
+            min-width: 24px;
         }
-
-        .match-card-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        .match-history-table .summoner-spells,
+        .match-history-table .runes {
+            gap: 4px; /* Larger gap for spells/runes */
+            margin: 0 auto; /* Center spells/runes */
         }
-
-        .match-header-card {
+        .match-history-table .summoner-spells img,
+        .match-history-table .runes img {
+            width: 25px; /* Larger spells/runes images */
+            height: 25px;
+        }
+        .match-history-table .kda-text {
+            font-size: 1.1em; /* Larger KDA text */
+            font-weight: bold;
+        }
+        .items-layout {
             display: flex;
             align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-            position: relative;
-        }
-        .dark-mode .match-header-card {
-            border-bottom: 1px solid #4a5568;
-        }
-
-        .match-win-indicator {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background-color: #28a745; /* Verde para victoria */
-        }
-        .match-loss-indicator {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background-color: #dc3545; /* Rojo para derrota */
-        }
-
-        .match-champion-img {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 15px;
-            border: 2px solid;
-        }
-        .match-win-indicator + .match-champion-img { border-color: #28a745; }
-        .match-loss-indicator + .match-champion-img { border-color: #dc3545; }
-
-        .match-info-main h5 {
-            margin-bottom: 0;
-            font-size: 1.3em;
-            color: #212529;
-        }
-        .dark-mode .match-info-main h5 {
-            color: #e2e8f0;
-        }
-        .match-info-main .match-result-text {
-            font-weight: bold;
-            font-size: 1em;
-        }
-        .match-info-main .match-queue-date {
-            font-size: 0.85em;
-            color: #6c757d;
-        }
-        .dark-mode .match-info-main .match-queue-date {
-            color: #adb5bd;
-        }
-
-        .match-kda-section {
-            text-align: center;
-            padding: 10px 15px;
-            background-color: #f0f0f0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .dark-mode .match-kda-section {
-            background-color: #343a40;
-            border-bottom: 1px solid #4a5568;
-        }
-        .match-kda-section .kda-value {
-            font-size: 1.4em;
-            font-weight: bold;
-        }
-        .match-kda-section .kda-breakdown {
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-        .dark-mode .match-kda-section .kda-breakdown {
-            color: #adb5bd;
-        }
-
-        .match-stats-summary {
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .dark-mode .match-stats-summary {
-            border-bottom: 1px solid #4a5568;
-        }
-        .match-stat-item {
-            text-align: center;
-            font-size: 0.85em;
-            color: #212529;
-        }
-        .dark-mode .match-stat-item {
-            color: #e2e8f0;
-        }
-        .match-stat-item i {
-            margin-right: 5px;
-            color: #007bff;
-        }
-        .match-stat-item .value {
-            font-weight: bold;
-            display: block;
-        }
-        .match-stat-item .label {
-            color: #6c757d;
-        }
-        .dark-mode .match-stat-item .label {
-            color: #adb5bd;
-        }
-
-        .match-runes-spells-items {
-            display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 10px 15px;
-            gap: 15px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .dark-mode .match-runes-spells-items {
-            border-bottom: 1px solid #4a5568;
-        }
-        .match-runes-spells-items .rune-spell-group {
-            display: flex;
-            flex-direction: column;
             gap: 5px;
         }
-        .match-runes-spells-items img {
-            width: 30px;
-            height: 30px;
-            border-radius: 5px;
-            object-fit: cover;
-        }
-        .match-runes-spells-items .rune-main { border: 1px solid gold; }
-        .match-runes-spells-items .rune-sub { border: 1px solid #6c757d; }
-
-        .match-items-grid {
+        .items-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 3px;
-            width: 100px; /* Ajusta el ancho para 3x2 items */
+            width: calc(25px * 3 + 3px * 2); /* 3 items + 2 gaps */
         }
-        .match-items-grid img, .match-items-grid .item-placeholder {
-            width: 30px;
-            height: 30px;
-            border-radius: 3px;
-            background-color: rgba(0,0,0,0.1);
-        }
-        .dark-mode .match-items-grid img, .dark-mode .match-items-grid .item-placeholder {
-            background-color: rgba(255,255,255,0.1);
-        }
-        .match-items-grid .trinket-item-img {
-            grid-column: span 1; /* Asegura que el trinket ocupe una celda */
-            width: 30px;
-            height: 30px;
-            border-radius: 3px;
-            background-color: rgba(0,0,0,0.1);
-        }
-        .dark-mode .match-items-grid .trinket-item-img {
-            background-color: rgba(255,255,255,0.1);
-        }
-
-        .match-details-expanded {
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-top: 1px solid #e0e0e0;
-            display: none; /* Oculto por defecto */
-        }
-        .dark-mode .match-details-expanded {
-            background-color: #3f4a59;
-            border-top: 1px solid #5a6a7a;
-        }
-        .match-details-expanded .team-section {
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-        .match-details-expanded .team-blue { background-color: rgba(0, 123, 255, 0.1); }
-        .match-details-expanded .team-red { background-color: rgba(220, 53, 69, 0.1); }
-        .dark-mode .match-details-expanded .team-blue { background-color: rgba(0, 123, 255, 0.2); }
-        .dark-mode .match-details-expanded .team-red { background-color: rgba(220, 53, 69, 0.2); }
-
-        .match-details-expanded .participant-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-            color: #212529;
-        }
-        .dark-mode .match-details-expanded .participant-row {
-            color: #e2e8f0;
-        }
-        .match-details-expanded .participant-row img {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            margin-right: 8px;
-            object-fit: cover;
-        }
-        .match-details-expanded .participant-row .name {
-            flex-grow: 1;
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .match-details-expanded .participant-row .stats {
-            margin-left: 10px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        .match-details-expanded .participant-row .items-small {
-            display: flex;
-            gap: 2px;
-            margin-left: 10px;
-        }
-        .match-details-expanded .participant-row .items-small img {
-            width: 20px;
-            height: 20px;
-            border-radius: 3px;
-        }
-        .match-details-expanded .participant-row .items-small .item-placeholder-small {
-            width: 20px;
-            height: 20px;
-            background-color: rgba(0,0,0,0.1);
-            border-radius: 3px;
-        }
-        .dark-mode .match-details-expanded .participant-row .items-small .item-placeholder-small {
-            background-color: rgba(255,255,255,0.1);
-        }
-        .match-details-expanded .player-highlight {
-            background-color: rgba(255, 193, 7, 0.15); /* Amarillo claro para el jugador actual */
+        .items-grid img, .items-grid .item-placeholder,
+        .trinket-item img, .trinket-item .item-placeholder {
+            width: 25px;
+            height: 25px;
             border-radius: 5px;
-            padding: 5px;
         }
-        .dark-mode .match-details-expanded .player-highlight {
-            background-color: rgba(255, 193, 7, 0.25);
+        .trinket-item .item-placeholder, .items-grid .item-placeholder {
+            border: 1px solid rgba(108, 117, 125, 0.3);
         }
-
-        /* Multikill badges */
+        .dark-mode .trinket-item .item-placeholder, .dark-mode .items-grid .item-placeholder {
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border in dark mode */
+        }
+        .match-history-table .match-result {
+            font-size: 1.1em; /* Larger result text */
+        }
+        /* --- INICIO: Mejoras de visualización del historial --- */
+        .match-history-table .match-row-win > td {
+            background-color: rgba(40, 167, 69, 0.08);
+        }
+        .match-history-table .match-row-loss > td {
+            background-color: rgba(220, 53, 69, 0.08);
+        }
+        .dark-mode .match-history-table .match-row-win > td {
+            background-color: rgba(40, 167, 69, 0.15);
+        }
+        .dark-mode .match-history-table .match-row-loss > td {
+            background-color: rgba(220, 53, 69, 0.15);
+        }
+        .highlight-performance {
+            border-left: 4px solid #ffc107; /* Borde dorado para partidas destacadas */
+        }
         .multikill-badge {
             display: inline-block;
             padding: 2px 6px;
@@ -561,90 +362,115 @@
             margin-left: 5px;
             vertical-align: middle;
         }
-        .penta-kill { background-color: #ff4500; }
-        .quadra-kill { background-color: #9400d3; }
-        .triple-kill { background-color: #dc143c; }
-        .double-kill { background-color: #0056b3; }
+        .penta-kill { background-color: #ff4500; } /* NaranjaRojo */
+        .quadra-kill { background-color: #9400d3; } /* Violeta Oscuro */
+        .triple-kill { background-color: #dc143c; } /* Carmesí */
+        .double-kill { background-color: #0056b3; } /* Azul */
 
         .damage-bar {
             display: flex;
             width: 100%;
-            height: 10px;
+            min-width: 80px; /* Ancho mínimo ajustado */
+            height: 12px; /* Altura reducida para una barra más fina */
             border-radius: 4px;
             overflow: hidden;
             background-color: #e9ecef;
             border: 1px solid #ccc;
-            margin-top: 5px;
         }
-        .damage-physical { background-color: #ff8c00; }
-        .damage-magic { background-color: #4169e1; }
-        .damage-true { background-color: #f8f9fa; }
+        .damage-physical { background-color: #ff8c00; } /* Naranja */
+        .damage-magic { background-color: #4169e1; } /* Azul Royal */
+        .damage-true { background-color: #f8f9fa; } /* Casi blanco */
         .dark-mode .damage-bar { background-color: #212529; border-color: #495057; }
 
-        /* Colores de Elo */
-        .tier-iron { color: #5a5a5a; }
-        .tier-bronze { color: #cd7f32; }
-        .tier-silver { color: #c0c0c0; }
-        .tier-gold { color: #ffd700; }
-        .tier-platinum { color: #e5e4e2; }
-        .tier-emerald { color: #50c878; }
-        .tier-diamond { color: #b9f2ff; }
-        .tier-master { color: #8a2be2; }
-        .tier-grandmaster { color: #ff4500; }
-        .tier-challenger { color: #00bfff; }
+        /* --- FIN: Mejoras de visualización del historial --- */
 
-        /* Colores KDA */
-        .kda-good { color: #48bb78; }
-        .kda-average { color: #ecc94b; }
-        .kda-bad { color: #f56565; }
-
-        /* General utility classes for spacing/flex */
-        .d-flex { display: flex; }
-        .align-items-center { align-items: center; }
-        .justify-content-center { justify-content: center; }
-        .flex-column { flex-direction: column; }
-        .gap-2 { gap: 0.5rem; }
-        .gap-3 { gap: 0.75rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mt-2 { margin-top: 0.5rem; }
-        .p-2 { padding: 0.5rem; }
-        .rounded { border-radius: 0.25rem; }
-        .fw-bold { font-weight: bold; }
-        .text-success { color: #28a745; }
-        .text-danger { color: #dc3545; }
-        .text-primary { color: #007bff; }
-        .text-warning { color: #ffc107; }
-        .text-muted { color: #6c757d; }
-        .text-white { color: #ffffff; }
-        .text-truncate {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        /* Styles for filter controls */
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            justify-content: center; /* Center filters */
+            align-items: center;
         }
-        .bg-opacity-25 { background-color: rgba(255, 193, 7, 0.25); } /* Para resaltar jugador en detalles */
-
-        /* --- INICIO: Mejoras de Responsividad para Móviles --- */
-        @media (max-width: 576px) {
-            .profile-header h1 {
-                font-size: 1.5rem; /* Reducir tamaño del nombre en móviles */
-            }
-            .match-card-item {
-                min-width: 0; /* Permitir que las tarjetas sean más pequeñas que 300px */
-            }
-            .match-details-expanded .participant-row {
-                flex-direction: column; /* Apilar los elementos verticalmente */
-                align-items: flex-start; /* Alinear al inicio */
-                gap: 5px; /* Añadir espacio entre elementos apilados */
-            }
-            .match-details-expanded .participant-row .stats,
-            .match-details-expanded .participant-row .items-small {
-                margin-left: 0; /* Eliminar margen izquierdo en móvil */
-            }
-            .hidden-on-mobile {
-                display: none !important;
-            }
+        .filter-controls label {
+            margin-bottom: 0; /* Remove default label margin */
+            font-weight: bold;
         }
-        /* --- FIN: Mejoras de Responsividad para Móviles --- */
+        .filter-controls select {
+            flex-grow: 1; /* Allow select boxes to grow */
+            max-width: 200px; /* Max width for select boxes */
+        }
+
+        /* Styles for champion level overlay */
+        .champion-level-container {
+            position: relative;
+            display: inline-block;
+        }
+        .champion-level-container img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        .champion-level {
+            position: absolute;
+            background-color: #343a40;
+            color: white;
+            font-weight: bold;
+            border-radius: 50%;
+            text-align: center;
+            border: 1px solid #6c757d;
+        }
+
+        /* Styles for summoner spells */
+        .summoner-spells {
+            display: flex;
+            flex-direction: column;
+        }
+        .summoner-spells img {
+            border-radius: 3px;
+        }
+
+        /* Styles for runes */
+        .runes {
+            display: flex;
+            flex-direction: column;
+        }
+        .runes img {
+            border-radius: 50%;
+        }
+        .runes img.keystone {
+            border: 1px solid gold;
+        }
+        .runes img.sub-rune {
+            border: 1px solid #6c757d;
+        }
+
+        /* Dark mode specific text color for small-text-stats */
+        .small-text-stats {
+            color: #6c757d; /* Default light mode color */
+        }
+        .dark-mode .small-text-stats, .dark-mode .small-text {
+            color: #adb5bd; /* Lighter gray for better contrast in dark mode */
+        }
+
+        /* --- INICIO: Animación para desplegar detalles de partida --- */
+        .details-content-wrapper {
+            display: grid;
+            grid-template-rows: 0fr; /* Colapsado por defecto */
+            transition: grid-template-rows 0.4s ease-in-out;
+        }
+
+        /* Cuando la fila contenedora (tr) NO tiene la clase 'hidden', se expande */
+        tr:not(.hidden) .details-content-wrapper {
+            grid-template-rows: 1fr;
+        }
+
+        .details-content-wrapper > div {
+            overflow: hidden; /* Esencial para que la animación de grid funcione */
+        }
+        /* --- FIN: Animación para desplegar detalles de partida --- */
     </style>
 </head>
 
@@ -691,16 +517,11 @@
 
 <div class="container mt-5">
     <div class="profile-header">
-        <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png"
+        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/profileicon/{{ perfil.perfil_icon_url }}.png"
              alt="Imagen de {{ perfil.nombre }}"
              onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png'; if (this.src === 'https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ perfil.nombre }}.png') { this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'white\'/></svg>'; }">
          <h1>{{ perfil.nombre }} <span class="small-text">({{ perfil.game_name }})</span></h1>
          <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
-         {% if perfil.soloq and perfil.soloq.en_partida %}
-            <a href="{{ perfil.soloq.url_ingame }}" target="_blank" class="opgg-link link-estado animate-pulse" style="background-color: #dc3545; margin-left: 10px;">
-                <i class="fas fa-gamepad me-1"></i> EN PARTIDA ({{ perfil.soloq.nombre_campeon }})
-            </a>
-         {% endif %}
     </div>
 
     <div class="row">
@@ -711,13 +532,12 @@
                 </div>
                 <div class="card-body">
                     {% if perfil.soloq %}
-                    <img src="https://ddragon.leagueoflegends.com/cdn/img/ranked-emblems/{{ perfil.soloq.tier | capitalize }}.png"
-                         alt="{{ perfil.soloq.tier }}" class="elo-image-lg">
+                    <img src="" alt="{{ perfil.soloq.tier }}" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4 class="{{ 'tier-' + perfil.soloq.tier | lower }}">{{ perfil.soloq.tier | capitalize }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
+                        <h4>{{ perfil.soloq.tier }} {{ perfil.soloq.rank }} ({{ perfil.soloq.league_points }} LPs)</h4>
                         <p>Wins: {{ perfil.soloq.wins }} | Losses: {{ perfil.soloq.losses }} | Total: {{ perfil.soloq.wins + perfil.soloq.losses }}</p>
                         {% set soloq_total_games = perfil.soloq.wins + perfil.soloq.losses %}
-                        {% set soloq_win_rate = (soloq_total_games > 0 and perfil.soloq.wins / soloq_total_games * 100) or 0 %}
+                        {% set soloq_win_rate = (perfil.soloq.wins / soloq_total_games * 100) if soloq_total_games > 0 else 0 %}
                         <p class="{% if soloq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                             Win Rate: {{ '%.2f'|format(soloq_win_rate) }}%
                         </p>
@@ -725,26 +545,44 @@
                             Peak Elo:
                             {% set peak_elo_soloq = perfil.soloq.get('peak_elo', 0) %}
                             {% set diff_peak_soloq = perfil.soloq.valor_clasificacion - peak_elo_soloq %}
-                            <span class="peak-elo {{ 'tier-' + (peak_elo_soloq | format_peak_elo).split(' ')[0] | lower }}">{{ peak_elo_soloq | format_peak_elo }}</span>
-                            {% if diff_peak_soloq < 0 %}
+                            {% if diff_peak_soloq == 0 %}
+                                <span class="peak-elo">{{ peak_elo_soloq | format_peak_elo }}</span>
+                            {% else %}
+                                {{ peak_elo_soloq | format_peak_elo }}
                                 <span class="small-text-stats">({{ (diff_peak_soloq * -1) }} LPs por debajo)</span>
-                            {% elif diff_peak_soloq > 0 %}
-                                <span class="small-text-stats text-success">(Nuevo pico!)</span>
                             {% endif %}
                         </p>
                         <p>
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
                         </p>
+                        {# Nuevo campo para LP en 24h #}
+                        {% if perfil.soloq.lp_change_24h is not none %}
+                            <p>
+                                LP en 24h: 
+                                {% if perfil.soloq.lp_change_24h > 0 %}
+                                    <span class="lp-gain">+{{ perfil.soloq.lp_change_24h }} LP</span>
+                                {% elif perfil.soloq.lp_change_24h < 0 %}
+                                    <span class="lp-loss">{{ perfil.soloq.lp_change_24h }} LP</span>
+                                {% else %}
+                                    <span>0 LP</span>
+                                {% endif %}
+                            </p>
+                        {% endif %}
+
+                        {# Contenedor para el gráfico de Elo #}
+                        <div class="mt-3 w-100" style="height: 200px;">
+                            <canvas id="soloqEloChart"></canvas>
+                        </div>
 
                         <div class="champion-stats-container">
                             {% if perfil.soloq.top_champion_stats %}
                                 {% for champion_stat in perfil.soloq.top_champion_stats %}
-                                    <div class="champion-stats-item {% if loop.index > 3 %}hidden-on-mobile{% endif %}">
+                                    <div class="champion-stats-item">
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
                                         <div class="champion-stats-info">
                                             <h5>{{ champion_stat.champion_name }}</h5>
-                                            <p class="kda-text fw-bold {{ 'kda-good' if champion_stat.kda >= 3 else ('kda-average' if champion_stat.kda >= 2 else 'kda-bad') }}">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
+                                            <p class="kda-text fw-bold">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
                                             <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
                                             <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
                                             <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
@@ -765,13 +603,13 @@
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <p class="small-text-stats">No hay estadísticas de campeones disponibles para SoloQ.</p>
+                                <p>No hay estadísticas de campeones disponibles para SoloQ.</p>
                             {% endif %}
                         </div>
 
                     </div>
                     {% else %}
-                    <p class="small-text-stats">No se encontraron datos de clasificatoria Solo/Duo.</p>
+                    <p>No se encontraron datos de clasificatoria Solo/Duo.</p>
                     {% endif %}
                 </div>
             </div>
@@ -784,13 +622,12 @@
                 </div>
                 <div class="card-body">
                     {% if perfil.flexq %}
-                    <img src="https://ddragon.leagueoflegends.com/cdn/img/ranked-emblems/{{ perfil.flexq.tier | capitalize }}.png"
-                         alt="{{ perfil.flexq.tier }}" class="elo-image-lg">
+                    <img src="" alt="{{ perfil.flexq.tier }}" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4 class="{{ 'tier-' + perfil.flexq.tier | lower }}">{{ perfil.flexq.tier | capitalize }} {{ perfil.flexq.rank }} ({{ perfil.flexq.league_points }} LPs)</h4>
+                        <h4>{{ perfil.flexq.tier }} {{ perfil.flexq.rank }} ({{ perfil.flexq.league_points }} LPs)</h4>
                         <p>Wins: {{ perfil.flexq.wins }} | Losses: {{ perfil.flexq.losses }} | Total: {{ perfil.flexq.wins + perfil.flexq.losses }}</p>
                         {% set flexq_total_games = perfil.flexq.wins + perfil.flexq.losses %}
-                        {% set flexq_win_rate = (flexq_total_games > 0 and perfil.flexq.wins / flexq_total_games * 100) or 0 %}
+                        {% set flexq_win_rate = (perfil.flexq.wins / flexq_total_games * 100) if flexq_total_games > 0 else 0 %}
                         <p class="{% if flexq_win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">
                             Win Rate: {{ '%.2f'|format(flexq_win_rate) }}%
                         </p>
@@ -798,26 +635,39 @@
                             Peak Elo:
                             {% set peak_elo_flexq = perfil.flexq.get('peak_elo', 0) %}
                             {% set diff_peak_flexq = perfil.flexq.valor_clasificacion - peak_elo_flexq %}
-                            <span class="peak-elo {{ 'tier-' + (peak_elo_flexq | format_peak_elo).split(' ')[0] | lower }}">{{ peak_elo_flexq | format_peak_elo }}</span>
-                            {% if diff_peak_flexq < 0 %}
+                            {% if diff_peak_flexq == 0 %}
+                                <span class="peak-elo">{{ peak_elo_flexq | format_peak_elo }}</span>
+                            {% else %}
+                                {{ peak_elo_flexq | format_peak_elo }}
                                 <span class="small-text-stats">({{ (diff_peak_flexq * -1) }} LPs por debajo)</span>
-                            {% elif diff_peak_flexq > 0 %}
-                                <span class="small-text-stats text-success">(Nuevo pico!)</span>
                             {% endif %}
                         </p>
                         <p>
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
                         </p>
+                        {# Nuevo campo para LP en 24h #}
+                        {% if perfil.flexq.lp_change_24h is not none %}
+                            <p>
+                                LP en 24h: 
+                                {% if perfil.flexq.lp_change_24h > 0 %}
+                                    <span class="lp-gain">+{{ perfil.flexq.lp_change_24h }} LP</span>
+                                {% elif perfil.flexq.lp_change_24h < 0 %}
+                                    <span class="lp-loss">{{ perfil.flexq.lp_change_24h }} LP</span>
+                                {% else %}
+                                    <span>0 LP</span>
+                                {% endif %}
+                            </p>
+                        {% endif %}
 
                         <div class="champion-stats-container">
                             {% if perfil.flexq.top_champion_stats %}
                                 {% for champion_stat in perfil.flexq.top_champion_stats %}
-                                    <div class="champion-stats-item {% if loop.index > 3 %}hidden-on-mobile{% endif %}">
+                                    <div class="champion-stats-item">
                                         <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion_stat.champion_name }}.png" alt="{{ champion_stat.champion_name }}">
                                         <div class="champion-stats-info">
                                             <h5>{{ champion_stat.champion_name }}</h5>
-                                            <p class="kda-text fw-bold {{ 'kda-good' if champion_stat.kda >= 3 else ('kda-average' if champion_stat.kda >= 2 else 'kda-bad') }}">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
+                                            <p class="kda-text fw-bold">{{ '%.2f'|format(champion_stat.kda) }} KDA</p>
                                             <p class="small-text-stats">Promedio: {{ '%.1f'|format(champion_stat.avg_kills) }} / {{ '%.1f'|format(champion_stat.avg_deaths) }} / {{ '%.1f'|format(champion_stat.avg_assists) }}</p>
                                             <p class="fw-bold {% if champion_stat.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f'|format(champion_stat.win_rate) }}% Win Rate</p>
                                             <p class="small-text-stats">({{ champion_stat.wins }}V / {{ champion_stat.losses }}D) - {{ champion_stat.games_played }} partidas</p>
@@ -838,39 +688,14 @@
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <p class="small-text-stats">No hay estadísticas de campeones disponibles para FlexQ.</p>
+                                <p>No hay estadísticas de campeones disponibles para FlexQ.</p>
                             {% endif %}
                         </div>
 
                     </div>
                     {% else %}
-                    <p class="small-text-stats">No se encontraron datos de clasificatoria Flexible.</p>
+                    <p>No se encontraron datos de clasificatoria Flexible.</p>
                     {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Champion Stats Section -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    Estadísticas por Campeón
-                </div>
-                <div class="card-body">
-                    {% for champ_name, stats in perfil.champion_stats.items() %}
-                    <div class="champion-stats-item {% if loop.index > 3 %}hidden-on-mobile{% endif %}">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champ_name }}.png" alt="{{ champ_name }}">
-                        <div class="champion-stats-info">
-                            <h5>{{ champ_name }}</h5>
-                            <p class="kda-text fw-bold">{{ '%.2f' % stats.kda }} KDA</p>
-                            <p class="small-text-stats">Promedio: {{ '%.1f' % (stats.kills / stats.games_played) }} / {{ '%.1f' % (stats.deaths / stats.games_played) }} / {{ '%.1f' % (stats.assists / stats.games_played) }}</p>
-                            <p class="fw-bold {% if stats.win_rate >= 50 %}win-rate-alto{% else %}win-rate-bajo{% endif %}">{{ '%.0f' % stats.win_rate }}% Win Rate</p>
-                            <p class="small-text-stats">({{ stats.wins }}V / {{ stats.losses }}D) - {{ stats.games_played }} partidas</p>
-                        </div>
-                    </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -950,12 +775,12 @@
                                 <span class="small-text-stats fw-bold" title="Participación en Asesinatos">{{ '%.0f'|format(match.get('kill_participation', 0)) }}% KP</span>
                             </td>
                             <td>
-                                <div>{{ '{:,.0f}'.format(match.total_damage_dealt_to_champions) }}</div>
+                                <div>{{ match.total_damage_dealt_to_champions | thousands_separator }}</div>
                                 <div>
                                     <span class="small-text-stats">
                                         {% set game_duration_minutes = match.game_duration / 60 %}
                                         {% if game_duration_minutes > 0 %}
-                                            {{ '{:,.0f}'.format(match.total_damage_dealt_to_champions / game_duration_minutes) }} DPM
+                                            {{ (match.total_damage_dealt_to_champions / game_duration_minutes) | thousands_separator }} DPM
                                         {% else %}
                                             0 DPM
                                         {% endif %}
@@ -966,7 +791,7 @@
                                     {% set physical_pct = (match.physical_damage_dealt_to_champions / total_damage * 100) %}
                                     {% set magic_pct = (match.magic_damage_dealt_to_champions / total_damage * 100) %}
                                     {% set true_pct = (match.true_damage_dealt_to_champions / total_damage * 100) %}
-                                    <div class="damage-bar mt-1" title="Físico: {{ '{:,.0f}'.format(match.physical_damage_dealt_to_champions) }} | Mágico: {{ '{:,.0f}'.format(match.magic_damage_dealt_to_champions) }} | Verdadero: {{ '{:,.0f}'.format(match.true_damage_dealt_to_champions) }}">
+                                    <div class="damage-bar mt-1" title="Físico: {{ match.physical_damage_dealt_to_champions | thousands_separator }} | Mágico: {{ match.magic_damage_dealt_to_champions | thousands_separator }} | Verdadero: {{ match.true_damage_dealt_to_champions | thousands_separator }}">
                                         <div class="damage-physical" style="width: {{ physical_pct }}%;"></div>
                                         <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
                                         <div class="damage-true" style="width: {{ true_pct }}%;"></div>
@@ -976,7 +801,7 @@
                                 {% endif %}
                             </td>
                             <td title="Daño a Objetivos / Torretas / Inhibidores / Objetivos Robados">
-                                <div>{{ '{:,.0f}'.format(match.get('damage_dealt_to_objectives', 0)) }}</div>
+                                <div>{{ match.get('damage_dealt_to_objectives', 0) | thousands_separator }}</div>
                                 <span class="small-text-stats">
                                     <i class="fas fa-chess-rook"></i> {{ match.get('turret_kills', 0) }}
                                 </span>
@@ -990,12 +815,12 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {{ '{:,.0f}'.format(match.gold_earned) }}
+                                {{ match.gold_earned | thousands_separator }}
                                 <br>
                                 <span class="small-text-stats">
                                     {% set game_duration_minutes = match.game_duration / 60 %}
                                     {% if game_duration_minutes > 0 %}
-                                        {{ '{:,.0f}'.format(match.gold_earned / game_duration_minutes) }} GPM
+                                        {{ (match.gold_earned / game_duration_minutes) | thousands_separator }} GPM
                                     {% else %}
                                         0 GPM
                                     {% endif %}
@@ -1015,6 +840,15 @@
                             </td>
                             <td title="Puntuación de Visión (por minuto) | Wards de Control | Wards Colocados / Destruidos">
                                 <span class="fw-bold">{{ match.vision_score }}</span>
+                                <br>
+                                <span class="small-text-stats">
+                                    {% set game_duration_minutes = match.game_duration / 60 %}
+                                    {% if game_duration_minutes > 0 %}
+                                        {{ '%.2f'|format(match.vision_score / game_duration_minutes) }} VSPM
+                                    {% else %}
+                                        0.00 VSPM
+                                    {% endif %}
+                                </span>
                                 <br>
                                 <span class="small-text-stats">
                                     {{ match.get('detector_wards_placed', 0) }} | {{ match.get('wards_placed', 0) }} / {{ match.get('wards_killed', 0) }}
@@ -1065,11 +899,11 @@
                             <td>
                                 {% if match.lp_change_this_game is not none %}
                                     {% if match.lp_change_this_game > 0 %}
-                                        <span class="lp-gain">+{{ match.lp_change_this_game }}</span>
+                                        <span class="lp-gain">+{{ match.lp_change_this_game }} LP</span>
                                     {% elif match.lp_change_this_game < 0 %}
-                                        <span class="lp-loss">{{ match.lp_change_this_game }}</span>
+                                        <span class="lp-loss">{{ match.lp_change_this_game }} LP</span>
                                     {% else %}
-                                        <span>0</span>
+                                        <span>0 LP</span>
                                     {% endif %}
                                 {% else %}
                                     <span>N/A</span>
@@ -1092,8 +926,9 @@
                                             <div class="col-md-6">
                                                 <div class="p-2 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
                                                     <h6 class="text-primary fw-bold mb-2">
-                                                        {% set team100_won = (match.all_participants | selectattr('team_id', 'equalto', 100) | list | first).win %}
-                                                        {% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul)
+                                                        {% set team100_participants = match.all_participants | selectattr('team_id', 'equalto', 100) | list %}
+                                                        {% set team100_won = team100_participants[0].win if team100_participants else false %}
+                                                        {% if team100_participants %}{% if team100_won %}Victoria{% else %}Derrota{% endif %} (Equipo Azul){% else %}Equipo Azul (N/A){% endif %}
                                                     </h6>
                                                     <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
                                                         <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
@@ -1117,7 +952,7 @@
                                                                     <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
                                                                 </div>
                                                                 <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
+                                                                    <span class="fw-bold">{{ participante.get('total_damage_dealt_to_champions', 0) | thousands_separator }}</span>
                                                                 </div>
                                                                 <div class="text-start" style="width: 80px;">
                                                                     <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
@@ -1149,16 +984,17 @@
                                             <div class="col-md-6">
                                                 <div class="p-2 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
                                                     <h6 class="text-danger fw-bold mb-2">
-                                                        {% set team200_won = (match.all_participants | selectattr('team_id', 'equalto', 200) | list | first).win %}
-                                                        {% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo)
+                                                        {% set team200_participants = match.all_participants | selectattr('team_id', 'equalto', 200) | list %}
+                                                        {% set team200_won = team200_participants[0].win if team200_participants else false %}
+                                                        {% if team200_participants %}{% if team200_won %}Victoria{% else %}Derrota{% endif %} (Equipo Rojo){% else %}Equipo Rojo (N/A){% endif %}
                                                     </h6>
                                                     <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
                                                         <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
-                                                        <div style="width: 110px;">KDA</div>
-                                                        <div style="width: 80px;">Daño</div>
-                                                        <div style="width: 80px;">CS</div>
-                                                        <div style="width: 50px;">Visión</div>
-                                                        <div style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                        <div class="text-start" style="width: 110px;">KDA</div>
+                                                        <div class="text-start" style="width: 80px;">Daño</div>
+                                                        <div class="text-start" style="width: 80px;">CS</div>
+                                                        <div class="text-start" style="width: 50px;">Visión</div>
+                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
                                                     </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
@@ -1174,7 +1010,7 @@
                                                                     <span class="small-text-stats">({{ '%.0f'|format(participante.get('kill_participation', 0)) }}% KP)</span>
                                                                 </div>
                                                                 <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">{{ '{:,.0f}'.format(participante.get('total_damage_dealt_to_champions', 0)) }}</span>
+                                                                    <span class="fw-bold">{{ participante.get('total_damage_dealt_to_champions', 0) | thousands_separator }}</span>
                                                                 </div>
                                                                 <div class="text-start" style="width: 80px;">
                                                                     <span class="fw-bold">{{ participante.get('total_cs', 0) }}</span>
@@ -1230,10 +1066,200 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // --- INICIO: Gráfico de Elo ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('soloqEloChart');
+        if (ctx) {
+            // Obtener datos pasados desde Flask
+            const eloHistory = {{ perfil.elo_history_soloq | tojson }};
+            
+            if (eloHistory && eloHistory.length > 1) {
+                const labels = eloHistory.map(entry => {
+                    const date = new Date(entry.timestamp);
+                    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                });
+                const dataPoints = eloHistory.map(entry => entry.elo);
+
+                // Detectar modo oscuro para colores
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                const textColor = isDarkMode ? '#adb5bd' : '#666';
+
+                // Función para obtener el color según el Tier
+                const getTierColor = (value) => {
+                    if (value >= 2800) {
+                        if (value >= 3200) return '#f1c40f'; // CHALLENGER - Dorado brillante
+                        if (value >= 3000) return '#e74c3c'; // GRANDMASTER - Rojo
+                        return '#9b59b6'; // MASTER - Morado
+                    }
+                    const tierIndex = Math.floor(value / 400);
+                    switch (tierIndex) {
+                        case 0: return '#7a7a7a'; // IRON - Gris
+                        case 1: return '#cd7f32'; // BRONZE - Bronce
+                        case 2: return '#a9a9a9'; // SILVER - Plata
+                        case 3: return '#daa520'; // GOLD - Dorado
+                        case 4: return '#20b2aa'; // PLATINUM - Turquesa
+                        case 5: return '#2ecc71'; // EMERALD - Verde Esmeralda
+                        case 6: return '#3498db'; // DIAMOND - Azul
+                        default: return '#007bff'; // Fallback
+                    }
+                };
+
+                // Helper para convertir hex a rgba con opacidad
+                const hexToRgba = (hex, alpha) => {
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                };
+
+                // Función para formatear el valor numérico a Rango (Ej: Oro I 50 LP)
+                const formatElo = (value) => {
+                    if (value >= 2800) {
+                        const lps = value - 2800;
+                        if (value >= 3200) return `CHALLENGER (${lps} LP)`;
+                        if (value >= 3000) return `GRANDMASTER (${lps} LP)`;
+                        return `MASTER (${lps} LP)`;
+                    }
+                    const tiers = ["HIERRO", "BRONCE", "PLATA", "ORO", "PLATINO", "ESMERALDA", "DIAMANTE"];
+                    const ranks = ["IV", "III", "II", "I"];
+                    
+                    const tierIndex = Math.floor(value / 400);
+                    const rankIndex = Math.floor((value % 400) / 100);
+                    const lp = Math.round(value % 100);
+                    
+                    const tier = tiers[tierIndex] || "UNKNOWN";
+                    const rank = ranks[rankIndex] || "";
+                    return `${tier} ${rank} (${lp} LP)`;
+                };
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Elo (Valor Clasificación)',
+                            data: dataPoints,
+                            backgroundColor: function(context) {
+                                const chart = context.chart;
+                                const {ctx, chartArea, scales} = chart;
+                                if (!chartArea) return null;
+                                const yScale = scales.y;
+                                if (!yScale) return null;
+
+                                // Definir el gradiente basado en los valores absolutos de Elo (0 a 3200)
+                                const yStart = yScale.getPixelForValue(0);
+                                const yEnd = yScale.getPixelForValue(3200);
+                                
+                                const gradient = ctx.createLinearGradient(0, yStart, 0, yEnd);
+                                
+                                const tiers = [
+                                    { val: 0, color: '#7a7a7a' },      // IRON
+                                    { val: 400, color: '#cd7f32' },    // BRONZE
+                                    { val: 800, color: '#a9a9a9' },    // SILVER
+                                    { val: 1200, color: '#daa520' },   // GOLD
+                                    { val: 1600, color: '#20b2aa' },   // PLATINUM
+                                    { val: 2000, color: '#2ecc71' },   // EMERALD
+                                    { val: 2400, color: '#3498db' },   // DIAMOND
+                                    { val: 2800, color: '#9b59b6' },   // MASTER
+                                    { val: 3000, color: '#e74c3c' },   // GRANDMASTER
+                                    { val: 3200, color: '#f1c40f' }    // CHALLENGER
+                                ];
+
+                                tiers.forEach(tier => {
+                                    gradient.addColorStop(tier.val / 3200, hexToRgba(tier.color, 0.2));
+                                });
+
+                                return gradient;
+                            },
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            fill: true,
+                            tension: 0.3, // Suavizado de línea
+                            segment: {
+                                borderColor: ctx => getTierColor(ctx.p0.parsed.y)
+                            },
+                            pointBackgroundColor: ctx => getTierColor(ctx.parsed.y),
+                            pointBorderColor: ctx => getTierColor(ctx.parsed.y)
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return formatElo(context.raw);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false, // Ocultar fechas en eje X para limpieza
+                                grid: { display: false }
+                            },
+                            y: {
+                                grid: { color: gridColor },
+                                ticks: { 
+                                    color: textColor,
+                                    stepSize: 100, // Forzar líneas cada división (100 LP)
+                                    callback: function(value) {
+                                        // Solo mostrar etiqueta si es una división exacta (0 LP)
+                                        if (value % 100 !== 0) return null;
+
+                                        if (value >= 2800) {
+                                            const lps = value - 2800;
+                                            if (value >= 3200) return `CHALLENGER`;
+                                            if (value >= 3000) return `GM`;
+                                            return `MASTER ${lps}LP`;
+                                        }
+
+                                        const tiers = ["HIERRO", "BRONCE", "PLATA", "ORO", "PLATINO", "ESMERALDA", "DIAMANTE"];
+                                        const ranks = ["IV", "III", "II", "I"];
+                                        
+                                        const tierIndex = Math.floor(value / 400);
+                                        const rankIndex = Math.floor((value % 400) / 100);
+                                        
+                                        if (tiers[tierIndex]) {
+                                            return `${tiers[tierIndex]} ${ranks[rankIndex]}`;
+                                        }
+                                        return "";
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            } else {
+                // Si no hay suficientes datos, mostrar mensaje o ocultar
+                ctx.style.display = 'none';
+                const container = ctx.parentElement;
+                const msg = document.createElement('p');
+                msg.textContent = "Insuficientes datos para el gráfico de Elo.";
+                msg.className = "text-muted small text-center mt-4";
+                container.appendChild(msg);
+            }
+        }
+    });
+    // --- FIN: Gráfico de Elo ---
+
+    // Esta función debe estar en el ámbito global para que la llame el `onclick`
     function toggleMatchDetails(matchId) {
-        const detailsDiv = document.getElementById(matchId);
-        if (detailsDiv) {
-            detailsDiv.style.display = detailsDiv.style.display === 'block' ? 'none' : 'block';
+        const detailsRow = document.getElementById(matchId);
+        // Comprobamos si la fila de detalles existe antes de intentar manipularla
+        if (detailsRow) {
+            detailsRow.classList.toggle('hidden');
         }
     }
 
@@ -1278,6 +1304,7 @@
             }
         });
 
+        // Banner dynamic images (if needed, this logic seems specific)
         const bannerImg = document.getElementById('banner-img');
         const banners = [
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
@@ -1288,8 +1315,9 @@
             currentBannerIndex = (currentBannerIndex + 1) % banners.length;
             bannerImg.src = banners[currentBannerIndex];
         }
-        setInterval(changeBanner, 5000);
+        setInterval(changeBanner, 5000); // Change banner every 5 seconds
 
+        // Lateral images dynamic (also specific to your design)
         const leftBanner = document.getElementById('left-banner');
         const rightBanner = document.getElementById('right-banner');
        const lateralBanners = [
@@ -1306,20 +1334,22 @@
             leftBanner.src = lateralBanners[currentLateralBannerIndex];
             rightBanner.src = lateralBanners[currentLateralBannerIndex];
         }
-        setInterval(changeLateralBanner, 5000);
+        setInterval(changeLateralBanner, 5000); // Change lateral banners every 5 seconds
 
 
+        // Audio control
         const backgroundAudio = document.getElementById('backgroundAudio');
         const toggleAudioBtn = document.getElementById('toggleAudio');
         const muteIcon = document.getElementById('muteIcon');
         const volumeSlider = document.getElementById('volumeSlider');
 
+        // Initialize audio state from localStorage
         const savedVolume = localStorage.getItem('backgroundAudioVolume');
         if (savedVolume !== null) {
             backgroundAudio.volume = parseFloat(savedVolume);
             volumeSlider.value = parseFloat(savedVolume);
         } else {
-            backgroundAudio.volume = 1.0;
+            backgroundAudio.volume = 1.0; // Default volume
             volumeSlider.value = 1.0;
         }
 
@@ -1330,12 +1360,14 @@
             muteIcon.classList.add('fa-microphone-slash');
         } else {
             backgroundAudio.muted = false;
+            // Attempt to play only if not muted, and handle Autoplay Policy
             const playPromise = backgroundAudio.play();
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
+                    // Autoplay was prevented. Show a "play" button.
                     console.log("Autoplay prevented:", error);
                     muteIcon.classList.remove('fa-volume-up');
-                    muteIcon.classList.add('fa-microphone-slash');
+                    muteIcon.classList.add('fa-microphone-slash'); // Show muted icon as initial state
                     toggleAudioBtn.title = "Reproducir Música";
                 });
             }
@@ -1380,25 +1412,29 @@
             }
         });
 
-        // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN PARA TARJETAS ---
+        // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN (REESTRUCTURADA) ---
         const queueFilter = document.getElementById('queueFilter');
         const championFilter = document.getElementById('championFilter');
-        const matchHistoryContainer = document.getElementById('match-history-container');
-        const allMatchCards = document.querySelectorAll('.match-card-item'); // Seleccionar las nuevas tarjetas
+        const allMatchRows = document.querySelectorAll('.match-history-table tbody tr');
         const paginationControls = document.getElementById('pagination-controls');
-        const cardsPerPage = 10;
+        const rowsPerPage = 10; // Partidas por página
 
+        // --- ESTADO ---
         let currentPage = 1;
 
+        // --- FUNCIONES AUXILIARES ---
         function populateChampionFilter() {
+            // Usamos un Set para evitar campeones duplicados
             const championNames = new Set();
-            allMatchCards.forEach(card => {
-                if (card.dataset.championName) {
-                    championNames.add(card.dataset.championName);
+            allMatchRows.forEach(row => {
+                // Solo consideramos las filas de partidas principales, no las de detalles
+                if (row.dataset.championName) {
+                    championNames.add(row.dataset.championName);
                 }
             });
 
             championFilter.innerHTML = '<option value="all">Todos</option>';
+            // Convertimos el Set a un Array y lo ordenamos alfabéticamente
             const sortedChampionNames = Array.from(championNames).sort();
             sortedChampionNames.forEach(championName => {
                 championFilter.add(new Option(championName, championName));
@@ -1406,26 +1442,14 @@
         }
 
         function populateQueueFilter() {
+            // Usamos un Map para asociar ID de cola con su nombre, evitando duplicados
             const queueTypes = new Map();
-            // Necesitamos acceder al nombre de la cola desde los datos de la partida, no del DOM directamente
-            // Esto asume que el `perfil.historial_partidas` está disponible en JS o que podemos obtenerlo.
-            // Para esta demostración, asumiremos que los nombres de cola se obtienen del atributo data-queue-id
-            // y que la función get_queue_type se puede replicar o que los nombres ya están en los datos.
-            // Para simplificar, usaremos un mapeo estático si no hay acceso a la función de Jinja2.
-            const queueNamesMap = {
-                400: "Normal (Blind Pick)", 420: "Clasificatoria Solo/Duo", 430: "Normal (Draft Pick)",
-                440: "Clasificatoria Flexible", 450: "ARAM", 700: "Clash", 800: "Co-op vs. AI (Beginner)",
-                810: "Co-op vs. AI (Intermediate)", 820: "Co-op vs. AI (Intro)", 830: "Co-op vs. AI (Twisted Treeline)",
-                840: "Co-op vs. AI (Summoner's Rift)", 850: "Co-op vs. AI (ARAM)", 900: "URF",
-                1020: "One For All", 1090: "Arena", 1100: "Arena", 1300: "Nexus Blitz",
-                1400: "Ultimate Spellbook", 1700: "Arena", 1900: "URF (ARAM)", 2000: "Tutorial",
-                2010: "Tutorial", 2020: "Tutorial",
-            };
-
-            allMatchCards.forEach(card => {
-                if (card.dataset.queueId) {
-                    const queueId = parseInt(card.dataset.queueId, 10);
-                    const queueName = queueNamesMap[queueId] || "Desconocido";
+            allMatchRows.forEach(row => {
+                // Solo consideramos las filas de partidas principales
+                if (row.dataset.queueId) {
+                    const queueId = row.dataset.queueId;
+                    // CORRECCIÓN: El nombre de la cola está en la primera celda (índice 0)
+                    const queueName = row.cells[0].textContent.trim(); 
                     if (!queueTypes.has(queueId)) {
                         queueTypes.set(queueId, queueName);
                     }
@@ -1433,66 +1457,81 @@
             });
 
             queueFilter.innerHTML = '<option value="all">Todas</option>';
+            // Ordenamos las colas por nombre para una mejor UX
             const sortedQueues = Array.from(queueTypes.entries()).sort((a, b) => a[1].localeCompare(b[1]));
             sortedQueues.forEach(([queueId, queueName]) => queueFilter.add(new Option(queueName, queueId)));
         }
 
-        function setupPagination(totalCards, page) {
+        function setupPagination(totalRows, page) {
             paginationControls.innerHTML = "";
-            const pageCount = Math.ceil(totalCards / cardsPerPage) || 1;
+            const pageCount = Math.ceil(totalRows / rowsPerPage) || 1; // Aseguramos que al menos sea 1
             if (pageCount <= 1) return;
 
+            // Botón "Anterior"
             const prevLi = document.createElement('li');
             prevLi.className = `page-item ${page === 1 ? 'disabled' : ''}`;
             prevLi.innerHTML = `<a class="page-link" href="#" data-page="${page - 1}" aria-label="Previous">&laquo; Anterior</a>`;
             paginationControls.appendChild(prevLi);
 
+            // Indicador de página "Página X de Y"
             const pageInfoLi = document.createElement('li');
             pageInfoLi.className = 'page-item disabled';
-            pageInfoLi.innerHTML = `<span class="page-link">Página ${page} de ${pageCount}</span>`;
+            pageInfoLi.innerHTML = `<span class="page-link">Página ${page} de ${pageCount}</span>`; // Más claro para el usuario
             paginationControls.appendChild(pageInfoLi);
 
+            // Botón "Siguiente"
             const nextLi = document.createElement('li');
             nextLi.className = `page-item ${page === pageCount ? 'disabled' : ''}`;
             nextLi.innerHTML = `<a class="page-link" href="#" data-page="${page + 1}" aria-label="Next">Siguiente &raquo;</a>`;
             paginationControls.appendChild(nextLi);
         }
 
+        // --- FUNCIÓN DE RENDERIZADO PRINCIPAL ---
         function renderMatchHistory() {
             const selectedQueue = queueFilter.value;
             const selectedChampion = championFilter.value;
 
-            const filteredCards = Array.from(allMatchCards).filter(card => {
-                const queueMatch = (selectedQueue === 'all' || card.dataset.queueId === selectedQueue);
-                const championMatch = (selectedChampion === 'all' || card.dataset.championName === selectedChampion);
+            // 1. Obtener y filtrar las filas de partidas principales
+            const mainMatchRows = Array.from(allMatchRows).filter(row => row.hasAttribute('data-queue-id'));
+            const filteredMainRows = mainMatchRows.filter(row => {
+                const queueMatch = (selectedQueue === 'all' || row.dataset.queueId === selectedQueue);
+                const championMatch = (selectedChampion === 'all' || row.dataset.championName === selectedChampion);
                 return queueMatch && championMatch;
             });
 
-            setupPagination(filteredCards.length, currentPage);
+            // 2. Configurar la paginación basado en los resultados filtrados
+            setupPagination(filteredMainRows.length, currentPage);
 
-            const startIndex = (currentPage - 1) * cardsPerPage;
-            const endIndex = startIndex + cardsPerPage;
-            const cardsForCurrentPage = filteredCards.slice(startIndex, endIndex);
+            // 3. Determinar qué filas mostrar en la página actual
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const rowsForCurrentPage = filteredMainRows.slice(startIndex, endIndex);
 
-            allMatchCards.forEach(card => {
-                const detailsDiv = card.querySelector('.match-details-expanded');
-                if (cardsForCurrentPage.includes(card)) {
-                    card.style.display = '';
+            // 4. Iterar sobre TODAS las filas principales para establecer su visibilidad
+            mainMatchRows.forEach(row => {
+                const detailRow = row.nextElementSibling;
+
+                if (rowsForCurrentPage.includes(row)) {
+                    // Esta fila está en la página actual, así que la mostramos.
+                    // No tocamos el 'display' de la fila de detalles para no interferir con la animación.
+                    row.style.display = '';
                 } else {
-                    card.style.display = 'none';
-                    if (detailsDiv) {
-                        detailsDiv.style.display = 'none'; // Asegurarse de que los detalles estén ocultos
+                    // Esta fila NO está en la página actual, la ocultamos junto con su detalle.
+                    row.style.display = 'none';
+                    if (detailRow && detailRow.id.startsWith('match-')) {
+                        detailRow.style.display = 'none';
                     }
                 }
             });
         }
 
+        // --- EVENT LISTENERS ---
         queueFilter.addEventListener('change', () => {
-            currentPage = 1;
+            currentPage = 1; // Resetear a la primera página al cambiar el filtro
             renderMatchHistory();
         });
         championFilter.addEventListener('change', () => {
-            currentPage = 1;
+            currentPage = 1; // Resetear a la primera página al cambiar el filtro
             renderMatchHistory();
         });
 
@@ -1508,11 +1547,14 @@
             }
         });
 
+        // --- INICIALIZACIÓN ---
         populateQueueFilter();
         populateChampionFilter();
         renderMatchHistory();
+        // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
 </script>
+
 
 </body>
 </html>
