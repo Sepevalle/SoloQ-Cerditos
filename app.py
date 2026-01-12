@@ -279,14 +279,14 @@ def _api_rate_limiter_worker():
         try:
             # Obtener la petición de la cola. Timeout para que el hilo no se bloquee indefinidamente.
             # Añadir logging para el tamaño de la cola
-            if not API_REQUEST_QUEUE.empty():
-                print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
+            # if not API_REQUEST_QUEUE.empty():
+            #     print(f"[_api_rate_limiter_worker] Tamaño de la cola de peticiones: {API_REQUEST_QUEUE.qsize()}")
             request_id, url, headers, timeout, is_spectator_api = API_REQUEST_QUEUE.get(timeout=1)
             
             # Consumir un token antes de realizar la petición
             riot_api_limiter.consume_token()
 
-            print(f"[_api_rate_limiter_worker] Procesando petición {request_id} a: {url}")
+            # print(f"[_api_rate_limiter_worker] Procesando petición {request_id} a: {url}")
             response = None
             for i in range(3): # Reintentos para la petición HTTP real
                 try:
@@ -294,7 +294,7 @@ def _api_rate_limiter_worker():
                     
                     # Si es una API de espectador y devuelve 404, no reintentar
                     if is_spectator_api and response.status_code == 404:
-                        print(f"[_api_rate_limiter_worker] Petición {request_id} a la API de espectador devolvió 404. No se reintentará.")
+                        # print(f"[_api_rate_limiter_worker] Petición {request_id} a la API de espectador devolvió 404. No se reintentará.")
                         break # Salir del bucle de reintentos inmediatamente
 
                     if response.status_code == 429:
@@ -303,7 +303,7 @@ def _api_rate_limiter_worker():
                         time.sleep(retry_after)
                         continue # Reintentar la petición después de esperar
                     response.raise_for_status() # Lanza una excepción para códigos de error HTTP
-                    print(f"[_api_rate_limiter_worker] Petición {request_id} exitosa. Status: {response.status_code}")
+                    # print(f"[_api_rate_limiter_worker] Petición {request_id} exitosa. Status: {response.status_code}")
                     break # Salir del bucle de reintentos si es exitoso
                 except requests.exceptions.RequestException as e:
                     print(f"[_api_rate_limiter_worker] Error en petición {request_id} a {url}: {e}. Intento {i + 1}/3")
@@ -501,7 +501,7 @@ def esta_en_partida(api_key, puuid):
     Comprueba si un jugador está en una partida activa.
     Retorna los datos completos de la partida si está en una, None si no.
     """
-    print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
+    # print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
     try:
         url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
         # Usar make_api_request con is_spectator_api=True para control de tasa específico si es necesario
@@ -991,7 +991,7 @@ def guardar_historial_jugador_github(puuid, historial_data):
     url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/match_history/{puuid}.json"
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
-        print(f"[guardar_historial_jugador_github] ERROR: Token de GitHub no encontrado para guardar historial de {puuid}. No se guardará el archivo.")
+        print(f"[guardar_historial_jugador_github] ERROR: Token de GitHub no encontrado para guardar historial de {puuid}. No se guardará el archivo.", flush=True)
         return False
 
     headers = {"Authorization": f"token {token}"}
@@ -1003,14 +1003,14 @@ def guardar_historial_jugador_github(puuid, historial_data):
         response = requests.get(url, headers=headers, timeout=30) # Aumentado timeout
         if response.status_code == 200:
             sha = response.json().get('sha')
-            print(f"[guardar_historial_jugador_github] SHA del historial de {puuid} obtenido: {sha}.")
+            print(f"[guardar_historial_jugador_github] SHA del historial de {puuid} obtenido: {sha}.", flush=True)
         elif response.status_code == 404:
-            print(f"[guardar_historial_jugador_github] Archivo {puuid}.json no existe en GitHub, se creará uno nuevo.")
+            print(f"[guardar_historial_jugador_github] Archivo {puuid}.json no existe en GitHub, se creará uno nuevo.", flush=True)
         else:
-            print(f"[guardar_historial_jugador_github] Error al obtener SHA del historial de {puuid}: {response.status_code} - {response.text}")
+            print(f"[guardar_historial_jugador_github] Error al obtener SHA del historial de {puuid}: {response.status_code} - {response.text}", flush=True)
             return False # Salir si no se puede obtener el SHA
     except Exception as e:
-        print(f"[guardar_historial_jugador_github] Excepción al obtener SHA del historial de {puuid}: {e}")
+        print(f"[guardar_historial_jugador_github] Excepción al obtener SHA del historial de {puuid}: {e}", flush=True)
         return False # Salir si hay una excepción
 
     contenido_json = json.dumps(historial_data, indent=2, ensure_ascii=False) # Añadido ensure_ascii=False
@@ -1021,15 +1021,15 @@ def guardar_historial_jugador_github(puuid, historial_data):
         data["sha"] = sha
 
     try:
-        print(f"[guardar_historial_jugador_github] Intentando guardar historial para {puuid} en GitHub. SHA: {sha}")
+        print(f"[guardar_historial_jugador_github] Intentando guardar historial para {puuid} en GitHub. SHA: {sha}", flush=True)
         response = requests.put(url, headers=headers, json=data, timeout=30) # Aumentado timeout
         if response.status_code in (200, 201):
-            print(f"[guardar_historial_jugador_github] Historial de {puuid}.json actualizado correctamente en GitHub. Status: {response.status_code}")
+            print(f"[guardar_historial_jugador_github] Historial de {puuid}.json actualizado correctamente en GitHub. Status: {response.status_code}", flush=True)
             success = True
         else:
-            print(f"[guardar_historial_jugador_github] ERROR: Fallo al actualizar historial de {puuid}.json: {response.status_code} - {response.text}")
+            print(f"[guardar_historial_jugador_github] ERROR: Fallo al actualizar historial de {puuid}.json: {response.status_code} - {response.text}", flush=True)
     except Exception as e:
-        print(f"[guardar_historial_jugador_github] ERROR: Excepción en la petición PUT a GitHub para el historial de {puuid}: {e}")
+        print(f"[guardar_historial_jugador_github] ERROR: Excepción en la petición PUT a GitHub para el historial de {puuid}: {e}", flush=True)
     return success
 
 def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_player):
@@ -1068,7 +1068,7 @@ def procesar_jugador(args_tuple):
     """
     cuenta, puuid, api_key_main, api_key_spectator, old_data_list, check_in_game_this_update = args_tuple
     riot_id, jugador_nombre = cuenta
-    print(f"[procesar_jugador] Procesando jugador: {riot_id}")
+    # print(f"[procesar_jugador] Procesando jugador: {riot_id}")
 
     if not puuid:
         print(f"[procesar_jugador] ADVERTENCIA: Omitiendo procesamiento para {riot_id} porque no se pudo obtener su PUUID.")
@@ -1211,6 +1211,29 @@ def actualizar_cache():
     print("[actualizar_cache] Iniciando actualización de la caché principal...")
     api_key_main = os.environ.get('RIOT_API_KEY')
     api_key_spectator = os.environ.get('RIOT_API_KEY_2', api_key_main)
+
+    # --- INICIO: CÓDIGO DE DEPURACIÓN TEMPORAL ---
+    try:
+        debug_riot_id = "T2 GumayUzi#T2G"
+        print(f"--- DEBUG: Verificando PUUID para {debug_riot_id} ---", flush=True)
+        debug_game_name, debug_tag_line = debug_riot_id.split('#')
+        debug_puuid_info = obtener_puuid(api_key_main, debug_game_name, debug_tag_line)
+        if debug_puuid_info and 'puuid' in debug_puuid_info:
+            fetched_puuid = debug_puuid_info['puuid']
+            stored_puuids = leer_puuids()
+            stored_puuid = stored_puuids.get(debug_riot_id)
+            print(f"DEBUG: PUUID recién obtenido de la API: {fetched_puuid}", flush=True)
+            print(f"DEBUG: PUUID almacenado en puuids.json: {stored_puuid}", flush=True)
+            if fetched_puuid == stored_puuid:
+                print("DEBUG: Los PUUIDs coinciden.", flush=True)
+            else:
+                print("DEBUG: ¡¡¡ALERTA!!! ¡Los PUUIDs NO COINCIDEN!", flush=True)
+        else:
+            print(f"DEBUG: Fallo al obtener el PUUID para {debug_riot_id} desde la API.", flush=True)
+        print(f"--- FIN: CÓDIGO DE DEPURACIÓN TEMPORAL ---", flush=True)
+    except Exception as e:
+        print(f"DEBUG: Ocurrió un error durante la verificación del PUUID: {e}", flush=True)
+    # --- FIN: CÓDIGO DE DEPURACIÓN TEMPORAL ---
     
     if not api_key_main:
         print("[actualizar_cache] ERROR CRÍTICO: La variable de entorno RIOT_API_KEY no está configurada. La aplicación no puede funcionar correctamente.")
@@ -1232,7 +1255,7 @@ def actualizar_cache():
     with cache_lock:
         cache['update_count'] = cache.get('update_count', 0) + 1
     check_in_game_this_update = cache['update_count'] % 2 == 1
-    print(f"[actualizar_cache] Check de partida activa en este ciclo: {check_in_game_this_update}")
+    # print(f"[actualizar_cache] Check de partida activa en este ciclo: {check_in_game_this_update}")
 
     puuid_dict = leer_puuids()
     puuids_actualizados = False
@@ -1769,13 +1792,13 @@ def actualizar_historial_partidas_en_segundo_plano():
                     # Este es un fallback, la lógica principal de detección de cambio de nombre está más abajo
                     continue
 
-                print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
+                # print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
                 # Leer el historial existente (directamente de GitHub, ya que es el hilo de escritura)
                 historial_existente = _read_player_match_history_from_github(puuid) 
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
                 remakes_guardados = set(historial_existente.get('remakes', []))
                 
-                print(f"[actualizar_historial_partidas_en_segundo_plano] Historial existente para {riot_id}: {len(ids_partidas_guardadas)} partidas guardadas, {len(remakes_guardados)} remakes.")
+                # print(f"[actualizar_historial_partidas_en_segundo_plano] Historial existente para {riot_id}: {len(ids_partidas_guardadas)} partidas guardadas, {len(remakes_guardados)} remakes.")
 
                 all_match_ids_season = []
                 for queue_id in queue_map.values():
@@ -1791,7 +1814,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                             print(f"[actualizar_historial_partidas_en_segundo_plano] No se encontraron más IDs de partida para cola {queue_id} y PUUID {puuid}.")
                             break
                         all_match_ids_season.extend(match_ids_page)
-                        print(f"[actualizar_historial_partidas_en_segundo_plano] Obtenidos {len(match_ids_page)} IDs de partida para {riot_id} (cola {queue_id}). Total de IDs de temporada hasta ahora: {len(all_match_ids_season)}.")
+                        # print(f"[actualizar_historial_partidas_en_segundo_plano] Obtenidos {len(match_ids_page)} IDs de partida para {riot_id} (cola {queue_id}). Total de IDs de temporada hasta ahora: {len(all_match_ids_season)}.")
                         if len(match_ids_page) < 100: break
                         start_index += 100
                 
@@ -1909,8 +1932,8 @@ def actualizar_historial_partidas_en_segundo_plano():
                                 match_end_ts_sec = match.get('game_end_timestamp', 0) / 1000 
                                 time_diff = detection_ts_sec - match_end_ts_sec
 
-                                # Look for matches that ended within a reasonable window (e.g., 5 minutes) BEFORE the LP detection
-                                if 0 < time_diff < 300 and time_diff < smallest_time_diff: # 300 seconds = 5 minutes
+                                # Look for matches that ended within a reasonable window (e.g., 10 minutes) BEFORE the LP detection
+                                if 0 < time_diff < 600 and time_diff < smallest_time_diff: # 600 seconds = 10 minutes
                                     smallest_time_diff = time_diff
                                     potential_match = match
 
@@ -1974,21 +1997,21 @@ def actualizar_historial_partidas_en_segundo_plano():
                 # Only save if there were new valid matches, new remakes, or pending LP updates were cleared
                 if nuevas_partidas_validas or nuevos_remakes or keys_to_clear_from_pending:
                     historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
-                    print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
+                    # print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
 
                     if nuevos_remakes:
                         remakes_guardados.update(nuevos_remakes)
                         historial_existente['remakes'] = list(remakes_guardados)
                         print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidos {len(nuevos_remakes)} remakes al historial de {riot_id}.")
                     
-                    print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.")
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.", flush=True)
                     if guardar_historial_jugador_github(puuid, historial_existente):
                         # Solo eliminar de pendientes si el guardado fue exitoso
                         with pending_lp_updates_lock:
                             for key in keys_to_clear_from_pending:
                                 if key in pending_lp_updates:
                                     del pending_lp_updates[key]
-                                    print(f"[{puuid}] [LP Associator] Actualización de LP pendiente eliminada tras guardado exitoso para {key}.")
+                                    print(f"[{puuid}] [LP Associator] Actualización de LP pendiente eliminada tras guardado exitoso para {key}.", flush=True)
 
                     # --- ACTUALIZAR LA CACHÉ EN MEMORIA DESPUÉS DE GUARDAR EN GITHUB ---
                     with PLAYER_MATCH_HISTORY_LOCK:
@@ -1996,7 +2019,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                             'data': historial_existente,
                             'timestamp': time.time()
                         }
-                        print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {puuid} actualizado y cacheado en memoria.")
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {puuid} actualizado y cacheado en memoria.", flush=True)
 
 
                     # Invalidate personal records cache for this player
