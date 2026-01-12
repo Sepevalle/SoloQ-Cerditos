@@ -19,7 +19,7 @@ def perfil_jugador(game_name):
     user_agent_string = request.headers.get('User-Agent', '').lower()
     is_mobile = any(keyword in user_agent_string for keyword in ['mobi', 'android', 'iphone', 'ipad'])
     
-    template_name = 'jugador_2.html' if is_mobile else 'jugador.html'
+    template_name = 'jugador.html'
     
     print(f"[perfil_jugador] Dispositivo detectado como {'Móvil' if is_mobile else 'Escritorio'}. Renderizando {template_name} para {game_name}.")
 

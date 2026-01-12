@@ -1211,29 +1211,6 @@ def actualizar_cache():
     print("[actualizar_cache] Iniciando actualización de la caché principal...")
     api_key_main = os.environ.get('RIOT_API_KEY')
     api_key_spectator = os.environ.get('RIOT_API_KEY_2', api_key_main)
-
-    # --- INICIO: CÓDIGO DE DEPURACIÓN TEMPORAL ---
-    try:
-        debug_riot_id = "T2 GumayUzi#T2G"
-        print(f"--- DEBUG: Verificando PUUID para {debug_riot_id} ---", flush=True)
-        debug_game_name, debug_tag_line = debug_riot_id.split('#')
-        debug_puuid_info = obtener_puuid(api_key_main, debug_game_name, debug_tag_line)
-        if debug_puuid_info and 'puuid' in debug_puuid_info:
-            fetched_puuid = debug_puuid_info['puuid']
-            stored_puuids = leer_puuids()
-            stored_puuid = stored_puuids.get(debug_riot_id)
-            print(f"DEBUG: PUUID recién obtenido de la API: {fetched_puuid}", flush=True)
-            print(f"DEBUG: PUUID almacenado en puuids.json: {stored_puuid}", flush=True)
-            if fetched_puuid == stored_puuid:
-                print("DEBUG: Los PUUIDs coinciden.", flush=True)
-            else:
-                print("DEBUG: ¡¡¡ALERTA!!! ¡Los PUUIDs NO COINCIDEN!", flush=True)
-        else:
-            print(f"DEBUG: Fallo al obtener el PUUID para {debug_riot_id} desde la API.", flush=True)
-        print(f"--- FIN: CÓDIGO DE DEPURACIÓN TEMPORAL ---", flush=True)
-    except Exception as e:
-        print(f"DEBUG: Ocurrió un error durante la verificación del PUUID: {e}", flush=True)
-    # --- FIN: CÓDIGO DE DEPURACIÓN TEMPORAL ---
     
     if not api_key_main:
         print("[actualizar_cache] ERROR CRÍTICO: La variable de entorno RIOT_API_KEY no está configurada. La aplicación no puede funcionar correctamente.")
@@ -1540,7 +1517,7 @@ def perfil_jugador(game_name):
     user_agent_string = request.headers.get('User-Agent', '').lower()
     is_mobile = any(keyword in user_agent_string for keyword in ['mobi', 'android', 'iphone', 'ipad'])
     
-    template_name = 'jugador_2.html' if is_mobile else 'jugador.html'
+    template_name = 'jugador.html'
     
     print(f"[perfil_jugador] Dispositivo detectado como {'Móvil' if is_mobile else 'Escritorio'}. Renderizando {template_name} para {game_name}.")
 
