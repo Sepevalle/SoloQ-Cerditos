@@ -1769,6 +1769,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                     # Este es un fallback, la lógica principal de detección de cambio de nombre está más abajo
                     continue
 
+                matches_con_lp_asociado = [] # Lista para guardar confirmaciones
                 # print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
                 # Leer el historial existente (directamente de GitHub, ya que es el hilo de escritura)
                 historial_existente = _read_player_match_history_from_github(puuid) 
@@ -1944,6 +1945,11 @@ def actualizar_historial_partidas_en_segundo_plano():
                             potential_match['lp_change_this_game'] = lp_change
                             print(f"[{lp_update_data['riot_id']}] [LP Associator] Cambio de LP {lp_change} asociado a la partida {potential_match['match_id']}.")
                             keys_to_clear_from_pending.append(lp_update_key)
+                            matches_con_lp_asociado.append({
+                                'match_id': potential_match['match_id'],
+                                'lp_change': lp_change,
+                                'riot_id': lp_update_data['riot_id']
+                            })
                         else:
                             print(f"[{lp_update_data['riot_id']}] [LP Associator] No se encontró una partida adecuada para asociar el cambio de LP {lp_change} (cola: {update_queue_type}).")
 
@@ -1983,12 +1989,17 @@ def actualizar_historial_partidas_en_segundo_plano():
                     
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.", flush=True)
                     if guardar_historial_jugador_github(puuid, historial_existente):
+                        # Imprimir confirmación de guardado en GitHub para cada partida con LP asociado
+                        for match_info in matches_con_lp_asociado:
+                            print(f"[{match_info['riot_id']}] [GitHub Sync] CONFIRMADO: Cambio de {match_info['lp_change']:+d} LP para la partida {match_info['match_id']} guardado en GitHub.", flush=True)
+
                         # Solo eliminar de pendientes si el guardado fue exitoso
                         with pending_lp_updates_lock:
                             for key in keys_to_clear_from_pending:
                                 if key in pending_lp_updates:
                                     del pending_lp_updates[key]
-                                    print(f"[{puuid}] [LP Associator] Actualización de LP pendiente eliminada tras guardado exitoso para {key}.", flush=True)
+                                    # La confirmación de arriba hace este log redundante
+                                    # print(f"[{puuid}] [LP Associator] Actualización de LP pendiente eliminada tras guardado exitoso para {key}.", flush=True)
 
                     # --- ACTUALIZAR LA CACHÉ EN MEMORIA DESPUÉS DE GUARDAR EN GITHUB ---
                     with PLAYER_MATCH_HISTORY_LOCK:
