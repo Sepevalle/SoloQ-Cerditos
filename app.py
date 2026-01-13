@@ -1885,11 +1885,18 @@ def actualizar_historial_partidas_en_segundo_plano():
                         print(f"[{lp_update_data['riot_id']}] [LP Associator] Intentando asociar LP pendiente para partida {match_id}.")
                         
                         # Buscar la partida directamente en el historial por su ID único
-                        target_match = next((m for m in historial_existente.get('matches', []) if m.get('match_id') == match_id), None)
+                        # con reintentos para manejar condiciones de carrera.
+                        target_match = None
+                        for attempt in range(3): # Intentar hasta 3 veces
+                            target_match = next((m for m in historial_existente.get('matches', []) if m.get('match_id') == match_id), None)
+                            if target_match:
+                                break
+                            print(f"[{lp_update_data['riot_id']}] [LP Associator] Partida {match_id} no encontrada en el intento {attempt + 1}. Esperando 2 segundos...")
+                            time.sleep(2)
 
                         # Si la partida aún no ha sido procesada y añadida al historial, se reintentará en el siguiente ciclo
                         if not target_match:
-                            print(f"[{lp_update_data['riot_id']}] [LP Associator] La partida {match_id} aún no está en el historial local. Se reintentará en el próximo ciclo.")
+                            print(f"[{lp_update_data['riot_id']}] [LP Associator] La partida {match_id} no se encontró después de varios intentos. Se reintentará en el próximo ciclo.")
                             continue
 
                         # Si la partida ya tiene LPs, es una actualización duplicada y se debe limpiar
