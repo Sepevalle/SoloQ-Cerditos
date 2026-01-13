@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from services.data_processing import obtener_datos_jugadores, leer_historial_jugador_github
 from collections import Counter
 
@@ -9,8 +9,25 @@ def estadisticas_globales():
     """Renderiza la página de estadísticas globales."""
     print("[estadisticas_globales] Petición recibida para la página de estadísticas globales.")
     
-    datos_jugadores, _ = obtener_datos_jugadores()
+    current_queue = request.args.get('queue', 'all')
+    selected_champion = request.args.get('champion', 'all')
     
+    datos_jugadores, _ = obtener_datos_jugadores(queue_type=current_queue)
+    
+    all_champions_for_filtering = set()
+    
+    # Recopilar todos los campeones de todas las partidas de todos los jugadores
+    todos_los_datos_sin_filtro, _ = obtener_datos_jugadores(queue_type='all')
+    for j in todos_los_datos_sin_filtro:
+        puuid = j.get('puuid')
+        if puuid:
+            historial = leer_historial_jugador_github(puuid)
+            for match in historial.get('matches', []):
+                if match.get('champion_name'):
+                    all_champions_for_filtering.add(match.get('champion_name'))
+    
+    champion_list = sorted(list(all_champions_for_filtering))
+
     # Stats for the first tab (by player)
     stats_por_jugador = []
     for jugador in datos_jugadores:
@@ -34,10 +51,14 @@ def estadisticas_globales():
 
     all_champions = []
     for j in datos_jugadores:
-        if 'top_champion_stats' in j:
-            for champ in j['top_champion_stats']:
-                all_champions.append(champ['champion_name'])
-    
+        puuid = j.get('puuid')
+        if puuid:
+            historial = leer_historial_jugador_github(puuid)
+            for match in historial.get('matches', []):
+                # Filtrar por campeón si se ha seleccionado uno
+                if selected_champion == 'all' or match.get('champion_name') == selected_champion:
+                    all_champions.append(match.get('champion_name'))
+
     most_played_champions = Counter(all_champions).most_common(5)
 
     player_with_most_games = None
@@ -63,6 +84,10 @@ def estadisticas_globales():
         if puuid:
             historial = leer_historial_jugador_github(puuid)
             for match in historial.get('matches', []):
+                # Aplicar filtro de campeón aquí también
+                if selected_champion != 'all' and match.get('champion_name') != selected_champion:
+                    continue
+
                 if match.get('kills') > records['Más Asesinatos']['value']:
                     records['Más Asesinatos']['value'] = match.get('kills')
                     records['Más Asesinatos']['player'] = j.get('jugador')
@@ -104,5 +129,5 @@ def estadisticas_globales():
         'records': records
     }
 
-    return render_template('estadisticas.html', stats=stats_por_jugador, global_stats=global_stats, ddragon_version="14.9.1")
+    return render_template('estadisticas.html', stats=stats_por_jugador, global_stats=global_stats, ddragon_version="14.9.1", champion_list=champion_list, selected_champion=selected_champion, current_queue=current_queue)
 

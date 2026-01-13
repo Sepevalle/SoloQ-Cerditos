@@ -79,11 +79,28 @@
     <h1 class="text-center mb-4">Estadísticas Globales de la Temporada</h1>
 
     <div class="text-center mb-4">
-        <div class="btn-group" role="group" aria-label="Filtro de Cola">
-            <a href="{{ url_for('estadisticas_globales', queue='all') }}" class="btn btn-outline-primary {% if current_queue == 'all' %}active{% endif %}">Todo</a>
-            <a href="{{ url_for('estadisticas_globales', queue='soloq') }}" class="btn btn-outline-primary {% if current_queue == 'soloq' %}active{% endif %}">Clasificatoria Solo/Duo</a>
-            <a href="{{ url_for('estadisticas_globales', queue='flex') }}" class="btn btn-outline-primary {% if current_queue == 'flex' %}active{% endif %}">Clasificatoria Flexible</a>
-        </div>
+        <form action="{{ url_for('stats.estadisticas_globales') }}" method="get" class="row justify-content-center align-items-center g-2">
+            <div class="col-md-3">
+                <label for="queue" class="visually-hidden">Cola</label>
+                <select name="queue" id="queue" class="form-select">
+                    <option value="all" {% if current_queue == 'all' %}selected{% endif %}>Todas las Colas</option>
+                    <option value="soloq" {% if current_queue == 'soloq' %}selected{% endif %}>Clasificatoria Solo/Duo</option>
+                    <option value="flex" {% if current_queue == 'flex' %}selected{% endif %}>Clasificatoria Flexible</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="champion" class="visually-hidden">Campeón</label>
+                <select name="champion" id="champion" class="form-select">
+                    <option value="all">Todos los campeones</option>
+                    {% for champion in champion_list %}
+                    <option value="{{ champion }}" {% if champion == selected_champion %}selected{% endif %}>{{ champion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
     </div>
 
     <ul class="nav nav-tabs" id="statsTabs" role="tablist">
@@ -98,17 +115,24 @@
     <div class="tab-content" id="statsTabsContent">
         <div class="tab-pane fade" id="personal-records" role="tabpanel" aria-labelledby="personal-records-tab">
             <div class="row mt-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label for="playerSelect" class="form-label">Seleccionar Jugador:</label>
                     <select class="form-select" id="playerSelect">
                         <option value="">-- Selecciona un jugador --</option>
                         {# Options will be populated by JavaScript #}
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label for="accountSelect" class="form-label">Seleccionar Cuenta:</label>
                     <select class="form-select" id="accountSelect" disabled>
                         <option value="">-- Selecciona una cuenta --</option>
+                        {# Options will be populated by JavaScript #}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="championSelect" class="form-label">Filtrar por Campeón:</label>
+                    <select class="form-select" id="championSelect" disabled>
+                        <option value="all">-- Todos los campeones --</option>
                         {# Options will be populated by JavaScript #}
                     </select>
                 </div>
@@ -312,6 +336,7 @@
         // --- Personal Records Tab Logic ---
         const playerSelect = document.getElementById('playerSelect');
         const accountSelect = document.getElementById('accountSelect');
+        const championSelect = document.getElementById('championSelect');
         const showPersonalRecordsBtn = document.getElementById('showPersonalRecordsBtn');
         const personalRecordsDisplay = document.getElementById('personalRecordsDisplay');
 
@@ -342,7 +367,9 @@
         // Function to populate accountSelect based on player selection
         playerSelect.addEventListener('change', function() {
             accountSelect.innerHTML = '<option value="">-- Selecciona una cuenta --</option>'; // Clear previous options
+            championSelect.innerHTML = '<option value="all">-- Todos los campeones --</option>'; // Reset champion select
             accountSelect.disabled = true;
+            championSelect.disabled = true;
             showPersonalRecordsBtn.disabled = true;
             personalRecordsDisplay.innerHTML = ''; // Clear displayed records
 
@@ -358,23 +385,58 @@
             }
         });
 
-        // Enable show button when an account is selected
+        // Function to fetch and populate championSelect
+        async function fetchPlayerChampions(puuid) {
+            championSelect.innerHTML = '<option value="all">-- Todos los campeones --</option>'; // Reset
+            championSelect.disabled = true;
+
+            if (!puuid) return;
+
+            try {
+                const response = await fetch(`/api/player/${puuid}/champions`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const champions = await response.json();
+                champions.forEach(champion => {
+                    const option = document.createElement('option');
+                    option.value = champion;
+                    option.textContent = champion;
+                    championSelect.appendChild(option);
+                });
+                championSelect.disabled = false;
+            } catch (error) {
+                console.error('Error fetching player champions:', error);
+            }
+        }
+
+        // Enable show button and fetch champions when an account is selected
         accountSelect.addEventListener('change', function() {
-            showPersonalRecordsBtn.disabled = !accountSelect.value;
+            const selectedPuuid = accountSelect.value;
+            showPersonalRecordsBtn.disabled = !selectedPuuid;
             personalRecordsDisplay.innerHTML = ''; // Clear displayed records
+            fetchPlayerChampions(selectedPuuid);
         });
 
         // Function to fetch and display personal records
         showPersonalRecordsBtn.addEventListener('click', async function() {
             const selectedPuuid = accountSelect.value;
+            const selectedChampion = championSelect.value;
+
             if (!selectedPuuid) {
                 personalRecordsDisplay.innerHTML = '<p class="text-warning">Por favor, selecciona una cuenta.</p>';
                 return;
             }
 
             personalRecordsDisplay.innerHTML = '<p class="text-info">Cargando récords personales...</p>';
+            
+            let url = `/api/personal_records/${selectedPuuid}`;
+            if (selectedChampion && selectedChampion !== 'all') {
+                url += `?champion=${encodeURIComponent(selectedChampion)}`;
+            }
+
             try {
-                const response = await fetch(`/api/personal_records/${selectedPuuid}`);
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -402,6 +464,7 @@
 
                 // Helper function for thousands separator
                 function formatNumberWithThousandsSeparator(num) {
+                    if (num === null || num === undefined) return 'N/A';
                     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                 }
 

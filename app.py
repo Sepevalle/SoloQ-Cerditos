@@ -2351,27 +2351,34 @@ def estadisticas_globales():
 
 
 # Se ha modificado la firma de la función para aceptar `player_display_name` y `riot_id`.
-def _get_player_personal_records(puuid, player_display_name, riot_id):
+def _get_player_personal_records(puuid, player_display_name, riot_id, champion_filter=None):
     """Calcula y devuelve los récords personales de un jugador.
     Utiliza caché para minimizar el consumo de CPU.
     """
-    print(f"[_get_player_personal_records] Solicitud de récords personales para PUUID: {puuid}, Jugador: {player_display_name}, Riot ID: {riot_id}")
+    print(f"[_get_player_personal_records] Solicitud de récords personales para PUUID: {puuid}, Jugador: {player_display_name}, Riot ID: {riot_id}, Campeón: {champion_filter or 'Todos'}")
+
+    # Generate a cache key based on puuid and champion filter
+    cache_key = f"{puuid}_{champion_filter or 'all'}"
 
     with PERSONAL_RECORDS_LOCK:
-        cached_data = PERSONAL_RECORDS_CACHE['data'].get(puuid)
-        cache_timestamp = PERSONAL_RECORDS_CACHE['timestamp']
+        cached_data = PERSONAL_RECORDS_CACHE['data'].get(cache_key)
+        cache_timestamp = PERSONAL_RECORDS_CACHE.get('timestamp', 0)
 
         # Check if cached data exists and is not stale
         if cached_data and (time.time() - cache_timestamp < PERSONAL_RECORDS_UPDATE_INTERVAL):
-            print(f"[_get_player_personal_records] Devolviendo récords personales cacheados para PUUID: {puuid}.")
+            print(f"[_get_player_personal_records] Devolviendo récords personales cacheados para: {cache_key}.")
             return cached_data
 
-    print(f"[_get_player_personal_records] Calculando récords personales para PUUID: {puuid} (no cacheados o estancados).")
-    # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
+    print(f"[_get_player_personal_records] Calculando récords personales para: {cache_key} (no cacheados o estancados).")
     historial = get_player_match_history(puuid) 
     all_matches_for_player = historial.get('matches', [])
 
-    # Initialize personal records with default values
+    # Filter matches by champion if a filter is provided
+    if champion_filter:
+        filtered_matches = [m for m in all_matches_for_player if m.get('champion_name') == champion_filter]
+    else:
+        filtered_matches = all_matches_for_player
+
     personal_records = {
         'longest_game': {'value': 0, 'match_id': None, 'game_date': 0, 'champion_name': 'N/A', 'kda': 0, 'achieved_timestamp': 0, 'game_duration': 0, 'kills': 0, 'deaths': 0, 'assists': 0, 'riot_id': 'N/A', 'player': 'N/A', 'champion_id': 'N/A'},
         'most_kills': {'value': 0, 'match_id': None, 'game_date': 0, 'champion_name': 'N/A', 'kda': 0, 'achieved_timestamp': 0, 'game_duration': 0, 'kills': 0, 'deaths': 0, 'assists': 0, 'riot_id': 'N/A', 'player': 'N/A', 'champion_id': 'N/A'},
@@ -2403,13 +2410,10 @@ def _get_player_personal_records(puuid, player_display_name, riot_id):
         'most_penta_kills': {'value': 0, 'match_id': None, 'game_date': 0, 'champion_name': 'N/A', 'kda': 0, 'achieved_timestamp': 0, 'game_duration': 0, 'kills': 0, 'deaths': 0, 'assists': 0, 'riot_id': 'N/A', 'player': 'N/A', 'champion_id': 'N/A'},
     }
 
-    # Asegurarse de que cada partida tenga el nombre del jugador y el riot_id
-    # Esto es CRUCIAL para que _create_record_dict pueda poblar los campos 'player' y 'riot_id'
-    for match in all_matches_for_player:
+    for match in filtered_matches:
         match['jugador_nombre'] = player_display_name
         match['riot_id'] = riot_id
 
-        # Update records with tie-breaking logic using _update_record
         personal_records['longest_game'] = _update_record(personal_records['longest_game'], match.get('game_duration', 0), match, 'longest_game')
         personal_records['most_kills'] = _update_record(personal_records['most_kills'], match.get('kills', 0), match, 'most_kills')
         personal_records['most_deaths'] = _update_record(personal_records['most_deaths'], match.get('deaths', 0), match, 'most_deaths')
@@ -2425,25 +2429,46 @@ def _get_player_personal_records(puuid, player_display_name, riot_id):
         personal_records['largest_killing_spree'] = _update_record(personal_records['largest_killing_spree'], match.get('largest_killing_spree', 0), match, 'largest_killing_spree')
         personal_records['largest_multikill'] = _update_record(personal_records['largest_multikill'], match.get('largestMultiKill', 0), match, 'largest_multikill')
         personal_records['most_time_spent_dead'] = _update_record(personal_records['most_time_spent_dead'], match.get('total_time_spent_dead', 0), match, 'most_time_spent_dead')
-        personal_records['most_wards_placed'] = _update_record(personal_records['most_wards_placed'], match.get('wards_placed', 0), match, 'most_wards_placed') # Corregido a 'wards_placed'
+        personal_records['most_wards_placed'] = _update_record(personal_records['most_wards_placed'], match.get('wards_placed', 0), match, 'most_wards_placed')
         personal_records['most_wards_killed'] = _update_record(personal_records['most_wards_killed'], match.get('wards_killed', 0), match, 'most_wards_killed')
-        personal_records['most_turret_kills'] = _update_record(personal_records['most_turret_kills'], match.get('turret_kills', 0), match, 'most_turret_kills') # Corregido a 'turret_kills'
-        personal_records['most_inhibitor_kills'] = _update_record(personal_records['most_inhibitor_kills'], match.get('inhibitor_kills', 0), match, 'most_inhibitor_kills') # Corregido a 'inhibitor_kills'
-        personal_records['most_baron_kills'] = _update_record(personal_records['most_baron_kills'], match.get('baron_kills', 0), match, 'most_baron_kills') # Corregido a 'baron_kills'
-        personal_records['most_dragon_kills'] = _update_record(personal_records['most_dragon_kills'], match.get('dragon_kills', 0), match, 'most_dragon_kills') # Corregido a 'dragon_kills'
+        personal_records['most_turret_kills'] = _update_record(personal_records['most_turret_kills'], match.get('turret_kills', 0), match, 'most_turret_kills')
+        personal_records['most_inhibitor_kills'] = _update_record(personal_records['most_inhibitor_kills'], match.get('inhibitor_kills', 0), match, 'most_inhibitor_kills')
+        personal_records['most_baron_kills'] = _update_record(personal_records['most_baron_kills'], match.get('baron_kills', 0), match, 'most_baron_kills')
+        personal_records['most_dragon_kills'] = _update_record(personal_records['most_dragon_kills'], match.get('dragon_kills', 0), match, 'most_dragon_kills')
         personal_records['most_damage_taken'] = _update_record(personal_records['most_damage_taken'], match.get('total_damage_taken', 0), match, 'most_damage_taken')
-        personal_records['most_total_heal'] = _update_record(personal_records['most_total_heal'], match.get('total_heal', 0), match, 'most_total_heal') # Corregido a 'total_heal'
-        personal_records['most_damage_shielded_on_teammates'] = _update_record(personal_records['most_damage_shielded_on_teammates'], match.get('total_damage_shielded_on_teammates', 0), match, 'most_damage_shielded_on_teammates') # Corregido a 'total_damage_shielded_on_teammates'
-        personal_records['most_time_ccing_others'] = _update_record(personal_records['most_time_ccing_others'], match.get('time_ccing_others', 0), match, 'most_time_ccing_others') # Corregido a 'time_ccing_others'
-        personal_records['most_objectives_stolen'] = _update_record(personal_records['most_objectives_stolen'], match.get('objectives_stolen', 0), match, 'most_objectives_stolen') # Corregido a 'objectives_stolen'
+        personal_records['most_total_heal'] = _update_record(personal_records['most_total_heal'], match.get('total_heal', 0), match, 'most_total_heal')
+        personal_records['most_damage_shielded_on_teammates'] = _update_record(personal_records['most_damage_shielded_on_teammates'], match.get('total_damage_shielded_on_teammates', 0), match, 'most_damage_shielded_on_teammates')
+        personal_records['most_time_ccing_others'] = _update_record(personal_records['most_time_ccing_others'], match.get('time_ccing_others', 0), match, 'most_time_ccing_others')
+        personal_records['most_objectives_stolen'] = _update_record(personal_records['most_objectives_stolen'], match.get('objectives_stolen', 0), match, 'most_objectives_stolen')
         personal_records['highest_kill_participation'] = _update_record(personal_records['highest_kill_participation'], match.get('kill_participation', 0), match, 'highest_kill_participation')
         personal_records['most_double_kills'] = _update_record(personal_records['most_double_kills'], match.get('doubleKills', 0), match, 'most_double_kills') 
         personal_records['most_triple_kills'] = _update_record(personal_records['most_triple_kills'], match.get('tripleKills', 0), match, 'most_triple_kills')  
         personal_records['most_quadra_kills'] = _update_record(personal_records['most_quadra_kills'], match.get('quadraKills', 0), match, 'most_quadra_kills')  
         personal_records['most_penta_kills'] = _update_record(personal_records['most_penta_kills'], match.get('pentaKills', 0), match, 'most_penta_kills')    
         
-    print(f"[_get_player_personal_records] Récords personales calculados para PUUID: {puuid}.")
+    print(f"[_get_player_personal_records] Récords personales calculados para: {cache_key}.")
+    
+    # Cache the newly calculated records
+    with PERSONAL_RECORDS_LOCK:
+        PERSONAL_RECORDS_CACHE['data'][cache_key] = personal_records
+        PERSONAL_RECORDS_CACHE['timestamp'] = time.time() # Update timestamp on new calculation
+    
     return personal_records
+
+@app.route('/api/player/<puuid>/champions')
+def get_player_champions(puuid):
+    """API endpoint to get the list of champions a player has played."""
+    print(f"[get_player_champions] Petición recibida para los campeones del PUUID: {puuid}.")
+    if not puuid:
+        return jsonify({"error": "PUUID no proporcionado"}), 400
+
+    historial = get_player_match_history(puuid)
+    matches = historial.get('matches', [])
+    
+    champions = sorted(list(set(m['champion_name'] for m in matches if 'champion_name' in m)))
+    
+    print(f"[get_player_champions] Devolviendo {len(champions)} campeones únicos para el PUUID: {puuid}.")
+    return jsonify(champions)
 
 @app.route('/api/personal_records/<puuid>')
 def get_personal_records_api(puuid):
@@ -2452,10 +2477,13 @@ def get_personal_records_api(puuid):
     """
     print(f"[get_personal_records_api] Petición recibida para PUUID: {puuid}.")
     
+    champion_filter = request.args.get('champion')
+    if champion_filter == 'all':
+        champion_filter = None
+
     player_display_name = "Desconocido"
     riot_id = "Desconocido"
 
-    # Buscar el nombre del jugador y riot_id en la caché de datos de jugadores
     datos_jugadores, _ = obtener_datos_jugadores()
     for jugador_info in datos_jugadores:
         if jugador_info.get('puuid') == puuid:
@@ -2467,20 +2495,19 @@ def get_personal_records_api(puuid):
         print("[get_personal_records_api] Error: PUUID no proporcionado.")
         return jsonify({"error": "PUUID no proporcionado"}), 400
 
-    personal_records = _get_player_personal_records(puuid, player_display_name, riot_id)
+    personal_records = _get_player_personal_records(puuid, player_display_name, riot_id, champion_filter=champion_filter)
     
     if personal_records:
-        print(f"[get_personal_records_api] Récords personales cargados para PUUID: {puuid}.")
-        # Convertir el diccionario de récords a una lista de diccionarios para facilitar el consumo en JS
+        print(f"[get_personal_records_api] Récords personales cargados para PUUID: {puuid} (Campeón: {champion_filter or 'Todos'}).")
         records_list = []
         for record_type, record_data in personal_records.items():
-            # Añadir el tipo de récord a los datos para que JS pueda identificarlo
             record_data['record_type_key'] = record_type 
             records_list.append(record_data)
         return jsonify(records_list)
     else:
-        print(f"[get_personal_records_api] No se encontraron récords personales para PUUID: {puuid}.")
-        return jsonify({"message": "No se encontraron récords personales para esta cuenta."}), 404
+        print(f"[get_personal_records_api] No se encontraron récords personales para PUUID: {puuid} (Campeón: {champion_filter or 'Todos'}).")
+        return jsonify({"message": "No se encontraron récords personales para esta cuenta y filtro."}), 404
+
 
 @app.route('/records_personales')
 def records_personales_page():
