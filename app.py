@@ -2163,210 +2163,191 @@ def _update_record(current_record, new_value, new_match, record_type):
     return current_record
 
 
-def _calculate_and_cache_global_stats():
+def _calculate_stats_for_queue(all_matches, queue_id_filter):
     """
-    Calcula todas las estadísticas globales y las almacena en la caché global.
-    Esta función está optimizada para la memoria.
+    Calculates global statistics for a specific queue from a list of all matches.
     """
-    print("[_calculate_and_cache_global_stats] Iniciando el cálculo de estadísticas globales.")
+    print(f"[_calculate_stats_for_queue] Calculating stats for queue_id: {queue_id_filter or 'all'}")
 
-    # Define a default structure for a record
     def default_record():
         return {
             'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'match_id': 'N/A', 'kda': 0,
             'game_date': 0, 'game_duration': 0, 'champion_name': 'N/A',
             'champion_id': 'N/A', 'kills': 0, 'deaths': 0, 'assists': 0,
-            'achieved_timestamp': 0, 
-            'is_tied_record': False # Nuevo campo para indicar si es un récord empatado
+            'achieved_timestamp': 0, 'is_tied_record': False
         }
 
-    global_records = {
-        'longest_game': default_record(),
-        'most_kills': default_record(),
-        'most_deaths': default_record(),
-        'most_assists': default_record(),
-        'highest_kda': default_record(),
-        'most_cs': default_record(),
-        'most_damage_dealt': default_record(),
-        'most_gold_earned': default_record(),
-        'most_vision_score': default_record(),
-        'largest_killing_spree': default_record(),
-        'largest_multikill': default_record(),
-        'most_time_spent_dead': default_record(), 
-        'most_wards_placed': default_record(),
-        'most_wards_killed': default_record(),
-        'most_turret_kills': default_record(),
-        'most_inhibitor_kills': default_record(),
-        'most_baron_kills': default_record(),
-        'most_dragon_kills': default_record(),
-        'most_damage_taken': default_record(),
-        'most_total_heal': default_record(),
-        'most_damage_shielded_on_teammates': default_record(),
-        'most_time_ccing_others': default_record(), 
-        'most_objectives_stolen': default_record(),
-        'highest_kill_participation': default_record(),
-        'most_double_kills': default_record(), 
-        'most_triple_kills': default_record(),  
-        'most_quadra_kills': default_record(),  
-        'most_penta_kills': default_record(),    
-    }
-
-    current_best_values = {key: 0 for key in global_records.keys()} 
+    # Initialize records and counters for this specific queue
+    global_records = {k: default_record() for k in [
+        'longest_game', 'most_kills', 'most_deaths', 'most_assists', 'highest_kda',
+        'most_cs', 'most_damage_dealt', 'most_gold_earned', 'most_vision_score',
+        'largest_killing_spree', 'largest_multikill', 'most_time_spent_dead',
+        'most_wards_placed', 'most_wards_killed', 'most_turret_kills',
+        'most_inhibitor_kills', 'most_baron_kills', 'most_dragon_kills',
+        'most_damage_taken', 'most_total_heal', 'most_damage_shielded_on_teammates',
+        'most_time_ccing_others', 'most_objectives_stolen', 'highest_kill_participation',
+        'most_double_kills', 'most_triple_kills', 'most_quadra_kills', 'most_penta_kills'
+    ]}
+    current_best_values = {key: 0 for key in global_records.keys()}
     tied_counts = {key: 0 for key in global_records.keys()}
-
-    puuid_dict = leer_puuids()
-    cuentas = leer_cuentas()
-
     total_wins = 0
     total_losses = 0
-    total_games_global = 0
     all_champions_played = []
 
-    for riot_id, jugador_nombre in cuentas:
-        puuid = puuid_dict.get(riot_id)
-        if not puuid:
-            print(f"[_calculate_and_cache_global_stats] Saltando jugador {riot_id}: PUUID no encontrado.")
-            continue
+    # Filter matches for the specific queue
+    filtered_matches = []
+    if queue_id_filter is None:
+        filtered_matches = all_matches
+    else:
+        filtered_matches = [m for m in all_matches if m.get('queue_id') == queue_id_filter]
+    
+    total_games_in_queue = len(filtered_matches)
+    if total_games_in_queue == 0:
+        return {
+            'overall_win_rate': 0,
+            'total_games': 0,
+            'most_played_champions': [],
+            'global_records': global_records
+        }
 
-        # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
-        historial = get_player_match_history(puuid) 
-        matches = historial.get('matches', [])
+    for match in filtered_matches:
+        if match.get('win'):
+            total_wins += 1
+        else:
+            total_losses += 1
         
-        for match in matches:
-            # Filtrar partidas para que solo cuenten las de la temporada actual
-            if match.get('game_end_timestamp', 0) / 1000 < SEASON_START_TIMESTAMP:
-                continue
+        all_champions_played.append(match.get('champion_name'))
 
-            # Añadir el nombre del jugador a cada partida para referencia
-            match['jugador_nombre'] = jugador_nombre
-            match['riot_id'] = riot_id
+        records_to_check = {
+            'longest_game': match.get('game_duration', 0),
+            'most_kills': match.get('kills', 0),
+            'most_deaths': match.get('deaths', 0),
+            'most_assists': match.get('assists', 0),
+            'highest_kda': match.get('kda', 0),
+            'most_cs': match.get('total_minions_killed', 0) + match.get('neutral_minions_killed', 0),
+            'most_damage_dealt': match.get('total_damage_dealt_to_champions', 0),
+            'most_gold_earned': match.get('gold_earned', 0),
+            'most_vision_score': match.get('vision_score', 0),
+            'largest_killing_spree': match.get('largest_killing_spree', 0),
+            'largest_multikill': match.get('largestMultiKill', 0),
+            'most_time_spent_dead': match.get('total_time_spent_dead', 0),
+            'most_wards_placed': match.get('wards_placed', 0),
+            'most_wards_killed': match.get('wards_killed', 0),
+            'most_turret_kills': match.get('turret_kills', 0),
+            'most_inhibitor_kills': match.get('inhibitor_kills', 0),
+            'most_baron_kills': match.get('baron_kills', 0),
+            'most_dragon_kills': match.get('dragon_kills', 0),
+            'most_damage_taken': match.get('total_damage_taken', 0),
+            'most_total_heal': match.get('total_heal', 0),
+            'most_damage_shielded_on_teammates': match.get('total_damage_shielded_on_teammates', 0),
+            'most_time_ccing_others': match.get('time_ccing_others', 0),
+            'most_objectives_stolen': match.get('objectives_stolen', 0),
+            'highest_kill_participation': match.get('kill_participation', 0),
+            'most_double_kills': match.get('doubleKills', 0),
+            'most_triple_kills': match.get('tripleKills', 0),
+            'most_quadra_kills': match.get('quadraKills', 0),
+            'most_penta_kills': match.get('pentaKills', 0),
+        }
 
-            total_games_global += 1
-            if match.get('win'):
-                total_wins += 1
-            else:
-                total_losses += 1
+        for record_key, current_value in records_to_check.items():
+            if current_value > current_best_values[record_key]:
+                current_best_values[record_key] = current_value
+                tied_counts[record_key] = 1
+            elif current_value == current_best_values[record_key] and current_value > 0:
+                tied_counts[record_key] += 1
             
-            all_champions_played.append(match.get('champion_name'))
+            updated_record = _update_record(global_records[record_key], current_value, match, record_key)
+            global_records[record_key] = updated_record
+            global_records[record_key]['is_tied_record'] = (tied_counts[record_key] > 1)
 
-            records_to_check = {
-                'longest_game': match.get('game_duration', 0),
-                'most_kills': match.get('kills', 0),
-                'most_deaths': match.get('deaths', 0), 
-                'most_assists': match.get('assists', 0),
-                'highest_kda': match.get('kda', 0),
-                'most_cs': match.get('total_minions_killed', 0) + match.get('neutral_minions_killed', 0),
-                'most_damage_dealt': match.get('total_damage_dealt_to_champions', 0),
-                'most_gold_earned': match.get('gold_earned', 0),
-                'most_vision_score': match.get('vision_score', 0),
-                'largest_killing_spree': match.get('largest_killing_spree', 0),
-                'largest_multikill': match.get('largestMultiKill', 0),
-                'most_time_spent_dead': match.get('total_time_spent_dead', 0), 
-                'most_wards_placed': match.get('wards_placed', 0), # Corrected
-                'most_wards_killed': match.get('wards_killed', 0),
-                'most_turret_kills': match.get('turret_kills', 0), # Corrected
-                'most_inhibitor_kills': match.get('inhibitor_kills', 0), # Corrected
-                'most_baron_kills': match.get('baron_kills', 0), # Corrected
-                'most_dragon_kills': match.get('dragon_kills', 0), # Corrected
-                'most_damage_taken': match.get('total_damage_taken', 0),
-                'most_total_heal': match.get('total_heal', 0), # Corrected
-                'most_damage_shielded_on_teammates': match.get('total_damage_shielded_on_teammates', 0), # Corrected
-                'most_time_ccing_others': match.get('time_ccing_others', 0), # Corrected
-                'most_objectives_stolen': match.get('objectives_stolen', 0), # Corrected
-                'highest_kill_participation': match.get('kill_participation', 0),
-                'most_double_kills': match.get('doubleKills', 0), 
-                'most_triple_kills': match.get('tripleKills', 0),  
-                'most_quadra_kills': match.get('quadraKills', 0),  
-                'most_penta_kills': match.get('pentaKills', 0),    
-            }
+    overall_win_rate = (total_wins / total_games_in_queue * 100) if total_games_in_queue > 0 else 0
+    most_played_champions = Counter(c for c in all_champions_played if c).most_common(5)
 
-            for record_key, current_value in records_to_check.items():
-                # Update current best value and tie count
-                if current_value > current_best_values[record_key]:
-                    current_best_values[record_key] = current_value
-                    tied_counts[record_key] = 1 
-                elif current_value == current_best_values[record_key]:
-                    tied_counts[record_key] += 1 
-                
-                # Update the global_records with the best match found so far
-                updated_record = _update_record(global_records[record_key], current_value, match, record_key)
-                global_records[record_key] = updated_record
-                
-                # Set the tied record flag based on the count
-                global_records[record_key]['is_tied_record'] = (tied_counts[record_key] > 1)
-
-
-    overall_win_rate = (total_wins / total_games_global * 100) if total_games_global > 0 else 0
-    most_played_champions = Counter(all_champions_played).most_common(5)
-
-    global_stats_data = {
+    return {
         'overall_win_rate': overall_win_rate,
-        'total_games': total_games_global,
+        'total_games': total_games_in_queue,
         'most_played_champions': most_played_champions,
         'global_records': global_records
     }
 
+def _calculate_and_cache_global_stats():
+    """
+    Calcula todas las estadísticas globales para diferentes colas y las almacena en la caché global.
+    """
+    print("[_calculate_and_cache_global_stats] Iniciando el cálculo de estadísticas globales para todas las colas.")
+
+    puuid_dict = leer_puuids()
+    cuentas = leer_cuentas()
+    all_matches = []
+
+    for riot_id, jugador_nombre in cuentas:
+        puuid = puuid_dict.get(riot_id)
+        if not puuid:
+            continue
+
+        historial = get_player_match_history(puuid)
+        matches = historial.get('matches', [])
+        
+        for match in matches:
+            if match.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP:
+                match['jugador_nombre'] = jugador_nombre
+                match['riot_id'] = riot_id
+                all_matches.append(match)
+    
+    # Define the queue filters
+    queue_filters = {
+        'all': None,
+        'soloq': 420,
+        'flex': 440
+    }
+    
+    # Calculate stats for each queue
+    all_stats = {}
+    for queue_name, queue_id in queue_filters.items():
+        all_stats[queue_name] = _calculate_stats_for_queue(all_matches, queue_id)
+
     with GLOBAL_STATS_LOCK:
-        GLOBAL_STATS_CACHE['data'] = global_stats_data
+        GLOBAL_STATS_CACHE['data'] = all_stats
         GLOBAL_STATS_CACHE['timestamp'] = time.time()
-    print("[_calculate_and_cache_global_stats] Cálculo de estadísticas globales completado y caché actualizada.")
+    print("[_calculate_and_cache_global_stats] Cálculo de estadísticas globales completado y caché actualizada para todas las colas.")
+
 
 @app.route('/estadisticas')
 def estadisticas_globales():
-    """Renderiza la página de estadísticas globales."""
+    """Renderiza la página de estadísticas globales, filtrada por tipo de cola."""
     print("[estadisticas_globales] Petición recibida para la página de estadísticas globales.")
     
+    selected_queue = request.args.get('queue', 'all').lower()
+    if selected_queue not in ['all', 'soloq', 'flex']:
+        selected_queue = 'all'
+
     with GLOBAL_STATS_LOCK:
-        global_stats = GLOBAL_STATS_CACHE['data']
+        all_global_stats = GLOBAL_STATS_CACHE['data']
         timestamp = GLOBAL_STATS_CACHE['timestamp']
 
-    # If cache is empty or too old, try to recalculate (should be handled by background thread)
-    if not global_stats or (time.time() - timestamp > GLOBAL_STATS_UPDATE_INTERVAL):
+    # If cache is empty or too old, try to recalculate
+    if not all_global_stats or (time.time() - timestamp > GLOBAL_STATS_UPDATE_INTERVAL):
         print("[estadisticas_globales] La caché de estadísticas globales está vacía o desactualizada. Intentando recalcular...")
         _calculate_and_cache_global_stats() # Force update
         with GLOBAL_STATS_LOCK:
-            global_stats = GLOBAL_STATS_CACHE['data']
+            all_global_stats = GLOBAL_STATS_CACHE['data']
+
+    # Select the stats for the chosen queue
+    global_stats = all_global_stats.get(selected_queue) if all_global_stats else None
 
     if not global_stats:
         print("[estadisticas_globales] No se pudieron cargar las estadísticas globales. Renderizando con datos vacíos.")
-        # Provide default empty data to avoid template errors
-        global_stats = {
-            'overall_win_rate': 0,
-            'total_games': 0,
-            'most_played_champions': [],
-            'global_records': {
-                'longest_game': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_deaths': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_assists': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'highest_kda': {'value': 0.0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_cs': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_damage_dealt': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_gold_earned': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_vision_score': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'largest_killing_spree': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'largest_multikill': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_time_spent_dead': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_wards_placed': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_wards_killed': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_turret_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_inhibitor_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_baron_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_dragon_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_damage_taken': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_total_heal': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_damage_shielded_on_teammates': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_time_ccing_others': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_objectives_stolen': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'highest_kill_participation': {'value': 0.0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_double_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_triple_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_quadra_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
-                'most_penta_kills': {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False},
+        # Provide default empty data structure for all queues to avoid template errors
+        def default_record_set():
+            return {
+                'overall_win_rate': 0, 'total_games': 0, 'most_played_champions': [],
+                'global_records': {k: {'value': 0, 'player': 'N/A', 'riot_id': 'N/A', 'champion_name': 'N/A', 'kda': 0, 'game_date': 0, 'game_duration': 0, 'is_tied_record': False}
+                                   for k in ['longest_game', 'most_kills', 'most_deaths', 'most_assists', 'highest_kda', 'most_cs', 'most_damage_dealt', 'most_gold_earned', 'most_vision_score', 'largest_killing_spree', 'largest_multikill', 'most_time_spent_dead', 'most_wards_placed', 'most_wards_killed', 'most_turret_kills', 'most_inhibitor_kills', 'most_baron_kills', 'most_dragon_kills', 'most_damage_taken', 'most_total_heal', 'most_damage_shielded_on_teammates', 'most_time_ccing_others', 'most_objectives_stolen', 'highest_kill_participation', 'most_double_kills', 'most_triple_kills', 'most_quadra_kills', 'most_penta_kills']}
             }
-        }
+        global_stats = default_record_set()
 
-    return render_template('estadisticas.html', global_stats=global_stats, ddragon_version=DDRAGON_VERSION)
+    return render_template('estadisticas.html', global_stats=global_stats, ddragon_version=DDRAGON_VERSION, current_queue=selected_queue)
+
 
 
 # Se ha modificado la firma de la función para aceptar `player_display_name` y `riot_id`.

@@ -29,6 +29,10 @@
         #statsTable th.th-sort-asc::after { content: ' \25B2'; opacity: 1; }
         #statsTable th.th-sort-desc::after { content: ' \25BC'; opacity: 1; }
         .card-title i { margin-right: 8px; }
+        .btn-group .btn.active {
+            background-color: #0d6efd;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -73,6 +77,14 @@
 
 <div class="container mt-5 pt-5">
     <h1 class="text-center mb-4">Estadísticas Globales de la Temporada</h1>
+
+    <div class="text-center mb-4">
+        <div class="btn-group" role="group" aria-label="Filtro de Cola">
+            <a href="{{ url_for('estadisticas_globales', queue='all') }}" class="btn btn-outline-primary {% if current_queue == 'all' %}active{% endif %}">Todo</a>
+            <a href="{{ url_for('estadisticas_globales', queue='soloq') }}" class="btn btn-outline-primary {% if current_queue == 'soloq' %}active{% endif %}">Clasificatoria Solo/Duo</a>
+            <a href="{{ url_for('estadisticas_globales', queue='flex') }}" class="btn btn-outline-primary {% if current_queue == 'flex' %}active{% endif %}">Clasificatoria Flexible</a>
+        </div>
+    </div>
 
     <ul class="nav nav-tabs" id="statsTabs" role="tablist">
         <li class="nav-item" role="presentation">
