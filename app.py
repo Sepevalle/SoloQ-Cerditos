@@ -171,6 +171,7 @@ pending_lp_updates_lock = threading.Lock()
 # Global cache for pre-calculated global statistics
 GLOBAL_STATS_CACHE = {
     "data": None,
+    "all_matches": [],
     "timestamp": 0
 }
 GLOBAL_STATS_LOCK = threading.Lock()
@@ -2163,7 +2164,7 @@ def _update_record(current_record, new_value, new_match, record_type):
     return current_record
 
 
-def _calculate_stats_for_queue(all_matches, queue_id_filter):
+def _calculate_stats_for_queue(all_matches, queue_id_filter, champion_filter=None):
     """
     Calculates global statistics for a specific queue from a list of all matches.
     """
@@ -2195,12 +2196,12 @@ def _calculate_stats_for_queue(all_matches, queue_id_filter):
     total_losses = 0
     all_champions_played = []
 
-    # Filter matches for the specific queue
-    filtered_matches = []
-    if queue_id_filter is None:
-        filtered_matches = all_matches
-    else:
-        filtered_matches = [m for m in all_matches if m.get('queue_id') == queue_id_filter]
+    # Filter matches
+    filtered_matches = all_matches
+    if champion_filter:
+        filtered_matches = [m for m in filtered_matches if m.get('champion_name') == champion_filter]
+    if queue_id_filter is not None:
+        filtered_matches = [m for m in filtered_matches if m.get('queue_id') == queue_id_filter]
     
     total_games_in_queue = len(filtered_matches)
     if total_games_in_queue == 0:
@@ -2352,6 +2353,7 @@ def _calculate_and_cache_global_stats():
 
     with GLOBAL_STATS_LOCK:
         GLOBAL_STATS_CACHE['data'] = all_stats
+        GLOBAL_STATS_CACHE['all_matches'] = all_matches
         GLOBAL_STATS_CACHE['timestamp'] = time.time()
     print("[_calculate_and_cache_global_stats] Cálculo de estadísticas globales completado y caché actualizada para todas las colas.")
 
@@ -2365,19 +2367,31 @@ def estadisticas_globales():
     if selected_queue not in ['all', 'soloq', 'flex']:
         selected_queue = 'all'
 
+    selected_champion = request.args.get('champion', 'all')
+    if selected_champion == 'all':
+        selected_champion = None
+
     with GLOBAL_STATS_LOCK:
         all_global_stats = GLOBAL_STATS_CACHE['data']
+        all_matches = GLOBAL_STATS_CACHE.get('all_matches', [])
         timestamp = GLOBAL_STATS_CACHE['timestamp']
 
     # If cache is empty or too old, try to recalculate
-    if not all_global_stats or (time.time() - timestamp > GLOBAL_STATS_UPDATE_INTERVAL):
+    if not all_global_stats or not all_matches or (time.time() - timestamp > GLOBAL_STATS_UPDATE_INTERVAL):
         print("[estadisticas_globales] La caché de estadísticas globales está vacía o desactualizada. Intentando recalcular...")
         _calculate_and_cache_global_stats() # Force update
         with GLOBAL_STATS_LOCK:
             all_global_stats = GLOBAL_STATS_CACHE['data']
+            all_matches = GLOBAL_STATS_CACHE.get('all_matches', [])
 
     # Select the stats for the chosen queue
-    global_stats = all_global_stats.get(selected_queue) if all_global_stats else None
+    if not selected_champion:
+        global_stats = all_global_stats.get(selected_queue) if all_global_stats else None
+    else:
+        queue_id_map = {'soloq': 420, 'flex': 440}
+        queue_id_filter = queue_id_map.get(selected_queue)
+        global_stats = _calculate_stats_for_queue(all_matches, queue_id_filter, champion_filter=selected_champion)
+
 
     if not global_stats:
         print("[estadisticas_globales] No se pudieron cargar las estadísticas globales. Renderizando con datos vacíos.")
@@ -2389,8 +2403,10 @@ def estadisticas_globales():
                                    for k in ['longest_game', 'most_kills', 'most_deaths', 'most_assists', 'highest_kda', 'most_cs', 'most_damage_dealt', 'most_gold_earned', 'most_vision_score', 'largest_killing_spree', 'largest_multikill', 'most_time_spent_dead', 'most_wards_placed', 'most_wards_killed', 'most_turret_kills', 'most_inhibitor_kills', 'most_baron_kills', 'most_dragon_kills', 'most_damage_taken', 'most_total_heal', 'most_damage_shielded_on_teammates', 'most_time_ccing_others', 'most_objectives_stolen', 'highest_kill_participation', 'most_double_kills', 'most_triple_kills', 'most_quadra_kills', 'most_penta_kills']}
             }
         global_stats = default_record_set()
+    
+    champion_list = sorted(list(set(m.get('champion_name') for m in all_matches if m.get('champion_name'))))
 
-    return render_template('estadisticas.html', global_stats=global_stats, ddragon_version=DDRAGON_VERSION, current_queue=selected_queue)
+    return render_template('estadisticas.html', global_stats=global_stats, ddragon_version=DDRAGON_VERSION, current_queue=selected_queue, champion_list=champion_list, selected_champion=selected_champion)
 
 
 
