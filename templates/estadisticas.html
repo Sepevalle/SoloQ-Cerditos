@@ -238,6 +238,8 @@
                                 {% elif key == 'most_triple_kills' %}<i class="fas fa-3"></i>Más Asesinatos Triples
                                 {% elif key == 'most_quadra_kills' %}<i class="fas fa-4"></i>Más Asesinatos Cuádruples
                                 {% elif key == 'most_penta_kills' %}<i class="fas fa-5"></i>Más Asesinatos Quíntuples
+                                {% elif key == 'longest_win_streak' %}<i class="fas fa-arrow-trend-up"></i>Mayor Racha de Victorias
+                                {% elif key == 'longest_loss_streak' %}<i class="fas fa-arrow-trend-down"></i>Mayor Racha de Derrotas
                                 {% endif %}
                             </h5>
                             <p class="card-text fs-4">
@@ -539,6 +541,8 @@
                     case 'most_triple_kills': iconClass = 'fas fa-3'; titleText = 'Más Asesinatos Triples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
                     case 'most_quadra_kills': iconClass = 'fas fa-4'; titleText = 'Más Asesinatos Cuádruples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
                     case 'most_penta_kills': iconClass = 'fas fa-5'; titleText = 'Más Asesinatos Quíntuples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'longest_win_streak': iconClass = 'fas fa-arrow-trend-up'; titleText = 'Mayor Racha de Victorias'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'longest_loss_streak': iconClass = 'fas fa-arrow-trend-down'; titleText = 'Mayor Racha de Derrotas'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
                     default:
                         iconClass = 'fas fa-trophy';
                         titleText = record.record_type_key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Basic formatting

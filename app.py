@@ -2186,7 +2186,8 @@ def _calculate_stats_for_queue(all_matches, queue_id_filter):
         'most_inhibitor_kills', 'most_baron_kills', 'most_dragon_kills',
         'most_damage_taken', 'most_total_heal', 'most_damage_shielded_on_teammates',
         'most_time_ccing_others', 'most_objectives_stolen', 'highest_kill_participation',
-        'most_double_kills', 'most_triple_kills', 'most_quadra_kills', 'most_penta_kills'
+        'most_double_kills', 'most_triple_kills', 'most_quadra_kills', 'most_penta_kills',
+        'longest_win_streak', 'longest_loss_streak'
     ]}
     current_best_values = {key: 0 for key in global_records.keys()}
     tied_counts = {key: 0 for key in global_records.keys()}
@@ -2209,6 +2210,49 @@ def _calculate_stats_for_queue(all_matches, queue_id_filter):
             'most_played_champions': [],
             'global_records': global_records
         }
+
+    # --- Streak Calculation ---
+    matches_by_player = defaultdict(list)
+    for match in filtered_matches:
+        matches_by_player[match['puuid']].append(match)
+
+    best_win_streak = {'value': 0, 'match': None}
+    best_loss_streak = {'value': 0, 'match': None}
+
+    for puuid, player_matches in matches_by_player.items():
+        player_matches.sort(key=lambda x: x.get('game_end_timestamp', 0))
+        streaks = calcular_rachas(player_matches)
+        
+        if streaks['max_win_streak'] > best_win_streak['value']:
+            best_win_streak['value'] = streaks['max_win_streak']
+            # Find the last match of this streak to represent the record
+            current_streak = 0
+            for match in player_matches:
+                if match.get('win'):
+                    current_streak += 1
+                    if current_streak == streaks['max_win_streak']:
+                        best_win_streak['match'] = match
+                        break
+                else:
+                    current_streak = 0
+
+        if streaks['max_loss_streak'] > best_loss_streak['value']:
+            best_loss_streak['value'] = streaks['max_loss_streak']
+            current_streak = 0
+            for match in player_matches:
+                if not match.get('win'):
+                    current_streak += 1
+                    if current_streak == streaks['max_loss_streak']:
+                        best_loss_streak['match'] = match
+                        break
+                else:
+                    current_streak = 0
+    
+    if best_win_streak['match']:
+        global_records['longest_win_streak'] = _update_record(global_records['longest_win_streak'], best_win_streak['value'], best_win_streak['match'], 'longest_win_streak')
+    if best_loss_streak['match']:
+        global_records['longest_loss_streak'] = _update_record(global_records['longest_loss_streak'], best_loss_streak['value'], best_loss_streak['match'], 'longest_loss_streak')
+    # --- End Streak Calculation ---
 
     for match in filtered_matches:
         if match.get('win'):
@@ -2408,12 +2452,50 @@ def _get_player_personal_records(puuid, player_display_name, riot_id, champion_f
         'most_triple_kills': {'value': 0, 'match_id': None, 'game_date': 0, 'champion_name': 'N/A', 'kda': 0, 'achieved_timestamp': 0, 'game_duration': 0, 'kills': 0, 'deaths': 0, 'assists': 0, 'riot_id': 'N/A', 'player': 'N/A', 'champion_id': 'N/A'},
         'most_quadra_kills': {'value': 0, 'match_id': None, 'game_date': 0, 'champion_name': 'N/A', 'kda': 0, 'achieved_timestamp': 0, 'game_duration': 0, 'kills': 0, 'deaths': 0, 'assists': 0, 'riot_id': 'N/A', 'player': 'N/A', 'champion_id': 'N/A'},
         'most_penta_kills': {'value': 0, 'match_id': None, 'game_date': 0, 'champion_name': 'N/A', 'kda': 0, 'achieved_timestamp': 0, 'game_duration': 0, 'kills': 0, 'deaths': 0, 'assists': 0, 'riot_id': 'N/A', 'player': 'N/A', 'champion_id': 'N/A'},
+        'longest_win_streak': {'value': 0, 'match_id': None, 'game_date': 0, 'champion_name': 'N/A', 'kda': 0, 'achieved_timestamp': 0, 'game_duration': 0, 'kills': 0, 'deaths': 0, 'assists': 0, 'riot_id': 'N/A', 'player': 'N/A', 'champion_id': 'N/A'},
+        'longest_loss_streak': {'value': 0, 'match_id': None, 'game_date': 0, 'champion_name': 'N/A', 'kda': 0, 'achieved_timestamp': 0, 'game_duration': 0, 'kills': 0, 'deaths': 0, 'assists': 0, 'riot_id': 'N/A', 'player': 'N/A', 'champion_id': 'N/A'},
     }
 
     for match in filtered_matches:
         match['jugador_nombre'] = player_display_name
         match['riot_id'] = riot_id
+    
+    # Sort matches by game end time, from oldest to newest for streak calculation
+    filtered_matches.sort(key=lambda x: x.get('game_end_timestamp', 0))
 
+    streaks = calcular_rachas(filtered_matches)
+    if streaks['max_win_streak'] > 0:
+        # Find the last match of the longest win streak to represent the record
+        win_streak_end_match = None
+        current_streak = 0
+        for match in filtered_matches:
+            if match.get('win'):
+                current_streak += 1
+                if current_streak == streaks['max_win_streak']:
+                    win_streak_end_match = match
+                    break
+            else:
+                current_streak = 0
+        if win_streak_end_match:
+            personal_records['longest_win_streak'] = _update_record(personal_records['longest_win_streak'], streaks['max_win_streak'], win_streak_end_match, 'longest_win_streak')
+
+    if streaks['max_loss_streak'] > 0:
+        # Find the last match of the longest loss streak
+        loss_streak_end_match = None
+        current_streak = 0
+        for match in filtered_matches:
+            if not match.get('win'):
+                current_streak += 1
+                if current_streak == streaks['max_loss_streak']:
+                    loss_streak_end_match = match
+                    break
+            else:
+                current_streak = 0
+        if loss_streak_end_match:
+            personal_records['longest_loss_streak'] = _update_record(personal_records['longest_loss_streak'], streaks['max_loss_streak'], loss_streak_end_match, 'longest_loss_streak')
+
+
+    for match in filtered_matches:
         personal_records['longest_game'] = _update_record(personal_records['longest_game'], match.get('game_duration', 0), match, 'longest_game')
         personal_records['most_kills'] = _update_record(personal_records['most_kills'], match.get('kills', 0), match, 'most_kills')
         personal_records['most_deaths'] = _update_record(personal_records['most_deaths'], match.get('deaths', 0), match, 'most_deaths')
