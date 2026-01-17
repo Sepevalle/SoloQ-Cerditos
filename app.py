@@ -579,6 +579,7 @@ def obtener_info_partida(args):
                 resolved_champion_name = champion_name_from_api
 
             participant_summary = {
+                "puuid": p.get('puuid'),
                 "summoner_name": p.get('riotIdGameName', p.get('summonerName')),
                 "champion_name": resolved_champion_name,
                 "win": p.get('win', False),
@@ -1383,6 +1384,12 @@ def actualizar_cache():
         jugador['wins'] = sum(1 for p in partidas_jugador if p.get('win'))
         jugador['losses'] = len(partidas_jugador) - jugador['wins']
 
+        # Calcular KDA general para la temporada
+        total_kills = sum(p.get('kills', 0) for p in partidas_jugador)
+        total_deaths = sum(p.get('deaths', 0) for p in partidas_jugador)
+        total_assists = sum(p.get('assists', 0) for p in partidas_jugador)
+        jugador['kda'] = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
+
         if not partidas_jugador:
             continue
 
@@ -1549,6 +1556,94 @@ def index():
                            ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=DDRAGON_VERSION, 
                            split_activo_nombre=split_activo_nombre)
+
+@app.route('/h2h')
+def h2h():
+    """Renderiza la página de comparación H2H y calcula los datos on-demand."""
+    print("[h2h] Petición recibida para la página de H2H.")
+    
+    datos_jugadores, _ = obtener_datos_jugadores()
+    
+    player_map = {}
+    for p in datos_jugadores:
+        if p.get('puuid') not in player_map:
+            # Solo nos interesa una entrada por jugador para el selector
+            player_map[p['puuid']] = {
+                'puuid': p['puuid'],
+                'jugador': p['jugador'],
+                'game_name': p['game_name']
+            }
+    
+    players_for_selector = sorted(player_map.values(), key=lambda x: x['jugador'])
+
+    player1_puuid = request.args.get('player1')
+    player2_puuid = request.args.get('player2')
+    
+    comparison_data = None
+
+    if player1_puuid and player2_puuid and player1_puuid != player2_puuid:
+        print(f"[h2h] Calculando comparación entre {player1_puuid} y {player2_puuid}")
+        
+        player1_base_data = player_map.get(player1_puuid)
+        player2_base_data = player_map.get(player2_puuid)
+
+        if player1_base_data and player2_base_data:
+            historial1 = _read_player_match_history_from_github(player1_puuid, riot_id=player1_base_data['game_name'])
+            historial2 = _read_player_match_history_from_github(player2_puuid, riot_id=player2_base_data['game_name'])
+            
+            matches1_ids = {m['match_id'] for m in historial1.get('matches', [])}
+            matches2_ids = {m['match_id'] for m in historial2.get('matches', [])}
+            common_match_ids = matches1_ids.intersection(matches2_ids)
+            print(f"[h2h] Se encontraron {len(common_match_ids)} partidas en común.")
+
+            h2h_stats = {'player1_wins': 0, 'player2_wins': 0}
+            if common_match_ids:
+                common_matches_details = [m for m in historial1.get('matches', []) if m['match_id'] in common_match_ids]
+                
+                for match in common_matches_details:
+                    p1_info = None
+                    p2_info = None
+                    
+                    for p in match.get('all_participants', []):
+                        if p.get('puuid') == player1_puuid:
+                            p1_info = p
+                        elif p.get('puuid') == player2_puuid:
+                            p2_info = p
+                    
+                    if not p1_info or not p2_info:
+                        p1_info_by_name = next((p for p in match.get('all_participants', []) if p.get('summoner_name') == player1_base_data['game_name'].split('#')[0]), None)
+                        p2_info_by_name = next((p for p in match.get('all_participants', []) if p.get('summoner_name') == player2_base_data['game_name'].split('#')[0]), None)
+                        if p1_info_by_name and p2_info_by_name:
+                            p1_info = p1_info_by_name
+                            p2_info = p2_info_by_name
+
+                    if p1_info and p2_info and p1_info.get('team_id') != p2_info.get('team_id'):
+                        if p1_info.get('win'):
+                            h2h_stats['player1_wins'] += 1
+                        else:
+                            h2h_stats['player2_wins'] += 1
+            
+            def get_player_stats(puuid, base_data):
+                stats_list = [d for d in datos_jugadores if d.get('puuid') == puuid]
+                soloq_stats = next((s for s in stats_list if s.get('queue_type') == 'RANKED_SOLO_5x5'), {})
+                
+                total_soloq_games = soloq_stats.get('wins', 0) + soloq_stats.get('losses', 0)
+                
+                return {
+                    'jugador': base_data['jugador'],
+                    'game_name': base_data['game_name'],
+                    'soloq': soloq_stats,
+                    'soloq_winrate': (soloq_stats.get('wins', 0) / total_soloq_games * 100) if total_soloq_games > 0 else 0,
+                    'soloq_kda': soloq_stats.get('kda', 0.0)
+                }
+
+            comparison_data = {
+                'player1': get_player_stats(player1_puuid, player1_base_data),
+                'player2': get_player_stats(player2_puuid, player2_base_data),
+                'h2h': h2h_stats
+            }
+
+    return render_template('h2h.html', players=players_for_selector, comparison_data=comparison_data)
 
 @app.route('/api/players_and_accounts')
 def get_players_and_accounts():
