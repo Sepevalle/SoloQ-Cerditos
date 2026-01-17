@@ -12,6 +12,7 @@
     <style>
         body {
             transition: background-color 0.3s, color 0.3s;
+            padding-top: 70px;
         }
         .dark-mode {
             background-color: #121212;
@@ -33,19 +34,19 @@
             padding: 20px;
             background-color: #212529;
             border-radius: 8px;
-            margin-top: 80px;
         }
         .dark-mode .h2h-container {
             background-color: #343a40;
         }
         .player-selector {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
             gap: 20px;
             margin-bottom: 30px;
         }
-        .player-selector select {
+        .player-selector select, .player-selector button {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #444;
@@ -54,12 +55,8 @@
             font-size: 16px;
         }
         .player-selector button {
-            padding: 10px 20px;
-            border-radius: 5px;
             border: none;
             background-color: #007bff;
-            color: white;
-            font-size: 16px;
             cursor: pointer;
         }
         .comparison-grid {
@@ -136,15 +133,19 @@
         <select name="player1" id="player1">
             <option value="">Selecciona Jugador 1</option>
             {% for player in players %}
-            <option value="{{ player.puuid }}" {% if request.args.get('player1') == player.puuid %}selected{% endif %}>{{ player.jugador }} ({{ player.game_name }})</option>
+            <option value="{{ player.puuid }}" {% if request.args.get('player1') == player.puuid %}selected{% endif %}>{{ player.jugador }}</option>
             {% endfor %}
         </select>
         <span>VS</span>
         <select name="player2" id="player2">
             <option value="">Selecciona Jugador 2</option>
             {% for player in players %}
-            <option value="{{ player.puuid }}" {% if request.args.get('player2') == player.puuid %}selected{% endif %}>{{ player.jugador }} ({{ player.game_name }})</option>
+            <option value="{{ player.puuid }}" {% if request.args.get('player2') == player.puuid %}selected{% endif %}>{{ player.jugador }}</option>
             {% endfor %}
+        </select>
+        <select name="queue_type" id="queue_type">
+            <option value="RANKED_SOLO_5x5" {% if selected_queue == 'RANKED_SOLO_5x5' %}selected{% endif %}>SoloQ</option>
+            <option value="RANKED_FLEX_SR" {% if selected_queue == 'RANKED_FLEX_SR' %}selected{% endif %}>Flex</option>
         </select>
         <button type="submit">Comparar</button>
     </form>
@@ -163,31 +164,30 @@
         </div>
 
         <!-- Stats -->
-        <div class="stat-value">{{ comparison_data.player1.soloq.tier }} {{ comparison_data.player1.soloq.rank }}</div>
-        <div class="stat-label">SoloQ Rank</div>
-        <div class="stat-value">{{ comparison_data.player2.soloq.tier }} {{ comparison_data.player2.soloq.rank }}</div>
+        <div class="stat-value">{{ comparison_data.player1.stats.tier }} {{ comparison_data.player1.stats.rank }}</div>
+        <div class="stat-label">Rank</div>
+        <div class="stat-value">{{ comparison_data.player2.stats.tier }} {{ comparison_data.player2.stats.rank }}</div>
         
-        <div class="stat-value">{{ comparison_data.player1.soloq.league_points }} LP</div>
-        <div class="stat-label">SoloQ LP</div>
-        <div class="stat-value">{{ comparison_data.player2.soloq.league_points }} LP</div>
+        <div class="stat-value">{{ comparison_data.player1.stats.league_points }} LP</div>
+        <div class="stat-label">LP</div>
+        <div class="stat-value">{{ comparison_data.player2.stats.league_points }} LP</div>
 
-        <div class="stat-value">{{ "%.2f"|format(comparison_data.player1.soloq_kda) }}</div>
-        <div class="stat-label">SoloQ KDA</div>
-        <div class="stat-value">{{ "%.2f"|format(comparison_data.player2.soloq_kda) }}</div>
+        <div class="stat-value">{{ "%.2f"|format(comparison_data.player1.kda) }}</div>
+        <div class="stat-label">KDA</div>
+        <div class="stat-value">{{ "%.2f"|format(comparison_data.player2.kda) }}</div>
 
-        <div class="stat-value">{{ "%.1f"|format(comparison_data.player1.soloq_winrate) }}%</div>
-        <div class="stat-label">SoloQ Winrate</div>
-        <div class="stat-value">{{ "%.1f"|format(comparison_data.player2.soloq_winrate) }}%</div>
+        <div class="stat-value">{{ "%.1f"|format(comparison_data.player1.winrate) }}%</div>
+        <div class="stat-label">Winrate</div>
+        <div class="stat-value">{{ "%.1f"|format(comparison_data.player2.winrate) }}%</div>
         
         <!-- H2H Record -->
-        <div class="stat-value" style="font-size: 2em; color: {% if comparison_data.h2h.player1_wins > comparison_data.h2h.player2_wins %}#28a745{% elif comparison_data.h2h.player1_wins < comparison_data.h2h.player2_wins %}#dc3545{% else %}white{% endif %};">
+        <div class="stat-value" style="font-size: 2em; color: {% if comparison_data.h2h.player1_wins > comparison_data.h2h.player2_wins %}#28a745 !important{% elif comparison_data.h2h.player1_wins < comparison_data.h2h.player2_wins %}#dc3545 !important{% else %}white{% endif %};">
             {{ comparison_data.h2h.player1_wins }}
         </div>
         <div class="stat-label" style="font-size: 1.5em;">H2H Wins</div>
-        <div class="stat-value" style="font-size: 2em; color: {% if comparison_data.h2h.player2_wins > comparison_data.h2h.player1_wins %}#28a745{% elif comparison_data.h2h.player2_wins < comparison_data.h2h.player1_wins %}#dc3545{% else %}white{% endif %};">
+        <div class="stat-value" style="font-size: 2em; color: {% if comparison_data.h2h.player2_wins > comparison_data.h2h.player1_wins %}#28a745 !important{% elif comparison_data.h2h.player2_wins < comparison_data.h2h.player1_wins %}#dc3545 !important{% else %}white{% endif %};">
             {{ comparison_data.h2h.player2_wins }}
         </div>
-
     </div>
     {% elif request.args.get('player1') and request.args.get('player2') %}
         <div class="text-center mt-4">

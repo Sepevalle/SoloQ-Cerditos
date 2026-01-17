@@ -1567,22 +1567,22 @@ def h2h():
     player_map = {}
     for p in datos_jugadores:
         if p.get('puuid') not in player_map:
-            # Solo nos interesa una entrada por jugador para el selector
-            player_map[p['puuid']] = {
-                'puuid': p['puuid'],
-                'jugador': p['jugador'],
-                'game_name': p['game_name']
-            }
+            player_map[p['puuid']] = {'puuid': p['puuid'], 'jugador': p['jugador'], 'game_name': p['game_name']}
     
     players_for_selector = sorted(player_map.values(), key=lambda x: x['jugador'])
 
     player1_puuid = request.args.get('player1')
     player2_puuid = request.args.get('player2')
+    # Default to SoloQ if not specified
+    selected_queue_name = request.args.get('queue_type', 'RANKED_SOLO_5x5')
     
+    queue_id_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
+    selected_queue_id = queue_id_map.get(selected_queue_name)
+
     comparison_data = None
 
-    if player1_puuid and player2_puuid and player1_puuid != player2_puuid:
-        print(f"[h2h] Calculando comparación entre {player1_puuid} y {player2_puuid}")
+    if player1_puuid and player2_puuid and player1_puuid != player2_puuid and selected_queue_id:
+        print(f"[h2h] Calculando comparación para {selected_queue_name} entre {player1_puuid} y {player2_puuid}")
         
         player1_base_data = player_map.get(player1_puuid)
         player2_base_data = player_map.get(player2_puuid)
@@ -1591,59 +1591,50 @@ def h2h():
             historial1 = _read_player_match_history_from_github(player1_puuid, riot_id=player1_base_data['game_name'])
             historial2 = _read_player_match_history_from_github(player2_puuid, riot_id=player2_base_data['game_name'])
             
-            matches1_ids = {m['match_id'] for m in historial1.get('matches', [])}
-            matches2_ids = {m['match_id'] for m in historial2.get('matches', [])}
+            matches1_ids = {m['match_id'] for m in historial1.get('matches', []) if m.get('queue_id') == selected_queue_id}
+            matches2_ids = {m['match_id'] for m in historial2.get('matches', []) if m.get('queue_id') == selected_queue_id}
             common_match_ids = matches1_ids.intersection(matches2_ids)
-            print(f"[h2h] Se encontraron {len(common_match_ids)} partidas en común.")
 
             h2h_stats = {'player1_wins': 0, 'player2_wins': 0}
             if common_match_ids:
                 common_matches_details = [m for m in historial1.get('matches', []) if m['match_id'] in common_match_ids]
                 
                 for match in common_matches_details:
-                    p1_info = None
-                    p2_info = None
-                    
+                    p1_info, p2_info = None, None
                     for p in match.get('all_participants', []):
-                        if p.get('puuid') == player1_puuid:
-                            p1_info = p
-                        elif p.get('puuid') == player2_puuid:
-                            p2_info = p
+                        if p.get('puuid') == player1_puuid: p1_info = p
+                        elif p.get('puuid') == player2_puuid: p2_info = p
                     
                     if not p1_info or not p2_info:
                         p1_info_by_name = next((p for p in match.get('all_participants', []) if p.get('summoner_name') == player1_base_data['game_name'].split('#')[0]), None)
                         p2_info_by_name = next((p for p in match.get('all_participants', []) if p.get('summoner_name') == player2_base_data['game_name'].split('#')[0]), None)
                         if p1_info_by_name and p2_info_by_name:
-                            p1_info = p1_info_by_name
-                            p2_info = p2_info_by_name
+                            p1_info, p2_info = p1_info_by_name, p2_info_by_name
 
                     if p1_info and p2_info and p1_info.get('team_id') != p2_info.get('team_id'):
-                        if p1_info.get('win'):
-                            h2h_stats['player1_wins'] += 1
-                        else:
-                            h2h_stats['player2_wins'] += 1
+                        if p1_info.get('win'): h2h_stats['player1_wins'] += 1
+                        else: h2h_stats['player2_wins'] += 1
             
-            def get_player_stats(puuid, base_data):
-                stats_list = [d for d in datos_jugadores if d.get('puuid') == puuid]
-                soloq_stats = next((s for s in stats_list if s.get('queue_type') == 'RANKED_SOLO_5x5'), {})
-                
-                total_soloq_games = soloq_stats.get('wins', 0) + soloq_stats.get('losses', 0)
+            def get_player_stats(puuid, base_data, queue_name):
+                stats_list = [d for d in datos_jugadores if d.get('puuid') == puuid and d.get('queue_type') == queue_name]
+                queue_stats = stats_list[0] if stats_list else {}
+                total_games = queue_stats.get('wins', 0) + queue_stats.get('losses', 0)
                 
                 return {
                     'jugador': base_data['jugador'],
                     'game_name': base_data['game_name'],
-                    'soloq': soloq_stats,
-                    'soloq_winrate': (soloq_stats.get('wins', 0) / total_soloq_games * 100) if total_soloq_games > 0 else 0,
-                    'soloq_kda': soloq_stats.get('kda', 0.0)
+                    'stats': queue_stats,
+                    'winrate': (queue_stats.get('wins', 0) / total_games * 100) if total_games > 0 else 0,
+                    'kda': queue_stats.get('kda', 0.0)
                 }
 
             comparison_data = {
-                'player1': get_player_stats(player1_puuid, player1_base_data),
-                'player2': get_player_stats(player2_puuid, player2_base_data),
-                'h2h': h2h_stats
+                'player1': get_player_stats(player1_puuid, player1_base_data, selected_queue_name),
+                'player2': get_player_stats(player2_puuid, player2_base_data, selected_queue_name)
             }
+            comparison_data['h2h'] = h2h_stats
 
-    return render_template('h2h.html', players=players_for_selector, comparison_data=comparison_data)
+    return render_template('h2h.html', players=players_for_selector, comparison_data=comparison_data, selected_queue=selected_queue_name)
 
 @app.route('/api/players_and_accounts')
 def get_players_and_accounts():
