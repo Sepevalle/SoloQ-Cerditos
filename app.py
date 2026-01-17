@@ -1062,6 +1062,7 @@ def guardar_historial_jugador_github(puuid, historial_data, riot_id=None):
 def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_player, riot_id=None):
     """
     Calcula el cambio total de LP, victorias y derrotas para un jugador en una cola específica en las últimas 24 horas.
+    Asume que `all_matches_for_player` está ordenado por `game_end_timestamp` descendente.
     """
     identifier = riot_id if riot_id else puuid
     now_utc = datetime.now(timezone.utc)
@@ -1082,7 +1083,11 @@ def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_
     for match in all_matches_for_player:
         match_timestamp_utc = match.get('game_end_timestamp', 0)
         
-        if match_timestamp_utc >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
+        if match_timestamp_utc < one_day_ago_timestamp_ms:
+            # Puesto que las partidas están ordenadas, no habrá más partidas en las últimas 24h.
+            break
+
+        if match.get('queue_id') == target_queue_id:
             if match.get('lp_change_this_game') is not None:
                 lp_change_24h += match['lp_change_this_game']
             
