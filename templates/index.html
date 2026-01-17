@@ -414,17 +414,18 @@
                             {{ diff_peak }} LPs
                         {% endif %}
                     </td> 
-                    <td > {# New column for LP change in 24h #}
-                        {% if jugador.lp_change_24h is not none %}
-                            {% if jugador.lp_change_24h > 0 %}
-                                <span class="lp-change-positive">+{{ jugador.lp_change_24h }} LP</span>
-                            {% elif jugador.lp_change_24h < 0 %}
-                                <span class="lp-change-negative">{{ jugador.lp_change_24h }} LP</span>
-                            {% else %}
-                                <span class="lp-change-neutral">0 LP</span>
-                            {% endif %}
+                    <td > {# Columna de LP en 24h con más detalle #}
+                        {% if jugador.wins_24h > 0 or jugador.losses_24h > 0 %}
+                            {% set lp_val = jugador.lp_change_24h %}
+                            <span class="{{ 'lp-change-positive' if lp_val > 0 else 'lp-change-negative' if lp_val < 0 else 'lp-change-neutral' }}">
+                                {{ '%+d'|format(lp_val) if lp_val != 0 else '0' }} LP
+                            </span>
+                            <br>
+                            <span class="small-text-stats">
+                                ({{ jugador.wins_24h }}V-{{ jugador.losses_24h }}D)
+                            </span>
                         {% else %}
-                            <span class="lp-change-neutral">N/A</span>
+                             <span class="lp-change-neutral">0 LP</span>
                         {% endif %}
                     </td>
                     <td class="elo-diferencia"></td>

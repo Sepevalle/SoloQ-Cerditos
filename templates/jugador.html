@@ -562,18 +562,22 @@
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
                         </p>
-                        {# Nuevo campo para LP en 24h #}
-                        {% if perfil.soloq.lp_change_24h is not none %}
-                            <p>
-                                LP en 24h: 
-                                {% if perfil.soloq.lp_change_24h > 0 %}
-                                    <span class="lp-gain">+{{ perfil.soloq.lp_change_24h }} LP</span>
-                                {% elif perfil.soloq.lp_change_24h < 0 %}
-                                    <span class="lp-loss">{{ perfil.soloq.lp_change_24h }} LP</span>
-                                {% else %}
-                                    <span>0 LP</span>
-                                {% endif %}
-                            </p>
+                        {# Nuevo campo para LP en 24h con detalle #}
+                        {% if perfil.soloq.wins_24h is defined and (perfil.soloq.wins_24h > 0 or perfil.soloq.losses_24h > 0) %}
+                        <p>
+                            LP en 24h: 
+                            {% set lp_val = perfil.soloq.lp_change_24h %}
+                            <span class="{{ 'lp-gain' if lp_val > 0 else 'lp-loss' if lp_val < 0 else '' }}">
+                                {{ '%+d'|format(lp_val) if lp_val != 0 else '0' }} LP
+                            </span>
+                            <span class="small-text-stats">
+                                ({{ perfil.soloq.wins_24h }}V-{{ perfil.soloq.losses_24h }}D)
+                            </span>
+                        </p>
+                        {% else %}
+                        <p>
+                            LP en 24h: <span>0 LP</span>
+                        </p>
                         {% endif %}
 
                         {# Contenedor para el gráfico de Elo #}
@@ -652,18 +656,22 @@
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
                         </p>
-                        {# Nuevo campo para LP en 24h #}
-                        {% if perfil.flexq.lp_change_24h is not none %}
-                            <p>
-                                LP en 24h: 
-                                {% if perfil.flexq.lp_change_24h > 0 %}
-                                    <span class="lp-gain">+{{ perfil.flexq.lp_change_24h }} LP</span>
-                                {% elif perfil.flexq.lp_change_24h < 0 %}
-                                    <span class="lp-loss">{{ perfil.flexq.lp_change_24h }} LP</span>
-                                {% else %}
-                                    <span>0 LP</span>
-                                {% endif %}
-                            </p>
+                        {# Nuevo campo para LP en 24h con detalle #}
+                        {% if perfil.flexq.wins_24h is defined and (perfil.flexq.wins_24h > 0 or perfil.flexq.losses_24h > 0) %}
+                        <p>
+                            LP en 24h: 
+                            {% set lp_val = perfil.flexq.lp_change_24h %}
+                            <span class="{{ 'lp-gain' if lp_val > 0 else 'lp-loss' if lp_val < 0 else '' }}">
+                                {{ '%+d'|format(lp_val) if lp_val != 0 else '0' }} LP
+                            </span>
+                            <span class="small-text-stats">
+                                ({{ perfil.flexq.wins_24h }}V-{{ perfil.flexq.losses_24h }}D)
+                            </span>
+                        </p>
+                        {% else %}
+                        <p>
+                            LP en 24h: <span>0 LP</span>
+                        </p>
                         {% endif %}
 
                         <div class="champion-stats-container">

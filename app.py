@@ -463,46 +463,52 @@ def obtener_nombre_campeon(champion_id):
 
 def obtener_puuid(api_key, riot_id, region):
     """Obtiene el PUUID de un jugador dado su Riot ID y región."""
-    print(f"[obtener_puuid] Intentando obtener PUUID para {riot_id} en región {region}.")
+    full_riot_id = f"{riot_id}#{region}"
+    print(f"[obtener_puuid] Intentando obtener PUUID para {full_riot_id}.")
     url = f"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{riot_id}/{region}?api_key={api_key}"
     response = make_api_request(url)
     if response:
-        print(f"[obtener_puuid] PUUID obtenido para {riot_id}.")
+        print(f"[obtener_puuid] PUUID obtenido para {full_riot_id}.")
         return response.json()
     else:
-        print(f"[obtener_puuid] No se pudo obtener el PUUID para {riot_id} después de varios intentos.")
+        print(f"[obtener_puuid] No se pudo obtener el PUUID para {full_riot_id} después de varios intentos.")
         return None
 
 def obtener_id_invocador(api_key, puuid):
     """Obtiene el ID de invocador de un jugador dado su PUUID."""
-    print(f"[obtener_id_invocador] Intentando obtener ID de invocador para PUUID: {puuid}.")
+    puuid_dict = leer_puuids()
+    riot_id = next((k for k, v in puuid_dict.items() if v == puuid), None)
+    identifier = riot_id if riot_id else f"PUUID: {puuid}"
+    print(f"[obtener_id_invocador] Intentando obtener ID de invocador para {identifier}.")
     url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
-        print(f"[obtener_id_invocador] ID de invocador obtenido para PUUID: {puuid}.")
+        print(f"[obtener_id_invocador] ID de invocador obtenido para {identifier}.")
         return response.json()
     else:
-        print(f"[obtener_id_invocador] No se pudo obtener el ID de invocador para {puuid}.")
+        print(f"[obtener_id_invocador] No se pudo obtener el ID de invocador para {identifier}.")
         return None
 
-def obtener_elo(api_key, puuid):
+def obtener_elo(api_key, puuid, riot_id=None):
     """Obtiene la información de Elo de un jugador dado su PUUID."""
-    print(f"[obtener_elo] Intentando obtener Elo para PUUID: {puuid}.")
+    identifier = riot_id if riot_id else f"PUUID: {puuid}"
+    print(f"[obtener_elo] Intentando obtener Elo para {identifier}.")
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={api_key}"
     response = make_api_request(url)
     if response:
-        print(f"[obtener_elo] Elo obtenido para PUUID: {puuid}.")
+        print(f"[obtener_elo] Elo obtenido para {identifier}.")
         return response.json()
     else:
-        print(f"[obtener_elo] No se pudo obtener el Elo para {puuid}.")
+        print(f"[obtener_elo] No se pudo obtener el Elo para {identifier}.")
         return None
 
-def esta_en_partida(api_key, puuid):
+def esta_en_partida(api_key, puuid, riot_id=None):
     """
     Comprueba si un jugador está en una partida activa.
     Retorna los datos completos de la partida si está en una, None si no.
     """
-    # print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
+    identifier = riot_id if riot_id else f"PUUID: {puuid}"
+    # print(f"[esta_en_partida] Verificando si el jugador {identifier} está en partida.")
     try:
         url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
         # Usar make_api_request con is_spectator_api=True para control de tasa específico si es necesario
@@ -512,21 +518,21 @@ def esta_en_partida(api_key, puuid):
             game_data = response.json()
             for participant in game_data.get("participants", []):
                 if participant["puuid"] == puuid:
-                    print(f"[esta_en_partida] Jugador {puuid} está en partida activa.")
+                    print(f"[esta_en_partida] Jugador {identifier} está en partida activa.")
                     return game_data
-            print(f"[esta_en_partida] Advertencia: Jugador {puuid} está en partida pero no se encontró en la lista de participantes.")
+            print(f"[esta_en_partida] Advertencia: Jugador {identifier} está en partida pero no se encontró en la lista de participantes.")
             return None
         elif response and response.status_code == 404:  # Player not in game (expected response)
-            print(f"[esta_en_partida] Jugador {puuid} no está en partida activa (404 Not Found).")
+            print(f"[esta_en_partida] Jugador {identifier} no está en partida activa (404 Not Found).")
             return None
         elif response is None: # make_api_request returned None due to timeout or persistent error
-            print(f"[esta_en_partida] make_api_request devolvió None para {puuid}. Posible timeout o error persistente.")
+            print(f"[esta_en_partida] make_api_request devolvió None para {identifier}. Posible timeout o error persistente.")
             return None
         else:  # Unexpected error
-            print(f"[esta_en_partida] Error inesperado al verificar partida para {puuid}. Status: {response.status_code}")
+            print(f"[esta_en_partida] Error inesperado al verificar partida para {identifier}. Status: {response.status_code}")
             response.raise_for_status() # Esto lanzará una excepción para códigos de error HTTP
     except requests.exceptions.RequestException as e:
-        print(f"[esta_en_partida] Error al verificar si el jugador {puuid} está en partida: {e}")
+        print(f"[esta_en_partida] Error al verificar si el jugador {identifier} está en partida: {e}")
         return None
 
 def obtener_info_partida(args):
@@ -535,7 +541,14 @@ def obtener_info_partida(args):
     además del nivel, hechizos, runas y AHORA MUCHAS MÁS ESTADÍSTICAS DETALLADAS.
     """
     match_id, puuid, api_key = args
-    print(f"[obtener_info_partida] Obteniendo información para la partida {match_id} del PUUID {puuid}.")
+    if len(args) == 4:
+        match_id, puuid, api_key, riot_id = args
+    else:
+        match_id, puuid, api_key = args
+        riot_id = None
+    
+    identifier = riot_id if riot_id else f"PUUID {puuid}"
+    print(f"[obtener_info_partida] Obteniendo información para la partida {match_id} de {identifier}.")
     url_match = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
     response_match = make_api_request(url_match)
     if not response_match:
@@ -598,7 +611,7 @@ def obtener_info_partida(args):
             detail['kill_participation'] = kp
 
         if not main_player_data:
-            print(f"[obtener_info_partida] Jugador principal {puuid} no encontrado en los participantes de la partida {match_id}.")
+            print(f"[obtener_info_partida] Jugador principal {identifier} no encontrado en los participantes de la partida {match_id}.")
             return None
 
         game_end_timestamp = info.get('gameEndTimestamp', 0) 
@@ -657,7 +670,7 @@ def obtener_info_partida(args):
             if len(perks['styles']) > 1:
                 perk_sub_id = perks['styles'][1]['style']
 
-        print(f"[obtener_info_partida] Información de partida {match_id} procesada para {puuid}.")
+        print(f"[obtener_info_partida] Información de partida {match_id} procesada para {identifier}.")
         return {
             "match_id": match_id,
             "puuid": puuid,
@@ -938,61 +951,65 @@ def guardar_peak_elo_en_github(peak_elo_dict):
     except Exception as e:
         print(f"[guardar_peak_elo_en_github] Error al actualizar el archivo peak_elo.json: {e}")
 
-def _read_player_match_history_from_github(puuid):
+def _read_player_match_history_from_github(puuid, riot_id=None):
     """Lee el historial de partidas de un jugador directamente desde la API de GitHub."""
+    identifier = riot_id if riot_id else f"PUUID: {puuid}"
     url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/match_history/{puuid}.json"
     token = os.environ.get('GITHUB_TOKEN')
     headers = {"Accept": "application/vnd.github.v3+json"}
     if token:
         headers["Authorization"] = f"token {token}"
 
-    print(f"[_read_player_match_history_from_github] Leyendo historial para PUUID: {puuid} desde API: {url}")
+    print(f"[_read_player_match_history_from_github] Leyendo historial para {identifier} desde API: {url}")
     try:
         resp = requests.get(url, headers=headers, timeout=30)
         if resp.status_code == 200:
             content = resp.json()
             file_content = base64.b64decode(content['content']).decode('utf-8')
-            print(f"[_read_player_match_history_from_github] Historial para {puuid} leído exitosamente de API GitHub.")
+            print(f"[_read_player_match_history_from_github] Historial para {identifier} leído exitosamente de API GitHub.")
             return json.loads(file_content)
         elif resp.status_code == 404:
-            print(f"[_read_player_match_history_from_github] No se encontró historial para {puuid} en API GitHub. Se creará uno nuevo.")
+            print(f"[_read_player_match_history_from_github] No se encontró historial para {identifier} en API GitHub. Se creará uno nuevo.")
             return {}
         else:
             print(f"[_read_player_match_history_from_github] Error API: {resp.status_code}")
             resp.raise_for_status()
     except Exception as e:
-        print(f"[_read_player_match_history_from_github] Error leyendo el historial para {puuid} de API GitHub: {e}")
+        print(f"[_read_player_match_history_from_github] Error leyendo el historial para {identifier} de API GitHub: {e}")
     return {}
 
-def get_player_match_history(puuid):
+def get_player_match_history(puuid, riot_id=None):
     """
     Obtiene el historial de partidas de un jugador, usando la caché en memoria primero.
     Si no está en caché o está expirado, lo lee desde GitHub y lo cachea.
     """
+    identifier = riot_id if riot_id else f"PUUID: {puuid}"
     with PLAYER_MATCH_HISTORY_LOCK:
         cached_data = PLAYER_MATCH_HISTORY_CACHE.get(puuid)
         
         if cached_data and (time.time() - cached_data['timestamp'] < PLAYER_MATCH_HISTORY_CACHE_TIMEOUT):
-            print(f"[get_player_match_history] Devolviendo historial cacheados para PUUID: {puuid}.")
+            print(f"[get_player_match_history] Devolviendo historial cacheados para {identifier}.")
             return cached_data['data']
         
-        print(f"[get_player_match_history] Historial para PUUID: {puuid} no cacheados o estancados. Leyendo de GitHub.")
-        historial = _read_player_match_history_from_github(puuid)
+        print(f"[get_player_match_history] Historial para {identifier} no cacheados o estancados. Leyendo de GitHub.")
+        historial = _read_player_match_history_from_github(puuid, riot_id=riot_id)
         PLAYER_MATCH_HISTORY_CACHE[puuid] = {
             'data': historial,
             'timestamp': time.time()
         }
-        print(f"[get_player_match_history] Historial para PUUID: {puuid} leído de GitHub y cacheado.")
+        print(f"[get_player_match_history] Historial para {identifier} leído de GitHub y cacheado.")
         return historial
 
 
-def guardar_historial_jugador_github(puuid, historial_data):
+def guardar_historial_jugador_github(puuid, historial_data, riot_id=None):
     """Guarda o actualiza el historial de partidas de un jugador en GitHub."""
+    identifier = riot_id if riot_id else puuid
     success = False
     url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/match_history/{puuid}.json"
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
         print(f"[guardar_historial_jugador_github] ERROR: Token de GitHub no encontrado para guardar historial de {puuid}. No se guardará el archivo.", flush=True)
+        print(f"[guardar_historial_jugador_github] ERROR: Token de GitHub no encontrado para guardar historial de {identifier}. No se guardará el archivo.", flush=True)
         return False
 
     headers = {"Authorization": f"token {token}"}
@@ -1005,60 +1022,85 @@ def guardar_historial_jugador_github(puuid, historial_data):
         if response.status_code == 200:
             sha = response.json().get('sha')
             print(f"[guardar_historial_jugador_github] SHA del historial de {puuid} obtenido: {sha}.", flush=True)
+            print(f"[guardar_historial_jugador_github] SHA del historial de {identifier} obtenido: {sha}.", flush=True)
         elif response.status_code == 404:
             print(f"[guardar_historial_jugador_github] Archivo {puuid}.json no existe en GitHub, se creará uno nuevo.", flush=True)
+            print(f"[guardar_historial_jugador_github] Archivo {identifier}.json no existe en GitHub, se creará uno nuevo.", flush=True)
         else:
             print(f"[guardar_historial_jugador_github] Error al obtener SHA del historial de {puuid}: {response.status_code} - {response.text}", flush=True)
+            print(f"[guardar_historial_jugador_github] Error al obtener SHA del historial de {identifier}: {response.status_code} - {response.text}", flush=True)
             return False # Salir si no se puede obtener el SHA
     except Exception as e:
         print(f"[guardar_historial_jugador_github] Excepción al obtener SHA del historial de {puuid}: {e}", flush=True)
+        print(f"[guardar_historial_jugador_github] Excepción al obtener SHA del historial de {identifier}: {e}", flush=True)
         return False # Salir si hay una excepción
 
     contenido_json = json.dumps(historial_data, indent=2, ensure_ascii=False) # Añadido ensure_ascii=False
     contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
     
     data = {"message": f"Actualizar historial de partidas para {puuid}", "content": contenido_b64, "branch": "main"}
+    data = {"message": f"Actualizar historial de partidas para {identifier}", "content": contenido_b64, "branch": "main"}
     if sha:
         data["sha"] = sha
 
     try:
         print(f"[guardar_historial_jugador_github] Intentando guardar historial para {puuid} en GitHub. SHA: {sha}", flush=True)
+        print(f"[guardar_historial_jugador_github] Intentando guardar historial para {identifier} en GitHub. SHA: {sha}", flush=True)
         response = requests.put(url, headers=headers, json=data, timeout=30) # Aumentado timeout
         if response.status_code in (200, 201):
             print(f"[guardar_historial_jugador_github] Historial de {puuid}.json actualizado correctamente en GitHub. Status: {response.status_code}", flush=True)
+            print(f"[guardar_historial_jugador_github] Historial de {identifier}.json actualizado correctamente en GitHub. Status: {response.status_code}", flush=True)
             success = True
         else:
             print(f"[guardar_historial_jugador_github] ERROR: Fallo al actualizar historial de {puuid}.json: {response.status_code} - {response.text}", flush=True)
+            print(f"[guardar_historial_jugador_github] ERROR: Fallo al actualizar historial de {identifier}.json: {response.status_code} - {response.text}", flush=True)
     except Exception as e:
         print(f"[guardar_historial_jugador_github] ERROR: Excepción en la petición PUT a GitHub para el historial de {puuid}: {e}", flush=True)
+        print(f"[guardar_historial_jugador_github] ERROR: Excepción en la petición PUT a GitHub para el historial de {identifier}: {e}", flush=True)
     return success
 
-def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_player):
+def _calculate_lp_change_for_player(puuid, queue_type_api_name, all_matches_for_player, riot_id=None):
     """
-    Calcula el cambio total de LP para un jugador en una cola específica en las últimas 24 horas.
-    Retorna 0 si no hay partidas para la cola especificada en las últimas 24 horas.
+    Calcula el cambio total de LP, victorias y derrotas para un jugador en una cola específica en las últimas 24 horas.
     """
+    identifier = riot_id if riot_id else puuid
     now_utc = datetime.now(timezone.utc)
     one_day_ago_utc = now_utc - timedelta(days=1)
     one_day_ago_timestamp_ms = int(one_day_ago_utc.timestamp() * 1000)
     
-    lp_change_24h = 0 # Inicializado a 0. Será 0 si no hay partidas recientes.
+    lp_change_24h = 0
+    wins_24h = 0
+    losses_24h = 0
     
     queue_id_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
     target_queue_id = queue_id_map.get(queue_type_api_name)
 
     if not target_queue_id:
-        print(f"[_calculate_lp_change_for_player] Tipo de cola '{queue_type_api_name}' no reconocido. Retornando 0 LP.")
-        return 0
+        # No need to print here, it would be too noisy. Return empty results.
+        return {'lp_change': 0, 'wins': 0, 'losses': 0}
 
     for match in all_matches_for_player:
         match_timestamp_utc = match.get('game_end_timestamp', 0)
-        # Solo considera partidas que terminaron en las últimas 24 horas
+        
         if match_timestamp_utc >= one_day_ago_timestamp_ms and match.get('queue_id') == target_queue_id:
             if match.get('lp_change_this_game') is not None:
                 lp_change_24h += match['lp_change_this_game']
-    print(f"[_calculate_lp_change_for_player] Cambio de LP en 24h para {puuid} en {queue_type_api_name}: {lp_change_24h} LP.")
-    return lp_change_24h
+            
+            # This logic assumes 'win' field is always present for ranked matches.
+            # If a match is a remake, it might not have 'win' or it might be filtered before.
+            # Based on `obtener_info_partida`, remakes are filtered out, so this should be safe.
+            if match.get('win') is True:
+                wins_24h += 1
+            else:
+                # We count it as a loss if it's not a win and is a ranked game in the last 24h.
+                # This correctly handles cases where a game is valid but 'win' is False.
+                losses_24h += 1
+    
+    # Only log if there was activity
+    if wins_24h > 0 or losses_24h > 0:
+        print(f"[_calculate_lp_change_for_player] Actividad 24h para {identifier} en {queue_type_api_name}: {lp_change_24h:+} LP, {wins_24h}V - {losses_24h}D.")
+    
+    return {'lp_change': lp_change_24h, 'wins': wins_24h, 'losses': losses_24h}
 
 
 def procesar_jugador(args_tuple):
@@ -1076,13 +1118,13 @@ def procesar_jugador(args_tuple):
         return []
 
     # Obtener la información de Elo actual del jugador (used for general display and 'needs_full_update' logic)
-    elo_info = obtener_elo(api_key_main, puuid)
+    elo_info = obtener_elo(api_key_main, puuid, riot_id=riot_id)
     if not elo_info:
         print(f"[procesar_jugador] No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP ni actualizar datos.")
         return old_data_list if old_data_list else []
 
     # 1. Sondeo ligero: usar la clave secundaria para esta llamada frecuente.
-    game_data = esta_en_partida(api_key_spectator, puuid)
+    game_data = esta_en_partida(api_key_spectator, puuid, riot_id=riot_id)
     is_currently_in_game = game_data is not None
 
     # --- LP Tracking Logic ---
@@ -1308,19 +1350,22 @@ def actualizar_cache():
             continue
         
         # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
-        historial = get_player_match_history(puuid) 
+        historial = get_player_match_history(puuid, riot_id=jugador.get('game_name')) 
         all_matches_for_player = historial.get('matches', [])
 
-        # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
-        # Esta lógica asigna el valor pre-calculado para cada cola.
-        # Si _calculate_lp_change_for_player (que se ejecuta en el hilo de historial de partidas)
-        # determinó que no hay partidas en las últimas 24h para esa cola, este valor será 0.
+        # OPTIMIZACIÓN: Leer datos de actividad de 24h directamente del historial pre-calculado.
         if queue_type == "RANKED_SOLO_5x5":
             jugador['lp_change_24h'] = historial.get('soloq_lp_change_24h', 0)
+            jugador['wins_24h'] = historial.get('soloq_wins_24h', 0)
+            jugador['losses_24h'] = historial.get('soloq_losses_24h', 0)
         elif queue_type == "RANKED_FLEX_SR":
             jugador['lp_change_24h'] = historial.get('flexq_lp_change_24h', 0)
+            jugador['wins_24h'] = historial.get('flexq_wins_24h', 0)
+            jugador['losses_24h'] = historial.get('flexq_losses_24h', 0)
         else:
-            jugador['lp_change_24h'] = 0 # Default for non-ranked queues
+            jugador['lp_change_24h'] = 0
+            jugador['wins_24h'] = 0
+            jugador['losses_24h'] = 0
 
         partidas_jugador = [
             p for p in all_matches_for_player
@@ -1583,7 +1628,7 @@ def _get_player_profile_data(game_name):
     historial_partidas_completo = {}
     if puuid:
         # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
-        historial_partidas_completo = get_player_match_history(puuid) 
+        historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name) 
         for match in historial_partidas_completo.get('matches', []):
             if 'lp_change_this_game' not in match:
                 match['lp_change_this_game'] = None
@@ -1601,20 +1646,26 @@ def _get_player_profile_data(game_name):
         'historial_partidas': historial_partidas_completo.get('matches', [])
     }
     
-    # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
-    # Estos valores ya fueron calculados y almacenados en el caché de historial por
-    # el hilo 'actualizar_historial_partidas_en_segundo_plano'.
-    # Si no hubo partidas en las últimas 24h para una cola, el valor será 0.
+    # OPTIMIZACIÓN: Leer datos de actividad de 24h directamente del historial pre-calculado.
     lp_change_soloq_24h = historial_partidas_completo.get('soloq_lp_change_24h', 0)
+    wins_soloq_24h = historial_partidas_completo.get('soloq_wins_24h', 0)
+    losses_soloq_24h = historial_partidas_completo.get('soloq_losses_24h', 0)
+    
     lp_change_flexq_24h = historial_partidas_completo.get('flexq_lp_change_24h', 0)
+    wins_flexq_24h = historial_partidas_completo.get('flexq_wins_24h', 0)
+    losses_flexq_24h = historial_partidas_completo.get('flexq_losses_24h', 0)
 
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['soloq'] = item
             perfil['soloq']['lp_change_24h'] = lp_change_soloq_24h
+            perfil['soloq']['wins_24h'] = wins_soloq_24h
+            perfil['soloq']['losses_24h'] = losses_soloq_24h
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['flexq'] = item
             perfil['flexq']['lp_change_24h'] = lp_change_flexq_24h
+            perfil['flexq']['wins_24h'] = wins_flexq_24h
+            perfil['flexq']['losses_24h'] = losses_flexq_24h
 
     historial_total = perfil.get('historial_partidas', [])
     
@@ -1715,7 +1766,7 @@ def perfil_jugador_original(game_name):
     historial_partidas_completo = {}
     if puuid:
         # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
-        historial_partidas_completo = get_player_match_history(puuid)
+        historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name)
         for match in historial_partidas_completo.get('matches', []):
             if 'lp_change_this_game' not in match:
                 match['lp_change_this_game'] = None
@@ -1797,7 +1848,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 matches_con_lp_asociado = [] # Lista para guardar confirmaciones
                 # print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
                 # Leer el historial existente (directamente de GitHub, ya que es el hilo de escritura)
-                historial_existente = _read_player_match_history_from_github(puuid) 
+                historial_existente = _read_player_match_history_from_github(puuid, riot_id=riot_id) 
                 ids_partidas_guardadas = {p['match_id'] for p in historial_existente.get('matches', [])}
                 remakes_guardados = set(historial_existente.get('remakes', []))
                 
@@ -1810,11 +1861,11 @@ def actualizar_historial_partidas_en_segundo_plano():
                         url_matches = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={SEASON_START_TIMESTAMP}&queue={queue_id}&start={start_index}&count=100&api_key={api_key}"
                         response_matches = make_api_request(url_matches)
                         if not response_matches: 
-                            print(f"[actualizar_historial_partidas_en_segundo_plano] No más partidas o error para cola {queue_id} y PUUID {puuid}. Response: {response_matches}")
+                            print(f"[actualizar_historial_partidas_en_segundo_plano] No más partidas o error para cola {queue_id} y {riot_id}. Response: {response_matches}")
                             break
                         match_ids_page = response_matches.json()
                         if not match_ids_page: 
-                            print(f"[actualizar_historial_partidas_en_segundo_plano] No se encontraron más IDs de partida para cola {queue_id} y PUUID {puuid}.")
+                            print(f"[actualizar_historial_partidas_en_segundo_plano] No se encontraron más IDs de partida para cola {queue_id} y {riot_id}.")
                             break
                         all_match_ids_season.extend(match_ids_page)
                         # print(f"[actualizar_historial_partidas_en_segundo_plano] Obtenidos {len(match_ids_page)} IDs de partida para {riot_id} (cola {queue_id}). Total de IDs de temporada hasta ahora: {len(all_match_ids_season)}.")
@@ -1841,7 +1892,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 else:
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Se encontraron {len(nuevos_match_ids)} partidas nuevas para {riot_id}. Procesando...")
 
-                    tareas = [(match_id, puuid, api_key) for match_id in nuevos_match_ids]
+                    tareas = [(match_id, puuid, api_key, riot_id) for match_id in nuevos_match_ids]
                     with ThreadPoolExecutor(max_workers=10) as executor:
                         nuevas_partidas_info = list(executor.map(obtener_info_partida, tareas))
 
@@ -1908,6 +1959,7 @@ def actualizar_historial_partidas_en_segundo_plano():
 
                         # Obtener el ELO más reciente para calcular el cambio
                         latest_elo_info = obtener_elo(api_key, update_puuid)
+                        latest_elo_info = obtener_elo(api_key, update_puuid, riot_id=lp_update_data.get('riot_id'))
                         if not latest_elo_info:
                             print(f"[{lp_update_data['riot_id']}] [LP Associator] No se pudo obtener el Elo más reciente para {update_puuid}. Saltando asociación de LP para la partida {match_id}.")
                             continue
@@ -1970,18 +2022,24 @@ def actualizar_historial_partidas_en_segundo_plano():
                     if 'pre_game_valor_clasificacion' not in match:
                         match['pre_game_valor_clasificacion'] = None
                 
-                # Recalcular el LP change en 24h para este jugador en el historial.
-                # Aquí es donde se garantiza que 'soloq_lp_change_24h' y 'flexq_lp_change_24h'
-                # se actualicen a 0 si no hay partidas recientes en las últimas 24h.
-                current_soloq_lp_change_24h = _calculate_lp_change_for_player(
-                    puuid, "RANKED_SOLO_5x5", historial_existente.get('matches', [])
+                # se actualicen con cada ciclo de actualización del historial.
+                current_riot_id_for_puuid = puuid_to_riot_id.get(puuid, riot_id)
+                
+                soloq_stats_24h = _calculate_lp_change_for_player(
+                    puuid, "RANKED_SOLO_5x5", historial_existente.get('matches', []), riot_id=current_riot_id_for_puuid
                 )
-                current_flexq_lp_change_24h = _calculate_lp_change_for_player(
-                    puuid, "RANKED_FLEX_SR", historial_existente.get('matches', [])
+                historial_existente['soloq_lp_change_24h'] = soloq_stats_24h['lp_change']
+                historial_existente['soloq_wins_24h'] = soloq_stats_24h['wins']
+                historial_existente['soloq_losses_24h'] = soloq_stats_24h['losses']
+
+                flexq_stats_24h = _calculate_lp_change_for_player(
+                    puuid, "RANKED_FLEX_SR", historial_existente.get('matches', []), riot_id=current_riot_id_for_puuid
                 )
-                historial_existente['soloq_lp_change_24h'] = current_soloq_lp_change_24h
-                historial_existente['flexq_lp_change_24h'] = current_flexq_lp_change_24h
-                print(f"[actualizar_historial_partidas_en_segundo_plano] LP change 24h calculado para {riot_id}: SoloQ={current_soloq_lp_change_24h}, FlexQ={current_flexq_lp_change_24h}.")
+                historial_existente['flexq_lp_change_24h'] = flexq_stats_24h['lp_change']
+                historial_existente['flexq_wins_24h'] = flexq_stats_24h['wins']
+                historial_existente['flexq_losses_24h'] = flexq_stats_24h['losses']
+                
+                # The print log is now inside _calculate_lp_change_for_player, so this one can be removed to avoid redundancy.
 
                 # Only save if there were new valid matches, new remakes, or pending LP updates were cleared
                 if nuevas_partidas_validas or nuevos_remakes or keys_to_clear_from_pending:
@@ -1994,7 +2052,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                         print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidos {len(nuevos_remakes)} remakes al historial de {riot_id}.")
                     
                     print(f"[actualizar_historial_partidas_en_segundo_plano] Llamando a guardar_historial_jugador_github para {riot_id}.", flush=True)
-                    if guardar_historial_jugador_github(puuid, historial_existente):
+                    if guardar_historial_jugador_github(puuid, historial_existente, riot_id=riot_id):
                         # Imprimir confirmación de guardado en GitHub para cada partida con LP asociado
                         for match_info in matches_con_lp_asociado:
                             print(f"[{match_info['riot_id']}] [GitHub Sync] CONFIRMADO: Cambio de {match_info['lp_change']:+d} LP para la partida {match_info['match_id']} guardado en GitHub.", flush=True)
@@ -2014,13 +2072,14 @@ def actualizar_historial_partidas_en_segundo_plano():
                             'timestamp': time.time()
                         }
                         print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {puuid} actualizado y cacheado en memoria.", flush=True)
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} actualizado y cacheado en memoria.", flush=True)
 
 
                     # Invalidate personal records cache for this player
                     with PERSONAL_RECORDS_LOCK:
                         if puuid in PERSONAL_RECORDS_CACHE['data']:
                             del PERSONAL_RECORDS_CACHE['data'][puuid]
-                            print(f"[actualizar_historial_partidas_en_segundo_plano] Récords personales cacheados para {puuid} invalidados.")
+                            print(f"[actualizar_historial_partidas_en_segundo_plano] Récords personales cacheados para {riot_id} invalidados.")
                 else:
                     print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
 
@@ -2330,7 +2389,7 @@ def _calculate_and_cache_global_stats():
         if not puuid:
             continue
 
-        historial = get_player_match_history(puuid)
+        historial = get_player_match_history(puuid, riot_id=riot_id)
         matches = historial.get('matches', [])
         
         for match in matches:
@@ -2430,7 +2489,7 @@ def _get_player_personal_records(puuid, player_display_name, riot_id, champion_f
             return cached_data
 
     print(f"[_get_player_personal_records] Calculando récords personales para: {cache_key} (no cacheados o estancados).")
-    historial = get_player_match_history(puuid) 
+    historial = get_player_match_history(puuid, riot_id=riot_id) 
     all_matches_for_player = historial.get('matches', [])
 
     # Filter matches by champion if a filter is provided
