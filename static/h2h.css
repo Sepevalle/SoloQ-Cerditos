@@ -1,36 +1,31 @@
-body {
-    padding-top: 70px;
-    transition: background-color 0.3s, color 0.3s;
+/* Specific styles for the H2H comparison page */
+
+.h2h-container {
+    max-width: 900px;
+    margin: 20px auto; /* Already using Bootstrap's container-fluid in base.html */
+    padding: 20px;
+    border-radius: 8px;
+    /* Background color will be handled by dark mode or Bootstrap's bg-light/white */
 }
-.dark-mode {
-    background-color: #121212;
+
+/* Dark mode adjustments for H2H specific elements */
+.dark-mode .h2h-container, .dark-mode .player-card {
+    background-color: #2a2a2a; /* Dark background for container and cards */
     color: #ffffff;
 }
-.dark-mode .navbar {
-    background-color: #343a40 !important;
-}
-.dark-mode .navbar-brand, .dark-mode .nav-link {
-    color: white !important;
-}
-.dark-mode .navbar-toggler-icon {
-    filter: invert(1) grayscale(100%) brightness(2);
-}
-.dark-mode .h2h-container, .dark-mode .player-card {
-    background-color: #2a2a2a;
-}
-.dark-mode .player-selector select {
+.dark-mode .player-selector select, .dark-mode .player-selector button {
     background-color: #333;
     color: white;
     border-color: #444;
 }
-
-.h2h-container {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
+.dark-mode .player-card {
+    border: 1px solid #444; /* Darker border in dark mode */
 }
+.dark-mode .stat-label, .dark-mode .stat-value {
+     border-bottom: 1px solid #444; /* Darker border for stat separators */
+}
+
+
 .player-selector {
     display: flex;
     flex-wrap: wrap;
@@ -39,13 +34,15 @@ body {
     gap: 15px;
     margin-bottom: 30px;
 }
-.player-selector select, .player-selector button {
+.player-selector select {
+    /* Using Bootstrap's form-select class, so some of these might be redundant */
     padding: 10px;
     border-radius: 5px;
     border: 1px solid #ced4da;
     font-size: 1rem;
 }
 .player-selector button {
+    /* Using Bootstrap's btn btn-primary class, so some of these might be redundant */
     border: none;
     background-color: #007bff;
     color: white;
@@ -59,27 +56,26 @@ body {
     padding-top: 20px;
 }
 .player-card {
-    background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     text-align: center;
-    border: 1px solid #dee2e6;
+    /* Border and background handled by dark mode/Bootstrap card classes */
 }
 .player-card h2 {
     margin-top: 0;
-    color: #007bff;
+    color: #007bff; /* Primary color for player names */
     font-size: 1.5rem;
 }
 .stat-label {
     grid-column: 2 / 3;
     text-align: center;
     font-weight: bold;
-    color: #6c757d;
+    color: #6c757d; /* Muted color for labels */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 10px 0;
-    border-bottom: 1px solid #dee2e6;
+    /* Border handled by dark mode adjustments */
 }
 .stat-value {
     font-size: 1.1rem;
@@ -89,8 +85,5 @@ body {
     align-items: center;
     justify-content: center;
     padding: 10px 0;
-    border-bottom: 1px solid #dee2e6;
-}
-.dark-mode .stat-label, .dark-mode .stat-value {
-     border-bottom: 1px solid #444;
+    /* Border handled by dark mode adjustments */
 }

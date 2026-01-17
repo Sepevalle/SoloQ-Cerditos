@@ -7,22 +7,22 @@
 {% endblock %}
 
 {% block content %}
-<div class="h2h-container">
-    <h1 class="text-center">Comparador Head-to-Head</h1>
-    <form class="player-selector" method="GET" action="{{ url_for('h2h') }}">
-        <select name="player1" id="player1" class="form-select">
+<div class="container my-4"> {# Changed h2h-container to Bootstrap container with margin #}
+    <h1 class="text-center mb-4">Comparador Head-to-Head</h1> {# Added margin-bottom to h1 #}
+    <form class="d-flex justify-content-center flex-wrap gap-3 mb-4" method="GET" action="{{ url_for('h2h') }}"> {# Refined player-selector #}
+        <select name="player1" id="player1" class="form-select w-auto"> {# Added w-auto for width adjustment #}
             <option value="">Selecciona Jugador 1</option>
             {% for player in players %}
             <option value="{{ player.puuid }}" {% if request.args.get('player1') == player.puuid %}selected{% endif %}>{{ player.jugador }}</option>
             {% endfor %}
         </select>
-        <select name="player2" id="player2" class="form-select">
+        <select name="player2" id="player2" class="form-select w-auto"> {# Added w-auto for width adjustment #}
             <option value="">Selecciona Jugador 2</option>
             {% for player in players %}
             <option value="{{ player.puuid }}" {% if request.args.get('player2') == player.puuid %}selected{% endif %}>{{ player.jugador }}</option>
             {% endfor %}
         </select>
-        <select name="queue_type" id="queue_type" class="form-select">
+        <select name="queue_type" id="queue_type" class="form-select w-auto"> {# Added w-auto for width adjustment #}
             <option value="RANKED_SOLO_5x5" {% if selected_queue == 'RANKED_SOLO_5x5' %}selected{% endif %}>SoloQ</option>
             <option value="RANKED_FLEX_SR" {% if selected_queue == 'RANKED_FLEX_SR' %}selected{% endif %}>Flex</option>
         </select>
@@ -32,14 +32,14 @@
     {% if comparison_data %}
     <div class="comparison-grid">
         <!-- Header -->
-        <div class="player-card card">
+        <div class="player-card card"> {# Added Bootstrap card class #}
             <div class="card-body">
                 <h2 class="card-title">{{ comparison_data.player1.jugador }}</h2>
                 <p class="text-muted">{{ comparison_data.player1.game_name }}</p>
             </div>
         </div>
         <div></div> <!-- Spacer column -->
-        <div class="player-card card">
+        <div class="player-card card"> {# Added Bootstrap card class #}
             <div class="card-body">
                 <h2 class="card-title">{{ comparison_data.player2.jugador }}</h2>
                 <p class="text-muted">{{ comparison_data.player2.game_name }}</p>
