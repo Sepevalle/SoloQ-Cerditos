@@ -87,8 +87,9 @@
                 <label for="queue" class="visually-hidden">Cola</label>
                 <select name="queue" id="queue" class="form-select">
                     <option value="all" {% if current_queue == 'all' %}selected{% endif %}>Todas las Colas</option>
-                    <option value="soloq" {% if current_queue == 'soloq' %}selected{% endif %}>Clasificatoria Solo/Duo</option>
-                    <option value="flex" {% if current_queue == 'flex' %}selected{% endif %}>Clasificatoria Flexible</option>
+                    {% for queue in available_queues %}
+                    <option value="{{ queue.id }}" {% if str(queue.id) == current_queue %}selected{% endif %}>{{ queue.name }}</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="col-md-3">
