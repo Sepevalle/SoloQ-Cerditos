@@ -552,12 +552,14 @@ def obtener_info_partida(args):
     Función auxiliar para ThreadPoolExecutor. Obtiene el campeón jugado y el resultado de una partida,
     además del nivel, hechizos, runas y AHORA MUCHAS MÁS ESTADÍSTICAS DETALLADAS.
     """
-    match_id, puuid, api_key = args
     if len(args) == 4:
         match_id, puuid, api_key, riot_id = args
-    else:
+    elif len(args) == 3:
         match_id, puuid, api_key = args
         riot_id = None
+    else:
+        print(f"[obtener_info_partida] ERROR: Número inesperado de argumentos: {len(args)}. Argumentos: {args}")
+        return None
     
     identifier = riot_id if riot_id else f"PUUID {puuid}"
     print(f"[obtener_info_partida] Obteniendo información para la partida {match_id} de {identifier}.")
