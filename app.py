@@ -1527,10 +1527,12 @@ def index():
     ultima_actualizacion = dt_target.strftime("%d/%m/%Y %H:%M:%S")
     
     print("[index] Renderizando index.html.")
+    has_player_data = bool(datos_jugadores) # Check if the list is not empty
     return render_template('index.html', datos_jugadores=datos_jugadores,
                            ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=DDRAGON_VERSION, 
-                           split_activo_nombre=split_activo_nombre)
+                           split_activo_nombre=split_activo_nombre,
+                           has_player_data=has_player_data)
 
 @app.route('/historial_global')
 def historial_global():

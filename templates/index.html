@@ -357,6 +357,7 @@
         </div>
     </div>
     
+    {% if datos_jugadores %}
     <div class="table-responsive">
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead class="table-dark">
@@ -484,6 +485,11 @@
             </tbody>
         </table>
     </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+        No hay datos de jugadores disponibles para mostrar en este momento. Por favor, inténtalo de nuevo más tarde.
+    </div>
+    {% endif %}
 </div>
 
 </div> <!-- Cierre de main-content -->
@@ -493,9 +499,11 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-        // Hide loading screen and show main content
-        document.getElementById('loading-screen').style.display = 'none';
-        document.getElementById('main-content').classList.remove('hidden');
+        // Only hide loading screen and show main content if there is player data
+        if ({{ has_player_data | tojson }}) {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('main-content').classList.remove('hidden');
+        }
 
         const backgroundAudio = document.getElementById('backgroundAudio');
         const toggleAudioButton = document.getElementById('toggleAudio');
