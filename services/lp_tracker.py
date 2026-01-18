@@ -218,9 +218,9 @@ def elo_tracker_worker(riot_api_key, github_token):
             # 4. Guardar el historial actualizado en GitHub
             _write_to_github(LP_HISTORY_FILE_PATH, lp_history, lp_history_sha, github_token)
 
-            print(f"[{datetime.now()}] [LP_TRACKER] Snapshot de ELO completado. Próxima ejecución en 10 minutos.")
+            print(f"[{datetime.now()}] [LP_TRACKER] Snapshot de ELO completado. Próxima ejecución en 5 minutos.")
             
         except Exception as e:
             print(f"[LP_TRACKER] Error inesperado en el worker de ELO: {e}")
             
-        time.sleep(600) # Espera 10 minutos
+        time.sleep(300) # Espera 5 minutos

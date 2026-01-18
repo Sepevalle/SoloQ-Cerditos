@@ -1668,45 +1668,47 @@ def _get_player_profile_data(game_name):
         historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name)
         
         for match in historial_partidas_completo.get('matches', []):
-            match['lp_change_this_game'] = None # Inicializar
-            game_end_ts = match.get('game_end_timestamp', 0)
-            queue_id = match.get('queue_id')
-            
-            queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR" if queue_id == 440 else None
-            
-            if game_end_ts > 0 and queue_name and queue_name in player_lp_history:
-                snapshots = sorted(player_lp_history[queue_name], key=lambda x: x['timestamp'])
+            # Solo calcular si el valor no está ya guardado en el JSON, como fallback
+            if match.get('lp_change_this_game') is None:
+                match['lp_change_this_game'] = None # Inicializar a None por si el cálculo de fallback falla
+                game_end_ts = match.get('game_end_timestamp', 0)
+                queue_id = match.get('queue_id')
                 
-                elo_before = None
-                elo_after = None
+                queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR" if queue_id == 440 else None
+                
+                if game_end_ts > 0 and queue_name and queue_name in player_lp_history:
+                    snapshots = sorted(player_lp_history[queue_name], key=lambda x: x['timestamp'])
+                    
+                    snapshot_before, snapshot_after = None, None
 
-                # Encontrar el ELO justo antes de la partida
-                for snapshot in reversed(snapshots):
-                    if snapshot['timestamp'] < game_end_ts:
-                        elo_before = snapshot['elo']
-                        break
-                
-                # Encontrar el ELO justo después de la partida
-                for snapshot in snapshots:
-                    if snapshot['timestamp'] > game_end_ts:
-                        elo_after = snapshot['elo']
-                        break
-                
-                if elo_before is not None and elo_after is not None:
-                    # Asegurarse de que no haya otra partida entre los snapshots
-                    is_clean_change = True
-                    for other_match in historial_partidas_completo.get('matches', []):
-                        if other_match['match_id'] != match['match_id'] and other_match.get('queue_id') == queue_id:
-                            other_ts = other_match.get('game_end_timestamp', 0)
-                            if elo_before and elo_after:
-                                if snapshot['timestamp'] < other_ts < snapshot['timestamp']:
+                    # Encontrar el snapshot justo antes de la partida
+                    for snapshot in reversed(snapshots):
+                        if snapshot['timestamp'] < game_end_ts:
+                            snapshot_before = snapshot
+                            break
+                    
+                    # Encontrar el snapshot justo después de la partida
+                    for snapshot in snapshots:
+                        if snapshot['timestamp'] > game_end_ts:
+                            snapshot_after = snapshot
+                            break
+                    
+                    if snapshot_before is not None and snapshot_after is not None:
+                        # Asegurarse de que no haya otra partida entre los snapshots
+                        is_clean_change = True
+                        for other_match in historial_partidas_completo.get('matches', []):
+                            if other_match['match_id'] != match['match_id'] and other_match.get('queue_id') == queue_id:
+                                other_ts = other_match.get('game_end_timestamp', 0)
+                                if snapshot_before['timestamp'] < other_ts < snapshot_after['timestamp']:
                                     is_clean_change = False
                                     break
-                    
-                    if is_clean_change:
-                        match['lp_change_this_game'] = elo_after - elo_before
-                        match['pre_game_valor_clasificacion'] = elo_before
-                        match['post_game_valor_clasificacion'] = elo_after
+                        
+                        if is_clean_change:
+                            elo_before = snapshot_before['elo']
+                            elo_after = snapshot_after['elo']
+                            match['lp_change_this_game'] = elo_after - elo_before
+                            match['pre_game_valor_clasificacion'] = elo_before
+                            match['post_game_valor_clasificacion'] = elo_after
 
 
     perfil = {
@@ -1754,9 +1756,24 @@ def _get_player_profile_data(game_name):
 
     historial_total = perfil.get('historial_partidas', [])
     
-    # --- Lógica de Gráfico de Evolución con lp_history.json ---
-    perfil['elo_history_soloq'] = player_lp_history.get("RANKED_SOLO_5x5", [])
-    perfil['elo_history_flexq'] = player_lp_history.get("RANKED_FLEX_SR", [])
+    # --- Lógica de Gráfico de Evolución basada en el historial de partidas ---
+    partidas_con_elo_soloq = sorted(
+        [p for p in historial_total if p.get('queue_id') == 420 and p.get('post_game_valor_clasificacion') is not None],
+        key=lambda x: x.get('game_end_timestamp', 0)
+    )
+    perfil['elo_history_soloq'] = [
+        {'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']}
+        for p in partidas_con_elo_soloq
+    ]
+
+    partidas_con_elo_flexq = sorted(
+        [p for p in historial_total if p.get('queue_id') == 440 and p.get('post_game_valor_clasificacion') is not None],
+        key=lambda x: x.get('game_end_timestamp', 0)
+    )
+    perfil['elo_history_flexq'] = [
+        {'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']}
+        for p in partidas_con_elo_flexq
+    ]
 
     if 'soloq' in perfil:
         partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
@@ -1828,6 +1845,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 print("[actualizar_historial_partidas_en_segundo_plano] Datos de DDragon no cargados, intentando actualizar.")
                 actualizar_ddragon_data()
 
+            lp_history = leer_lp_history()
             cuentas = leer_cuentas()
             puuid_dict = leer_puuids()
             # Crear un mapa inverso para buscar Riot IDs por PUUID eficientemente
@@ -1909,6 +1927,48 @@ def actualizar_historial_partidas_en_segundo_plano():
                     print(f"[actualizar_historial_partidas_en_segundo_plano] {len(nuevas_partidas_validas)} partidas válidas y {len(nuevos_remakes)} remakes procesados para {riot_id}.")
 
                     if nuevas_partidas_validas:
+                        # --- INICIO: CALCULAR Y ASIGNAR LP A NUEVAS PARTIDAS ---
+                        player_lp_history = lp_history.get(puuid, {})
+                        if player_lp_history:
+                            # Combinar partidas para una comprobación 'is_clean_change' precisa
+                            all_player_matches = historial_existente.get('matches', []) + nuevas_partidas_validas
+                            
+                            for match in nuevas_partidas_validas:
+                                match['lp_change_this_game'] = None
+                                game_end_ts = match.get('game_end_timestamp', 0)
+                                queue_id = match.get('queue_id')
+                                queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR" if queue_id == 440 else None
+
+                                if game_end_ts > 0 and queue_name and queue_name in player_lp_history:
+                                    snapshots = sorted(player_lp_history[queue_name], key=lambda x: x['timestamp'])
+                                    
+                                    snapshot_before, snapshot_after = None, None
+                                    for snapshot in reversed(snapshots):
+                                        if snapshot['timestamp'] < game_end_ts:
+                                            snapshot_before = snapshot
+                                            break
+                                    for snapshot in snapshots:
+                                        if snapshot['timestamp'] > game_end_ts:
+                                            snapshot_after = snapshot
+                                            break
+                                    
+                                    if snapshot_before and snapshot_after:
+                                        is_clean_change = True
+                                        for other_match in all_player_matches:
+                                            if other_match['match_id'] != match['match_id'] and other_match.get('queue_id') == queue_id:
+                                                other_ts = other_match.get('game_end_timestamp', 0)
+                                                if snapshot_before['timestamp'] < other_ts < snapshot_after['timestamp']:
+                                                    is_clean_change = False
+                                                    break
+                                        
+                                        if is_clean_change:
+                                            elo_before = snapshot_before['elo']
+                                            elo_after = snapshot_after['elo']
+                                            match['lp_change_this_game'] = elo_after - elo_before
+                                            match['pre_game_valor_clasificacion'] = elo_before
+                                            match['post_game_valor_clasificacion'] = elo_after
+                        # --- FIN: CALCULAR Y ASIGNAR LP A NUEVAS PARTIDAS ---
+
                         # --- DETECCIÓN DE CAMBIO DE NOMBRE (SIN LLAMADAS EXTRA A LA API) ---
                         for partida in nuevas_partidas_validas:
                             nuevo_riot_id = partida.get('riot_id')
