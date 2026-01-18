@@ -32,11 +32,22 @@ def get_personal_records(puuid):
     historial = leer_historial_jugador_github(puuid)
     matches = historial.get('matches', [])
 
+    # Get optional query parameters
+    queue_filter = request.args.get('queue', 'all')
+    champion_filter = request.args.get('champion', 'all') # Not strictly needed for personal records as they are per-player, but good for consistency
+
     # Filter matches by SEASON_START_TIMESTAMP
     filtered_matches = [
         m for m in matches 
         if m.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
     ]
+
+    # Apply queue filter if specified
+    if queue_filter != 'all':
+        filtered_matches = [
+            m for m in filtered_matches
+            if str(m.get('queue_id')) == queue_filter
+        ]
 
     # Sort matches by game_end_timestamp in descending order (most recent first)
     filtered_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)

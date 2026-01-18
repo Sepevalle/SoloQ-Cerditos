@@ -144,8 +144,9 @@
                     <label for="queueSelect" class="form-label">Filtrar por Cola:</label>
                     <select class="form-select" id="queueSelect" disabled>
                         <option value="all">Todas las Colas</option>
-                        <option value="soloq">Clasificatoria Solo/Duo</option>
-                        <option value="flex">Clasificatoria Flexible</option>
+                        {% for queue in available_queues %}
+                        <option value="{{ queue.id }}">{{ queue.name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
