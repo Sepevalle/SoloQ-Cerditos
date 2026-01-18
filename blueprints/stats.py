@@ -161,7 +161,7 @@ def estadisticas_globales():
         'total_games': total_games_global,
         'most_played_champions': most_played_champions,
         'player_with_most_games': player_with_most_games,
-        'records': records
+        'global_records': records
     }
 
     return render_template(
