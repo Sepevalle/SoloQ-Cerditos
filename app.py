@@ -1,3 +1,4 @@
+from services.lp_tracker import elo_tracker_worker
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 import requests
 import os
@@ -157,21 +158,6 @@ cache = {
 }
 CACHE_TIMEOUT = 130  # 2 minutos para el resumen principal de jugadores
 cache_lock = threading.Lock()
-
-# Global storage for LP tracking (in-game status)
-# Stores { (puuid, queue_type_string): {'pre_game_valor_clasificacion': int, 'game_start_timestamp': float, 'riot_id': str, 'queue_type': str} }
-player_in_game_lp = {}
-player_in_game_lp_lock = threading.Lock()
-
-# Stores { (puuid, queue_type_string): {'pre_game_valor_clasificacion': int, 'detection_timestamp': float, 'riot_id': str, 'queue_type': str} }
-# This will hold LP changes detected immediately after a game, to be associated with a match later.
-pending_lp_updates = {}
-pending_lp_updates_lock = threading.Lock()
-
-# Dead-letter queue for LP updates that could not be associated
-dead_letter_lp_updates = {}
-dead_letter_lp_updates_lock = threading.Lock()
-
 
 # Global cache for pre-calculated global statistics
 GLOBAL_STATS_CACHE = {
@@ -460,7 +446,6 @@ def actualizar_ddragon_data():
 
 # Cargar los datos de DDragon al inicio
 actualizar_ddragon_data()
-dead_letter_lp_updates.update(leer_dead_letter_lp_updates())
 
 
 
@@ -752,9 +737,6 @@ def obtener_info_partida(args):
             "first_blood_assist": p.get('firstBloodAssist', False),
             "objectives_stolen": p.get('objectivesStolen', 0),
             "kill_participation": kill_participation,
-            "lp_change_this_game": None, # Initialize LP change to None for new matches
-            "post_game_valor_clasificacion": None, # Initialize post-game ELO to None
-            "pre_game_valor_clasificacion": None, # Initialize pre-game ELO to None
 
             # --- AÑADIMOS LA LISTA DE TODOS LOS PARTICIPANTES ---
             "all_participants": all_participants_details
@@ -894,32 +876,6 @@ def leer_puuids():
         print(f"[leer_puuids] Error leyendo puuids.json de API: {e}")
     return {}
 
-def leer_dead_letter_lp_updates():
-    """Lee el archivo de dead-letter LP updates desde GitHub."""
-    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/dead_letter_lp_updates.json"
-    token = os.environ.get('GITHUB_TOKEN')
-    headers = {"Accept": "application/vnd.github.v3+json"}
-    if token:
-        headers["Authorization"] = f"token {token}"
-
-    print(f"[leer_dead_letter_lp_updates] Leyendo dead-letter LP updates desde API: {url}")
-    try:
-        resp = requests.get(url, headers=headers, timeout=30)
-        if resp.status_code == 200:
-            content = resp.json()
-            file_content = base64.b64decode(content['content']).decode('utf-8')
-            print("[leer_dead_letter_lp_updates] Dead-letter LP updates leídos exitosamente desde API.")
-            return json.loads(file_content)
-        elif resp.status_code == 404:
-            print("[leer_dead_letter_lp_updates] El archivo dead_letter_lp_updates.json no existe en API.")
-            return {}
-        else:
-            print(f"[leer_dead_letter_lp_updates] Error API: {resp.status_code}")
-            resp.raise_for_status()
-    except Exception as e:
-        print(f"[leer_dead_letter_lp_updates] Error leyendo dead_letter_lp_updates.json de API: {e}")
-    return {}
-
 def guardar_puuids_en_github(puuid_dict):
     """Guarda o actualiza el archivo puuids.json en GitHub."""
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/puuids.json"
@@ -954,88 +910,6 @@ def guardar_puuids_en_github(puuid_dict):
             print(f"[guardar_puuids_en_github] Error al actualizar puuids.json: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"[guardar_puuids_en_github] Error en la petición PUT a GitHub para puuids.json: {e}")
-
-def guardar_peak_elo_en_github(peak_elo_dict):
-    """Guarda o actualiza el archivo peak_elo.json en GitHub."""
-    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
-    token = os.environ.get('GITHUB_TOKEN')
-    if not token:
-        print("Token de GitHub no encontrado para guardar peak_elo. No se guardará el archivo.")
-        return
-
-    headers = {"Authorization": f"token {token}"}
-    
-    sha = None
-    try:
-        response = requests.get(url, headers=headers, timeout=30) # Aumentado timeout
-        if response.status_code == 200:
-            sha = response.json().get('sha')
-            print(f"[guardar_peak_elo_en_github] SHA de peak_elo.json obtenido: {sha}")
-        else:
-            print(f"[guardar_peak_elo_en_github] Error al obtener el archivo peak_elo.json para SHA: {response.status_code}")
-    except Exception as e:
-        print(f"[guardar_peak_elo_en_github] No se pudo obtener el SHA de peak_elo.json: {e}")
-        return
-
-    try:
-        contenido_json = json.dumps(peak_elo_dict, ensure_ascii=False, indent=2)
-        contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
-
-        response = requests.put(
-            url,
-            headers=headers,
-            json={
-                "message": "Actualizar peak elo",
-                "content": contenido_b64,
-                "sha": sha,
-                "branch": "main"
-            },
-            timeout=30 # Aumentado timeout
-        )
-        if response.status_code in (200, 201):
-            print("[guardar_peak_elo_en_github] Archivo peak_elo.json actualizado correctamente en GitHub.")
-        else:
-            print(f"[guardar_peak_elo_en_github] Error al actualizar peak_elo.json: {response.status_code} - {response.text}")
-    except Exception as e:
-        print(f"[guardar_peak_elo_en_github] Error al actualizar el archivo peak_elo.json: {e}")
-
-def guardar_dead_letter_lp_updates_en_github():
-    """Guarda el diccionario de dead-letter LP updates en GitHub."""
-    with dead_letter_lp_updates_lock:
-        if not dead_letter_lp_updates:
-            return
-
-        print("[guardar_dead_letter_lp_updates_en_github] Guardando dead-letter LP updates en GitHub.")
-        url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/dead_letter_lp_updates.json"
-        token = os.environ.get('GITHUB_TOKEN')
-        if not token:
-            print("[guardar_dead_letter_lp_updates_en_github] Token de GitHub no encontrado. No se puede guardar el archivo.")
-            return
-
-        headers = {"Authorization": f"token {token}"}
-        sha = None
-        try:
-            response = requests.get(url, headers=headers, timeout=30)
-            if response.status_code == 200:
-                sha = response.json().get('sha')
-        except Exception as e:
-            print(f"[guardar_dead_letter_lp_updates_en_github] No se pudo obtener el SHA de dead_letter_lp_updates.json: {e}")
-
-        contenido_json = json.dumps(dead_letter_lp_updates, indent=2)
-        contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
-        
-        data = {"message": "Actualizar dead-letter LP updates", "content": contenido_b64, "branch": "main"}
-        if sha:
-            data["sha"] = sha
-
-        try:
-            response = requests.put(url, headers=headers, json=data, timeout=30)
-            if response.status_code in (200, 201):
-                print("[guardar_dead_letter_lp_updates_en_github] Archivo dead_letter_lp_updates.json actualizado en GitHub.")
-            else:
-                print(f"[guardar_dead_letter_lp_updates_en_github] Error al actualizar dead_letter_lp_updates.json: {response.status_code} - {response.text}")
-        except Exception as e:
-            print(f"[guardar_dead_letter_lp_updates_en_github] Error en la petición PUT a GitHub: {e}")
 
 
 def _read_player_match_history_from_github(puuid, riot_id=None):
@@ -2962,6 +2836,12 @@ if __name__ == "__main__":
     personal_records_calc_thread.daemon = True
     personal_records_calc_thread.start()
     print("[main] Hilo 'actualizar_records_personales_periodicamente' iniciado.")
+
+    # Iniciar el nuevo hilo de seguimiento de LP
+    lp_tracker_thread = threading.Thread(target=elo_tracker_worker, args=(os.environ.get("RIOT_API_KEY"), os.environ.get("GITHUB_TOKEN")))
+    lp_tracker_thread.daemon = True
+    lp_tracker_thread.start()
+    print("[main] Hilo 'lp_tracker_thread' iniciado.")
 
     port = int(os.environ.get("PORT", 5000))
     print(f"[main] Aplicación Flask ejecutándose en http://0.0.0.0:{port}")
