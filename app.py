@@ -168,6 +168,11 @@ player_in_game_lp_lock = threading.Lock()
 pending_lp_updates = {}
 pending_lp_updates_lock = threading.Lock()
 
+# Dead-letter queue for LP updates that could not be associated
+dead_letter_lp_updates = {}
+dead_letter_lp_updates_lock = threading.Lock()
+
+
 # Global cache for pre-calculated global statistics
 GLOBAL_STATS_CACHE = {
     "data": None,
@@ -455,6 +460,8 @@ def actualizar_ddragon_data():
 
 # Cargar los datos de DDragon al inicio
 actualizar_ddragon_data()
+dead_letter_lp_updates.update(leer_dead_letter_lp_updates())
+
 
 
 def obtener_nombre_campeon(champion_id):
@@ -887,6 +894,32 @@ def leer_puuids():
         print(f"[leer_puuids] Error leyendo puuids.json de API: {e}")
     return {}
 
+def leer_dead_letter_lp_updates():
+    """Lee el archivo de dead-letter LP updates desde GitHub."""
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/dead_letter_lp_updates.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    print(f"[leer_dead_letter_lp_updates] Leyendo dead-letter LP updates desde API: {url}")
+    try:
+        resp = requests.get(url, headers=headers, timeout=30)
+        if resp.status_code == 200:
+            content = resp.json()
+            file_content = base64.b64decode(content['content']).decode('utf-8')
+            print("[leer_dead_letter_lp_updates] Dead-letter LP updates leídos exitosamente desde API.")
+            return json.loads(file_content)
+        elif resp.status_code == 404:
+            print("[leer_dead_letter_lp_updates] El archivo dead_letter_lp_updates.json no existe en API.")
+            return {}
+        else:
+            print(f"[leer_dead_letter_lp_updates] Error API: {resp.status_code}")
+            resp.raise_for_status()
+    except Exception as e:
+        print(f"[leer_dead_letter_lp_updates] Error leyendo dead_letter_lp_updates.json de API: {e}")
+    return {}
+
 def guardar_puuids_en_github(puuid_dict):
     """Guarda o actualiza el archivo puuids.json en GitHub."""
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/puuids.json"
@@ -965,6 +998,45 @@ def guardar_peak_elo_en_github(peak_elo_dict):
             print(f"[guardar_peak_elo_en_github] Error al actualizar peak_elo.json: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"[guardar_peak_elo_en_github] Error al actualizar el archivo peak_elo.json: {e}")
+
+def guardar_dead_letter_lp_updates_en_github():
+    """Guarda el diccionario de dead-letter LP updates en GitHub."""
+    with dead_letter_lp_updates_lock:
+        if not dead_letter_lp_updates:
+            return
+
+        print("[guardar_dead_letter_lp_updates_en_github] Guardando dead-letter LP updates en GitHub.")
+        url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/dead_letter_lp_updates.json"
+        token = os.environ.get('GITHUB_TOKEN')
+        if not token:
+            print("[guardar_dead_letter_lp_updates_en_github] Token de GitHub no encontrado. No se puede guardar el archivo.")
+            return
+
+        headers = {"Authorization": f"token {token}"}
+        sha = None
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            if response.status_code == 200:
+                sha = response.json().get('sha')
+        except Exception as e:
+            print(f"[guardar_dead_letter_lp_updates_en_github] No se pudo obtener el SHA de dead_letter_lp_updates.json: {e}")
+
+        contenido_json = json.dumps(dead_letter_lp_updates, indent=2)
+        contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+        
+        data = {"message": "Actualizar dead-letter LP updates", "content": contenido_b64, "branch": "main"}
+        if sha:
+            data["sha"] = sha
+
+        try:
+            response = requests.put(url, headers=headers, json=data, timeout=30)
+            if response.status_code in (200, 201):
+                print("[guardar_dead_letter_lp_updates_en_github] Archivo dead_letter_lp_updates.json actualizado en GitHub.")
+            else:
+                print(f"[guardar_dead_letter_lp_updates_en_github] Error al actualizar dead_letter_lp_updates.json: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"[guardar_dead_letter_lp_updates_en_github] Error en la petición PUT a GitHub: {e}")
+
 
 def _read_player_match_history_from_github(puuid, riot_id=None):
     """Lee el historial de partidas de un jugador directamente desde la API de GitHub."""
@@ -1722,84 +1794,7 @@ def historial_global():
                            global_match_history=final_matches,
                            ddragon_version=DDRAGON_VERSION)
 
-# @app.route('/h2h')
-# def h2h():
-#     """Renderiza la página de comparación H2H y calcula los datos on-demand."""
-#     print("[h2h] Petición recibida para la página de H2H.")
-    
-#     datos_jugadores, _ = obtener_datos_jugadores()
-    
-#     player_map = {}
-#     for p in datos_jugadores:
-#         if p.get('puuid') not in player_map:
-#             player_map[p['puuid']] = {'puuid': p['puuid'], 'jugador': p['jugador'], 'game_name': p['game_name']}
-    
-#     players_for_selector = sorted(player_map.values(), key=lambda x: x['jugador'])
 
-#     player1_puuid = request.args.get('player1')
-#     player2_puuid = request.args.get('player2')
-#     # Default to SoloQ if not specified
-#     selected_queue_name = request.args.get('queue_type', 'RANKED_SOLO_5x5')
-    
-#     queue_id_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-#     selected_queue_id = queue_id_map.get(selected_queue_name)
-
-#     comparison_data = None
-
-#     if player1_puuid and player2_puuid and player1_puuid != player2_puuid and selected_queue_id:
-#         print(f"[h2h] Calculando comparación para {selected_queue_name} entre {player1_puuid} y {player2_puuid}")
-        
-#         player1_base_data = player_map.get(player1_puuid)
-#         player2_base_data = player_map.get(player2_puuid)
-
-#         if player1_base_data and player2_base_data:
-#             historial1 = _read_player_match_history_from_github(player1_puuid, riot_id=player1_base_data['game_name'])
-#             historial2 = _read_player_match_history_from_github(player2_puuid, riot_id=player2_base_data['game_name'])
-            
-#             matches1_ids = {m['match_id'] for m in historial1.get('matches', []) if m.get('queue_id') == selected_queue_id}
-#             matches2_ids = {m['match_id'] for m in historial2.get('matches', []) if m.get('queue_id') == selected_queue_id}
-#             common_match_ids = matches1_ids.intersection(matches2_ids)
-
-#             h2h_stats = {'player1_wins': 0, 'player2_wins': 0}
-#             if common_match_ids:
-#                 common_matches_details = [m for m in historial1.get('matches', []) if m['match_id'] in common_match_ids]
-                
-#                 for match in common_matches_details:
-#                     p1_info, p2_info = None, None
-#                     for p in match.get('all_participants', []):
-#                         if p.get('puuid') == player1_puuid: p1_info = p
-#                         elif p.get('puuid') == player2_puuid: p2_info = p
-                    
-#                     if not p1_info or not p2_info:
-#                         p1_info_by_name = next((p for p in match.get('all_participants', []) if p.get('summoner_name') == player1_base_data['game_name'].split('#')[0]), None)
-#                         p2_info_by_name = next((p for p in match.get('all_participants', []) if p.get('summoner_name') == player2_base_data['game_name'].split('#')[0]), None)
-#                         if p1_info_by_name and p2_info_by_name:
-#                             p1_info, p2_info = p1_info_by_name, p2_info_by_name
-
-#                     if p1_info and p2_info and p1_info.get('team_id') != p2_info.get('team_id'):
-#                         if p1_info.get('win'): h2h_stats['player1_wins'] += 1
-#                         else: h2h_stats['player2_wins'] += 1
-            
-#             def get_player_stats(puuid, base_data, queue_name):
-#                 stats_list = [d for d in datos_jugadores if d.get('puuid') == puuid and d.get('queue_type') == queue_name]
-#                 queue_stats = stats_list[0] if stats_list else {}
-#                 total_games = queue_stats.get('wins', 0) + queue_stats.get('losses', 0)
-                
-#                 return {
-#                     'jugador': base_data['jugador'],
-#                     'game_name': base_data['game_name'],
-#                     'stats': queue_stats,
-#                     'winrate': (queue_stats.get('wins', 0) / total_games * 100) if total_games > 0 else 0,
-#                     'kda': queue_stats.get('kda', 0.0)
-#                 }
-
-#             comparison_data = {
-#                 'player1': get_player_stats(player1_puuid, player1_base_data, selected_queue_name),
-#                 'player2': get_player_stats(player2_puuid, player2_base_data, selected_queue_name)
-#             }
-#             comparison_data['h2h'] = h2h_stats
-
-#     return render_template('h2h.html', players=players_for_selector, comparison_data=comparison_data, selected_queue=selected_queue_name)
 
 @app.route('/api/players_and_accounts')
 def get_players_and_accounts():
@@ -2001,72 +1996,7 @@ def _get_player_profile_data(game_name):
     return perfil
 
 
-@app.route('/jugador_original/<path:game_name>')
-def perfil_jugador_original(game_name):
-    """
-    Muestra una página de perfil para un jugador específico.
-    Esta es la versión CORREGIDA Y MEJORADA de tu función original.
-    """
-    print(f"[perfil_jugador_original] Petición recibida para el perfil original de jugador: {game_name}")
-    todos_los_datos, _ = obtener_datos_jugadores()
-    
-    datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
-    
-    if not datos_del_jugador:
-        print(f"[perfil_jugador_original] Perfil de jugador original {game_name} no encontrado. Retornando 404.")
-        return render_template('404.html'), 404
-    
-    primer_perfil = datos_del_jugador[0]
-    puuid = primer_perfil.get('puuid')
 
-    historial_partidas_completo = {}
-    if puuid:
-        # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
-        historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name)
-        for match in historial_partidas_completo.get('matches', []):
-            if 'lp_change_this_game' not in match:
-                match['lp_change_this_game'] = None
-                print(f"[perfil_jugador_original] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} del jugador {puuid}.")
-            if 'pre_game_valor_clasificacion' not in match:
-                match['pre_game_valor_clasificacion'] = None
-            if 'post_game_valor_clasificacion' not in match:
-                match['post_game_valor_clasificacion'] = None
-
-
-    perfil = {
-        'nombre': primer_perfil.get('jugador', 'N/A'),
-        'game_name': game_name,
-        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''),
-        'historial_partidas': historial_partidas_completo.get('matches', [])
-    }
-    
-    for item in datos_del_jugador:
-        if item.get('queue_type') == 'RANKED_SOLO_5x5':
-            perfil['soloq'] = item
-        elif item.get('queue_type') == 'RANKED_FLEX_SR':
-            perfil['flexq'] = item
-
-    historial_total = perfil.get('historial_partidas', [])
-    
-    if 'soloq' in perfil:
-        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
-        rachas_soloq = calcular_rachas(partidas_soloq)
-        perfil['soloq'].update(rachas_soloq)
-        print(f"[perfil_jugador_original] Rachas SoloQ calculadas para {game_name}.")
-
-    if 'flexq' in perfil:
-        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
-        rachas_flexq = calcular_rachas(partidas_flexq)
-        perfil['flexq'].update(rachas_flexq)
-        print(f"[perfil_jugador_original] Rachas FlexQ calculadas para {game_name}.")
-
-    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-    print(f"[perfil_jugador_original] Perfil original de {game_name} preparado.")
-    return render_template('jugador.html',
-                           perfil=perfil,
-                           ddragon_version=DDRAGON_VERSION,
-                           datetime=datetime,
-                           now=datetime.now())
 
 def actualizar_historial_partidas_en_segundo_plano():
     """
@@ -2097,9 +2027,17 @@ def actualizar_historial_partidas_en_segundo_plano():
                 # Usar el mapa inverso para encontrar el PUUID si el riot_id de cuentas.txt es antiguo
                 puuid = puuid_dict.get(riot_id)
                 if not puuid:
-                    print(f"[actualizar_historial_partidas_en_segundo_plano] PUUID para {riot_id} no encontrado directamente. El nombre puede haber cambiado.")
-                    # Este es un fallback, la lógica principal de detección de cambio de nombre está más abajo
-                    continue
+                    print(f"[actualizar_historial_partidas_en_segundo_plano] PUUID para {riot_id} no encontrado. Intentando obtenerlo de la API...")
+                    game_name, tag_line = riot_id.split('#')
+                    puuid_info = obtener_puuid(api_key, game_name, tag_line)
+                    if puuid_info and 'puuid' in puuid_info:
+                        puuid = puuid_info['puuid']
+                        puuid_dict[riot_id] = puuid
+                        puuids_actualizados = True
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] PUUID {puuid} obtenido y añadido para {riot_id}.")
+                    else:
+                        print(f"[actualizar_historial_partidas_en_segundo_plano] Fallo al obtener PUUID para {riot_id}. Omitiendo a este jugador en este ciclo.")
+                        continue
 
                 matches_con_lp_asociado = [] # Lista para guardar confirmaciones
                 # print(f"[actualizar_historial_partidas_en_segundo_plano] Procesando historial para {riot_id} (PUUID: {puuid}).")
@@ -2204,6 +2142,13 @@ def actualizar_historial_partidas_en_segundo_plano():
 
                         # Si la partida aún no ha sido procesada y añadida al historial, se reintentará en el siguiente ciclo
                         if not target_match:
+                            if time.time() - lp_update_data.get('pending_since', time.time()) > 3600: # 1 hour
+                                print(f"[{lp_update_data['riot_id']}] [LP Associator] La actualización de LP para la partida {match_id} ha estado pendiente por más de 1 hora. Moviendo a la cola de dead-letter.")
+                                with dead_letter_lp_updates_lock:
+                                    dead_letter_lp_updates[match_id] = lp_update_data
+                                keys_to_clear_from_pending.append(match_id)
+                                continue
+                            
                             print(f"[{lp_update_data['riot_id']}] [LP Associator] La partida {match_id} no se encontró después de varios intentos. Se reintentará en el próximo ciclo.")
                             continue
 
@@ -2340,10 +2285,12 @@ def actualizar_historial_partidas_en_segundo_plano():
                     print(f"[actualizar_historial_partidas_en_segundo_plano] No hay cambios significativos para guardar en el historial de {riot_id}.")
 
             print("[actualizar_historial_partidas_en_segundo_plano] Ciclo de actualización de historial completado. Próxima revisión en 5 minutos.")
+            guardar_dead_letter_lp_updates_en_github()
             time.sleep(600)
 
         except Exception as e:
             print(f"[actualizar_historial_partidas_en_segundo_plano] ERROR GLOBAL en el hilo de actualización de estadísticas: {e}. Reintentando en 5 minutos.")
+            guardar_dead_letter_lp_updates_en_github()
             time.sleep(600)
 
 def keep_alive():
