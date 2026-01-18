@@ -565,6 +565,16 @@
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.soloq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.soloq.get('max_loss_streak', 0) }}D</span>
                         </p>
+                        <p>
+                            Rachas (Actual): 
+                            {% if perfil.soloq.get('current_win_streak', 0) > 0 %}
+                                <span class="text-success fw-bold">{{ perfil.soloq.get('current_win_streak', 0) }}V</span>
+                            {% elif perfil.soloq.get('current_loss_streak', 0) > 0 %}
+                                <span class="text-danger fw-bold">{{ perfil.soloq.get('current_loss_streak', 0) }}D</span>
+                            {% else %}
+                                <span>—</span>
+                            {% endif %}
+                        </p>
                         {# Nuevo campo para LP en 24h con detalle #}
                         {% if perfil.soloq.wins_24h is defined and (perfil.soloq.wins_24h > 0 or perfil.soloq.losses_24h > 0) %}
                         <p>
@@ -658,6 +668,16 @@
                         <p>
                             Rachas (Max): 
                             <span class="text-success fw-bold">{{ perfil.flexq.get('max_win_streak', 0) }}V</span> / <span class="text-danger fw-bold">{{ perfil.flexq.get('max_loss_streak', 0) }}D</span>
+                        </p>
+                        <p>
+                            Rachas (Actual): 
+                            {% if perfil.flexq.get('current_win_streak', 0) > 0 %}
+                                <span class="text-success fw-bold">{{ perfil.flexq.get('current_win_streak', 0) }}V</span>
+                            {% elif perfil.flexq.get('current_loss_streak', 0) > 0 %}
+                                <span class="text-danger fw-bold">{{ perfil.flexq.get('current_loss_streak', 0) }}D</span>
+                            {% else %}
+                                <span>—</span>
+                            {% endif %}
                         </p>
                         {# Nuevo campo para LP en 24h con detalle #}
                         {% if perfil.flexq.wins_24h is defined and (perfil.flexq.wins_24h > 0 or perfil.flexq.losses_24h > 0) %}

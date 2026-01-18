@@ -1501,6 +1501,14 @@ def actualizar_cache():
         total_assists = sum(p.get('assists', 0) for p in partidas_jugador)
         jugador['kda'] = (total_kills + total_assists) / total_deaths if total_deaths > 0 else float(total_kills + total_assists)
 
+        # Calcular rachas de victorias/derrotas para el jugador en esta cola
+        rachas = calcular_rachas(partidas_jugador)
+        jugador['current_win_streak'] = rachas['current_win_streak']
+        jugador['current_loss_streak'] = rachas['current_loss_streak']
+        # Guardar también las rachas máximas, aunque no se usen en la vista principal, pueden ser útiles.
+        jugador['max_win_streak'] = rachas['max_win_streak']
+        jugador['max_loss_streak'] = rachas['max_loss_streak']
+
         if not partidas_jugador:
             continue
 
