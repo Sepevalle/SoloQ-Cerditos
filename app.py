@@ -502,6 +502,18 @@ def obtener_elo(api_key, puuid, riot_id=None):
         print(f"[obtener_elo] No se pudo obtener el Elo para {identifier}.")
         return None
 
+def obtener_historial_partidas(api_key, puuid, count=20):
+    """Obtiene el historial de partidas de un jugador dado su PUUID."""
+    print(f"[obtener_historial_partidas] Intentando obtener historial de partidas para PUUID: {puuid}. Cantidad: {count}")
+    url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count={count}&api_key={api_key}"
+    response = make_api_request(url)
+    if response:
+        print(f"[obtener_historial_partidas] Historial de partidas obtenido para PUUID: {puuid}.")
+        return response.json()
+    else:
+        print(f"[obtener_historial_partidas] No se pudo obtener el historial de partidas para {puuid}.")
+        return None
+
 def esta_en_partida(api_key, puuid, riot_id=None):
     """
     Comprueba si un jugador está en una partida activa.
@@ -1220,14 +1232,111 @@ def procesar_jugador(args_tuple):
     # or if they just finished a game (was in game before but not anymore).
     needs_full_update = not old_data_list or is_currently_in_game or was_in_game_before
 
-    if not needs_full_update:
-        print(f"[procesar_jugador] Jugador {riot_id} inactivo. Omitiendo actualización de Elo.")
+    # Obtener historial de partidas existente (si lo hay)
+    player_match_history_data = get_player_match_history(puuid, riot_id=riot_id)
+    existing_matches = player_match_history_data.get('matches', [])
+    existing_match_ids = {m['match_id'] for m in existing_matches}
+    
+    # Filtrar remakes guardados para no volver a procesarlos
+    remakes_guardados = set(player_match_history_data.get('remakes', []))
+
+    new_matches_details = [] # Para almacenar los detalles de las partidas recién obtenidas
+
+    if needs_full_update:
+        print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
+        
+        # 3. Obtener nuevos IDs de partidas de la API
+        all_match_ids = obtener_historial_partidas(api_key_main, puuid, count=100) # Pedir más partidas
+        if all_match_ids:
+            # Filtrar partidas de la temporada actual y nuevas (no guardadas previamente)
+            new_match_ids_to_process = []
+            for match_id in all_match_ids:
+                # Comprobar si la partida ya fue procesada o es un remake conocido
+                if match_id not in existing_match_ids and match_id not in remakes_guardados:
+                    new_match_ids_to_process.append(match_id)
+            
+            # Limitar a un número razonable de nuevas partidas para procesar en un ciclo
+            # para evitar sobrecargar la API en caso de que un jugador tenga muchas partidas nuevas.
+            MAX_NEW_MATCHES_PER_UPDATE = 30
+            if len(new_match_ids_to_process) > MAX_NEW_MATCHES_PER_UPDATE:
+                print(f"[procesar_jugador] Limiting new matches for {riot_id} from {len(new_match_ids_to_process)} to {MAX_NEW_MATCHES_PER_UPDATE}.")
+                new_match_ids_to_process = new_match_ids_to_process[:MAX_NEW_MATCHES_PER_UPDATE]
+
+
+            if new_match_ids_to_process:
+                print(f"[procesar_jugador] Procesando {len(new_match_ids_to_process)} nuevas partidas para {riot_id}.")
+                tareas_partidas = [
+                    (match_id, puuid, api_key_main, riot_id) for match_id in new_match_ids_to_process
+                ]
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    resultados_partidas = executor.map(obtener_info_partida, tareas_partidas)
+                
+                for resultado in resultados_partidas:
+                    if resultado:
+                        # Asegurarse de que el game_end_timestamp sea posterior al inicio de la temporada
+                        if resultado.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP:
+                            new_matches_details.append(resultado)
+                        else:
+                            print(f"[procesar_jugador] Ignorando partida {resultado.get('match_id')} para {riot_id} por ser anterior a la temporada actual.")
+                    else:
+                        print(f"[procesar_jugador] Advertencia: Una de las nuevas partidas para {riot_id} no se pudo procesar.")
+                print(f"[procesar_jugador] {len(new_matches_details)} partidas nuevas procesadas exitosamente para {riot_id}.")
+            else:
+                print(f"[procesar_jugador] No hay nuevas partidas para procesar para {riot_id} en la temporada actual.")
+        else:
+            print(f"[procesar_jugador] No se pudo obtener ningún ID de partida de la API para {riot_id}.")
+        
+        # Combinar partidas existentes con las nuevas, eliminando duplicados si los hubiera
+        updated_matches = {m['match_id']: m for m in existing_matches}
+        for new_match in new_matches_details:
+            updated_matches[new_match['match_id']] = new_match
+        
+        # Reconvertir a lista y ordenar por fecha (más reciente primero)
+        all_matches_for_player = sorted(updated_matches.values(), key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+
+        # Actualizar los remakes guardados (si se detectaron nuevos remakes durante obtener_info_partida)
+        newly_detected_remakes = {
+            m['match_id'] for m in new_matches_details
+            if not m # Si el resultado es None, implica un remake o error irrecuperable
+            # TODO: Add explicit check for remake flag from riot_api.obtener_info_partida
+        }
+        updated_remakes = remakes_guardados.union(newly_detected_remakes)
+
+
+        # Recalcular LP y Victorias/Derrotas 24h para ambas colas
+        soloq_lp_change_24h_data = _calculate_lp_change_for_player(puuid, "RANKED_SOLO_5x5", all_matches_for_player, riot_id)
+        flexq_lp_change_24h_data = _calculate_lp_change_for_player(puuid, "RANKED_FLEX_SR", all_matches_for_player, riot_id)
+
+
+        # Guardar historial actualizado en GitHub
+        updated_historial_data = {
+            'matches': all_matches_for_player,
+            'last_updated': time.time(),
+            'soloq_lp_change_24h': soloq_lp_change_24h_data['lp_change'],
+            'soloq_wins_24h': soloq_lp_change_24h_data['wins'],
+            'soloq_losses_24h': soloq_lp_change_24h_data['losses'],
+            'flexq_lp_change_24h': flexq_lp_change_24h_data['lp_change'],
+            'flexq_wins_24h': flexq_lp_change_24h_data['wins'],
+            'flexq_losses_24h': flexq_lp_change_24h_data['losses'],
+            'remakes': list(updated_remakes)
+        }
+        guardar_historial_jugador_github(puuid, updated_historial_data, riot_id=riot_id)
+        
+        # Actualizar la caché en memoria inmediatamente después de guardar
+        with PLAYER_MATCH_HISTORY_LOCK:
+            PLAYER_MATCH_HISTORY_CACHE[puuid] = {
+                'data': updated_historial_data,
+                'timestamp': time.time()
+            }
+        print(f"[procesar_jugador] Historial de partidas de {riot_id} actualizado y guardado en GitHub.")
+    else:
+        print(f"[procesar_jugador] Jugador {riot_id} inactivo. Omitiendo actualización de Elo y historial de partidas.")
+        # If no full update, still ensure 'en_partida' is false in old data
         for data in old_data_list:
             data['en_partida'] = False
         return old_data_list
 
-    print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
-    
+    # Continuar con el procesamiento de datos del jugador para la visualización en el frontend
     riot_id_modified = riot_id.replace("#", "-")
     url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
     url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
