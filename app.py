@@ -1988,11 +1988,11 @@ def actualizar_historial_partidas_en_segundo_plano():
                                                     break
                                         
                                         if is_clean_change:
-                                            elo_before = snapshot_before['elo']
-                                            elo_after = snapshot_after['elo']
-                                            match['lp_change_this_game'] = elo_after - elo_before
-                                            match['pre_game_valor_clasificacion'] = elo_before
-                                            match['post_game_valor_clasificacion'] = elo_after
+                                            lp_before = snapshot_before.get('league_points_raw', 0)
+                                            lp_after = snapshot_after.get('league_points_raw', 0)
+                                            match['lp_change_this_game'] = lp_after - lp_before
+                                            match['pre_game_valor_clasificacion'] = snapshot_before['elo']
+                                            match['post_game_valor_clasificacion'] = snapshot_after['elo']
                         # --- FIN: CALCULAR Y ASIGNAR LP A NUEVAS PARTIDAS ---
 
                         # --- DETECCIÓN DE CAMBIO DE NOMBRE (SIN LLAMADAS EXTRA A LA API) ---
@@ -2014,6 +2014,56 @@ def actualizar_historial_partidas_en_segundo_plano():
                         historial_existente.setdefault('matches', []).extend(nuevas_partidas_validas)
                         print(f"[actualizar_historial_partidas_en_segundo_plano] Añadidas {len(nuevas_partidas_validas)} partidas válidas al historial de {riot_id}.")
 
+                # --- INICIO: CALCULAR/ACTUALIZAR LP PARA PARTIDAS EXISTENTES CON LP NULO ---
+                player_lp_history = lp_history.get(puuid, {}) 
+                if player_lp_history:
+                    current_all_matches = historial_existente.get('matches', []) 
+                    updated_existing_matches = False # Flag to indicate if any existing match was updated
+
+                    for match_to_update in current_all_matches:
+                        if match_to_update.get('lp_change_this_game') is None:
+                            game_end_ts = match_to_update.get('game_end_timestamp', 0)
+                            queue_id = match_to_update.get('queue_id')
+                            queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR" if queue_id == 440 else None
+
+                            if game_end_ts > 0 and queue_name and queue_name in player_lp_history:
+                                snapshots = sorted(player_lp_history[queue_name], key=lambda x: x['timestamp'])
+                                
+                                snapshot_before, snapshot_after = None, None
+                                for snapshot in reversed(snapshots):
+                                    if snapshot['timestamp'] < game_end_ts:
+                                        snapshot_before = snapshot
+                                        break
+                                for snapshot in snapshots:
+                                    if snapshot['timestamp'] > game_end_ts:
+                                        snapshot_after = snapshot
+                                        break
+                                
+                                if snapshot_before and snapshot_after:
+                                    is_clean_change = True
+                                    for other_match in current_all_matches:
+                                        if other_match['match_id'] != match_to_update['match_id'] and other_match.get('queue_id') == queue_id:
+                                            other_ts = other_match.get('game_end_timestamp', 0)
+                                            if snapshot_before['timestamp'] < other_ts < snapshot_after['timestamp']:
+                                                is_clean_change = False
+                                                break
+                                    
+                                    if is_clean_change:
+                                        lp_before = snapshot_before.get('league_points_raw', 0)
+                                        lp_after = snapshot_after.get('league_points_raw', 0)
+                                        match_to_update['lp_change_this_game'] = lp_after - lp_before
+                                        match_to_update['pre_game_valor_clasificacion'] = snapshot_before['elo']
+                                        match_to_update['post_game_valor_clasificacion'] = snapshot_after['elo']
+                                        updated_existing_matches = True
+                                        print(f"[actualizar_historial_partidas_en_segundo_plano] LP re-calculado para match {match_to_update['match_id']} de {riot_id}: {match_to_update['lp_change_this_game']}")
+                                    else:
+                                        print(f"[actualizar_historial_partidas_en_segundo_plano] No clean change found between snapshots for match {match_to_update['match_id']} of {riot_id}. LP remains null.")
+                                else:
+                                    print(f"[actualizar_historial_partidas_en_segundo_plano] No sufficient LP snapshots for match {match_to_update['match_id']} of {riot_id}. LP remains null.")
+                            else:
+                                print(f"[actualizar_historial_partidas_en_segundo_plano] Missing queue_name or game_end_ts for match {match_to_update['match_id']} of {riot_id}. LP remains null.")
+                # --- FIN: CALCULAR/ACTUALIZAR LP PARA PARTIDAS EXISTENTES CON LP NULO ---
+
                 
                 # se actualicen con cada ciclo de actualización del historial.
                 current_riot_id_for_puuid = puuid_to_riot_id.get(puuid, riot_id)
@@ -2021,7 +2071,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 stats_have_changed = False # No longer calculated here
                 
                 # Only save if there were new valid matches or new remakes or if the stats have changed
-                if nuevas_partidas_validas or nuevos_remakes or stats_have_changed:
+                if nuevas_partidas_validas or nuevos_remakes or updated_existing_matches:
                     historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
                     # print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
 

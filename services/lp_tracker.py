@@ -211,7 +211,8 @@ def elo_tracker_worker(riot_api_key, github_token):
                         # Añadir el nuevo snapshot
                         lp_history[puuid][queue_type].append({
                             "timestamp": timestamp,
-                            "elo": valor
+                            "elo": valor,
+                            "league_points_raw": entry.get('leaguePoints', 0)
                         })
                         print(f"[LP_TRACKER] Snapshot añadido para {riot_id} en {queue_type}: {valor} ELO")
 
