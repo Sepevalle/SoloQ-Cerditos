@@ -1366,19 +1366,33 @@ def actualizar_cache():
         historial = get_player_match_history(puuid, riot_id=jugador.get('game_name')) 
         all_matches_for_player = historial.get('matches', [])
 
-        # OPTIMIZACIÓN: Leer datos de actividad de 24h directamente del historial pre-calculado.
-        if queue_type == "RANKED_SOLO_5x5":
-            jugador['lp_change_24h'] = historial.get('soloq_lp_change_24h', 0)
-            jugador['wins_24h'] = historial.get('soloq_wins_24h', 0)
-            jugador['losses_24h'] = historial.get('soloq_losses_24h', 0)
-        elif queue_type == "RANKED_FLEX_SR":
-            jugador['lp_change_24h'] = historial.get('flexq_lp_change_24h', 0)
-            jugador['wins_24h'] = historial.get('flexq_wins_24h', 0)
-            jugador['losses_24h'] = historial.get('flexq_losses_24h', 0)
-        else:
-            jugador['lp_change_24h'] = 0
-            jugador['wins_24h'] = 0
-            jugador['losses_24h'] = 0
+        # CALCULAR DINÁMICAMENTE el resumen de 24h
+        now_utc = datetime.now(timezone.utc)
+        one_day_ago_timestamp_ms = int((now_utc - timedelta(days=1)).timestamp() * 1000)
+        
+        lp_change_24h = 0
+        wins_24h = 0
+        losses_24h = 0
+
+        # Filtrar partidas de la cola correcta para el cálculo
+        partidas_de_la_cola_en_24h = [
+            m for m in all_matches_for_player 
+            if m.get('queue_id') == queue_id and m.get('game_end_timestamp', 0) > one_day_ago_timestamp_ms
+        ]
+
+        for match in partidas_de_la_cola_en_24h:
+            lp_change = match.get('lp_change_this_game')
+            if lp_change is not None:
+                lp_change_24h += lp_change
+            
+            if match.get('win'):
+                wins_24h += 1
+            else:
+                losses_24h += 1
+
+        jugador['lp_change_24h'] = lp_change_24h
+        jugador['wins_24h'] = wins_24h
+        jugador['losses_24h'] = losses_24h
 
         partidas_jugador = [
             p for p in all_matches_for_player
@@ -1760,41 +1774,11 @@ def _get_player_profile_data(game_name):
         'historial_partidas': historial_partidas_completo.get('matches', [])
     }
     
-    # Recalcular el resumen de 24h
-    now_utc = datetime.now(timezone.utc)
-    one_day_ago_timestamp_ms = int((now_utc - timedelta(days=1)).timestamp() * 1000)
-    
-    lp_change_soloq_24h = 0
-    wins_soloq_24h = 0
-    losses_soloq_24h = 0
-    lp_change_flexq_24h = 0
-    wins_flexq_24h = 0
-    losses_flexq_24h = 0
-
-    for match in perfil['historial_partidas']:
-        if match.get('game_end_timestamp', 0) > one_day_ago_timestamp_ms:
-            lp_change = match.get('lp_change_this_game')
-            if lp_change is not None:
-                if match.get('queue_id') == 420:
-                    lp_change_soloq_24h += lp_change
-                    if match.get('win'): wins_soloq_24h += 1 
-                    else: losses_soloq_24h += 1
-                elif match.get('queue_id') == 440:
-                    lp_change_flexq_24h += lp_change
-                    if match.get('win'): wins_flexq_24h += 1
-                    else: losses_flexq_24h += 1
-
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['soloq'] = item
-            perfil['soloq']['lp_change_24h'] = lp_change_soloq_24h
-            perfil['soloq']['wins_24h'] = wins_soloq_24h
-            perfil['soloq']['losses_24h'] = losses_soloq_24h
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['flexq'] = item
-            perfil['flexq']['lp_change_24h'] = lp_change_flexq_24h
-            perfil['flexq']['wins_24h'] = wins_flexq_24h
-            perfil['flexq']['losses_24h'] = losses_flexq_24h
 
     historial_total = perfil.get('historial_partidas', [])
     
@@ -2034,56 +2018,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 # se actualicen con cada ciclo de actualización del historial.
                 current_riot_id_for_puuid = puuid_to_riot_id.get(puuid, riot_id)
 
-                # --- INICIO: CALCULAR Y GUARDAR RESUMEN DE 24H ---
-
-                # Store old values before recalculating to check for changes
-                old_soloq_lp = historial_existente.get('soloq_lp_change_24h', 0)
-                old_soloq_wins = historial_existente.get('soloq_wins_24h', 0)
-                old_soloq_losses = historial_existente.get('soloq_losses_24h', 0)
-                old_flexq_lp = historial_existente.get('flexq_lp_change_24h', 0)
-                old_flexq_wins = historial_existente.get('flexq_wins_24h', 0)
-                old_flexq_losses = historial_existente.get('flexq_losses_24h', 0)
-
-                now_utc = datetime.now(timezone.utc)
-                one_day_ago_timestamp_ms = int((now_utc - timedelta(days=1)).timestamp() * 1000)
-                
-                lp_change_soloq_24h = 0
-                wins_soloq_24h = 0
-                losses_soloq_24h = 0
-                lp_change_flexq_24h = 0
-                wins_flexq_24h = 0
-                losses_flexq_24h = 0
-
-                for match in historial_existente.get('matches', []):
-                    if match.get('game_end_timestamp', 0) > one_day_ago_timestamp_ms:
-                        lp_change = match.get('lp_change_this_game')
-                        if lp_change is not None:
-                            if match.get('queue_id') == 420: # SoloQ
-                                lp_change_soloq_24h += lp_change
-                                if match.get('win'): wins_soloq_24h += 1 
-                                else: losses_soloq_24h += 1
-                            elif match.get('queue_id') == 440: # FlexQ
-                                lp_change_flexq_24h += lp_change
-                                if match.get('win'): wins_flexq_24h += 1
-                                else: losses_flexq_24h += 1
-                
-                historial_existente['soloq_lp_change_24h'] = lp_change_soloq_24h
-                historial_existente['soloq_wins_24h'] = wins_soloq_24h
-                historial_existente['soloq_losses_24h'] = losses_soloq_24h
-                historial_existente['flexq_lp_change_24h'] = lp_change_flexq_24h
-                historial_existente['flexq_wins_24h'] = wins_flexq_24h
-                historial_existente['flexq_losses_24h'] = losses_flexq_24h
-                # --- FIN: CALCULAR Y GUARDAR RESUMEN DE 24H ---
-
-                # Check if the stats have changed
-                stats_have_changed = (
-                    old_soloq_lp != historial_existente['soloq_lp_change_24h'] or
-                    old_soloq_wins != historial_existente['soloq_wins_24h'] or
-                    old_soloq_losses != historial_existente['soloq_losses_24h'] or
-                    old_flexq_lp != historial_existente['flexq_lp_change_24h'] or
-                    old_flexq_wins != historial_existente['flexq_wins_24h'] or
-                    old_flexq_losses != historial_existente['flexq_losses_24h']
-                )
+                stats_have_changed = False # No longer calculated here
                 
                 # Only save if there were new valid matches or new remakes or if the stats have changed
                 if nuevas_partidas_validas or nuevos_remakes or stats_have_changed:
