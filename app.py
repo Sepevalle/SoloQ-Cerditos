@@ -2235,7 +2235,10 @@ def _calculate_stats_for_queue(all_matches, queue_id_filter, champion_filter=Non
     if champion_filter:
         filtered_matches = [m for m in filtered_matches if m.get('champion_name') == champion_filter]
     if queue_id_filter is not None:
-        filtered_matches = [m for m in filtered_matches if m.get('queue_id') == queue_id_filter]
+        if isinstance(queue_id_filter, list):
+            filtered_matches = [m for m in filtered_matches if m.get('queue_id') in queue_id_filter]
+        else:
+            filtered_matches = [m for m in filtered_matches if m.get('queue_id') == queue_id_filter]
     
     total_games_in_queue = len(filtered_matches)
     if total_games_in_queue == 0:
@@ -2376,6 +2379,7 @@ def _calculate_and_cache_global_stats():
     # Define the queue filters
     queue_filters = {
         'all': None,
+        'all_rankeds': [420, 440],
         'soloq': 420,
         'flex': 440
     }
@@ -2399,11 +2403,11 @@ def estadisticas_globales():
     
     selected_queue_id = request.args.get('queue', 'all')
     # Validate the queue ID from the request
-    if selected_queue_id not in ['all', '420', '440']:
+    if selected_queue_id not in ['all', '420', '440', 'all_rankeds']:
         selected_queue_id = 'all'
 
-    # Map the ID from the request to the key used in the cache ('soloq', 'flex')
-    queue_id_to_name_map = {'420': 'soloq', '440': 'flex', 'all': 'all'}
+    # Map the ID from the request to the key used in the cache
+    queue_id_to_name_map = {'420': 'soloq', '440': 'flex', 'all': 'all', 'all_rankeds': 'all_rankeds'}
     selected_queue_name = queue_id_to_name_map.get(selected_queue_id, 'all')
 
     selected_champion = request.args.get('champion', 'all')
@@ -2427,8 +2431,9 @@ def estadisticas_globales():
     if not selected_champion:
         global_stats = all_global_stats.get(selected_queue_name) if all_global_stats else None
     else:
-        # The queue ID from the request is already the correct format for the filter, just need to cast to int
-        queue_id_filter = int(selected_queue_id) if selected_queue_id.isdigit() else None
+        # Define the mapping from the request value to the actual filter value
+        queue_id_map = {'420': 420, '440': 440, 'all_rankeds': [420, 440], 'all': None}
+        queue_id_filter = queue_id_map.get(selected_queue_id)
         global_stats = _calculate_stats_for_queue(all_matches, queue_id_filter, champion_filter=selected_champion)
 
 
@@ -2446,6 +2451,7 @@ def estadisticas_globales():
     champion_list = sorted(list(set(m.get('champion_name') for m in all_matches if m.get('champion_name'))))
     
     available_queues = [
+        {'id': 'all_rankeds', 'name': 'All Rankeds'},
         {'id': 420, 'name': 'Ranked Solo/Duo'},
         {'id': 440, 'name': 'Ranked Flex'}
     ]
