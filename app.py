@@ -850,6 +850,41 @@ def leer_peak_elo():
 
     return False, {}
 
+def guardar_peak_elo_en_github(peak_elo_dict):
+    """Guarda o actualiza el archivo peak_elo.json en GitHub."""
+    url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/peak_elo.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print("Token de GitHub no encontrado para guardar Peak ELO. No se guardará el archivo.")
+        return
+
+    headers = {"Authorization": f"token {token}"}
+    
+    sha = None
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        if response.status_code == 200:
+            sha = response.json().get('sha')
+            print(f"[guardar_peak_elo_en_github] SHA de peak_elo.json obtenido: {sha}")
+    except Exception as e:
+        print(f"[guardar_peak_elo_en_github] No se pudo obtener el SHA de peak_elo.json: {e}")
+
+    contenido_json = json.dumps(peak_elo_dict, indent=2)
+    contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+    
+    data = {"message": "Actualizar Peak ELO", "content": contenido_b64, "branch": "main"}
+    if sha:
+        data["sha"] = sha
+
+    try:
+        response = requests.put(url, headers=headers, json=data, timeout=30)
+        if response.status_code in (200, 201):
+            print("[guardar_peak_elo_en_github] Archivo peak_elo.json actualizado correctamente en GitHub.")
+        else:
+            print(f"[guardar_peak_elo_en_github] Error al actualizar peak_elo.json: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"[guardar_peak_elo_en_github] Error en la petición PUT a GitHub para peak_elo.json: {e}")
+
 def leer_puuids():
     """Lee el archivo de PUUIDs desde la API de GitHub para evitar caché de CDN."""
     url = "https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/puuids.json"

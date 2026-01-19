@@ -88,7 +88,7 @@
                 <select name="queue" id="queue" class="form-select">
                     <option value="all" {% if current_queue == 'all' %}selected{% endif %}>Todas las Colas</option>
                     {% for queue in available_queues %}
-                    <option value="{{ queue.id }}" {% if str(queue.id) == current_queue %}selected{% endif %}>{{ queue.name }}</option>
+                    <option value="{{ queue.id }}" {% if queue.id|string == current_queue %}selected{% endif %}>{{ queue.name }}</option>
                     {% endfor %}
                 </select>
             </div>
