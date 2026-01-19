@@ -29,18 +29,12 @@ def _get_player_profile_data(game_name):
         'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''),
         'historial_partidas': historial_partidas_completo.get('matches', [])
     }
-    
-    # OPTIMIZACIÓN: Leer lp_change_24h directamente del historial pre-calculado
-    lp_change_soloq_24h = historial_partidas_completo.get('soloq_lp_change_24h', 0)
-    lp_change_flexq_24h = historial_partidas_completo.get('flexq_lp_change_24h', 0)
 
     for item in datos_del_jugador:
         if item.get('queue_type') == 'RANKED_SOLO_5x5':
             perfil['soloq'] = item
-            perfil['soloq']['lp_change_24h'] = lp_change_soloq_24h
         elif item.get('queue_type') == 'RANKED_FLEX_SR':
             perfil['flexq'] = item
-            perfil['flexq']['lp_change_24h'] = lp_change_flexq_24h
 
     historial_total = perfil.get('historial_partidas', [])
     
