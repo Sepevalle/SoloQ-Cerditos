@@ -2397,9 +2397,14 @@ def estadisticas_globales():
     """Renderiza la página de estadísticas globales, filtrada por tipo de cola."""
     print("[estadisticas_globales] Petición recibida para la página de estadísticas globales.")
     
-    selected_queue = request.args.get('queue', 'all').lower()
-    if selected_queue not in ['all', 'soloq', 'flex']:
-        selected_queue = 'all'
+    selected_queue_id = request.args.get('queue', 'all')
+    # Validate the queue ID from the request
+    if selected_queue_id not in ['all', '420', '440']:
+        selected_queue_id = 'all'
+
+    # Map the ID from the request to the key used in the cache ('soloq', 'flex')
+    queue_id_to_name_map = {'420': 'soloq', '440': 'flex', 'all': 'all'}
+    selected_queue_name = queue_id_to_name_map.get(selected_queue_id, 'all')
 
     selected_champion = request.args.get('champion', 'all')
     if selected_champion == 'all':
@@ -2420,10 +2425,10 @@ def estadisticas_globales():
 
     # Select the stats for the chosen queue
     if not selected_champion:
-        global_stats = all_global_stats.get(selected_queue) if all_global_stats else None
+        global_stats = all_global_stats.get(selected_queue_name) if all_global_stats else None
     else:
-        queue_id_map = {'soloq': 420, 'flex': 440}
-        queue_id_filter = queue_id_map.get(selected_queue)
+        # The queue ID from the request is already the correct format for the filter, just need to cast to int
+        queue_id_filter = int(selected_queue_id) if selected_queue_id.isdigit() else None
         global_stats = _calculate_stats_for_queue(all_matches, queue_id_filter, champion_filter=selected_champion)
 
 
@@ -2439,8 +2444,13 @@ def estadisticas_globales():
         global_stats = default_record_set()
     
     champion_list = sorted(list(set(m.get('champion_name') for m in all_matches if m.get('champion_name'))))
+    
+    available_queues = [
+        {'id': 420, 'name': 'Ranked Solo/Duo'},
+        {'id': 440, 'name': 'Ranked Flex'}
+    ]
 
-    return render_template('estadisticas.html', global_stats=global_stats, ddragon_version=DDRAGON_VERSION, current_queue=selected_queue, champion_list=champion_list, selected_champion=selected_champion)
+    return render_template('estadisticas.html', global_stats=global_stats, ddragon_version=DDRAGON_VERSION, current_queue=selected_queue_id, available_queues=available_queues, champion_list=champion_list, selected_champion=selected_champion)
 
 
 
