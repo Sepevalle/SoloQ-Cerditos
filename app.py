@@ -14,6 +14,11 @@ import locale # Import for locale formatting
 
 app = Flask(__name__)
 
+# Inyectar 'str' en el contexto de Jinja2 para que esté disponible en todas las plantillas.
+@app.context_processor
+def utility_processor():
+    return dict(str=str)
+
 # --- CONFIGURACIÓN DE ZONA HORARIA Y LOCALIZACIÓN ---
 # Define la zona horaria de visualización (UTC+2) para asegurar consistencia.
 TARGET_TIMEZONE = timezone(timedelta(hours=2))
