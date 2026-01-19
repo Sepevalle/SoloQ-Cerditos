@@ -2030,6 +2030,15 @@ def actualizar_historial_partidas_en_segundo_plano():
                 current_riot_id_for_puuid = puuid_to_riot_id.get(puuid, riot_id)
 
                 # --- INICIO: CALCULAR Y GUARDAR RESUMEN DE 24H ---
+
+                # Store old values before recalculating to check for changes
+                old_soloq_lp = historial_existente.get('soloq_lp_change_24h', 0)
+                old_soloq_wins = historial_existente.get('soloq_wins_24h', 0)
+                old_soloq_losses = historial_existente.get('soloq_losses_24h', 0)
+                old_flexq_lp = historial_existente.get('flexq_lp_change_24h', 0)
+                old_flexq_wins = historial_existente.get('flexq_wins_24h', 0)
+                old_flexq_losses = historial_existente.get('flexq_losses_24h', 0)
+
                 now_utc = datetime.now(timezone.utc)
                 one_day_ago_timestamp_ms = int((now_utc - timedelta(days=1)).timestamp() * 1000)
                 
@@ -2060,9 +2069,19 @@ def actualizar_historial_partidas_en_segundo_plano():
                 historial_existente['flexq_wins_24h'] = wins_flexq_24h
                 historial_existente['flexq_losses_24h'] = losses_flexq_24h
                 # --- FIN: CALCULAR Y GUARDAR RESUMEN DE 24H ---
+
+                # Check if the stats have changed
+                stats_have_changed = (
+                    old_soloq_lp != historial_existente['soloq_lp_change_24h'] or
+                    old_soloq_wins != historial_existente['soloq_wins_24h'] or
+                    old_soloq_losses != historial_existente['soloq_losses_24h'] or
+                    old_flexq_lp != historial_existente['flexq_lp_change_24h'] or
+                    old_flexq_wins != historial_existente['flexq_wins_24h'] or
+                    old_flexq_losses != historial_existente['flexq_losses_24h']
+                )
                 
-                # Only save if there were new valid matches or new remakes or if the LP change in the last 24h is different from the stored one
-                if nuevas_partidas_validas or nuevos_remakes:
+                # Only save if there were new valid matches or new remakes or if the stats have changed
+                if nuevas_partidas_validas or nuevos_remakes or stats_have_changed:
                     historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
                     # print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
 
