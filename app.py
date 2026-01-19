@@ -1993,8 +1993,40 @@ def actualizar_historial_partidas_en_segundo_plano():
                 
                 # se actualicen con cada ciclo de actualización del historial.
                 current_riot_id_for_puuid = puuid_to_riot_id.get(puuid, riot_id)
+
+                # --- INICIO: CALCULAR Y GUARDAR RESUMEN DE 24H ---
+                now_utc = datetime.now(timezone.utc)
+                one_day_ago_timestamp_ms = int((now_utc - timedelta(days=1)).timestamp() * 1000)
                 
-                # Only save if there were new valid matches or new remakes
+                lp_change_soloq_24h = 0
+                wins_soloq_24h = 0
+                losses_soloq_24h = 0
+                lp_change_flexq_24h = 0
+                wins_flexq_24h = 0
+                losses_flexq_24h = 0
+
+                for match in historial_existente.get('matches', []):
+                    if match.get('game_end_timestamp', 0) > one_day_ago_timestamp_ms:
+                        lp_change = match.get('lp_change_this_game')
+                        if lp_change is not None:
+                            if match.get('queue_id') == 420: # SoloQ
+                                lp_change_soloq_24h += lp_change
+                                if match.get('win'): wins_soloq_24h += 1 
+                                else: losses_soloq_24h += 1
+                            elif match.get('queue_id') == 440: # FlexQ
+                                lp_change_flexq_24h += lp_change
+                                if match.get('win'): wins_flexq_24h += 1
+                                else: losses_flexq_24h += 1
+                
+                historial_existente['soloq_lp_change_24h'] = lp_change_soloq_24h
+                historial_existente['soloq_wins_24h'] = wins_soloq_24h
+                historial_existente['soloq_losses_24h'] = losses_soloq_24h
+                historial_existente['flexq_lp_change_24h'] = lp_change_flexq_24h
+                historial_existente['flexq_wins_24h'] = wins_flexq_24h
+                historial_existente['flexq_losses_24h'] = losses_flexq_24h
+                # --- FIN: CALCULAR Y GUARDAR RESUMEN DE 24H ---
+                
+                # Only save if there were new valid matches or new remakes or if the LP change in the last 24h is different from the stored one
                 if nuevas_partidas_validas or nuevos_remakes:
                     historial_existente['matches'].sort(key=lambda x: x['game_end_timestamp'], reverse=True)
                     # print(f"[actualizar_historial_partidas_en_segundo_plano] Historial de {riot_id} ordenado.")
