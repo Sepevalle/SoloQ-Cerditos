@@ -100,13 +100,11 @@ def format_peak_elo_filter(valor):
         6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD",
         2: "SILVER", 1: "BRONZE", 0: "IRON"
     }
-    # CORRECCIÓN: rank_map debe mapear los valores calculados a las cadenas correctas (0:'IV', 1:'III', 2:'II', 3:'I')
-    rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"} # Corregido
+    rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"}
 
     league_points = valor % 100
-    valor_without_lps = valor - league_points
-    rank_value = (valor_without_lps // 100) % 4
-    tier_value = (valor_without_lps // 100) // 4
+    tier_value = valor // 400
+    rank_value = (valor % 400) // 100
 
     tier_name = tier_map.get(tier_value, "UNKNOWN")
     rank_name = rank_map.get(rank_value, "")
@@ -1551,28 +1549,29 @@ def index():
     print("[index] Petición recibida para la página principal.")
     datos_jugadores, timestamp = obtener_datos_jugadores()
     
-    lectura_exitosa, peak_elo_dict = leer_peak_elo()
+    with PEAK_ELO_LOCK:
+        lectura_exitosa, peak_elo_dict = leer_peak_elo()
 
-    if lectura_exitosa:
-        actualizado = False
-        for jugador in datos_jugadores:
-            key = get_peak_elo_key(jugador)
-            peak = peak_elo_dict.get(key, 0)
+        if lectura_exitosa:
+            actualizado = False
+            for jugador in datos_jugadores:
+                key = get_peak_elo_key(jugador)
+                peak = peak_elo_dict.get(key, 0)
 
-            valor = jugador["valor_clasificacion"]
-            if valor > peak:
-                peak_elo_dict[key] = valor
-                peak = valor
-                actualizado = True
-                print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
-            jugador["peak_elo"] = peak
+                valor = jugador["valor_clasificacion"]
+                if valor > peak:
+                    peak_elo_dict[key] = valor
+                    peak = valor
+                    actualizado = True
+                    print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
+                jugador["peak_elo"] = peak
 
-        if actualizado:
-            guardar_peak_elo_en_github(peak_elo_dict)
-    else:
-        print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
-        for jugador in datos_jugadores:
-            jugador["peak_elo"] = jugador["valor_clasificacion"]
+            if actualizado:
+                guardar_peak_elo_en_github(peak_elo_dict)
+        else:
+            print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
+            for jugador in datos_jugadores:
+                jugador["peak_elo"] = jugador["valor_clasificacion"]
 
     split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
     # El timestamp de la caché está en segundos UTC (de time.time())

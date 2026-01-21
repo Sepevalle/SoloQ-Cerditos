@@ -68,7 +68,9 @@ def process_player_match_history(matches, player_lp_history):
         list: The list of matches with LP change information added.
     """
     for match in matches:
+        # Only calculate if the key is missing or None
         if match.get('lp_change_this_game') is None:
+            match['lp_change_this_game'] = None # Initialize to None
             queue_id = match.get('queue_id')
             queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR" if queue_id == 440 else None
 
