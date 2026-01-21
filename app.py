@@ -1350,6 +1350,8 @@ def actualizar_cache():
 
     print(f"[actualizar_cache] Calculando estadísticas de campeones y LP en 24h para {len(todos_los_datos)} entradas de jugador.")
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
+    lp_history = leer_lp_history() # Leer el historial de LP una vez
+
     for jugador in todos_los_datos:
         puuid = jugador.get('puuid')
         queue_type = jugador.get('queue_type')
@@ -1363,7 +1365,10 @@ def actualizar_cache():
         
         # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
         historial = get_player_match_history(puuid, riot_id=jugador.get('game_name')) 
-        all_matches_for_player = historial.get('matches', [])
+        
+        # PROCESAR el historial para asegurar que 'lp_change_this_game' exista
+        player_lp_history = lp_history.get(puuid, {})
+        all_matches_for_player = process_player_match_history(historial.get('matches', []), player_lp_history)
 
         # CALCULAR DINÁMICAMENTE el resumen de 24h
         now_utc = datetime.now(timezone.utc)
