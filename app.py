@@ -100,11 +100,13 @@ def format_peak_elo_filter(valor):
         6: "DIAMOND", 5: "EMERALD", 4: "PLATINUM", 3: "GOLD",
         2: "SILVER", 1: "BRONZE", 0: "IRON"
     }
-    rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"}
+    # CORRECCIÓN: rank_map debe mapear los valores calculados a las cadenas correctas (0:'IV', 1:'III', 2:'II', 3:'I')
+    rank_map = {3: "I", 2: "II", 1: "III", 0: "IV"} # Corregido
 
     league_points = valor % 100
-    tier_value = valor // 400
-    rank_value = (valor % 400) // 100
+    valor_without_lps = valor - league_points
+    rank_value = (valor_without_lps // 100) % 4
+    tier_value = (valor_without_lps // 100) // 4
 
     tier_name = tier_map.get(tier_value, "UNKNOWN")
     rank_name = rank_map.get(rank_value, "")
@@ -1350,8 +1352,6 @@ def actualizar_cache():
 
     print(f"[actualizar_cache] Calculando estadísticas de campeones y LP en 24h para {len(todos_los_datos)} entradas de jugador.")
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
-    lp_history = leer_lp_history() # Leer el historial de LP una vez
-
     for jugador in todos_los_datos:
         puuid = jugador.get('puuid')
         queue_type = jugador.get('queue_type')
@@ -1365,10 +1365,7 @@ def actualizar_cache():
         
         # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
         historial = get_player_match_history(puuid, riot_id=jugador.get('game_name')) 
-        
-        # PROCESAR el historial para asegurar que 'lp_change_this_game' exista
-        player_lp_history = lp_history.get(puuid, {})
-        all_matches_for_player = process_player_match_history(historial.get('matches', []), player_lp_history)
+        all_matches_for_player = historial.get('matches', [])
 
         # CALCULAR DINÁMICAMENTE el resumen de 24h
         now_utc = datetime.now(timezone.utc)
@@ -1554,29 +1551,28 @@ def index():
     print("[index] Petición recibida para la página principal.")
     datos_jugadores, timestamp = obtener_datos_jugadores()
     
-    with PEAK_ELO_LOCK:
-        lectura_exitosa, peak_elo_dict = leer_peak_elo()
+    lectura_exitosa, peak_elo_dict = leer_peak_elo()
 
-        if lectura_exitosa:
-            actualizado = False
-            for jugador in datos_jugadores:
-                key = get_peak_elo_key(jugador)
-                peak = peak_elo_dict.get(key, 0)
+    if lectura_exitosa:
+        actualizado = False
+        for jugador in datos_jugadores:
+            key = get_peak_elo_key(jugador)
+            peak = peak_elo_dict.get(key, 0)
 
-                valor = jugador["valor_clasificacion"]
-                if valor > peak:
-                    peak_elo_dict[key] = valor
-                    peak = valor
-                    actualizado = True
-                    print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
-                jugador["peak_elo"] = peak
+            valor = jugador["valor_clasificacion"]
+            if valor > peak:
+                peak_elo_dict[key] = valor
+                peak = valor
+                actualizado = True
+                print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
+            jugador["peak_elo"] = peak
 
-            if actualizado:
-                guardar_peak_elo_en_github(peak_elo_dict)
-        else:
-            print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
-            for jugador in datos_jugadores:
-                jugador["peak_elo"] = jugador["valor_clasificacion"]
+        if actualizado:
+            guardar_peak_elo_en_github(peak_elo_dict)
+    else:
+        print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
+        for jugador in datos_jugadores:
+            jugador["peak_elo"] = jugador["valor_clasificacion"]
 
     split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
     # El timestamp de la caché está en segundos UTC (de time.time())
