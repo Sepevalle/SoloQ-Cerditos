@@ -1,114 +1,80 @@
-def _get_player_profile_data(game_name):
+from datetime import datetime, timedelta, timezone
+
+def calculate_lp_change(match, all_matches_for_player, player_queue_lp_history):
     """
-    Función auxiliar que encapsula la lógica para obtener y procesar
-    todos los datos de un perfil de jugador.
-    Devuelve el diccionario 'perfil' o None si no se encuentra el jugador.
+    Calculates the LP gain/loss for a single match robustly.
+
+    Args:
+        match (dict): The match to calculate the LP change for.
+        all_matches_for_player (list): A list of all matches for the player in the current season.
+        player_queue_lp_history (list): A list of LP snapshots for the player in the specific queue.
+
+    Returns:
+        tuple: A tuple containing the LP change (int or None), ELO before the match (int or None),
+               and ELO after the match (int or None).
     """
-    print(f"[_get_player_profile_data] Obteniendo datos de perfil para: {game_name}")
-    todos_los_datos, _ = obtener_datos_jugadores()
-    datos_del_jugador = [j for j in todos_los_datos if j.get('game_name') == game_name]
+    game_end_ts = match.get('game_end_timestamp', 0)
+    queue_id = match.get('queue_id')
+
+    if not game_end_ts or not queue_id:
+        return None, None, None
+
+    snapshots = sorted(player_queue_lp_history, key=lambda x: x['timestamp'])
     
-    if not datos_del_jugador:
-        print(f"[_get_player_profile_data] No se encontraron datos para el jugador {game_name} en la caché.")
-        return None
+    snapshot_before, snapshot_after = None, None
+    # Find the snapshot just before the match
+    for snapshot in reversed(snapshots):
+        if snapshot['timestamp'] < game_end_ts:
+            snapshot_before = snapshot
+            break
     
-    primer_perfil = datos_del_jugador[0]
-    puuid = primer_perfil.get('puuid')
+    # Find the snapshot just after the match
+    for snapshot in snapshots:
+        if snapshot['timestamp'] > game_end_ts:
+            snapshot_after = snapshot
+            break
 
-    historial_partidas_completo = {}
-    if puuid:
-        historial_partidas_completo = leer_historial_jugador_github(puuid)
-        for match in historial_partidas_completo.get('matches', []):
-            if 'lp_change_this_game' not in match:
-                match['lp_change_this_game'] = None
-                print(f"[_get_player_profile_data] Inicializando 'lp_change_this_game' a None para la partida {match.get('match_id')} del jugador {puuid}.")
-
-    perfil = {
-        'nombre': primer_perfil.get('jugador', 'N/A'),
-        'game_name': game_name,
-        'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''),
-        'historial_partidas': historial_partidas_completo.get('matches', [])
-    }
-
-    for item in datos_del_jugador:
-        if item.get('queue_type') == 'RANKED_SOLO_5x5':
-            perfil['soloq'] = item
-        elif item.get('queue_type') == 'RANKED_FLEX_SR':
-            perfil['flexq'] = item
-
-    historial_total = perfil.get('historial_partidas', [])
-    
-    # --- START of new ELO History Logic ---
-    perfil['elo_history_soloq'] = []
-    perfil['elo_history_flexq'] = []    
-
-    # --- Lógica de Gráfico de Evolución (Línea Suave) ---
-    # Filtra partidas que tienen el dato de ELO post-partida y las ordena cronológicamente.
-    partidas_con_elo_soloq = sorted(
-        [p for p in historial_total if p.get('queue_id') == 420 and p.get('post_game_valor_clasificacion') is not None],
-        key=lambda x: x.get('game_end_timestamp', 0)
-    )
-    perfil['elo_history_soloq'] = [
-        {'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']}
-        for p in partidas_con_elo_soloq
-    ]
-
-    partidas_con_elo_flexq = sorted(
-        [p for p in historial_total if p.get('queue_id') == 440 and p.get('post_game_valor_clasificacion') is not None],
-        key=lambda x: x.get('game_end_timestamp', 0)
-    )
-    perfil['elo_history_flexq'] = [
-        {'timestamp': p['game_end_timestamp'], 'elo': p['post_game_valor_clasificacion']}
-        for p in partidas_con_elo_flexq
-    ]
-
-    # --- END of new ELO History Logic ---
-
-
-    if 'soloq' in perfil:
-        partidas_soloq = [p for p in historial_total if p.get('queue_id') == 420]
-        rachas_soloq = calcular_rachas(partidas_soloq)
-        perfil['soloq'].update(rachas_soloq)
-        print(f"[_get_player_profile_data] Rachas SoloQ calculadas para {game_name}.")
-
-    if 'flexq' in perfil:
-        partidas_flexq = [p for p in historial_total if p.get('queue_id') == 440]
-        rachas_flexq = calcular_rachas(partidas_flexq)
-        perfil['flexq'].update(rachas_flexq)
-        print(f"[_get_player_profile_data] Rachas FlexQ calculadas para {game_name}.")
-
-    # --- Champion Specific Stats ---
-    champion_stats = {}
-    for match in historial_total:
-        champion_name = match.get('champion_name')
-        if champion_name and champion_name != "Desconocido":
-            if champion_name not in champion_stats:
-                champion_stats[champion_name] = {
-                    'games_played': 0,
-                    'wins': 0,
-                    'losses': 0,
-                    'kills': 0,
-                    'deaths': 0,
-                    'assists': 0
-                }
+    if snapshot_before and snapshot_after:
+        # Ensure no other match is between the snapshots
+        is_clean_change = True
+        for other_match in all_matches_for_player:
+            if other_match['match_id'] != match['match_id'] and other_match.get('queue_id') == queue_id:
+                other_ts = other_match.get('game_end_timestamp', 0)
+                if snapshot_before['timestamp'] < other_ts < snapshot_after['timestamp']:
+                    is_clean_change = False
+                    break
+        
+        if is_clean_change:
+            elo_before = snapshot_before.get('elo', 0)
+            elo_after = snapshot_after.get('elo', 0)
             
-            stats = champion_stats[champion_name]
-            stats['games_played'] += 1
-            if match.get('win'):
-                stats['wins'] += 1
-            else:
-                stats['losses'] += 1
-            
-            stats['kills'] += match.get('kills', 0)
-            stats['deaths'] += match.get('deaths', 0)
-            stats['assists'] += match.get('assists', 0)
+            if elo_before == 0 or elo_after == 0:
+                return None, None, None
 
-    for champ, stats in champion_stats.items():
-        stats['win_rate'] = (stats['wins'] / stats['games_played'] * 100) if stats['games_played'] > 0 else 0
-        stats['kda'] = (stats['kills'] + stats['assists']) / max(1, stats['deaths'])
+            lp_change = elo_after - elo_before
+            return lp_change, elo_before, elo_after
 
-    perfil['champion_stats'] = sorted(champion_stats.items(), key=lambda x: x[1]['games_played'], reverse=True)
+    return None, None, None
 
-    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-    print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
-    return perfil
+def process_player_match_history(matches, player_lp_history):
+    """
+    Processes a player's match history to calculate LP changes for each match.
+
+    Args:
+        matches (list): A list of matches for the player.
+        player_lp_history (dict): A dictionary of LP snapshots for the player, keyed by queue name.
+
+    Returns:
+        list: The list of matches with LP change information added.
+    """
+    for match in matches:
+        if match.get('lp_change_this_game') is None:
+            queue_id = match.get('queue_id')
+            queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR" if queue_id == 440 else None
+
+            if queue_name and queue_name in player_lp_history:
+                lp_change, elo_before, elo_after = calculate_lp_change(match, matches, player_lp_history[queue_name])
+                match['lp_change_this_game'] = lp_change
+                match['pre_game_valor_clasificacion'] = elo_before
+                match['post_game_valor_clasificacion'] = elo_after
+    return matches

@@ -1,4 +1,5 @@
 from services.lp_tracker import elo_tracker_worker
+from services.data_processing import process_player_match_history
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 import requests
 import os
@@ -1688,6 +1689,8 @@ def perfil_jugador(game_name):
                            datetime=datetime,
                            now=datetime.now())
 
+
+
 def _get_player_profile_data(game_name):
     """
     Función auxiliar que encapsula la lógica para obtener y procesar
@@ -1720,58 +1723,18 @@ def _get_player_profile_data(game_name):
     player_lp_history = lp_history.get(puuid, {})
     
     historial_partidas_completo = {}
+    processed_matches = []
     if puuid:
         historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name)
-        
-        for match in historial_partidas_completo.get('matches', []):
-            # Solo calcular si el valor no está ya guardado en el JSON, como fallback
-            if match.get('lp_change_this_game') is None:
-                match['lp_change_this_game'] = None # Inicializar a None por si el cálculo de fallback falla
-                game_end_ts = match.get('game_end_timestamp', 0)
-                queue_id = match.get('queue_id')
-                
-                queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR" if queue_id == 440 else None
-                
-                if game_end_ts > 0 and queue_name and queue_name in player_lp_history:
-                    snapshots = sorted(player_lp_history[queue_name], key=lambda x: x['timestamp'])
-                    
-                    snapshot_before, snapshot_after = None, None
-
-                    # Encontrar el snapshot justo antes de la partida
-                    for snapshot in reversed(snapshots):
-                        if snapshot['timestamp'] < game_end_ts:
-                            snapshot_before = snapshot
-                            break
-                    
-                    # Encontrar el snapshot justo después de la partida
-                    for snapshot in snapshots:
-                        if snapshot['timestamp'] > game_end_ts:
-                            snapshot_after = snapshot
-                            break
-                    
-                    if snapshot_before is not None and snapshot_after is not None:
-                        # Asegurarse de que no haya otra partida entre los snapshots
-                        is_clean_change = True
-                        for other_match in historial_partidas_completo.get('matches', []):
-                            if other_match['match_id'] != match['match_id'] and other_match.get('queue_id') == queue_id:
-                                other_ts = other_match.get('game_end_timestamp', 0)
-                                if snapshot_before['timestamp'] < other_ts < snapshot_after['timestamp']:
-                                    is_clean_change = False
-                                    break
-                        
-                        if is_clean_change:
-                            elo_before = snapshot_before['elo']
-                            elo_after = snapshot_after['elo']
-                            match['lp_change_this_game'] = elo_after - elo_before
-                            match['pre_game_valor_clasificacion'] = elo_before
-                            match['post_game_valor_clasificacion'] = elo_after
+        matches = historial_partidas_completo.get('matches', [])
+        processed_matches = process_player_match_history(matches, player_lp_history)
 
 
     perfil = {
         'nombre': primer_perfil.get('jugador', 'N/A'),
         'game_name': game_name,
         'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''),
-        'historial_partidas': historial_partidas_completo.get('matches', [])
+        'historial_partidas': processed_matches
     }
     
     for item in datos_del_jugador:
@@ -1988,9 +1951,9 @@ def actualizar_historial_partidas_en_segundo_plano():
                                                     break
                                         
                                         if is_clean_change:
-                                            lp_before = snapshot_before.get('league_points_raw', 0)
-                                            lp_after = snapshot_after.get('league_points_raw', 0)
-                                            match['lp_change_this_game'] = lp_after - lp_before
+                                            elo_before = snapshot_before.get('elo', 0)
+                                            elo_after = snapshot_after.get('elo', 0)
+                                            match['lp_change_this_game'] = elo_after - elo_before
                                             match['pre_game_valor_clasificacion'] = snapshot_before['elo']
                                             match['post_game_valor_clasificacion'] = snapshot_after['elo']
                         # --- FIN: CALCULAR Y ASIGNAR LP A NUEVAS PARTIDAS ---
@@ -2049,9 +2012,9 @@ def actualizar_historial_partidas_en_segundo_plano():
                                                 break
                                     
                                     if is_clean_change:
-                                        lp_before = snapshot_before.get('league_points_raw', 0)
-                                        lp_after = snapshot_after.get('league_points_raw', 0)
-                                        match_to_update['lp_change_this_game'] = lp_after - lp_before
+                                        elo_before = snapshot_before.get('elo', 0)
+                                        elo_after = snapshot_after.get('elo', 0)
+                                        match_to_update['lp_change_this_game'] = elo_after - elo_before
                                         match_to_update['pre_game_valor_clasificacion'] = snapshot_before['elo']
                                         match_to_update['post_game_valor_clasificacion'] = snapshot_after['elo']
                                         updated_existing_matches = True
