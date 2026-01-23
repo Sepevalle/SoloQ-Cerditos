@@ -1229,10 +1229,27 @@ def procesar_jugador(args_tuple):
             }
         print(f"[procesar_jugador] Historial de partidas de {riot_id} actualizado y guardado en GitHub.")
     else:
-        print(f"[procesar_jugador] Jugador {riot_id} inactivo. Omitiendo actualización de Elo y historial de partidas.")
-        # If no full update, still ensure 'en_partida' is false in old data
+        print(f"[procesar_jugador] Jugador {riot_id} inactivo. Actualizando solo el Elo.")
+        
+        # Mapear datos antiguos por queue_type para una fácil actualización
+        old_data_by_queue = {d['queue_type']: d for d in old_data_list}
+
+        for new_elo in elo_info:
+            queue_type = new_elo.get('queueType')
+            if queue_type in old_data_by_queue:
+                # Actualizar los datos existentes con el nuevo Elo
+                data = old_data_by_queue[queue_type]
+                data['tier'] = new_elo.get('tier', data.get('tier', 'Sin rango'))
+                data['rank'] = new_elo.get('rank', data.get('rank', ''))
+                data['league_points'] = new_elo.get('leaguePoints', data.get('league_points', 0))
+                data['valor_clasificacion'] = calcular_valor_clasificacion(
+                    data['tier'], data['rank'], data['league_points']
+                )
+
+        # Asegurarse de que el estado 'en_partida' esté siempre actualizado
         for data in old_data_list:
-            data['en_partida'] = False
+            data['en_partida'] = is_currently_in_game
+
         return old_data_list
 
     # Continuar con el procesamiento de datos del jugador para la visualización en el frontend
