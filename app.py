@@ -1274,6 +1274,61 @@ def _write_to_github_internal(file_path, data, sha, token):
     return False
 
 
+def _recalcular_lp_partidas_historicas(puuid, all_matches):
+    """
+    Recalcula LP para partidas históricas que no tienen LP asignado.
+    IMPORTANTE: Debe ejecutarse una sola vez al principio.
+    """
+    print(f"[_recalcular_lp_partidas_historicas] Iniciando recálculo de LP para {puuid}...")
+    
+    # Crear índice por cola para acceso rápido
+    matches_by_queue = defaultdict(list)
+    for m in all_matches:
+        matches_by_queue[m.get('queue_id')].append(m)
+    
+    # Ordenar matches por timestamp para asegurar que tenemos los anteriores primero
+    for queue_id in matches_by_queue:
+        matches_by_queue[queue_id] = sorted(matches_by_queue[queue_id], key=lambda x: x.get('game_end_timestamp', 0))
+    
+    recalculated = 0
+    for match in all_matches:
+        # Solo recalcular si no tiene LP
+        if match.get('lp_change_this_game') is None:
+            queue_id = match.get('queue_id')
+            if queue_id not in [420, 440]:
+                continue
+            
+            queue_matches = matches_by_queue.get(queue_id, [])
+            game_end_ts = match.get('game_end_timestamp', 0)
+            
+            # Buscar la partida anterior en la misma cola
+            previous_matches = [
+                m for m in queue_matches
+                if m.get('game_end_timestamp', 0) < game_end_ts and
+                   m.get('post_game_valor_clasificacion') is not None
+            ]
+            
+            if previous_matches:
+                most_recent_match = max(previous_matches, key=lambda x: x.get('game_end_timestamp', 0))
+                pre_game_elo = most_recent_match.get('post_game_valor_clasificacion')
+                
+                # Obtener post-game elo del match actual
+                post_game_elo = match.get('post_game_valor_clasificacion')
+                if post_game_elo is None:
+                    post_game_elo = pre_game_elo  # Fallback si no existe
+                
+                lp_change = post_game_elo - pre_game_elo if pre_game_elo else 0
+                
+                match['lp_change_this_game'] = lp_change
+                match['pre_game_valor_clasificacion'] = pre_game_elo
+                match['post_game_valor_clasificacion'] = post_game_elo
+                recalculated += 1
+    
+    if recalculated > 0:
+        print(f"[_recalcular_lp_partidas_historicas] Recalculados {recalculated} LP para {puuid}")
+    return all_matches
+
+
 def procesar_jugador(args_tuple):
     """
     Procesa los datos de un solo jugador.
@@ -1397,6 +1452,14 @@ def procesar_jugador(args_tuple):
         
         # Reconvertir a lista y ordenar por fecha (más reciente primero)
         all_matches_for_player = sorted(updated_matches.values(), key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+        
+        # OPTIMIZACIÓN: Recalcular LP para partidas históricas que no lo tienen
+        # Se ejecuta UNA sola vez la primera vez que se cargan los datos
+        matches_sin_lp = sum(1 for m in all_matches_for_player if m.get('lp_change_this_game') is None)
+        if matches_sin_lp > 0 and len(new_matches_details) == 0:
+            # Solo si hay matches sin LP y NO hay nuevas partidas (indica carga inicial)
+            all_matches_for_player = _recalcular_lp_partidas_historicas(puuid, all_matches_for_player)
+            print(f"[procesar_jugador] LP recalculado para partidas históricas de {riot_id}")
 
         # Actualizar los remakes guardados (si se detectaron nuevos remakes durante obtener_info_partida)
         newly_detected_remakes = {
