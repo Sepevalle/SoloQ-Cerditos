@@ -2439,10 +2439,12 @@ def _find_lp_change(match, player_lp_history, all_player_matches, match_ids_set=
         return None
     
     snapshots = sorted(player_lp_history[queue_name], key=lambda x: x['timestamp'])
-    
+
     # Búsqueda binaria para encontrar snapshots anterior y posterior
-    idx = bisect.bisect_left(snapshots, game_end_ts, key=lambda x: x['timestamp'])
-    
+    # bisect in the stdlib doesn't support a `key` argument, so build a list of timestamps
+    timestamps = [s['timestamp'] for s in snapshots]
+    idx = bisect.bisect_left(timestamps, game_end_ts)
+
     snapshot_before = snapshots[idx - 1] if idx > 0 else None
     snapshot_after = snapshots[idx] if idx < len(snapshots) else None
     
@@ -2483,27 +2485,6 @@ def _process_lp_for_matches(matches, player_lp_history, all_player_matches):
             match['post_game_valor_clasificacion'] = lp_info['post_game']
         results.append(match)
     return results
-    """Actualiza un récord con lógica de desempate: se prefiere mayor valor, o el más antiguo si los valores son iguales.
-    También actualiza si el registro actual es el valor predeterminado y el nuevo valor es >= 0.
-    """
-    new_record_data = _create_record_dict(new_match, new_value, record_type)
-
-    # Check if the current record is still the unpopulated default
-    is_current_record_default = (current_record['value'] == 0 and current_record['player'] == 'N/A' and current_record['achieved_timestamp'] == 0)
-
-    # Lógica de actualización:
-    # 1. Si el nuevo valor es estrictamente mayor, siempre actualiza.
-    # 2. Si los valores son iguales, prefiere la partida más antigua (timestamp más pequeño).
-    # 3. Si el récord actual es el valor por defecto (no inicializado), y el nuevo valor es >= 0, actualiza.
-    current_value_for_comparison = current_record['value'] if current_record['value'] is not None else -1
-    new_value_for_comparison = new_record_data['value'] if new_record_data['value'] is not None else -1
-
-    if new_value_for_comparison > current_value_for_comparison or \
-       (new_value_for_comparison == current_value_for_comparison and
-        new_record_data['achieved_timestamp'] < current_record['achieved_timestamp']) or \
-       (is_current_record_default and new_value_for_comparison >= 0): 
-        return new_record_data
-    return current_record
 
 
 def _calculate_stats_for_queue(all_matches, queue_id_filter, champion_filter=None):
