@@ -229,6 +229,11 @@
             .lateral-img {
                 display: block;
             }
+            /* Reservar espacio lateral para que las imágenes no superpongan el contenido */
+            #main-content {
+                padding-left: calc(150px + 40px); /* ancho imagen + margen */
+                padding-right: calc(150px + 40px);
+            }
             /* Mantener lateral images visibles sin alterar el ancho del navbar
                para que el navbar sea consistente con otras páginas. */
         }
