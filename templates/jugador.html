@@ -39,9 +39,15 @@
             color: gold;
             font-weight: bold;
         }
+        .dark-mode .peak-elo {
+            color: #ffd700;
+        }
         .estado-en-partida {
             color: #007BFF !important;
             font-weight: bold;
+        }
+        .dark-mode .estado-en-partida {
+            color: #66b3ff !important;
         }
         .table a {
             color: inherit;
@@ -217,6 +223,19 @@
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
         }
+        .dark-mode .rank-card {
+            background-color: #343a40 !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .rank-card .card-header {
+            background-color: #495057 !important;
+        }
+        .dark-mode .rank-card .card-body {
+            background-color: #343a40 !important;
+        }
+        .dark-mode .dark-mode .rank-card .card-title {
+            color: #66b3ff;
+        }
         .rank-card .card-body {
             display: flex;
             flex-direction: column;
@@ -237,6 +256,12 @@
             margin-bottom: 5px;
             color: #007bff;
         }
+        .dark-mode .rank-details h4 {
+            color: #66b3ff;
+        }
+        .dark-mode .rank-details p {
+            color: #e0e0e0;
+        }
         .rank-details p {
             margin-bottom: 3px;
         }
@@ -251,6 +276,9 @@
             margin-bottom: 10px;
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
+        }
+        .dark-mode .champion-stats-item {
+            border-bottom-color: #6c757d;
         }
         .champion-stats-item:last-child {
             margin-bottom: 0;
@@ -274,6 +302,9 @@
         .kda-text {
             font-size: 0.9em;
             color: #6c757d;
+        }
+        .dark-mode .kda-text {
+            color: #adb5bd;
         }
         .match-history-card {
             margin-top: 40px;
@@ -380,7 +411,62 @@
         .damage-physical { background-color: #ff8c00; } /* Naranja */
         .damage-magic { background-color: #4169e1; } /* Azul Royal */
         .damage-true { background-color: #f8f9fa; } /* Casi blanco */
+        .dark-mode .damage-true { background-color: #495057; }
         .dark-mode .damage-bar { background-color: #212529; border-color: #495057; }
+        
+        /* Estilos adicionales para modo oscuro */
+        .dark-mode .filter-controls label {
+            color: #e0e0e0;
+        }
+        .dark-mode .form-select,
+        .dark-mode .form-control {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .form-select option {
+            background-color: #343a40;
+            color: #fff;
+        }
+        .dark-mode label {
+            color: #e0e0e0;
+        }
+        .dark-mode a {
+            color: #66b3ff;
+        }
+        .dark-mode a:hover {
+            color: #99ccff;
+        }
+        .dark-mode .match-history-table th {
+            background-color: #495057 !important;
+            color: #fff !important;
+        }
+        .dark-mode .match-history-table td {
+            border-color: #6c757d !important;
+        }
+        .dark-mode .card {
+            background-color: #343a40 !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .card-header {
+            background-color: #495057 !important;
+            color: #fff !important;
+        }
+        .dark-mode .list-group-item {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+        .dark-mode .table thead th {
+            background-color: #495057 !important;
+            color: #fff !important;
+        }
+        .dark-mode .table tbody td {
+            border-color: #6c757d !important;
+        }
 
         /* --- FIN: Mejoras de visualización del historial --- */
 
