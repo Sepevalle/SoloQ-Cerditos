@@ -229,16 +229,8 @@
             .lateral-img {
                 display: block;
             }
-            body {
-                /* Espacio para los banners laterales */
-                padding-left: 180px;
-                padding-right: 180px;
-            }
-            .navbar.fixed-top {
-                /* Ajustar la barra de navegación al nuevo padding del body */
-                left: 180px;
-                right: 180px;
-            }
+            /* Mantener lateral images visibles sin alterar el ancho del navbar
+               para que el navbar sea consistente con otras páginas. */
         }
         .left-img {
             left: 20px;
@@ -604,12 +596,16 @@
 </div> <!-- Cierre de main-content -->
 
 <!-- Script de Bootstrap JS (necesario para el menú desplegable y otras funcionalidades) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+<!-- Template data for JS (avoid inline Jinja inside <script>) -->
+<div id="template-data" data-has-player='{{ has_player_data | tojson }}' style="display:none"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
         // Only hide loading screen and show main content if there is player data
-        if ({{ has_player_data | tojson }}) {
+        var hasPlayerData = JSON.parse(document.getElementById('template-data').dataset.hasPlayer || 'false');
+        if (hasPlayerData) {
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('main-content').classList.remove('hidden');
         }
