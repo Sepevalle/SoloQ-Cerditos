@@ -82,16 +82,56 @@
             background-color: #121212;
             color: #ffffff;
         }
+        /* Estilos específicos para tabla en modo claro */
+        .table thead th {
+            background-color: #f8f9fa;
+            color: #212529;
+            font-weight: 600;
+            border-color: #dee2e6;
+        }
+        .table tbody td {
+            border-color: #dee2e6;
+            color: #212529;
+        }
+        /* Estilos específicos para tabla en modo oscuro */
+        .dark-mode .table thead th {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+            font-weight: 600;
+        }
+        .dark-mode .table tbody td {
+            color: #e0e0e0 !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .table tbody tr {
+            background-color: transparent;
+        }
+        .dark-mode .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+        .dark-mode .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        /* Links en tabla - modo oscuro */
+        .dark-mode .table a {
+            color: #66b3ff;
+            text-decoration: none;
+        }
+        .dark-mode .table a:hover {
+            color: #99ccff;
+            text-decoration: underline;
+        }
+        /* Bordes de tabla en modo claro */
+        .table {
+            background-color: white;
+        }
         .dark-mode .navbar {
             background-color: #343a40 !important;
             color: white;
         }
         .dark-mode .navbar-brand {
             color: white !important;
-        }
-        .dark-mode .table {
-            background-color: #343a40 !important;
-            color: white;
         }
         .dark-mode .nav-link {
             color: white !important;
@@ -109,11 +149,6 @@
         .dark-mode .form-select option {
             background-color: #343a40;
             color: #fff;
-        }
-        .dark-mode .table thead th {
-            background-color: #495057 !important;
-            color: #fff !important;
-            border-color: #6c757d !important;
         }
         .dark-mode .table tbody td {
             border-color: #6c757d !important;
@@ -415,7 +450,7 @@
     {% if datos_jugadores %}
     <div class="table-responsive">
         <table class="table table-hover table-striped" id="jugadoresTable">
-            <thead class="table-dark">
+            <thead>
                 <tr>
                     <th data-sort-by="elo">Posición</th>
                     <th data-sort-by="jugador">Jugador</th>
