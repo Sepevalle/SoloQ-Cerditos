@@ -94,18 +94,36 @@
             color: #212529;
         }
         /* Estilos específicos para tabla en modo oscuro */
+        .dark-mode .table {
+            background-color: transparent;
+            color: #e0e0e0;
+        }
         .dark-mode .table thead th {
             background-color: #495057 !important;
             color: #fff !important;
             border-color: #6c757d !important;
             font-weight: 600;
+            padding: 12px !important;
+        }
+        .dark-mode .table thead {
+            background-color: #495057 !important;
+        }
+        .dark-mode .table thead tr {
+            background-color: #495057 !important;
+        }
+        .dark-mode .table thead th * {
+            color: #fff !important;
+        }
+        .dark-mode .table tbody {
+            background-color: transparent;
+        }
+        .dark-mode .table tbody tr {
+            background-color: transparent;
         }
         .dark-mode .table tbody td {
             color: #e0e0e0 !important;
             border-color: #6c757d !important;
-        }
-        .dark-mode .table tbody tr {
-            background-color: transparent;
+            background-color: transparent !important;
         }
         .dark-mode .table-striped tbody tr:nth-of-type(odd) {
             background-color: rgba(255, 255, 255, 0.03) !important;
