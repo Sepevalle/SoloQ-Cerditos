@@ -14,8 +14,20 @@
         .dark-mode .navbar { background-color: #343a40 !important; color: white; }
         .dark-mode .navbar-brand, .dark-mode .nav-link { color: white !important; }
         .dark-mode .table, .dark-mode .card { background-color: #343a40 !important; color: white; }
-        .dark-mode .nav-tabs .nav-link { color: #ffffff; }
-        .dark-mode .nav-tabs .nav-link.active { background-color: #495057; border-color: #495057; }
+        .dark-mode .nav-tabs { border-color: #6c757d; }
+        .dark-mode .nav-tabs .nav-link { 
+            color: #adb5bd !important;
+            border-color: transparent;
+        }
+        .dark-mode .nav-tabs .nav-link:hover {
+            border-color: #6c757d;
+            color: #e0e0e0 !important;
+        }
+        .dark-mode .nav-tabs .nav-link.active { 
+            background-color: #495057 !important;
+            border-color: #6c757d #6c757d #495057 !important;
+            color: #fff !important;
+        }
         .dark-mode .navbar-toggler-icon { filter: invert(1) grayscale(100%) brightness(2); }
         .table td, .table th { text-align: center; vertical-align: middle; }
         .jugador-columna { text-align: left !important; }
@@ -24,6 +36,7 @@
         .dark-mode .small-text-stats { color: #adb5bd; }
         .win-rate-alto { color: #228B22 !important; }
         .win-rate-bajo { color: tomato !important; }
+        .dark-mode .win-rate-bajo { color: #ff6b6b !important; }
         #statsTable th[data-sortable="true"] { cursor: pointer; }
         #statsTable th[data-sortable="true"]::after { content: ' \2195'; opacity: 0.4; }
         #statsTable th.th-sort-asc::after { content: ' \25B2'; opacity: 1; }
@@ -32,6 +45,61 @@
         .btn-group .btn.active {
             background-color: #0d6efd;
             color: white;
+        }
+        .dark-mode .form-select,
+        .dark-mode .form-control {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .form-select option {
+            background-color: #343a40;
+            color: #fff;
+        }
+        .dark-mode .list-group-item {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode label {
+            color: #e0e0e0;
+        }
+        .dark-mode .btn-primary {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        .dark-mode .btn-primary:hover {
+            background-color: #003d82;
+            border-color: #003d82;
+        }
+        .dark-mode a {
+            color: #66b3ff;
+        }
+        .dark-mode a:hover {
+            color: #99ccff;
+        }
+        .dark-mode .badge {
+            background-color: #0056b3 !important;
+        }
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+        .dark-mode .table thead th {
+            background-color: #495057 !important;
+            color: #fff !important;
+        }
+        .dark-mode .table tbody td {
+            border-color: #6c757d !important;
+        }
+        .dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4, .dark-mode h5 {
+            color: #fff;
+        }
+        .dark-mode .card-header {
+            background-color: #495057 !important;
+            color: #fff !important;
+        }
+        .dark-mode .card-body {
+            background-color: #343a40 !important;
         }
     </style>
 </head>

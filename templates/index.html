@@ -65,6 +65,19 @@
         .opgg-link:hover {
             background-color: #004494; /* Un azul más oscuro al pasar el ratón */
         }
+        .dark-mode .opgg-link {
+            background-color: #0056b3;
+            color: white !important;
+        }
+        .dark-mode .opgg-link:hover {
+            background-color: #003d82;
+        }
+        .dark-mode .link-estado {
+            color: #66b3ff;
+        }
+        .dark-mode .link-estado:hover {
+            color: #99ccff;
+        }
         .dark-mode {
             background-color: #121212;
             color: #ffffff;
@@ -86,6 +99,48 @@
         .dark-mode .navbar-toggler-icon {
             /* Invierte el color del icono de hamburguesa para que sea visible en modo oscuro */
             filter: invert(1) grayscale(100%) brightness(2);
+        }
+        .dark-mode .form-select,
+        .dark-mode .form-control {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .form-select option {
+            background-color: #343a40;
+            color: #fff;
+        }
+        .dark-mode .table thead th {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .table tbody td {
+            border-color: #6c757d !important;
+        }
+        .dark-mode .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        .dark-mode .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .dark-mode label {
+            color: #e0e0e0;
+        }
+        .dark-mode #lastUpdated {
+            color: #adb5bd;
+        }
+        .dark-mode .small-text {
+            color: #adb5bd;
+        }
+        .dark-mode .small-text-stats {
+            color: #adb5bd;
+        }
+        .dark-mode a {
+            color: #66b3ff;
+        }
+        .dark-mode a:hover {
+            color: #99ccff;
         }
         .table td, .table th {
             text-align: center;
