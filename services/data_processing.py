@@ -77,6 +77,7 @@ def calculate_lp_change(match, all_matches_for_player, player_queue_lp_history):
 def process_player_match_history(matches, player_lp_history):
     """
     Processes a player's match history to calculate LP changes for each match.
+    MEJORADO: Ahora intenta múltiples métodos de cálculo para minimizar valores null.
 
     Args:
         matches (list): A list of matches for the player.
@@ -85,16 +86,36 @@ def process_player_match_history(matches, player_lp_history):
     Returns:
         list: The list of matches with LP change information added.
     """
-    for match in matches:
-        # Only calculate if the key is missing or None
+    # Ordenar matches por timestamp descendente (más recientes primero)
+    matches_sorted = sorted(matches, key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+    
+    for i, match in enumerate(matches_sorted):
+        # Solo calcular si no tiene valor válido
         if match.get('lp_change_this_game') is None:
-            match['lp_change_this_game'] = None # Initialize to None
             queue_id = match.get('queue_id')
             queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR" if queue_id == 440 else None
 
             if queue_name and queue_name in player_lp_history:
+                # Método 1: Usar snapshots históricos de la API
                 lp_change, elo_before, elo_after = calculate_lp_change(match, matches, player_lp_history[queue_name])
+                
+                # Método 2: Si Método 1 falló, buscar la partida anterior en la misma cola
+                if lp_change is None and i + 1 < len(matches_sorted):
+                    for next_match in matches_sorted[i+1:]:
+                        if next_match.get('queue_id') == queue_id and next_match.get('post_game_valor_clasificacion') is not None:
+                            # La partida anterior está disponible
+                            elo_before = next_match.get('post_game_valor_clasificacion')
+                            # Buscar la siguiente partida en la misma cola para obtener post_game
+                            for prev_match in matches_sorted[:i]:
+                                if prev_match.get('queue_id') == queue_id and prev_match.get('post_game_valor_clasificacion') is not None:
+                                    elo_after = prev_match.get('post_game_valor_clasificacion')
+                                    if elo_before is not None and elo_after is not None:
+                                        lp_change = elo_after - elo_before
+                                    break
+                            break
+                
                 match['lp_change_this_game'] = lp_change
-                match['pre_game_valor_clasificacion'] = elo_before
-                match['post_game_valor_clasificacion'] = elo_after
-    return matches
+                match['pre_game_valor_clasificacion'] = elo_before if lp_change is not None else None
+                match['post_game_valor_clasificacion'] = elo_after if lp_change is not None else None
+    
+    return matches_sorted
