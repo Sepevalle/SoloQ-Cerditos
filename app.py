@@ -1199,59 +1199,6 @@ def _registrar_snapshot_lp(puuid, elo_info, riot_id=None):
                 })
                 print(f"[_registrar_snapshot_lp] Snapshot registrado para {identifier} en {queue_type}: {valor} ELO")
 
-def _actualizar_lp_history_con_snapshot(puuid, elo_info, riot_id=None):
-    """
-    NUEVO: Registra snapshots POST-PARTIDA directamente en el historial de LP.
-    Esto garantiza que siempre tenemos un snapshot post-game válido para el siguiente cálculo.
-    
-    Se ejecuta INMEDIATAMENTE después de obtener una partida nueva.
-    """
-    identifier = riot_id if riot_id else f"PUUID: {puuid}"
-    timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
-    
-    # Leer el historial actual de LP
-    lp_history = leer_lp_history()
-    
-    if puuid not in lp_history:
-        lp_history[puuid] = {
-            "RANKED_SOLO_5x5": [],
-            "RANKED_FLEX_SR": []
-        }
-    
-    snapshots_added = 0
-    for entry in elo_info:
-        queue_type = entry.get('queueType')
-        if queue_type in ["RANKED_SOLO_5x5", "RANKED_FLEX_SR"]:
-            valor = calcular_valor_clasificacion(
-                entry.get('tier', 'Sin rango'),
-                entry.get('rank', ''),
-                entry.get('leaguePoints', 0)
-            )
-            
-            # Verificar si este snapshot ya existe (evitar duplicados)
-            snapshots_recent = [
-                s for s in lp_history[puuid][queue_type]
-                if abs(s['timestamp'] - timestamp) < 30000  # Dentro de 30 segundos
-            ]
-            
-            if not snapshots_recent:
-                # Añadir nuevo snapshot
-                lp_history[puuid][queue_type].append({
-                    "timestamp": timestamp,
-                    "elo": valor,
-                    "league_points_raw": entry.get('leaguePoints', 0),
-                    "source": "post_match_capture"  # Etiqueta para debugging
-                })
-                snapshots_added += 1
-                print(f"[_actualizar_lp_history_con_snapshot] 📊 Snapshot POST-PARTIDA registrado para {identifier} en {queue_type}: {valor} ELO")
-    
-    # Guardar los cambios en GitHub
-    if snapshots_added > 0:
-        # Actualizar caché también
-        with cache_lock:
-            cache['lp_history'] = lp_history
-        print(f"[_actualizar_lp_history_con_snapshot] {snapshots_added} snapshot(s) registrado(s) para {identifier}")
-
 def _guardar_snapshots_en_github():
     """
     Guarda los snapshots acumulados en GitHub.
@@ -1330,14 +1277,9 @@ def _write_to_github_internal(file_path, data, sha, token):
 def _recalcular_lp_partidas_historicas(puuid, all_matches):
     """
     Recalcula LP para partidas históricas que no tienen LP asignado.
-    MEJORADO: Detecta y evita acumulación de LP cuando faltan snapshots.
-    
-    Estrategia:
-    1. Para cada partida sin LP, busca la anterior con post_game_elo válido
-    2. Valida que el cambio de LP sea razonable (±80 típicamente)
-    3. Si detecta acumulación probable, marca para recálculo cuando tengamos snapshots
+    IMPORTANTE: Debe ejecutarse una sola vez al principio.
     """
-    print(f"[_recalcular_lp_partidas_historicas] Iniciando recálculo mejorado de LP para {puuid}...")
+    print(f"[_recalcular_lp_partidas_historicas] Iniciando recálculo de LP para {puuid}...")
     
     # Crear índice por cola para acceso rápido
     matches_by_queue = defaultdict(list)
@@ -1349,8 +1291,6 @@ def _recalcular_lp_partidas_historicas(puuid, all_matches):
         matches_by_queue[queue_id] = sorted(matches_by_queue[queue_id], key=lambda x: x.get('game_end_timestamp', 0))
     
     recalculated = 0
-    flagged_for_later = 0
-    
     for match in all_matches:
         # Solo recalcular si no tiene LP
         if match.get('lp_change_this_game') is None:
@@ -1374,37 +1314,18 @@ def _recalcular_lp_partidas_historicas(puuid, all_matches):
                 
                 # Obtener post-game elo del match actual
                 post_game_elo = match.get('post_game_valor_clasificacion')
-                
                 if post_game_elo is None:
-                    # IMPORTANTE: No asumir que post_game = pre_game
-                    # Esto causa acumulación. Mejor marcar para recálculo posterior
-                    match['lp_calculation_status'] = 'pending_snapshot'
-                    flagged_for_later += 1
-                    continue
+                    post_game_elo = pre_game_elo  # Fallback si no existe
                 
                 lp_change = post_game_elo - pre_game_elo if pre_game_elo else 0
-                
-                # Validación: detectar cambios anormales (probable acumulación)
-                if abs(lp_change) > 80:  # Máximo típico es ~30 gain, ~70 loss en demotions
-                    # Probable acumulación detectada
-                    print(f"[_recalcular_lp_partidas_historicas] ⚠️ ALERTA: LP change anormal para {puuid}: {lp_change} LP")
-                    print(f"  Pre: {pre_game_elo}, Post: {post_game_elo}")
-                    print(f"  Match: {match.get('match_id')}, Timestamp: {game_end_ts}")
-                    match['lp_calculation_status'] = 'pending_verification'
-                    flagged_for_later += 1
-                    continue
                 
                 match['lp_change_this_game'] = lp_change
                 match['pre_game_valor_clasificacion'] = pre_game_elo
                 match['post_game_valor_clasificacion'] = post_game_elo
-                match['lp_calculation_status'] = 'calculated'
                 recalculated += 1
-            else:
-                # No hay partida anterior con snapshot
-                match['lp_calculation_status'] = 'pending_snapshot'
-                flagged_for_later += 1
     
-    print(f"[_recalcular_lp_partidas_historicas] Recalculados: {recalculated}, Pendientes de snapshot: {flagged_for_later}")
+    if recalculated > 0:
+        print(f"[_recalcular_lp_partidas_historicas] Recalculados {recalculated} LP para {puuid}")
     return all_matches
 
 
@@ -1446,9 +1367,6 @@ def procesar_jugador(args_tuple):
     if not elo_info:
         print(f"[procesar_jugador] No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP ni actualizar datos.")
         return old_data_list if old_data_list else []
-
-    # NUEVO: Registrar snapshot inmediato para garantizar post-match ELO para próximas partidas
-    _actualizar_lp_history_con_snapshot(puuid, elo_info, riot_id=riot_id)
 
     # OPTIMIZACIÓN: Convertir elo_info a un diccionario por queue para cálculo rápido de LP
     current_elo_by_queue = {}
@@ -1536,12 +1454,12 @@ def procesar_jugador(args_tuple):
         all_matches_for_player = sorted(updated_matches.values(), key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
         
         # OPTIMIZACIÓN: Recalcular LP para partidas históricas que no lo tienen
-        # MEJORADO: Ahora recalcula SIEMPRE que hay partidas sin LP (no solo en carga inicial)
+        # Se ejecuta UNA sola vez la primera vez que se cargan los datos
         matches_sin_lp = sum(1 for m in all_matches_for_player if m.get('lp_change_this_game') is None)
-        if matches_sin_lp > 0:
-            # Recalcular SIEMPRE que haya matches sin LP
+        if matches_sin_lp > 0 and len(new_matches_details) == 0:
+            # Solo si hay matches sin LP y NO hay nuevas partidas (indica carga inicial)
             all_matches_for_player = _recalcular_lp_partidas_historicas(puuid, all_matches_for_player)
-            print(f"[procesar_jugador] LP recalculado para {matches_sin_lp} partida(s) de {riot_id}")
+            print(f"[procesar_jugador] LP recalculado para partidas históricas de {riot_id}")
 
         # Actualizar los remakes guardados (si se detectaron nuevos remakes durante obtener_info_partida)
         newly_detected_remakes = {
