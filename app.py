@@ -2183,15 +2183,9 @@ def _get_player_profile_data(game_name):
 
     # --- AÑADIR ANÁLISIS DE GEMINI ---
     try:
-        # Obtener análisis de Gemini para el jugador
-        from flask import request
-        # Solo incluir análisis si se solicita explícitamente (para evitar llamadas innecesarias)
-        incluir_analisis = request.args.get('analisis', 'false').lower() == 'true'
-        if incluir_analisis:
-            analisis_gemini = analizar_partidas_con_gemini(puuid, game_name)
-            perfil['analisis_gemini'] = analisis_gemini
-        else:
-            perfil['analisis_gemini'] = None
+        # Obtener análisis de Gemini para el jugador (siempre incluido por defecto)
+        analisis_gemini = analizar_partidas_con_gemini(puuid, game_name)
+        perfil['analisis_gemini'] = analisis_gemini
     except Exception as e:
         print(f"[_get_player_profile_data] Error obteniendo análisis Gemini: {e}")
         perfil['analisis_gemini'] = None
