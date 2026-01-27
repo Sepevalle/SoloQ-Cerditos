@@ -3231,7 +3231,7 @@ Responde ÚNICAMENTE con un objeto JSON válido que contenga:
 """
 
         # Llamar a Gemini
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model = genai.GenerativeModel('models/gemini-1.5-pro-002')
         response = model.generate_content(prompt)
 
         # Parsear respuesta JSON
