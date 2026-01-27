@@ -829,6 +829,175 @@
         </div>
     </div>
 
+    <!-- Análisis de IA Gemini -->
+    {% if perfil.analisis_gemini and perfil.analisis_gemini.error is not defined %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-brain me-2"></i>
+                Análisis Inteligente de Rendimiento
+                <small class="text-white-50 ms-2">
+                    <i class="fas fa-clock me-1"></i>
+                    {{ perfil.analisis_gemini.ultima_actualizacion | strftime('%d/%m/%Y %H:%M') if perfil.analisis_gemini.ultima_actualizacion else 'N/A' }}
+                </small>
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Análisis General -->
+            {% if perfil.analisis_gemini.analisis_general %}
+            <div class="mb-4">
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Análisis General
+                </h6>
+                <p class="mb-0">{{ perfil.analisis_gemini.analisis_general }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Estadísticas Clave -->
+            {% if perfil.analisis_gemini.estadisticas_clave %}
+            <div class="mb-4">
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Estadísticas Clave
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-success mb-1">{{ perfil.analisis_gemini.estadisticas_clave.victorias }}</div>
+                            <small class="text-muted">Victorias</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-danger mb-1">{{ perfil.analisis_gemini.estadisticas_clave.derrotas }}</div>
+                            <small class="text-muted">Derrotas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-info mb-1">{{ "%.2f"|format(perfil.analisis_gemini.estadisticas_clave.kda_promedio) }}</div>
+                            <small class="text-muted">KDA Promedio</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-warning mb-1">{{ "%.1f"|format(perfil.analisis_gemini.estadisticas_clave.participacion_promedio) }}%</div>
+                            <small class="text-muted">Participación</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Análisis por Campeón -->
+            {% if perfil.analisis_gemini.analisis_por_campeon %}
+            <div class="mb-4">
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-user-ninja me-2"></i>
+                    Análisis por Campeón
+                </h6>
+                <div class="row g-3">
+                    {% for champ in perfil.analisis_gemini.analisis_por_campeon %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champ.campeon }}.png"
+                                     alt="{{ champ.campeon }}"
+                                     class="rounded-circle mb-2"
+                                     style="width: 50px; height: 50px;">
+                                <h6 class="card-title mb-2">{{ champ.campeon }}</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary me-1">{{ champ.partidas }}P</span>
+                                    <span class="badge bg-info">{{ "%.0f"|format(champ.winrate) }}% WR</span>
+                                </div>
+                                <p class="small text-muted mb-2">KDA: {{ "%.2f"|format(champ.kda_promedio) }}</p>
+                                {% if champ.observaciones %}
+                                <p class="small mb-0">{{ champ.observaciones }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Fortalezas y Debilidades -->
+            <div class="row mb-4">
+                {% if perfil.analisis_gemini.fortalezas %}
+                <div class="col-md-6">
+                    <h6 class="text-success mb-3">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Fortalezas
+                    </h6>
+                    <ul class="list-group list-group-flush">
+                        {% for fortaleza in perfil.analisis_gemini.fortalezas %}
+                        <li class="list-group-item bg-success bg-opacity-10 border-0">
+                            <i class="fas fa-check text-success me-2"></i>
+                            {{ fortaleza }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if perfil.analisis_gemini.debilidades %}
+                <div class="col-md-6">
+                    <h6 class="text-danger mb-3">
+                        <i class="fas fa-minus-circle me-2"></i>
+                        Áreas de Mejora
+                    </h6>
+                    <ul class="list-group list-group-flush">
+                        {% for debilidad in perfil.analisis_gemini.debilidades %}
+                        <li class="list-group-item bg-danger bg-opacity-10 border-0">
+                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                            {{ debilidad }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Recomendaciones -->
+            {% if perfil.analisis_gemini.recomendaciones %}
+            <div class="mb-4">
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Recomendaciones Específicas
+                </h6>
+                <div class="alert alert-info">
+                    <ul class="mb-0">
+                        {% for recomendacion in perfil.analisis_gemini.recomendaciones %}
+                        <li>{{ recomendacion }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Comparación con Equipo y Rivales -->
+            {% if perfil.analisis_gemini.comparacion_equipo_rivales %}
+            <div class="mb-0">
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-balance-scale me-2"></i>
+                    Comparación con Equipo y Rivales
+                </h6>
+                <div class="alert alert-secondary">
+                    <p class="mb-0">{{ perfil.analisis_gemini.comparacion_equipo_rivales }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% elif perfil.analisis_gemini and perfil.analisis_gemini.error %}
+    <div class="alert alert-warning mb-4">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Error en el análisis:</strong> {{ perfil.analisis_gemini.error }}
+    </div>
+    {% endif %}
+
     <div class="card match-history-card">
         <div class="card-header">
             Historial de Partidas

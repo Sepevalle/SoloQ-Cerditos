@@ -12,8 +12,16 @@ from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 import queue # Import for the queue
 import locale # Import for locale formatting
+import google.generativeai as genai
 
 app = Flask(__name__)
+
+# Configurar Gemini API
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+else:
+    print("Advertencia: GEMINI_API_KEY no está configurada en las variables de entorno.")
 
 # Inyectar 'str' en el contexto de Jinja2 para que esté disponible en todas las plantillas.
 @app.context_processor
@@ -219,6 +227,11 @@ PERSONAL_RECORDS_UPDATE_INTERVAL = 3600 # Update personal records every hour (36
 PLAYER_MATCH_HISTORY_CACHE = {}
 PLAYER_MATCH_HISTORY_LOCK = threading.Lock()
 PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 300 # 5 minutos para el historial de partidas individual
+
+# --- CACHÉ PARA ANÁLISIS DE GEMINI ---
+GEMINI_ANALYSIS_CACHE = {}
+GEMINI_ANALYSIS_LOCK = threading.Lock()
+GEMINI_ANALYSIS_CACHE_TIMEOUT = 3600 # 1 hora para análisis de Gemini
 
 # --- CONFIGURACIÓN DE SPLITS ---
 SPLITS = {
@@ -1559,13 +1572,21 @@ def procesar_jugador(args_tuple):
             'remakes': list(updated_remakes)
         }
         guardar_historial_jugador_github(puuid, updated_historial_data, riot_id=riot_id)
-        
+
         # Actualizar la caché en memoria inmediatamente después de guardar
         with PLAYER_MATCH_HISTORY_LOCK:
             PLAYER_MATCH_HISTORY_CACHE[puuid] = {
                 'data': updated_historial_data,
                 'timestamp': time.time()
             }
+
+        # Invalidar caché de análisis de Gemini si hay nuevas partidas
+        if nuevas_partidas_validas:
+            with GEMINI_ANALYSIS_LOCK:
+                if puuid in GEMINI_ANALYSIS_CACHE:
+                    del GEMINI_ANALYSIS_CACHE[puuid]
+                    print(f"[procesar_jugador] Caché de análisis Gemini invalidado para {riot_id} debido a nuevas partidas.")
+
         print(f"[procesar_jugador] Historial de partidas de {riot_id} actualizado y guardado en GitHub.")
     
     # Continuar con el procesamiento de datos del jugador para la visualización en el frontend
@@ -2158,6 +2179,21 @@ def _get_player_profile_data(game_name):
         stats['kda'] = (stats['kills'] + stats['assists']) / max(1, stats['deaths'])
 
     perfil['champion_stats'] = sorted(champion_stats.items(), key=lambda x: x[1]['games_played'], reverse=True)
+
+    # --- AÑADIR ANÁLISIS DE GEMINI ---
+    try:
+        # Obtener análisis de Gemini para el jugador
+        from flask import request
+        # Solo incluir análisis si se solicita explícitamente (para evitar llamadas innecesarias)
+        incluir_analisis = request.args.get('analisis', 'false').lower() == 'true'
+        if incluir_analisis:
+            analisis_gemini = analizar_partidas_con_gemini(puuid, game_name)
+            perfil['analisis_gemini'] = analisis_gemini
+        else:
+            perfil['analisis_gemini'] = None
+    except Exception as e:
+        print(f"[_get_player_profile_data] Error obteniendo análisis Gemini: {e}")
+        perfil['analisis_gemini'] = None
 
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
     print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
@@ -2984,7 +3020,7 @@ def get_personal_records_api(puuid):
     API endpoint para obtener los récords personales de un jugador dado su PUUID.
     """
     print(f"[get_personal_records_api] Petición recibida para PUUID: {puuid}.")
-    
+
     champion_filter = request.args.get('champion')
     if champion_filter == 'all':
         champion_filter = None
@@ -3004,17 +3040,241 @@ def get_personal_records_api(puuid):
         return jsonify({"error": "PUUID no proporcionado"}), 400
 
     personal_records = _get_player_personal_records(puuid, player_display_name, riot_id, champion_filter=champion_filter)
-    
+
     if personal_records:
         print(f"[get_personal_records_api] Récords personales cargados para PUUID: {puuid} (Campeón: {champion_filter or 'Todos'}).")
         records_list = []
         for record_type, record_data in personal_records.items():
-            record_data['record_type_key'] = record_type 
+            record_data['record_type_key'] = record_type
             records_list.append(record_data)
         return jsonify(records_list)
     else:
         print(f"[get_personal_records_api] No se encontraron récords personales para PUUID: {puuid} (Campeón: {champion_filter or 'Todos'}).")
         return jsonify({"message": "No se encontraron récords personales para esta cuenta y filtro."}), 404
+
+def _leer_analisis_gemini_github(puuid):
+    """Lee el análisis de Gemini desde GitHub si existe."""
+    url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/gemini_analysis/{puuid}.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    try:
+        resp = requests.get(url, headers=headers, timeout=30)
+        if resp.status_code == 200:
+            content = resp.json()
+            file_content = base64.b64decode(content['content']).decode('utf-8')
+            return json.loads(file_content), content.get('sha')
+        elif resp.status_code == 404:
+            return None, None
+    except Exception as e:
+        print(f"[_leer_analisis_gemini_github] Error leyendo análisis para {puuid}: {e}")
+    return None, None
+
+def _guardar_analisis_gemini_github(puuid, analisis_data):
+    """Guarda el análisis de Gemini en GitHub."""
+    url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/gemini_analysis/{puuid}.json"
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print(f"[guardar_analisis_gemini_github] ERROR: Token de GitHub no encontrado para guardar análisis de {puuid}")
+        return False
+
+    headers = {"Authorization": f"token {token}"}
+    sha = None
+
+    # Obtener SHA si el archivo ya existe
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        if response.status_code == 200:
+            sha = response.json().get('sha')
+    except Exception as e:
+        print(f"[guardar_analisis_gemini_github] No se pudo obtener SHA para {puuid}: {e}")
+
+    contenido_json = json.dumps(analisis_data, indent=2, ensure_ascii=False)
+    contenido_b64 = base64.b64encode(contenido_json.encode('utf-8')).decode('utf-8')
+
+    data = {"message": f"Actualizar análisis Gemini para {puuid}", "content": contenido_b64, "branch": "main"}
+    if sha:
+        data["sha"] = sha
+
+    try:
+        response = requests.put(url, headers=headers, json=data, timeout=30)
+        if response.status_code in (200, 201):
+            print(f"[guardar_analisis_gemini_github] Análisis de {puuid} guardado correctamente en GitHub.")
+            return True
+        else:
+            print(f"[guardar_analisis_gemini_github] ERROR: Fallo al guardar análisis de {puuid}: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"[guardar_analisis_gemini_github] ERROR: Excepción guardando análisis de {puuid}: {e}")
+        return False
+
+def _necesita_analisis_nuevo(puuid, matches):
+    """Verifica si se necesita generar un nuevo análisis basado en las últimas 10 partidas."""
+    # Leer análisis existente
+    analisis_existente, _ = _leer_analisis_gemini_github(puuid)
+    if not analisis_existente:
+        return True, "No existe análisis previo"
+
+    # Verificar si el análisis cubre las últimas 10 partidas
+    ultima_actualizacion = analisis_existente.get('ultima_actualizacion')
+    if not ultima_actualizacion:
+        return True, "Análisis sin timestamp de actualización"
+
+    # Filtrar últimas 10 partidas de SoloQ
+    soloq_matches = [m for m in matches if m.get('queue_id') == 420][:10]
+    if not soloq_matches:
+        return False, "No hay partidas de SoloQ para analizar"
+
+    # Verificar si hay partidas más recientes que el último análisis
+    try:
+        ultima_actualizacion_dt = datetime.fromisoformat(ultima_actualizacion.replace('Z', '+00:00'))
+        ultima_partida_dt = datetime.fromtimestamp(soloq_matches[0].get('game_end_timestamp', 0) / 1000, tz=timezone.utc)
+
+        if ultima_partida_dt > ultima_actualizacion_dt:
+            return True, f"Nueva partida después del análisis (última: {ultima_partida_dt}, análisis: {ultima_actualizacion_dt})"
+    except Exception as e:
+        print(f"[_necesita_analisis_nuevo] Error comparando timestamps: {e}")
+        return True, "Error en comparación de timestamps"
+
+    return False, "Análisis está actualizado"
+
+def analizar_partidas_con_gemini(puuid, riot_id=None):
+    """
+    Analiza las últimas 10 partidas de SoloQ usando Gemini AI.
+    Optimizado para evitar llamadas innecesarias a la API.
+    Devuelve un JSON con análisis global y recomendaciones.
+    """
+    if not GEMINI_API_KEY:
+        return {"error": "GEMINI_API_KEY no configurada"}
+
+    try:
+        # Obtener historial de partidas
+        historial = get_player_match_history(puuid, riot_id=riot_id)
+        matches = historial.get('matches', [])
+
+        # Verificar si se necesita nuevo análisis
+        necesita_nuevo, razon = _necesita_analisis_nuevo(puuid, matches)
+        if not necesita_nuevo:
+            print(f"[analizar_partidas_con_gemini] Usando análisis existente para {puuid}: {razon}")
+            analisis_existente, _ = _leer_analisis_gemini_github(puuid)
+            return analisis_existente
+
+        print(f"[analizar_partidas_con_gemini] Generando nuevo análisis para {puuid}: {razon}")
+
+        # Filtrar últimas 10 partidas de SoloQ (queue_id 420)
+        soloq_matches = [m for m in matches if m.get('queue_id') == 420][:10]
+
+        if len(soloq_matches) < 5:
+            return {"error": "No hay suficientes partidas de SoloQ para analizar (mínimo 5)"}
+
+        # Formatear datos para Gemini
+        prompt = f"""
+Analiza las siguientes 10 últimas partidas de SoloQ del jugador {riot_id or puuid}.
+Proporciona un análisis global detallado incluyendo:
+
+1. Rendimiento general: Victorias/derrotas, KDA promedio, participación en asesinatos
+2. Análisis por campeón: Campeones más jugados, winrate por campeón
+3. Patrones de juego: Fortalezas y debilidades identificadas
+4. Recomendaciones específicas: Mejoras en selección de campeón, roles, decisiones en partida
+5. Estadísticas clave: Daño por minuto, visión, objetivos tomados
+6. Comparación con equipo y rivales: Cómo se compara el rendimiento
+
+Datos de las partidas:
+"""
+
+        for i, match in enumerate(soloq_matches, 1):
+            prompt += f"""
+Partida {i}:
+- Campeón: {match.get('champion_name', 'N/A')}
+- Resultado: {'Victoria' if match.get('win') else 'Derrota'}
+- KDA: {match.get('kills', 0)}/{match.get('deaths', 0)}/{match.get('assists', 0)}
+- Participación en asesinatos: {match.get('kill_participation', 0):.1f}%
+- Daño total: {match.get('total_damage_dealt_to_champions', 0):,}
+- Daño por minuto: {(match.get('total_damage_dealt_to_champions', 0) / max(match.get('game_duration', 1) / 60, 1)):.0f}
+- Visión: {match.get('vision_score', 0)} ({match.get('wards_placed', 0)} wards colocados)
+- Objetivos: {match.get('turret_kills', 0)} torretas, {match.get('inhibitor_kills', 0)} inhibidores, {match.get('baron_kills', 0)} barones, {match.get('dragon_kills', 0)} dragones
+- LP cambio: {match.get('lp_change_this_game', 'N/A')}
+- Duración: {match.get('game_duration', 0) // 60}m {match.get('game_duration', 0) % 60}s
+"""
+
+            # Información de participantes (equipo y rivales)
+            all_participants = match.get('all_participants', [])
+            if all_participants:
+                prompt += "- Participantes:\n"
+                for p in all_participants:
+                    team = "Aliado" if p.get('team_id') == 100 else "Enemigo"
+                    prompt += f"  {team}: {p.get('summoner_name', 'N/A')} ({p.get('champion_name', 'N/A')}) - KDA: {p.get('kills', 0)}/{p.get('deaths', 0)}/{p.get('assists', 0)}\n"
+
+        prompt += """
+Responde ÚNICAMENTE con un objeto JSON válido que contenga:
+{
+  "analisis_general": "Resumen del rendimiento general",
+  "estadisticas_clave": {
+    "victorias": número,
+    "derrotas": número,
+    "kda_promedio": número,
+    "participacion_promedio": número,
+    "dano_por_minuto_promedio": número
+  },
+  "analisis_por_campeon": [
+    {
+      "campeon": "Nombre",
+      "partidas": número,
+      "winrate": número,
+      "kda_promedio": número,
+      "observaciones": "Comentarios específicos"
+    }
+  ],
+  "fortalezas": ["Lista de fortalezas"],
+  "debilidades": ["Lista de debilidades"],
+  "recomendaciones": ["Lista de recomendaciones específicas"],
+  "comparacion_equipo_rivales": "Análisis comparativo",
+  "ultima_actualizacion": "timestamp o fecha"
+}
+"""
+
+        # Llamar a Gemini
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+
+        # Parsear respuesta JSON
+        try:
+            analisis = json.loads(response.text.strip())
+            analisis['ultima_actualizacion'] = datetime.now().isoformat()
+
+            # Guardar análisis en GitHub
+            if _guardar_analisis_gemini_github(puuid, analisis):
+                print(f"[analizar_partidas_con_gemini] Análisis guardado exitosamente para {puuid}")
+            else:
+                print(f"[analizar_partidas_con_gemini] Error guardando análisis para {puuid}")
+
+            return analisis
+        except json.JSONDecodeError:
+            return {"error": "Error al parsear respuesta de Gemini", "raw_response": response.text}
+
+    except Exception as e:
+        print(f"[analizar_partidas_con_gemini] Error: {e}")
+        return {"error": str(e)}
+
+@app.route('/api/analisis_gemini/<puuid>')
+def get_analisis_gemini(puuid):
+    """
+    Endpoint para obtener análisis de Gemini para un jugador.
+    """
+    print(f"[get_analisis_gemini] Solicitud de análisis para PUUID: {puuid}")
+
+    # Obtener riot_id del jugador
+    riot_id = None
+    datos_jugadores, _ = obtener_datos_jugadores()
+    for jugador_info in datos_jugadores:
+        if jugador_info.get('puuid') == puuid:
+            riot_id = jugador_info.get('game_name')
+            break
+
+    analisis = analizar_partidas_con_gemini(puuid, riot_id)
+    return jsonify(analisis)
 
 
 @app.route('/records_personales')
