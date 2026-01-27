@@ -1483,6 +1483,7 @@ def procesar_jugador(args_tuple):
     remakes_guardados = set(player_match_history_data.get('remakes', []))
 
     new_matches_details = [] # Para almacenar los detalles de las partidas recién obtenidas
+    nuevas_partidas_validas = [] # Initialize to avoid NameError
 
     if needs_full_update:
         print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
@@ -1580,12 +1581,12 @@ def procesar_jugador(args_tuple):
                 'timestamp': time.time()
             }
 
-        # Invalidar caché de análisis de Gemini si hay nuevas partidas
-        if nuevas_partidas_validas:
-            with GEMINI_ANALYSIS_LOCK:
-                if puuid in GEMINI_ANALYSIS_CACHE:
-                    del GEMINI_ANALYSIS_CACHE[puuid]
-                    print(f"[procesar_jugador] Caché de análisis Gemini invalidado para {riot_id} debido a nuevas partidas.")
+    # Invalidar caché de análisis de Gemini si hay nuevas partidas
+    if 'nuevas_partidas_validas' in locals() and nuevas_partidas_validas:
+        with GEMINI_ANALYSIS_LOCK:
+            if puuid in GEMINI_ANALYSIS_CACHE:
+                del GEMINI_ANALYSIS_CACHE[puuid]
+                print(f"[procesar_jugador] Caché de análisis Gemini invalidado para {riot_id} debido a nuevas partidas.")
 
         print(f"[procesar_jugador] Historial de partidas de {riot_id} actualizado y guardado en GitHub.")
     
