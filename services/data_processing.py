@@ -88,7 +88,16 @@ def process_player_match_history(matches, player_lp_history):
     """
     # Ordenar matches por timestamp descendente (más recientes primero)
     matches_sorted = sorted(matches, key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-    
+
+    # Ensure all matches have the lp_change_this_game key initialized
+    for match in matches_sorted:
+        if 'lp_change_this_game' not in match:
+            match['lp_change_this_game'] = None
+        if 'pre_game_valor_clasificacion' not in match:
+            match['pre_game_valor_clasificacion'] = None
+        if 'post_game_valor_clasificacion' not in match:
+            match['post_game_valor_clasificacion'] = None
+
     for i, match in enumerate(matches_sorted):
         # Solo calcular si no tiene valor válido
         if match.get('lp_change_this_game') is None:
@@ -98,7 +107,7 @@ def process_player_match_history(matches, player_lp_history):
             if queue_name and queue_name in player_lp_history:
                 # Método 1: Usar snapshots históricos de la API
                 lp_change, elo_before, elo_after = calculate_lp_change(match, matches, player_lp_history[queue_name])
-                
+
                 # Método 2: Si Método 1 falló, buscar la partida anterior en la misma cola
                 if lp_change is None and i + 1 < len(matches_sorted):
                     for next_match in matches_sorted[i+1:]:
@@ -113,9 +122,14 @@ def process_player_match_history(matches, player_lp_history):
                                         lp_change = elo_after - elo_before
                                     break
                             break
-                
-                match['lp_change_this_game'] = lp_change
-                match['pre_game_valor_clasificacion'] = elo_before if lp_change is not None else None
-                match['post_game_valor_clasificacion'] = elo_after if lp_change is not None else None
+
+                if lp_change is not None:
+                    match['lp_change_this_game'] = lp_change
+                    match['pre_game_valor_clasificacion'] = elo_before
+                    match['post_game_valor_clasificacion'] = elo_after
+                else:
+                    match['lp_change_this_game'] = None
+                    match['pre_game_valor_clasificacion'] = None
+                    match['post_game_valor_clasificacion'] = None
     
     return matches_sorted
