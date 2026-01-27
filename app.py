@@ -23,6 +23,11 @@ if GEMINI_API_KEY:
 else:
     print("Advertencia: GEMINI_API_KEY no está configurada en las variables de entorno.")
 
+for m in genai.list_models():
+    print("MODELO:", m.name, m.supported_generation_methods)    
+
+
+
 # Inyectar 'str' en el contexto de Jinja2 para que esté disponible en todas las plantillas.
 @app.context_processor
 def utility_processor():
