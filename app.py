@@ -222,18 +222,6 @@ PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 300 # 5 minutos para el historial de partid
 
 # --- CONFIGURACIÓN DE SPLITS ---
 SPLITS = {
-    "s15_split1": {
-        "name": "Temporada 2025 - Split 1",
-        "start_date": datetime(2025, 1, 9),
-    },
-    "s15_split2": {
-        "name": "Temporada 2025 - Split 2",
-        "start_date": datetime(2025, 5, 15),
-    },
-    "s15_split3": {
-        "name": "Temporada 2025 - Split 3",
-        "start_date": datetime(2025, 9, 10),
-    },
     "s16_split1": {
         "name": "Temporada 2026 - Split 1",
         "start_date": datetime(2026, 1, 8, tzinfo=timezone.utc),
