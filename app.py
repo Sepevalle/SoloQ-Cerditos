@@ -3101,15 +3101,28 @@ def analizar_partidas_gemini(puuid):
         prompt = f"Analiza estas 5 partidas de LoL para el jugador {puuid}: {json.dumps(resumen_ia)}"
         print(f"[analizar_partidas_gemini] Prompt creado: {prompt[:100]}...")
 
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config={'response_mime_type': 'application/json', 'response_schema': AnalisisSoloQ}
-        )
-        print("[analizar_partidas_gemini] Respuesta de Gemini obtenida")
+        try:
+            response = gemini_client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=prompt,
+                config={'response_mime_type': 'application/json', 'response_schema': AnalisisSoloQ}
+            )
+            print("[analizar_partidas_gemini] Respuesta de Gemini obtenida")
 
-        resultado_final = response.parsed.dict()
-        print("[analizar_partidas_gemini] Resultado parseado")
+            resultado_final = response.parsed.dict()
+            print("[analizar_partidas_gemini] Resultado parseado")
+        except Exception as gemini_error:
+            # Manejar errores específicos de Gemini API
+            error_str = str(gemini_error)
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                print(f"[analizar_partidas_gemini] Cuota de Gemini agotada: {gemini_error}")
+                return jsonify({
+                    "error": "Cuota agotada",
+                    "mensaje": "Has excedido la cuota gratuita de Gemini. Espera unas horas para que se renueve o actualiza a un plan de pago."
+                }), 429
+            else:
+                # Re-lanzar otros errores para que sean manejados por el except general
+                raise gemini_error
 
         # 5. ACTUALIZAR GITHUB
         # Guardar el análisis
