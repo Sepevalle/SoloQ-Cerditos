@@ -3098,11 +3098,10 @@ def analizar_partidas_gemini(puuid):
         }
 
         prompt = f"Analiza esta partida de LoL para el jugador {puuid}: {json.dumps(resumen_partida)}"
-        print(f"[analizar_partidas_gemini] Prompt creado: {prompt[:100]}...")
 
         try:
             response = gemini_client.models.generate_content(
-                model='gemini-2.0-flash',
+                model='gemini-2.5-flash-lite',
                 contents=prompt,
                 config={'response_mime_type': 'application/json', 'response_schema': AnalisisSoloQ}
             )
