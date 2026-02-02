@@ -3089,16 +3089,15 @@ def analizar_partidas_gemini(puuid):
         # 4. EJECUCIÓN DE LLAMADA A GEMINI
         # Si llega aquí es porque tiene_permiso=="SI" o el cooldown expiró
         print("[analizar_partidas_gemini] Ejecutando llamada a Gemini")
-        resumen_ia = []
-        for m in matches_soloq:
-            resumen_ia.append({
-                "campeon": m.get('champion_name'),
-                "kda": f"{m.get('kills')}/{m.get('deaths')}/{m.get('assists')}",
-                "resultado": "Victoria" if m.get('win') else "Derrota",
-                "daño": m.get('total_damage_dealt_to_champions')
-            })
+        match = matches_soloq[0]  # Solo hay una partida ahora
+        resumen_partida = {
+            "campeon": match.get('champion_name'),
+            "kda": f"{match.get('kills')}/{match.get('deaths')}/{match.get('assists')}",
+            "resultado": "Victoria" if match.get('win') else "Derrota",
+            "daño": match.get('total_damage_dealt_to_champions')
+        }
 
-        prompt = f"Analiza estas 5 partidas de LoL para el jugador {puuid}: {json.dumps(resumen_ia)}"
+        prompt = f"Analiza esta partida de LoL para el jugador {puuid}: {json.dumps(resumen_partida)}"
         print(f"[analizar_partidas_gemini] Prompt creado: {prompt[:100]}...")
 
         try:
