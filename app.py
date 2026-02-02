@@ -2050,9 +2050,14 @@ def _get_player_profile_data(game_name):
         processed_matches = process_player_match_history(matches, player_lp_history)
 
 
+    # Asegurar que tenemos el PUUID actualizado desde el archivo
+    puuid_dict = leer_puuids()
+    puuid = puuid_dict.get(game_name, puuid)  # Usar el del dict si no está en cache
+
     perfil = {
         'nombre': primer_perfil.get('jugador', 'N/A'),
         'game_name': game_name,
+        'puuid': puuid,
         'perfil_icon_url': primer_perfil.get('perfil_icon_url', ''),
         'historial_partidas': processed_matches
     }

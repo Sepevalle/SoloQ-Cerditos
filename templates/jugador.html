@@ -1916,7 +1916,7 @@
         if (!puuid || puuid === 'None' || puuid.trim() === '') {
             loader.style.display = 'none';
             errorDiv.style.display = 'block';
-            errorDiv.innerText = 'Error: PUUID no disponible para este jugador.';
+            errorDiv.innerText = 'Los datos del jugador están cargándose. Por favor, espera unos minutos y recarga la página. Si el problema persiste, revisa los logs del servidor.';
             btn.disabled = false;
             return;
         }
