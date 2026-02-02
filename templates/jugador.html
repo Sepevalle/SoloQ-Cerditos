@@ -1912,6 +1912,15 @@
         const errorDiv = document.getElementById('ia-error');
         const puuid = "{{ perfil.puuid }}";
 
+        // Validar que el PUUID esté disponible
+        if (!puuid || puuid === 'None' || puuid.trim() === '') {
+            loader.style.display = 'none';
+            errorDiv.style.display = 'block';
+            errorDiv.innerText = 'Error: PUUID no disponible para este jugador.';
+            btn.disabled = false;
+            return;
+        }
+
         btn.disabled = true;
         loader.style.display = 'block';
         content.style.display = 'none';
