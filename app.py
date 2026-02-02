@@ -181,6 +181,8 @@ BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 
 # Rutas de archivos en GitHub
 LP_HISTORY_FILE_PATH = "lp_history.json"
+GITHUB_REPO = "Sepevalle/SoloQ-Cerditos"
+GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
 
 # Caché para almacenar los datos de los jugadores principales (resumen de ELO)
 cache = {
@@ -3028,48 +3030,60 @@ def _calculate_and_cache_global_stats_periodically():
 @app.route('/api/analisis-ia/<puuid>', methods=['GET'])
 def analizar_partidas_gemini(puuid):
     try:
+        print(f"[analizar_partidas_gemini] Iniciando análisis para PUUID: {puuid}")
         if not gemini_client:
+            print("[analizar_partidas_gemini] Gemini no configurado")
             return jsonify({"error": "Gemini no configurado"}), 500
 
         # 1. ¿Tiene permiso manual en GitHub?
+        print(f"[analizar_partidas_gemini] Verificando permisos para {puuid}")
         tiene_permiso, permiso_sha = gestionar_permiso_jugador(puuid)
-        
+        print(f"[analizar_partidas_gemini] Permiso: {tiene_permiso}")
+
         # 2. Obtener las últimas 5 partidas de SoloQ
         riot_id_info = next((rid for rid, p in leer_puuids().items() if p == puuid), None)
+        print(f"[analizar_partidas_gemini] Riot ID encontrado: {riot_id_info}")
         historial = get_player_match_history(puuid, riot_id=riot_id_info)
         matches_soloq = sorted(
             [m for m in historial.get('matches', []) if m.get('queue_id') == 420],
             key=lambda x: x.get('game_end_timestamp', 0), reverse=True
         )[:5]
+        print(f"[analizar_partidas_gemini] Partidas encontradas: {len(matches_soloq)}")
 
         if not matches_soloq:
             return jsonify({"error": "No hay partidas de SoloQ para analizar"}), 404
 
         # Crear firma de las partidas
         current_signature = "-".join(sorted([str(m['match_id']) for m in matches_soloq]))
+        print(f"[analizar_partidas_gemini] Firma actual: {current_signature}")
 
         # 3. Revisar si ya existe un análisis previo
         analisis_previo, player_sha = obtener_analisis_github(puuid)
-        
+        print(f"[analizar_partidas_gemini] Análisis previo encontrado: {analisis_previo is not None}")
+
         # LÓGICA DE DECISIÓN
         if tiene_permiso == False:
             if analisis_previo:
                 # Si son las mismas partidas, damos la caché (es gratis)
                 if analisis_previo.get('signature') == current_signature:
+                    print("[analizar_partidas_gemini] Devolviendo caché")
                     return jsonify({"origen": "cache", **analisis_previo['data']}), 200
-                
+
                 # Si son nuevas, aplicar cooldown de 24h
                 horas = (time.time() - analisis_previo.get('timestamp', 0)) / 3600
                 if horas < 24:
+                    print(f"[analizar_partidas_gemini] Cooldown activo: {horas} horas")
                     return jsonify({
-                        "error": "Cooldown", 
+                        "error": "Cooldown",
                         "mensaje": f"Espera {int(24-horas)}h o pide rehabilitación manual."
                     }), 429
             else:
+                print("[analizar_partidas_gemini] Usuario bloqueado")
                 return jsonify({"error": "Bloqueado", "mensaje": "No tienes permiso activo."}), 403
 
         # 4. EJECUCIÓN DE LLAMADA A GEMINI
         # Si llega aquí es porque tiene_permiso=="SI" o el cooldown expiró
+        print("[analizar_partidas_gemini] Ejecutando llamada a Gemini")
         resumen_ia = []
         for m in matches_soloq:
             resumen_ia.append({
@@ -3080,19 +3094,23 @@ def analizar_partidas_gemini(puuid):
             })
 
         prompt = f"Analiza estas 5 partidas de LoL para el jugador {puuid}: {json.dumps(resumen_ia)}"
+        print(f"[analizar_partidas_gemini] Prompt creado: {prompt[:100]}...")
 
         response = gemini_client.models.generate_content(
             model='gemini-2.0-flash',
             contents=prompt,
             config={'response_mime_type': 'application/json', 'response_schema': AnalisisSoloQ}
         )
-        
+        print("[analizar_partidas_gemini] Respuesta de Gemini obtenida")
+
         resultado_final = response.parsed.dict()
+        print("[analizar_partidas_gemini] Resultado parseado")
 
         # 5. ACTUALIZAR GITHUB
         # Guardar el análisis
         nuevo_doc = {"timestamp": time.time(), "signature": current_signature, "data": resultado_final}
         actualizar_archivo_github(f"analisisIA/{puuid}.json", nuevo_doc, player_sha)
+        print("[analizar_partidas_gemini] Análisis guardado en GitHub")
 
         # AUTO-BLOQUEO: Volvemos a poner el permiso en NO para la próxima vez
         # Así tú tienes que ponerlo en SI manualmente para rehabilitarlo
@@ -3102,11 +3120,14 @@ def analizar_partidas_gemini(puuid):
             "ultima_modificacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         actualizar_archivo_github(f"config/permisos/{puuid}.json", estado_bloqueado, permiso_sha)
+        print("[analizar_partidas_gemini] Permiso bloqueado")
 
         return jsonify({"origen": "nuevo", **resultado_final}), 200
 
     except Exception as e:
         print(f"[analizar_partidas_gemini] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
 
 if __name__ == "__main__":
