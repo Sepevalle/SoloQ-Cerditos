@@ -1953,30 +1953,34 @@ def historial_global():
 
 @app.route('/api/players_and_accounts')
 def get_players_and_accounts():
-    print("[get_players_and_accounts] Petición recibida para obtener jugadores y cuentas.")
-    datos_jugadores, _ = obtener_datos_jugadores()
-    
-    players_data = {}
-    for jugador_info in datos_jugadores:
-        player_name = jugador_info.get('jugador')
-        riot_id = jugador_info.get('game_name')
-        puuid = jugador_info.get('puuid')
+    try:
+        print("[get_players_and_accounts] Petición recibida para obtener jugadores y cuentas.")
+        datos_jugadores, _ = obtener_datos_jugadores()
+        
+        players_data = {}
+        for jugador_info in datos_jugadores:
+            player_name = jugador_info.get('jugador')
+            riot_id = jugador_info.get('game_name')
+            puuid = jugador_info.get('puuid')
 
-        if player_name and riot_id and puuid:
-            if player_name not in players_data:
-                players_data[player_name] = []
-            
-            # Check if this specific riot_id/puuid pair is already added for this player
-            # This handles cases where a player might have multiple entries in datos_jugadores
-            # for different queue types but the same riot_id/puuid.
-            if not any(acc['puuid'] == puuid for acc in players_data[player_name]):
-                players_data[player_name].append({
-                    'riot_id': riot_id,
-                    'puuid': puuid
-                })
-    
-    print(f"[get_players_and_accounts] Devolviendo {len(players_data)} jugadores con sus cuentas.")
-    return jsonify(players_data)
+            if player_name and riot_id and puuid:
+                if player_name not in players_data:
+                    players_data[player_name] = []
+                
+                # Check if this specific riot_id/puuid pair is already added for this player
+                # This handles cases where a player might have multiple entries in datos_jugadores
+                # for different queue types but the same riot_id/puuid.
+                if not any(acc['puuid'] == puuid for acc in players_data[player_name]):
+                    players_data[player_name].append({
+                        'riot_id': riot_id,
+                        'puuid': puuid
+                    })
+        
+        print(f"[get_players_and_accounts] Devolviendo {len(players_data)} jugadores con sus cuentas.")
+        return jsonify(players_data)
+    except Exception as e:
+        print(f"[get_players_and_accounts] ERROR: {e}")
+        return jsonify({"error": "Ocurrió un error inesperado en el servidor."}), 500
 
 @app.route('/jugador/<path:game_name>')
 def perfil_jugador(game_name):
@@ -2686,49 +2690,24 @@ def _calculate_stats_for_queue(all_matches, queue_id_filter, champion_filter=Non
         'global_records': global_records
     }
 
-def _calculate_and_cache_global_stats():
-    """
-    Calcula todas las estadísticas globales para diferentes colas y las almacena en la caché global.
-    """
-    print("[_calculate_and_cache_global_stats] Iniciando el cálculo de estadísticas globales para todas las colas.")
 
-    puuid_dict = leer_puuids()
-    cuentas = leer_cuentas()
-    all_matches = []
 
-    for riot_id, jugador_nombre in cuentas:
-        puuid = puuid_dict.get(riot_id)
-        if not puuid:
-            continue
 
-        historial = get_player_match_history(puuid, riot_id=riot_id)
-        matches = historial.get('matches', [])
-        
-        for match in matches:
-            if match.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP:
-                match['jugador_nombre'] = jugador_nombre
-                match['riot_id'] = riot_id
-                all_matches.append(match)
-    
-    # Define the queue filters
-    queue_filters = {
-        'all': None,
-        'all_rankeds': [420, 440],
-        'soloq': 420,
-        'flex': 440
-    }
-    
-    # Calculate stats for each queue
-    all_stats = {}
-    for queue_name, queue_id in queue_filters.items():
-        all_stats[queue_name] = _calculate_stats_for_queue(all_matches, queue_id)
-
+def get_global_stats():
+    """Devuelve las estadísticas globales cacheadas."""
     with GLOBAL_STATS_LOCK:
-        GLOBAL_STATS_CACHE['data'] = all_stats
-        GLOBAL_STATS_CACHE['all_matches'] = all_matches
-        GLOBAL_STATS_CACHE['timestamp'] = time.time()
-    print("[_calculate_and_cache_global_stats] Cálculo de estadísticas globales completado y caché actualizada para todas las colas.")
+        # Deep copy to prevent modification of cached data outside of lock
+        return json.loads(json.dumps(GLOBAL_STATS_CACHE))
 
+@app.route('/api/global_stats', methods=['GET'])
+def global_stats_api():
+    """API endpoint to get global statistics."""
+    try:
+        stats_data = get_global_stats()
+        return jsonify(stats_data)
+    except Exception as e:
+        print(f"[global_stats_api] ERROR: {e}")
+        return jsonify({"error": "Ocurrió un error inesperado en el servidor."}), 500
 
 @app.route('/estadisticas')
 def estadisticas_globales():
@@ -2929,55 +2908,63 @@ def _get_player_personal_records(puuid, player_display_name, riot_id, champion_f
 @app.route('/api/player/<puuid>/champions')
 def get_player_champions(puuid):
     """API endpoint to get the list of champions a player has played."""
-    print(f"[get_player_champions] Petición recibida para los campeones del PUUID: {puuid}.")
-    if not puuid:
-        return jsonify({"error": "PUUID no proporcionado"}), 400
+    try:
+        print(f"[get_player_champions] Petición recibida para los campeones del PUUID: {puuid}.")
+        if not puuid:
+            return jsonify({"error": "PUUID no proporcionado"}), 400
 
-    historial = get_player_match_history(puuid)
-    matches = historial.get('matches', [])
-    
-    champions = sorted(list(set(m['champion_name'] for m in matches if 'champion_name' in m)))
-    
-    print(f"[get_player_champions] Devolviendo {len(champions)} campeones únicos para el PUUID: {puuid}.")
-    return jsonify(champions)
+        historial = get_player_match_history(puuid)
+        matches = historial.get('matches', [])
+        
+        champions = sorted(list(set(m['champion_name'] for m in matches if 'champion_name' in m)))
+        
+        print(f"[get_player_champions] Devolviendo {len(champions)} campeones únicos para el PUUID: {puuid}.")
+        return jsonify(champions)
+    except Exception as e:
+        print(f"[get_player_champions] ERROR: {e}")
+        return jsonify({"error": "Ocurrió un error inesperado en el servidor."}), 500
 
 @app.route('/api/personal_records/<puuid>')
 def get_personal_records_api(puuid):
     """
     API endpoint para obtener los récords personales de un jugador dado su PUUID.
     """
-    print(f"[get_personal_records_api] Petición recibida para PUUID: {puuid}.")
-    
-    champion_filter = request.args.get('champion')
-    if champion_filter == 'all':
-        champion_filter = None
+    try:
+        print(f"[get_personal_records_api] Petición recibida para PUUID: {puuid}.")
+        
+        champion_filter = request.args.get('champion')
+        if champion_filter == 'all':
+            champion_filter = None
 
-    player_display_name = "Desconocido"
-    riot_id = "Desconocido"
+        player_display_name = "Desconocido"
+        riot_id = "Desconocido"
 
-    datos_jugadores, _ = obtener_datos_jugadores()
-    for jugador_info in datos_jugadores:
-        if jugador_info.get('puuid') == puuid:
-            player_display_name = jugador_info.get('jugador', "Desconocido")
-            riot_id = jugador_info.get('game_name', "Desconocido")
-            break
+        datos_jugadores, _ = obtener_datos_jugadores()
+        for jugador_info in datos_jugadores:
+            if jugador_info.get('puuid') == puuid:
+                player_display_name = jugador_info.get('jugador', "Desconocido")
+                riot_id = jugador_info.get('game_name', "Desconocido")
+                break
 
-    if not puuid:
-        print("[get_personal_records_api] Error: PUUID no proporcionado.")
-        return jsonify({"error": "PUUID no proporcionado"}), 400
+        if not puuid:
+            print("[get_personal_records_api] Error: PUUID no proporcionado.")
+            return jsonify({"error": "PUUID no proporcionado"}), 400
 
-    personal_records = _get_player_personal_records(puuid, player_display_name, riot_id, champion_filter=champion_filter)
-    
-    if personal_records:
-        print(f"[get_personal_records_api] Récords personales cargados para PUUID: {puuid} (Campeón: {champion_filter or 'Todos'}).")
-        records_list = []
-        for record_type, record_data in personal_records.items():
-            record_data['record_type_key'] = record_type 
-            records_list.append(record_data)
-        return jsonify(records_list)
-    else:
-        print(f"[get_personal_records_api] No se encontraron récords personales para PUUID: {puuid} (Campeón: {champion_filter or 'Todos'}).")
-        return jsonify({"message": "No se encontraron récords personales para esta cuenta y filtro."}), 404
+        personal_records = _get_player_personal_records(puuid, player_display_name, riot_id, champion_filter=champion_filter)
+        
+        if personal_records:
+            print(f"[get_personal_records_api] Récords personales cargados para PUUID: {puuid} (Campeón: {champion_filter or 'Todos'}).")
+            records_list = []
+            for record_type, record_data in personal_records.items():
+                record_data['record_type_key'] = record_type 
+                records_list.append(record_data)
+            return jsonify(records_list)
+        else:
+            print(f"[get_personal_records_api] No se encontraron récords personales para PUUID: {puuid} (Campeón: {champion_filter or 'Todos'}).")
+            return jsonify({"message": "No se encontraron récords personales para esta cuenta y filtro."}), 404
+    except Exception as e:
+        print(f"[get_personal_records_api] ERROR: {e}")
+        return jsonify({"error": "Ocurrió un error inesperado en el servidor."}), 500
 
 
 @app.route('/records_personales')
@@ -3040,60 +3027,60 @@ def _calculate_and_cache_global_stats_periodically():
 
 @app.route('/api/analisis-ia/<puuid>', methods=['GET'])
 def analizar_partidas_gemini(puuid):
-    if not gemini_client:
-        return jsonify({"error": "Gemini no configurado"}), 500
-
-    # 1. ¿Tiene permiso manual en GitHub?
-    tiene_permiso, permiso_sha = gestionar_permiso_jugador(puuid)
-    
-    # 2. Obtener las últimas 5 partidas de SoloQ
-    riot_id_info = next((rid for rid, p in leer_puuids().items() if p == puuid), None)
-    historial = get_player_match_history(puuid, riot_id=riot_id_info)
-    matches_soloq = sorted(
-        [m for m in historial.get('matches', []) if m.get('queue_id') == 420],
-        key=lambda x: x.get('game_end_timestamp', 0), reverse=True
-    )[:5]
-
-    if not matches_soloq:
-        return jsonify({"error": "No hay partidas de SoloQ para analizar"}), 404
-
-    # Crear firma de las partidas
-    current_signature = "-".join(sorted([str(m['match_id']) for m in matches_soloq]))
-
-    # 3. Revisar si ya existe un análisis previo
-    analisis_previo, player_sha = obtener_analisis_github(puuid)
-    
-    # LÓGICA DE DECISIÓN
-    if tiene_permiso == False:
-        if analisis_previo:
-            # Si son las mismas partidas, damos la caché (es gratis)
-            if analisis_previo.get('signature') == current_signature:
-                return jsonify({"origen": "cache", **analisis_previo['data']}), 200
-            
-            # Si son nuevas, aplicar cooldown de 24h
-            horas = (time.time() - analisis_previo.get('timestamp', 0)) / 3600
-            if horas < 24:
-                return jsonify({
-                    "error": "Cooldown", 
-                    "mensaje": f"Espera {int(24-horas)}h o pide rehabilitación manual."
-                }), 429
-        else:
-            return jsonify({"error": "Bloqueado", "mensaje": "No tienes permiso activo."}), 403
-
-    # 4. EJECUCIÓN DE LLAMADA A GEMINI
-    # Si llega aquí es porque tiene_permiso=="SI" o el cooldown expiró
-    resumen_ia = []
-    for m in matches_soloq:
-        resumen_ia.append({
-            "campeon": m.get('champion_name'),
-            "kda": f"{m.get('kills')}/{m.get('deaths')}/{m.get('assists')}",
-            "resultado": "Victoria" if m.get('win') else "Derrota",
-            "daño": m.get('total_damage_dealt_to_champions')
-        })
-
-    prompt = f"Analiza estas 5 partidas de LoL para el jugador {puuid}: {json.dumps(resumen_ia)}"
-
     try:
+        if not gemini_client:
+            return jsonify({"error": "Gemini no configurado"}), 500
+
+        # 1. ¿Tiene permiso manual en GitHub?
+        tiene_permiso, permiso_sha = gestionar_permiso_jugador(puuid)
+        
+        # 2. Obtener las últimas 5 partidas de SoloQ
+        riot_id_info = next((rid for rid, p in leer_puuids().items() if p == puuid), None)
+        historial = get_player_match_history(puuid, riot_id=riot_id_info)
+        matches_soloq = sorted(
+            [m for m in historial.get('matches', []) if m.get('queue_id') == 420],
+            key=lambda x: x.get('game_end_timestamp', 0), reverse=True
+        )[:5]
+
+        if not matches_soloq:
+            return jsonify({"error": "No hay partidas de SoloQ para analizar"}), 404
+
+        # Crear firma de las partidas
+        current_signature = "-".join(sorted([str(m['match_id']) for m in matches_soloq]))
+
+        # 3. Revisar si ya existe un análisis previo
+        analisis_previo, player_sha = obtener_analisis_github(puuid)
+        
+        # LÓGICA DE DECISIÓN
+        if tiene_permiso == False:
+            if analisis_previo:
+                # Si son las mismas partidas, damos la caché (es gratis)
+                if analisis_previo.get('signature') == current_signature:
+                    return jsonify({"origen": "cache", **analisis_previo['data']}), 200
+                
+                # Si son nuevas, aplicar cooldown de 24h
+                horas = (time.time() - analisis_previo.get('timestamp', 0)) / 3600
+                if horas < 24:
+                    return jsonify({
+                        "error": "Cooldown", 
+                        "mensaje": f"Espera {int(24-horas)}h o pide rehabilitación manual."
+                    }), 429
+            else:
+                return jsonify({"error": "Bloqueado", "mensaje": "No tienes permiso activo."}), 403
+
+        # 4. EJECUCIÓN DE LLAMADA A GEMINI
+        # Si llega aquí es porque tiene_permiso=="SI" o el cooldown expiró
+        resumen_ia = []
+        for m in matches_soloq:
+            resumen_ia.append({
+                "campeon": m.get('champion_name'),
+                "kda": f"{m.get('kills')}/{m.get('deaths')}/{m.get('assists')}",
+                "resultado": "Victoria" if m.get('win') else "Derrota",
+                "daño": m.get('total_damage_dealt_to_champions')
+            })
+
+        prompt = f"Analiza estas 5 partidas de LoL para el jugador {puuid}: {json.dumps(resumen_ia)}"
+
         response = gemini_client.models.generate_content(
             model='gemini-2.0-flash',
             contents=prompt,
@@ -3119,7 +3106,8 @@ def analizar_partidas_gemini(puuid):
         return jsonify({"origen": "nuevo", **resultado_final}), 200
 
     except Exception as e:
-        return jsonify({"error": "Error en Gemini", "detalle": str(e)}), 500
+        print(f"[analizar_partidas_gemini] ERROR: {e}")
+        return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
 
 if __name__ == "__main__":
     print("[main] Iniciando la aplicación Flask.")
