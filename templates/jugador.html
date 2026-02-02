@@ -619,6 +619,47 @@
          <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
     </div>
 
+<div class="container mt-4 mb-4">
+    <div class="card border-0 shadow-lg" style="background: linear-gradient(145deg, #11131a, #1a1d29); border-radius: 15px; border-left: 5px solid #0dcaf0 !important;">
+        <div class="card-header border-0 d-flex justify-content-between align-items-center" style="background: rgba(0,0,0,0.3);">
+            <h5 class="mb-0 text-info font-monospace">
+                <i class="fas fa-brain me-2"></i>COACH VIRTUAL GEMINI 2.0
+            </h5>
+            <button id="btn-ia" class="btn btn-sm btn-outline-info" onclick="ejecutarAnalisisIA()">
+                <i class="fas fa-magic me-2"></i>Solicitar Análisis
+            </button>
+        </div>
+        <div class="card-body">
+            <div id="ia-loader" class="text-center py-4" style="display:none;">
+                <div class="spinner-border text-info mb-2" role="status"></div>
+                <p class="text-muted small">Analizando tus últimas 5 partidas de SoloQ...</p>
+            </div>
+            
+            <div id="ia-content" style="display:none;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="text-primary small fw-bold"><i class="fas fa-user me-1"></i> Desempeño Individual</label>
+                        <p id="ia-ind" class="text-light small mb-3"></p>
+                        <label class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i> Puntos Fuertes</label>
+                        <p id="ia-fuerte" class="text-light small mb-3"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-warning small fw-bold"><i class="fas fa-tools me-1"></i> Aspectos de Mejora</label>
+                        <p id="ia-mejora" class="text-light small mb-3"></p>
+                        <label class="text-info small fw-bold"><i class="fas fa-lightbulb me-1"></i> Recomendación</label>
+                        <p id="ia-recom" class="text-light small mb-3"></p>
+                    </div>
+                </div>
+                <div class="mt-2 pt-2 border-top border-secondary text-center">
+                    <small id="ia-extra" class="text-muted italic"></small>
+                </div>
+            </div>
+
+            <div id="ia-error" class="alert alert-dark text-warning small" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
     <div class="row">
         <div class="col-md-6">
             <div class="card rank-card">
@@ -1855,12 +1896,53 @@
             }
         });
 
+        
+
         // --- INICIALIZACIÓN ---
         populateQueueFilter();
         populateChampionFilter();
         renderMatchHistory();
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
+
+    async function ejecutarAnalisisIA() {
+        const btn = document.getElementById('btn-ia');
+        const loader = document.getElementById('ia-loader');
+        const content = document.getElementById('ia-content');
+        const errorDiv = document.getElementById('ia-error');
+        const puuid = "{{ perfil.puuid }}";
+
+        btn.disabled = true;
+        loader.style.display = 'block';
+        content.style.display = 'none';
+        errorDiv.style.display = 'none';
+
+        try {
+            const response = await fetch(`/api/analisis-ia/${puuid}`);
+            const data = await response.json();
+
+            if (response.status === 429 || response.status === 403 || !response.ok) {
+                throw new Error(data.mensaje || data.error || "Error al conectar con la IA");
+            }
+
+            // Rellenar datos
+            document.getElementById('ia-ind').innerText = data.analisis_individual;
+            document.getElementById('ia-fuerte').innerText = data.puntos_fuertes;
+            document.getElementById('ia-mejora').innerText = data.aspectos_mejora;
+            document.getElementById('ia-recom').innerText = data.recomendaciones;
+            document.getElementById('ia-extra').innerText = `Compañeros: ${data.valoracion_companeros} | Rivales: ${data.valoracion_rivales}`;
+
+            loader.style.display = 'none';
+            content.style.display = 'block';
+            btn.innerHTML = data.origen === 'cache' ? 'Análisis desde Caché' : 'Análisis Completado';
+        } catch (err) {
+            loader.style.display = 'none';
+            errorDiv.style.display = 'block';
+            errorDiv.innerText = err.message;
+            btn.disabled = false;
+            btn.innerHTML = 'Reintentar Análisis';
+        }
+    }
 </script>
 
 

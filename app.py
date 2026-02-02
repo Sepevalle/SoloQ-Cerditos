@@ -12,6 +12,8 @@ from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 import queue # Import for the queue
 import locale # Import for locale formatting
+from google import genai
+from pydantic import BaseModel
 
 app = Flask(__name__)
 
@@ -1316,7 +1318,62 @@ def _recalcular_lp_partidas_historicas(puuid, all_matches):
         print(f"[_recalcular_lp_partidas_historicas] Recalculados {recalculated} LP para {puuid}")
     return all_matches
 
+# Configuración de Gemini
+gemini_client = None
+if os.environ.get("GOOGLE_API_KEY"):
+    gemini_client = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY"))
 
+# Esquema para que Gemini responda siempre con el mismo JSON
+class AnalisisSoloQ(BaseModel):
+    analisis_individual: str
+    valoracion_companeros: str
+    valoracion_rivales: str
+    aspectos_mejora: str
+    puntos_fuertes: str
+    recomendaciones: str
+    otros: str
+
+def obtener_analisis_github(puuid):
+    """Recupera el análisis previo de un jugador desde GitHub"""
+    path = f"analisisIA/{puuid}.json"
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    try:
+        r = requests.get(url, headers=headers)
+        if r.status_code == 200:
+            content = r.json()
+            decoded = json.loads(base64.b64decode(content['content']).decode('utf-8'))
+            return decoded, content['sha']
+    except: pass
+    return None, None
+
+def gestionar_permiso_jugador(puuid):
+    """Consulta el interruptor individual (SI/NO) en GitHub"""
+    path = f"config/permisos/{puuid}.json"
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    r = requests.get(url, headers=headers)
+    if r.status_code == 200:
+        content = r.json()
+        decoded = json.loads(base64.b64decode(content['content']).decode('utf-8'))
+        return decoded.get("permitir_llamada") == "SI", content['sha']
+    # Si no existe, lo habilitamos por defecto creando el archivo
+    elif r.status_code == 404:
+        actualizar_archivo_github(path, {"permitir_llamada": "SI", "razon": "Inicializado"})
+        return True, None
+    return False, None
+
+def actualizar_archivo_github(path, datos, sha=None):
+    """Función genérica para escribir archivos JSON en GitHub"""
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    payload = {
+        "message": f"Update {path}",
+        "content": base64.b64encode(json.dumps(datos, indent=2, ensure_ascii=False).encode('utf-8')).decode('utf-8')
+    }
+    if sha: payload["sha"] = sha
+    requests.put(url, headers=headers, json=payload)
+    
 def procesar_jugador(args_tuple):
     """
     Procesa los datos de un solo jugador.
@@ -2980,6 +3037,89 @@ def _calculate_and_cache_global_stats_periodically():
         except Exception as e:
             print(f"[_calculate_and_cache_global_stats_periodically] ERROR en el hilo de cálculo de estadísticas globales: {e}")
         time.sleep(GLOBAL_STATS_UPDATE_INTERVAL)
+
+@app.route('/api/analisis-ia/<puuid>', methods=['GET'])
+def analizar_partidas_gemini(puuid):
+    if not gemini_client:
+        return jsonify({"error": "Gemini no configurado"}), 500
+
+    # 1. ¿Tiene permiso manual en GitHub?
+    tiene_permiso, permiso_sha = gestionar_permiso_jugador(puuid)
+    
+    # 2. Obtener las últimas 5 partidas de SoloQ
+    riot_id_info = next((rid for rid, p in leer_puuids().items() if p == puuid), None)
+    historial = get_player_match_history(puuid, riot_id=riot_id_info)
+    matches_soloq = sorted(
+        [m for m in historial.get('matches', []) if m.get('queue_id') == 420],
+        key=lambda x: x.get('game_end_timestamp', 0), reverse=True
+    )[:5]
+
+    if not matches_soloq:
+        return jsonify({"error": "No hay partidas de SoloQ para analizar"}), 404
+
+    # Crear firma de las partidas
+    current_signature = "-".join(sorted([str(m['match_id']) for m in matches_soloq]))
+
+    # 3. Revisar si ya existe un análisis previo
+    analisis_previo, player_sha = obtener_analisis_github(puuid)
+    
+    # LÓGICA DE DECISIÓN
+    if tiene_permiso == False:
+        if analisis_previo:
+            # Si son las mismas partidas, damos la caché (es gratis)
+            if analisis_previo.get('signature') == current_signature:
+                return jsonify({"origen": "cache", **analisis_previo['data']}), 200
+            
+            # Si son nuevas, aplicar cooldown de 24h
+            horas = (time.time() - analisis_previo.get('timestamp', 0)) / 3600
+            if horas < 24:
+                return jsonify({
+                    "error": "Cooldown", 
+                    "mensaje": f"Espera {int(24-horas)}h o pide rehabilitación manual."
+                }), 429
+        else:
+            return jsonify({"error": "Bloqueado", "mensaje": "No tienes permiso activo."}), 403
+
+    # 4. EJECUCIÓN DE LLAMADA A GEMINI
+    # Si llega aquí es porque tiene_permiso=="SI" o el cooldown expiró
+    resumen_ia = []
+    for m in matches_soloq:
+        resumen_ia.append({
+            "campeon": m.get('champion_name'),
+            "kda": f"{m.get('kills')}/{m.get('deaths')}/{m.get('assists')}",
+            "resultado": "Victoria" if m.get('win') else "Derrota",
+            "daño": m.get('total_damage_dealt_to_champions')
+        })
+
+    prompt = f"Analiza estas 5 partidas de LoL para el jugador {puuid}: {json.dumps(resumen_ia)}"
+
+    try:
+        response = gemini_client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config={'response_mime_type': 'application/json', 'response_schema': AnalisisSoloQ}
+        )
+        
+        resultado_final = response.parsed.dict()
+
+        # 5. ACTUALIZAR GITHUB
+        # Guardar el análisis
+        nuevo_doc = {"timestamp": time.time(), "signature": current_signature, "data": resultado_final}
+        actualizar_archivo_github(f"analisisIA/{puuid}.json", nuevo_doc, player_sha)
+
+        # AUTO-BLOQUEO: Volvemos a poner el permiso en NO para la próxima vez
+        # Así tú tienes que ponerlo en SI manualmente para rehabilitarlo
+        estado_bloqueado = {
+            "permitir_llamada": "NO",
+            "razon": "Llamada consumida. Requiere rehabilitación manual.",
+            "ultima_modificacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        actualizar_archivo_github(f"config/permisos/{puuid}.json", estado_bloqueado, permiso_sha)
+
+        return jsonify({"origen": "nuevo", **resultado_final}), 200
+
+    except Exception as e:
+        return jsonify({"error": "Error en Gemini", "detalle": str(e)}), 500
 
 if __name__ == "__main__":
     print("[main] Iniciando la aplicación Flask.")
