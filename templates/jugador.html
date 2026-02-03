@@ -557,6 +557,41 @@
         .runes img.sub-rune {
             border: 1px solid #6c757d;
         }
+        
+        /* Estilo Base Coach (Inspirado en tu original) */
+        .coach-card {
+            background: linear-gradient(145deg, #11131a, #1a1d29);
+            border-radius: 15px !important;
+            border-left: 5px solid #0dcaf0 !important;
+        }
+
+        .bg-header-ia { background: rgba(0,0,0,0.3); }
+
+        /* Párrafos de la IA */
+        .ia-paragraph {
+            color: #e0e0e0; /* Gris muy claro para lectura descansada */
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 0;
+            white-space: pre-wrap; /* Mantiene el formato del JSON */
+            text-align: justify;
+        }
+
+        /* Adaptación a MODO CLARO (Si el body no tiene .dark-mode) */
+        body:not(.dark-mode) .coach-card {
+            background: linear-gradient(145deg, #ffffff, #f0f2f5);
+            border: 1px solid #dee2e6 !important;
+            border-left: 5px solid #0dcaf0 !important;
+        }
+
+        body:not(.dark-mode) .ia-paragraph { color: #333; }
+        body:not(.dark-mode) .bg-header-ia { background: rgba(0,0,0,0.05); }
+
+        /* Resaltado especial para la recomendación */
+        .text-highlight { color: #0dcaf0 !important; }
+        body:not(.dark-mode) .text-highlight { color: #007bff !important; }
+
+
 
         /* Dark mode specific text color for small-text-stats */
         .small-text-stats {
@@ -644,43 +679,50 @@
          <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
     </div>
 
-<div class="container mt-4">
-    <div id="seccion-ia" class="card shadow-sm border-0 mb-4 ia-card">
-        <div class="card-header bg-gradient-purple text-white d-flex align-items-center justify-content-between">
-            <span><i class="fas fa-robot me-2"></i> Análisis Táctico con IA</span>
-            <small id="ia-timestamp" class="opacity-75"></small>
+<div class="container mt-4 mb-4">
+    <div class="card border-0 shadow-lg coach-card">
+        <div class="card-header border-0 d-flex justify-content-between align-items-center bg-header-ia">
+            <h5 class="mb-0 text-info font-monospace">
+                <i class="fas fa-brain me-2"></i>COACH VIRTUAL GEMINI 2.5
+            </h5>
+            <button id="btn-ia" class="btn btn-sm btn-outline-info" onclick="ejecutarAnalisisIA()">
+                <i class="fas fa-magic me-2"></i>Solicitar Análisis
+            </button>
         </div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="p-3 rounded ia-item mb-3">
-                        <h6 class="fw-bold text-primary"><i class="fas fa-user-ninja me-2"></i>Análisis Individual</h6>
-                        <p id="ia-individual" class="mb-0 text-muted-custom small-text"></p>
+            <div id="ia-loader" class="text-center py-4" style="display:none;">
+                <div class="spinner-border text-info mb-2" role="status"></div>
+                <p class="text-muted small">Analizando tus últimas 5 partidas de SoloQ...</p>
+            </div>
+            
+            <div id="ia-content" style="display:none;">
+                <div class="row g-4"> <div class="col-md-6">
+                        <div class="mb-4 ia-text-container">
+                            <label class="text-primary small fw-bold mb-2 d-block"><i class="fas fa-user me-1"></i> Desempeño Individual</label>
+                            <p id="ia-ind" class="ia-paragraph"></p>
+                        </div>
+                        <div class="mb-4 ia-text-container">
+                            <label class="text-success small fw-bold mb-2 d-block"><i class="fas fa-check-circle me-1"></i> Puntos Fuertes</label>
+                            <p id="ia-fuerte" class="ia-paragraph"></p>
+                        </div>
                     </div>
-                    <div class="p-3 rounded ia-item mb-3">
-                        <h6 class="fw-bold text-success"><i class="fas fa-users me-2"></i>Valoración de Compañeros</h6>
-                        <p id="ia-companeros" class="mb-0 text-muted-custom small-text"></p>
-                    </div>
-                    <div class="p-3 rounded ia-item">
-                        <h6 class="fw-bold text-danger"><i class="fas fa-skull-crossbones me-2"></i>Valoración de Rivales</h6>
-                        <p id="ia-rivales" class="mb-0 text-muted-custom small-text"></p>
+                    <div class="col-md-6">
+                        <div class="mb-4 ia-text-container">
+                            <label class="text-warning small fw-bold mb-2 d-block"><i class="fas fa-tools me-1"></i> Aspectos de Mejora</label>
+                            <p id="ia-mejora" class="ia-paragraph"></p>
+                        </div>
+                        <div class="mb-4 ia-text-container">
+                            <label class="text-info small fw-bold mb-2 d-block"><i class="fas fa-lightbulb me-1"></i> Recomendación</label>
+                            <p id="ia-recom" class="ia-paragraph fw-medium text-highlight"></p>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="p-3 rounded ia-item mb-3 highlight-item">
-                        <h6 class="fw-bold text-warning"><i class="fas fa-star me-2"></i>Puntos Fuertes</h6>
-                        <p id="ia-fuertes" class="mb-0 text-muted-custom small-text"></p>
-                    </div>
-                    <div class="p-3 rounded ia-item mb-3">
-                        <h6 class="fw-bold text-info"><i class="fas fa-chart-line me-2"></i>Aspectos de Mejora</h6>
-                        <p id="ia-mejora" class="mb-0 text-muted-custom small-text"></p>
-                    </div>
-                    <div class="p-3 rounded ia-item border-start border-4 border-primary bg-light-blue">
-                        <h6 class="fw-bold"><i class="fas fa-lightbulb me-2"></i>Recomendación Final</h6>
-                        <p id="ia-recomendacion" class="mb-0 text-muted-custom fw-medium"></p>
-                    </div>
+                <div class="mt-2 pt-3 border-top border-secondary">
+                    <p id="ia-extra" class="text-muted small fst-italic text-center mb-0"></p>
                 </div>
             </div>
+
+            <div id="ia-error" class="alert alert-dark text-warning small" style="display:none;"></div>
         </div>
     </div>
 </div>
@@ -1949,54 +1991,50 @@
         // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
     });
 
-    async function ejecutarAnalisisIA() {
-        const btn = document.getElementById('btn-ia');
-        const loader = document.getElementById('ia-loader');
-        const content = document.getElementById('ia-content');
-        const errorDiv = document.getElementById('ia-error');
-        const puuid = "{{ perfil.puuid }}";
+async function ejecutarAnalisisIA() {
+    const puuid = "{{ perfil.puuid }}";
+    const btn = document.getElementById('btn-ia');
+    const loader = document.getElementById('ia-loader');
+    const content = document.getElementById('ia-content');
+    const errorDiv = document.getElementById('ia-error');
 
-        // Validar que el PUUID esté disponible
-        if (!puuid || puuid === 'None' || puuid.trim() === '') {
-            loader.style.display = 'none';
-            errorDiv.style.display = 'block';
-            errorDiv.innerText = 'Los datos del jugador están cargándose. Por favor, espera unos minutos y recarga la página. Si el problema persiste, revisa los logs del servidor.';
-            btn.disabled = false;
-            return;
-        }
+    // Estado inicial
+    btn.disabled = true;
+    loader.style.display = 'block';
+    content.style.display = 'none';
+    errorDiv.style.display = 'none';
 
-        btn.disabled = true;
-        loader.style.display = 'block';
-        content.style.display = 'none';
-        errorDiv.style.display = 'none';
+    try {
+        const response = await fetch(`/api/analisis-ia/${puuid}`);
+        const result = await response.json();
 
-        try {
-            const response = await fetch(`/api/analisis-ia/${puuid}`);
-            const data = await response.json();
+        if (!response.ok) throw new Error(result.mensaje || result.error || "Error en la API");
 
-            if (response.status === 429 || response.status === 403 || !response.ok) {
-                throw new Error(data.mensaje || data.error || "Error al conectar con la IA");
-            }
+        // El JSON viene con la clave 'data' según tu ejemplo anterior
+        const d = result.data || result;
 
-            // Rellenar datos
-            document.getElementById('ia-ind').innerText = data.analisis_individual;
-            document.getElementById('ia-fuerte').innerText = data.puntos_fuertes;
-            document.getElementById('ia-mejora').innerText = data.aspectos_mejora;
-            document.getElementById('ia-recom').innerText = data.recomendaciones;
-            document.getElementById('ia-extra').innerText = `Compañeros: ${data.valoracion_companeros} | Rivales: ${data.valoracion_rivales}`;
+        // Rellenar con los campos correctos del JSON
+        document.getElementById('ia-ind').innerText = d.analisis_individual;
+        document.getElementById('ia-fuerte').innerText = d.puntos_fuertes;
+        document.getElementById('ia-mejora').innerText = d.aspectos_mejora;
+        document.getElementById('ia-recom').innerText = d.recomendaciones;
+        
+        // Formatear el extra (Compañeros y Rivales)
+        document.getElementById('ia-extra').innerText = 
+            `📊 Análisis de entorno: ${d.valoracion_companeros} \n\n ⚔️ Sobre los rivales: ${d.valoracion_rivales}`;
 
-            loader.style.display = 'none';
-            content.style.display = 'block';
-            btn.innerHTML = data.origen === 'cache' ? 'Análisis desde Caché' : 'Análisis Completado';
-        } catch (err) {
-            loader.style.display = 'none';
-            errorDiv.style.display = 'block';
-            errorDiv.innerText = err.message;
-            btn.disabled = false;
-            btn.innerHTML = 'Reintentar Análisis';
-        }
+        loader.style.display = 'none';
+        content.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-check me-2"></i>Análisis Listo';
+        
+    } catch (err) {
+        loader.style.display = 'none';
+        errorDiv.style.display = 'block';
+        errorDiv.innerText = "⚠️ " + err.message;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync me-2"></i>Reintentar';
     }
-</script>
+}</script>
 
 
 </body>
