@@ -467,6 +467,31 @@
         .dark-mode .table tbody td {
             border-color: #6c757d !important;
         }
+                /* Colores personalizados para IA */
+        .bg-gradient-purple { background: linear-gradient(45deg, #6a11cb, #2575fc); }
+
+        .ia-card { transition: all 0.3s ease; }
+
+        /* MODO CLARO (Por defecto) */
+        .ia-item { background-color: #f8f9fa; border: 1px solid #e9ecef; }
+        .text-muted-custom { color: #444; line-height: 1.5; }
+        .small-text { font-size: 0.92rem; }
+        .bg-light-blue { background-color: #eef6ff; }
+
+        /* MODO OSCURO (Cuando el body tiene .dark-mode) */
+        .dark-mode .ia-card { background-color: #2d2d2d; color: #eee; }
+        .dark-mode .ia-item { background-color: #383838; border-color: #444; }
+        .dark-mode .text-muted-custom { color: #ccc; }
+        .dark-mode .bg-light-blue { background-color: #1a2533; border-color: #2575fc !important; }
+        .dark-mode .text-primary { color: #4dabff !important; }
+        .dark-mode .text-success { color: #51cf66 !important; }
+
+        /* Evitar que el texto se rompa */
+        p[id^="ia-"] {
+            white-space: pre-wrap; /* Mantiene saltos de línea si los hay */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
 
         /* --- FIN: Mejoras de visualización del historial --- */
 
@@ -619,43 +644,43 @@
          <a href="https://www.op.gg/summoners/euw/{{ perfil.game_name | replace('#', '-') }}" target="_blank" class="opgg-link">Ver en OP.GG</a>
     </div>
 
-<div class="container mt-4 mb-4">
-    <div class="card border-0 shadow-lg" style="background: linear-gradient(145deg, #11131a, #1a1d29); border-radius: 15px; border-left: 5px solid #0dcaf0 !important;">
-        <div class="card-header border-0 d-flex justify-content-between align-items-center" style="background: rgba(0,0,0,0.3);">
-            <h5 class="mb-0 text-info font-monospace">
-                <i class="fas fa-brain me-2"></i>COACH VIRTUAL GEMINI 2.0
-            </h5>
-            <button id="btn-ia" class="btn btn-sm btn-outline-info" onclick="ejecutarAnalisisIA()">
-                <i class="fas fa-magic me-2"></i>Solicitar Análisis
-            </button>
+<div class="container mt-4">
+    <div id="seccion-ia" class="card shadow-sm border-0 mb-4 ia-card">
+        <div class="card-header bg-gradient-purple text-white d-flex align-items-center justify-content-between">
+            <span><i class="fas fa-robot me-2"></i> Análisis Táctico con IA</span>
+            <small id="ia-timestamp" class="opacity-75"></small>
         </div>
         <div class="card-body">
-            <div id="ia-loader" class="text-center py-4" style="display:none;">
-                <div class="spinner-border text-info mb-2" role="status"></div>
-                <p class="text-muted small">Analizando tus últimas 5 partidas de SoloQ...</p>
-            </div>
-            
-            <div id="ia-content" style="display:none;">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="text-primary small fw-bold"><i class="fas fa-user me-1"></i> Desempeño Individual</label>
-                        <p id="ia-ind" class="text-light small mb-3"></p>
-                        <label class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i> Puntos Fuertes</label>
-                        <p id="ia-fuerte" class="text-light small mb-3"></p>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="p-3 rounded ia-item mb-3">
+                        <h6 class="fw-bold text-primary"><i class="fas fa-user-ninja me-2"></i>Análisis Individual</h6>
+                        <p id="ia-individual" class="mb-0 text-muted-custom small-text"></p>
                     </div>
-                    <div class="col-md-6">
-                        <label class="text-warning small fw-bold"><i class="fas fa-tools me-1"></i> Aspectos de Mejora</label>
-                        <p id="ia-mejora" class="text-light small mb-3"></p>
-                        <label class="text-info small fw-bold"><i class="fas fa-lightbulb me-1"></i> Recomendación</label>
-                        <p id="ia-recom" class="text-light small mb-3"></p>
+                    <div class="p-3 rounded ia-item mb-3">
+                        <h6 class="fw-bold text-success"><i class="fas fa-users me-2"></i>Valoración de Compañeros</h6>
+                        <p id="ia-companeros" class="mb-0 text-muted-custom small-text"></p>
+                    </div>
+                    <div class="p-3 rounded ia-item">
+                        <h6 class="fw-bold text-danger"><i class="fas fa-skull-crossbones me-2"></i>Valoración de Rivales</h6>
+                        <p id="ia-rivales" class="mb-0 text-muted-custom small-text"></p>
                     </div>
                 </div>
-                <div class="mt-2 pt-2 border-top border-secondary text-center">
-                    <small id="ia-extra" class="text-muted italic"></small>
+                <div class="col-md-6">
+                    <div class="p-3 rounded ia-item mb-3 highlight-item">
+                        <h6 class="fw-bold text-warning"><i class="fas fa-star me-2"></i>Puntos Fuertes</h6>
+                        <p id="ia-fuertes" class="mb-0 text-muted-custom small-text"></p>
+                    </div>
+                    <div class="p-3 rounded ia-item mb-3">
+                        <h6 class="fw-bold text-info"><i class="fas fa-chart-line me-2"></i>Aspectos de Mejora</h6>
+                        <p id="ia-mejora" class="mb-0 text-muted-custom small-text"></p>
+                    </div>
+                    <div class="p-3 rounded ia-item border-start border-4 border-primary bg-light-blue">
+                        <h6 class="fw-bold"><i class="fas fa-lightbulb me-2"></i>Recomendación Final</h6>
+                        <p id="ia-recomendacion" class="mb-0 text-muted-custom fw-medium"></p>
+                    </div>
                 </div>
             </div>
-
-            <div id="ia-error" class="alert alert-dark text-warning small" style="display:none;"></div>
         </div>
     </div>
 </div>
@@ -1659,6 +1684,25 @@
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
         ];
         let currentBannerIndex = 0;
+
+        function mostrarAnalisisIA(jsonResponse) {
+            const d = jsonResponse.data;
+            
+            // Asignar textos
+            document.getElementById('ia-individual').innerText = d.analisis_individual;
+            document.getElementById('ia-companeros').innerText = d.valoracion_companeros;
+            document.getElementById('ia-rivales').innerText = d.valoracion_rivales;
+            document.getElementById('ia-mejora').innerText = d.aspectos_mejora;
+            document.getElementById('ia-fuertes').innerText = d.puntos_fuertes;
+            document.getElementById('ia-recomendacion').innerText = d.recomendaciones;
+
+            // Mostrar fecha si existe
+            if(jsonResponse.timestamp) {
+                const fecha = new Date(jsonResponse.timestamp * 1000).toLocaleString();
+                document.getElementById('ia-timestamp').innerText = "Actualizado: " + fecha;
+            }
+        };
+
 
         function changeBanner() {
             currentBannerIndex = (currentBannerIndex + 1) % banners.length;
