@@ -3143,6 +3143,7 @@ def analizar_partidas_gemini(puuid):
             f"Analiza profundamente estas 5 partidas de League of Legends para el jugador {puuid}. "
             "Tienes los datos completos de la partida y de los 10 participantes de cada una. "
             "Evalúa el desempeño del jugador no solo por su KDA, sino por su impacto en relación "
+            "Si tienes que referenciar a una partida, no uses su 'match_id' sino el campeón del jugador. "
             "a sus aliados y enemigos (daño, participación, objetivos). "
             f"Datos: {json.dumps(partidas_para_ia)}"
         )
