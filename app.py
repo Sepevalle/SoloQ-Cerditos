@@ -3091,7 +3091,7 @@ def analizar_partidas_gemini(puuid):
         matches_soloq = sorted(
             [m for m in historial.get('matches', []) if m.get('queue_id') == 420],
             key=lambda x: x.get('game_end_timestamp', 0), reverse=True
-        )[:5]
+        )[:10]
         print(f"[analizar_partidas_gemini] Partidas encontradas: {len(matches_soloq)}")
 
         if not matches_soloq:
@@ -3126,22 +3126,30 @@ def analizar_partidas_gemini(puuid):
                 return jsonify({"error": "Bloqueado", "mensaje": "No tienes permiso activo."}), 403
 
         # 4. EJECUCIÓN DE LLAMADA A GEMINI
-        # Si llega aquí es porque tiene_permiso=="SI" o el cooldown expiró
-        print("[analizar_partidas_gemini] Ejecutando llamada a Gemini")
-        resumen_ia = []
+        print("[analizar_partidas_gemini] Preparando datos masivos para Gemini")
+        
+        # Enviamos las partidas completas, pero eliminamos campos que Gemini no necesita 
+        # para ahorrar tokens (como metadatos de la API o enlaces de imágenes)
+        partidas_para_ia = []
         for m in matches_soloq:
-            resumen_ia.append({
-                "campeon": m.get('champion_name'),
-                "kda": f"{m.get('kills')}/{m.get('deaths')}/{m.get('assists')}",
-                "resultado": "Victoria" if m.get('win') else "Derrota",
-                "daño": m.get('total_damage_dealt_to_champions')
-            })
+            # Hacemos una copia para no alterar el historial original
+            match_data = m.copy()
+            # Opcional: eliminar campos excesivamente largos que no aportan al análisis táctico
+            # match_data.pop('metadata', None) 
+            partidas_para_ia.append(match_data)
 
-        prompt = f"Analiza estas 5 partidas de LoL para el jugador {puuid}: {json.dumps(resumen_ia)}"
+        # El prompt debe ser más específico ahora que tiene tantos datos
+        prompt = (
+            f"Analiza profundamente estas 5 partidas de League of Legends para el jugador {puuid}. "
+            "Tienes los datos completos de la partida y de los 10 participantes de cada una. "
+            "Evalúa el desempeño del jugador no solo por su KDA, sino por su impacto en relación "
+            "a sus aliados y enemigos (daño, participación, objetivos). "
+            f"Datos: {json.dumps(partidas_para_ia)}"
+        )
 
         try:
             response = gemini_client.models.generate_content(
-                model='gemini-2.5-flash-lite',
+                model='gemini-3-pro-preview',
                 contents=prompt,
                 config={'response_mime_type': 'application/json', 'response_schema': AnalisisSoloQ}
             )
