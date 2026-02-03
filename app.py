@@ -3091,7 +3091,7 @@ def analizar_partidas_gemini(puuid):
         matches_soloq = sorted(
             [m for m in historial.get('matches', []) if m.get('queue_id') == 420],
             key=lambda x: x.get('game_end_timestamp', 0), reverse=True
-        )[:10]
+        )[:5]
         print(f"[analizar_partidas_gemini] Partidas encontradas: {len(matches_soloq)}")
 
         if not matches_soloq:
@@ -3149,7 +3149,7 @@ def analizar_partidas_gemini(puuid):
 
         try:
             response = gemini_client.models.generate_content(
-                model='gemini-3-pro-preview',
+                model='gemini-3-flash-preview',
                 contents=prompt,
                 config={'response_mime_type': 'application/json', 'response_schema': AnalisisSoloQ}
             )
