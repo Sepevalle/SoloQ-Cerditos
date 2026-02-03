@@ -3020,6 +3020,45 @@ def _calculate_and_cache_personal_records_periodically():
         time.sleep(PERSONAL_RECORDS_UPDATE_INTERVAL)
 
 
+def _calculate_and_cache_global_stats():
+    """
+    Calcula todas las estadísticas globales para diferentes colas y las almacena en la caché global.
+    """
+    print("[_calculate_and_cache_global_stats] Iniciando el cálculo de estadísticas globales para todas las colas.")
+    puuid_dict = leer_puuids()
+    cuentas = leer_cuentas()
+    all_matches = []
+    for riot_id, jugador_nombre in cuentas:
+        puuid = puuid_dict.get(riot_id)
+        if not puuid:
+            continue
+
+        historial = get_player_match_history(puuid, riot_id=riot_id)
+        matches = historial.get('matches', [])
+        for match in matches:
+            if match.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP:
+                match['jugador_nombre'] = jugador_nombre
+                match['riot_id'] = riot_id
+                all_matches.append(match)
+    # Define the queue filters
+
+    queue_filters = {
+        'all': None,
+        'all_rankeds': [420, 440],
+        'soloq': 420,
+        'flex': 440
+    }
+    # Calculate stats for each queue
+    all_stats = {}
+    for queue_name, queue_id in queue_filters.items():
+        all_stats[queue_name] = _calculate_stats_for_queue(all_matches, queue_id)
+
+    with GLOBAL_STATS_LOCK:
+        GLOBAL_STATS_CACHE['data'] = all_stats
+        GLOBAL_STATS_CACHE['all_matches'] = all_matches
+        GLOBAL_STATS_CACHE['timestamp'] = time.time()
+    print("[_calculate_and_cache_global_stats] Cálculo de estadísticas globales completado y caché actualizada para todas las colas.")
+
 # --- New function for background global stats calculation ---
 def _calculate_and_cache_global_stats_periodically():
     """Hilo para calcular y cachear las estadísticas globales periódicamente."""
