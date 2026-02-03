@@ -557,25 +557,33 @@
         .runes img.sub-rune {
             border: 1px solid #6c757d;
         }
-        
-        /* Estilo Base Coach (Inspirado en tu original) */
+        /* Estilo del Coach */
         .coach-card {
             background: linear-gradient(145deg, #11131a, #1a1d29);
             border-radius: 15px !important;
             border-left: 5px solid #0dcaf0 !important;
         }
 
-        .bg-header-ia { background: rgba(0,0,0,0.3); }
-
-        /* Párrafos de la IA */
         .ia-paragraph {
-            color: #e0e0e0; /* Gris muy claro para lectura descansada */
-            font-size: 0.95rem;
+            color: #cbd5e0;
             line-height: 1.6;
             margin-bottom: 0;
-            white-space: pre-wrap; /* Mantiene el formato del JSON */
-            text-align: justify;
         }
+
+        #ia-footer-otros {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px dashed rgba(13, 202, 240, 0.2);
+        }
+
+        .text-highlight {
+            color: #0dcaf0 !important;
+        }
+
+
+        .bg-header-ia { background: rgba(0,0,0,0.3); }
+
 
         /* Adaptación a MODO CLARO (Si el body no tiene .dark-mode) */
         body:not(.dark-mode) .coach-card {
@@ -590,7 +598,6 @@
         /* Resaltado especial para la recomendación */
         .text-highlight { color: #0dcaf0 !important; }
         body:not(.dark-mode) .text-highlight { color: #007bff !important; }
-
 
 
         /* Dark mode specific text color for small-text-stats */
@@ -692,33 +699,35 @@
         <div class="card-body">
             <div id="ia-loader" class="text-center py-4" style="display:none;">
                 <div class="spinner-border text-info mb-2" role="status"></div>
-                <p class="text-muted small">Analizando tus últimas 5 partidas de SoloQ...</p>
+                <p class="text-muted small">Consultando tácticas con la IA...</p>
             </div>
             
             <div id="ia-content" style="display:none;">
-                <div class="row g-4"> <div class="col-md-6">
-                        <div class="mb-4 ia-text-container">
+                <div class="row g-4"> 
+                    <div class="col-md-6">
+                        <div class="mb-4">
                             <label class="text-primary small fw-bold mb-2 d-block"><i class="fas fa-user me-1"></i> Desempeño Individual</label>
                             <p id="ia-ind" class="ia-paragraph"></p>
                         </div>
-                        <div class="mb-4 ia-text-container">
-                            <label class="text-success small fw-bold mb-2 d-block"><i class="fas fa-check-circle me-1"></i> Puntos Fuertes</label>
-                            <p id="ia-fuerte" class="ia-paragraph"></p>
+                        <div class="mb-4">
+                            <label class="text-success small fw-bold mb-2 d-block"><i class="fas fa-users-cog me-1"></i> Análisis de Entorno (Aliados y Rivales)</label>
+                            <div id="ia-extra" class="ia-paragraph small"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="mb-4 ia-text-container">
+                        <div class="mb-4">
                             <label class="text-warning small fw-bold mb-2 d-block"><i class="fas fa-tools me-1"></i> Aspectos de Mejora</label>
                             <p id="ia-mejora" class="ia-paragraph"></p>
                         </div>
-                        <div class="mb-4 ia-text-container">
-                            <label class="text-info small fw-bold mb-2 d-block"><i class="fas fa-lightbulb me-1"></i> Recomendación</label>
+                        <div class="mb-4">
+                            <label class="text-info small fw-bold mb-2 d-block"><i class="fas fa-lightbulb me-1"></i> Recomendación Maestra</label>
                             <p id="ia-recom" class="ia-paragraph fw-medium text-highlight"></p>
                         </div>
                     </div>
                 </div>
+
                 <div class="mt-2 pt-3 border-top border-secondary">
-                    <p id="ia-extra" class="text-muted small fst-italic text-center mb-0"></p>
+                    <div id="ia-footer-otros" class="text-muted small fst-italic text-center"></div>
                 </div>
             </div>
 
@@ -1998,8 +2007,9 @@ async function ejecutarAnalisisIA() {
     const content = document.getElementById('ia-content');
     const errorDiv = document.getElementById('ia-error');
 
-    // Estado inicial
+    // Resetear vista
     btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analizando...';
     loader.style.display = 'block';
     content.style.display = 'none';
     errorDiv.style.display = 'none';
@@ -2008,25 +2018,35 @@ async function ejecutarAnalisisIA() {
         const response = await fetch(`/api/analisis-ia/${puuid}`);
         const result = await response.json();
 
-        if (!response.ok) throw new Error(result.mensaje || result.error || "Error en la API");
+        if (!response.ok) throw new Error(result.mensaje || result.error || "Error");
 
-        // El JSON viene con la clave 'data' según tu ejemplo anterior
         const d = result.data || result;
 
-        // Rellenar con los campos correctos del JSON
+        // 1. Campos principales
         document.getElementById('ia-ind').innerText = d.analisis_individual;
-        document.getElementById('ia-fuerte').innerText = d.puntos_fuertes;
         document.getElementById('ia-mejora').innerText = d.aspectos_mejora;
         document.getElementById('ia-recom').innerText = d.recomendaciones;
-        
-        // Formatear el extra (Compañeros y Rivales)
-        document.getElementById('ia-extra').innerText = 
-            `📊 Análisis de entorno: ${d.valoracion_companeros} \n\n ⚔️ Sobre los rivales: ${d.valoracion_rivales}`;
 
+        // 2. Integrar Compañeros y Rivales
+        document.getElementById('ia-extra').innerHTML = 
+            `<strong>Aliados:</strong> ${d.valoracion_companeros}<br><br><strong>Rivales:</strong> ${d.valoracion_rivales}`;
+
+        // 3. Campo 'Otros' abajo
+        document.getElementById('ia-footer-otros').innerHTML = 
+            `<i class="fas fa-info-circle me-1"></i> ${d.otros || "Sin notas adicionales"}`;
+
+        // 4. Lógica de botón y visualización
         loader.style.display = 'none';
         content.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-check me-2"></i>Análisis Listo';
         
+        if (result.origen === "cache") {
+            btn.className = "btn btn-sm btn-info";
+            btn.innerHTML = '<i class="fas fa-history me-2"></i>Análisis desde Caché';
+        } else {
+            btn.className = "btn btn-sm btn-success";
+            btn.innerHTML = '<i class="fas fa-sparkles me-2"></i>Nuevo Análisis';
+        }
+
     } catch (err) {
         loader.style.display = 'none';
         errorDiv.style.display = 'block';
