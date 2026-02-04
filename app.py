@@ -1025,23 +1025,34 @@ def get_player_match_history(puuid, riot_id=None):
     """
     Obtiene el historial de partidas de un jugador, usando la caché en memoria primero.
     Si no está en caché o está expirado, lo lee desde GitHub y lo cachea.
+    Si la lectura de GitHub falla, devuelve datos cacheados antiguos si existen.
     """
     identifier = riot_id if riot_id else f"PUUID: {puuid}"
     with PLAYER_MATCH_HISTORY_LOCK:
         cached_data = PLAYER_MATCH_HISTORY_CACHE.get(puuid)
         
+        # Si hay datos frescos en la caché, se devuelven.
         if cached_data and (time.time() - cached_data['timestamp'] < PLAYER_MATCH_HISTORY_CACHE_TIMEOUT):
             print(f"[get_player_match_history] Devolviendo historial cacheados para {identifier}.")
             return cached_data['data']
         
         print(f"[get_player_match_history] Historial para {identifier} no cacheados o estancados. Leyendo de GitHub.")
-        historial = _read_player_match_history_from_github(puuid, riot_id=riot_id)
+        historial_from_github = _read_player_match_history_from_github(puuid, riot_id=riot_id)
+        
+        # Si la lectura de GitHub falla (devuelve vacío) pero tenemos caché antigua, usamos la caché antigua.
+        if not historial_from_github and cached_data:
+            print(f"[get_player_match_history] Error al leer de GitHub para {identifier}. Usando datos cacheados antiguos.")
+            # No actualizamos el timestamp, para que la próxima vez intente leer de GitHub de nuevo.
+            return cached_data['data']
+
+        # Si obtuvimos algo de GitHub, actualizamos la caché.
+        # Esto también maneja el caso en que el historial es legítimamente vacío (jugador nuevo).
         PLAYER_MATCH_HISTORY_CACHE[puuid] = {
-            'data': historial,
+            'data': historial_from_github,
             'timestamp': time.time()
         }
         print(f"[get_player_match_history] Historial para {identifier} leído de GitHub y cacheado.")
-        return historial
+        return historial_from_github
 
 
 def guardar_historial_jugador_github(puuid, historial_data, riot_id=None):
@@ -1401,15 +1412,11 @@ def procesar_jugador(args_tuple):
     # or if they just finished a game (was in game before but not anymore).
     needs_full_update = not old_data_list or is_currently_in_game or was_in_game_before
 
-    # OPTIMIZACIÓN: Solo obtener Elo si necesitamos actualización completa para evitar llamadas innecesarias a jugadores inactivos
-    if not needs_full_update and old_data_list:
-        # Jugador inactivo: devolver datos antiguos con estado actualizado
-        print(f"[procesar_jugador] Jugador {riot_id} inactivo. Retornando datos cacheados sin actualizar Elo.")
-        for data in old_data_list:
-            data['en_partida'] = is_currently_in_game
-        return old_data_list
-
-    # Solo obtener Elo si necesitamos actualización completa
+    # Se elimina la optimización que evitaba la actualización del ELO para jugadores inactivos.
+    # Esto asegura que el ELO siempre se actualice, incluso si la comprobación de "en partida" falla,
+    # solucionando el bug donde la clasificación no se refrescaba.
+    
+    # Ahora se obtiene el Elo en cada ciclo de actualización para todos los jugadores.
     elo_info = obtener_elo(api_key_main, puuid, riot_id=riot_id)
     if not elo_info:
         print(f"[procesar_jugador] No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP ni actualizar datos.")
@@ -3091,7 +3098,7 @@ def analizar_partidas_gemini(puuid):
         matches_soloq = sorted(
             [m for m in historial.get('matches', []) if m.get('queue_id') == 420],
             key=lambda x: x.get('game_end_timestamp', 0), reverse=True
-        )[:5]
+        )[:10]
         print(f"[analizar_partidas_gemini] Partidas encontradas: {len(matches_soloq)}")
 
         if not matches_soloq:
