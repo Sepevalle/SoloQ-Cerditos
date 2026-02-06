@@ -164,12 +164,14 @@ def elo_tracker_worker(riot_api_key, github_token):
     """
     Worker que se ejecuta periódicamente para tomar 'snapshots' del ELO de los jugadores.
     
-    MEJORADO:
-    - Evita snapshots duplicados usando timestamps y valores de ELO
+    MEJORADO PARA RENDER FREE:
+    - Ejecuta cada 30 minutos (en lugar de 5) para reducir consumo de API
+    - Evita snapshots duplicados - solo guarda si hay cambio de ELO
     - Detecta cambios reales en ELO antes de guardar
-    - Registra metadatos para mejor debugging
+    - No guarda en GitHub si no hay cambios (ahorra writes)
     """
     print("[LP_TRACKER] Iniciando el worker de seguimiento de ELO...")
+    print("[LP_TRACKER] OPTIMIZACIÓN RENDER: Se ejecutará cada 30 minutos para reducir consumo de API")
     while True:
         try:
             print(f"[{datetime.now()}] [LP_TRACKER] Iniciando snapshot de ELO...")
@@ -254,4 +256,4 @@ def elo_tracker_worker(riot_api_key, github_token):
         except Exception as e:
             print(f"[LP_TRACKER] Error inesperado en el worker de ELO: {e}")
             
-        time.sleep(300) # Espera 5 minutos
+        time.sleep(1800) # OPTIMIZACIÓN RENDER: 30 minutos (1800 seg) en lugar de 5 minutos
