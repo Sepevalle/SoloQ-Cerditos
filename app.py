@@ -220,9 +220,11 @@ PERSONAL_RECORDS_UPDATE_INTERVAL = 3600 # Update personal records every hour (36
 # --- NUEVA CACHÉ EN MEMORIA PARA EL HISTORIAL DE PARTIDAS DE LOS JUGADORES ---
 # Almacena el historial completo de partidas por PUUID en memoria.
 # { puuid: { 'data': historial_json, 'timestamp': last_update_time } }
+# OPTIMIZACIÓN: Limitar tamaño de caché + tiempo de expiración más agresivo
 PLAYER_MATCH_HISTORY_CACHE = {}
 PLAYER_MATCH_HISTORY_LOCK = threading.Lock()
-PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 300 # 5 minutos para el historial de partidas individual
+PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 180  # 3 minutos (reducido de 5 para liberar memoria)
+PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE = 25  # Máximo 25 jugadores en caché simultaneamente
 
 # --- CONFIGURACIÓN DE SPLITS ---
 SPLITS = {
@@ -241,6 +243,47 @@ API_RESPONSE_EVENTS = {} # Diccionario para almacenar eventos de respuesta por I
 API_RESPONSE_DATA = {} # Diccionario para almacenar los datos de respuesta por ID de petición
 REQUEST_ID_COUNTER = 0 # Contador para IDs de petición únicos
 REQUEST_ID_COUNTER_LOCK = threading.Lock() # Bloqueo para el contador
+API_RESPONSE_CLEANUP_THRESHOLD = 300  # OPTIMIZACIÓN: Limpiar si excede 300 respuestas pendientes
+
+# OPTIMIZACIÓN: Función para limpiar cachés cuando se quedan sin espacio
+def cleanup_memory_caches():
+    """
+    Limpia cachés de memoria para evitar fugas de RAM.
+    Llamado periódicamente por los threads de actualización.
+    """
+    global PLAYER_MATCH_HISTORY_CACHE, API_RESPONSE_EVENTS, API_RESPONSE_DATA
+    
+    current_time = time.time()
+    
+    # Limpiar caché de historial de partidas expirado
+    with PLAYER_MATCH_HISTORY_LOCK:
+        expired_puuids = [
+            puuid for puuid, data in PLAYER_MATCH_HISTORY_CACHE.items()
+            if current_time - data['timestamp'] > PLAYER_MATCH_HISTORY_CACHE_TIMEOUT
+        ]
+        for puuid in expired_puuids:
+            del PLAYER_MATCH_HISTORY_CACHE[puuid]
+        
+        # Si aún hay muchos en caché, eliminar los más antiguos
+        if len(PLAYER_MATCH_HISTORY_CACHE) > PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE:
+            sorted_cache = sorted(
+                PLAYER_MATCH_HISTORY_CACHE.items(),
+                key=lambda x: x[1]['timestamp']
+            )
+            for puuid, _ in sorted_cache[:-PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE]:
+                del PLAYER_MATCH_HISTORY_CACHE[puuid]
+                print(f"[cleanup_memory_caches] Eliminado del caché: {puuid[:16]}...")
+    
+    # Limpiar respuestas de API antiguas
+    with REQUEST_ID_COUNTER_LOCK:
+        if len(API_RESPONSE_EVENTS) > API_RESPONSE_CLEANUP_THRESHOLD:
+            # Mantener solo las últimas 100 respuestas
+            event_keys = sorted(API_RESPONSE_EVENTS.keys())
+            keys_to_delete = event_keys[:-100]
+            for key in keys_to_delete:
+                API_RESPONSE_EVENTS.pop(key, None)
+                API_RESPONSE_DATA.pop(key, None)
+            print(f"[cleanup_memory_caches] Limpiadas {len(keys_to_delete)} respuestas de API antiguas")
 
 class RateLimiter:
     """
@@ -1047,6 +1090,7 @@ def get_player_match_history(puuid, riot_id=None):
 
         # Si obtuvimos algo de GitHub, actualizamos la caché.
         # Esto también maneja el caso en que el historial es legítimamente vacío (jugador nuevo).
+        # NOTA: Se guarda el historial COMPLETO desde el inicio de la temporada
         PLAYER_MATCH_HISTORY_CACHE[puuid] = {
             'data': historial_from_github,
             'timestamp': time.time()
@@ -2351,6 +2395,8 @@ def actualizar_cache_periodicamente():
     print("[actualizar_cache_periodicamente] Hilo de actualización de caché periódica iniciado.")
     while True:
         actualizar_cache()
+        # OPTIMIZACIÓN: Limpiar cachés de memoria después de actualizar
+        cleanup_memory_caches()
         time.sleep(CACHE_TIMEOUT)
 
 def _filter_matches_by_queue_and_champion(matches, queue_id_filter=None, champion_filter=None):
