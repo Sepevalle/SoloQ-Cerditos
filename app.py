@@ -1,4 +1,5 @@
 from services.data_processing import process_player_match_history
+from services.lp_tracker import elo_tracker_worker
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 import requests
 import os
@@ -3284,10 +3285,13 @@ if __name__ == "__main__":
     personal_records_calc_thread.start()
     print("[main] Hilo 'actualizar_records_personales_periodicamente' iniciado.")
 
-    # OPTIMIZACIÓN: Ya no necesitamos el worker de lp_tracker separado
-    # Los snapshots se registran en procesar_jugador() sin hacer llamadas extra a la API
-    # y se guardan en GitHub cada hora desde actualizar_cache()
-    # print("[main] Hilo 'lp_tracker_thread' desactivado (snapshots ahora integrados en actualizar_cache)")
+    # CRÍTICO: Reactivar el tracker de ELO para calcular LP en partidas
+    # Este thread toma snapshots del ELO cada 5 minutos y los guarda en GitHub
+    # Sin esto, no hay forma de calcular el cambio de LP por partida
+    lp_tracker_thread = threading.Thread(target=elo_tracker_worker, args=(RIOT_API_KEY, GITHUB_TOKEN))
+    lp_tracker_thread.daemon = True
+    lp_tracker_thread.start()
+    print("[main] Hilo 'elo_tracker_worker' iniciado.")
 
     port = int(os.environ.get("PORT", 5000))
     print(f"[main] Aplicación Flask ejecutándose en http://0.0.0.0:{port}")
