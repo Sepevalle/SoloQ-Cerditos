@@ -163,6 +163,11 @@ def calcular_valor_clasificacion(tier, rank, league_points):
 def elo_tracker_worker(riot_api_key, github_token):
     """
     Worker que se ejecuta periódicamente para tomar 'snapshots' del ELO de los jugadores.
+    
+    MEJORADO:
+    - Evita snapshots duplicados usando timestamps y valores de ELO
+    - Detecta cambios reales en ELO antes de guardar
+    - Registra metadatos para mejor debugging
     """
     print("[LP_TRACKER] Iniciando el worker de seguimiento de ELO...")
     while True:
@@ -182,6 +187,9 @@ def elo_tracker_worker(riot_api_key, github_token):
             lp_history, lp_history_sha = _read_json_from_github(LP_HISTORY_FILE_PATH, github_token)
 
             # 3. Iterar sobre los jugadores y actualizar su historial de LP
+            snapshots_added = 0
+            snapshots_skipped = 0
+            
             for riot_id, player_name in cuentas:
                 puuid = puuids_data.get(riot_id)
                 if not puuid:
@@ -208,18 +216,40 @@ def elo_tracker_worker(riot_api_key, github_token):
                             entry.get('leaguePoints', 0)
                         )
                         
+                        # Obtener el último snapshot de esta cola
+                        queue_history = lp_history[puuid][queue_type]
+                        last_snapshot = queue_history[-1] if queue_history else None
+                        
+                        # Evitar duplicados: no guardar si el valor ELO es idéntico al último snapshot
+                        # dentro de los últimos 10 minutos (600000 ms)
+                        if last_snapshot:
+                            time_diff = timestamp - last_snapshot['timestamp']
+                            elo_diff = abs(valor - last_snapshot['elo'])
+                            
+                            if time_diff < 600000 and elo_diff == 0:
+                                # Es un duplicado - mismo ELO dentro de 10 minutos
+                                print(f"[LP_TRACKER] Snapshot duplicado detectado para {riot_id} en {queue_type}. Saltando.")
+                                snapshots_skipped += 1
+                                continue
+                        
                         # Añadir el nuevo snapshot
                         lp_history[puuid][queue_type].append({
                             "timestamp": timestamp,
                             "elo": valor,
                             "league_points_raw": entry.get('leaguePoints', 0)
                         })
-                        print(f"[LP_TRACKER] Snapshot añadido para {riot_id} en {queue_type}: {valor} ELO")
+                        print(f"[LP_TRACKER] Snapshot añadido para {riot_id} en {queue_type}: {valor} ELO (Raw LP: {entry.get('leaguePoints', 0)})")
+                        snapshots_added += 1
 
             # 4. Guardar el historial actualizado en GitHub
-            _write_to_github(LP_HISTORY_FILE_PATH, lp_history, lp_history_sha, github_token)
-
-            print(f"[{datetime.now()}] [LP_TRACKER] Snapshot de ELO completado. Próxima ejecución en 5 minutos.")
+            if snapshots_added > 0:
+                _write_to_github(LP_HISTORY_FILE_PATH, lp_history, lp_history_sha, github_token)
+                print(f"[{datetime.now()}] [LP_TRACKER] Snapshot de ELO completado. "
+                      f"Añadidos: {snapshots_added}, Saltados: {snapshots_skipped}. "
+                      f"Próxima ejecución en 5 minutos.")
+            else:
+                print(f"[{datetime.now()}] [LP_TRACKER] No se añadieron snapshots nuevos (todos duplicados o sin cambios). "
+                      f"Próxima ejecución en 5 minutos.")
             
         except Exception as e:
             print(f"[LP_TRACKER] Error inesperado en el worker de ELO: {e}")
