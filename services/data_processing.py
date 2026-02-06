@@ -40,28 +40,38 @@ def calculate_lp_change_robust(match, all_matches_for_player, player_queue_lp_hi
             snapshot_after = snapshot
             break
 
-    # Si tenemos ambos snapshots, verificar que NO hay otras partidas de la misma cola entre ellos
+    # Si tenemos ambos snapshots, verificar partidas entre ellos.
+    # Nuevo comportamiento: si hay múltiples partidas entre snapshots, aplicar
+    # todo el delta de ELO al ÚLTIMO partido dentro del intervalo.
     if snapshot_before and snapshot_after:
-        # Filtrar solo partidas de la misma cola y que no sean la actual
+        # Filtrar solo partidas de la misma cola (incluyendo la actual)
         matches_in_queue = [
             m for m in all_matches_for_player 
-            if m.get('queue_id') == queue_id and m.get('match_id') != match_id
+            if m.get('queue_id') == queue_id
         ]
-        
-        # Verificar si hay partidas entre los snapshots
+
+        # Buscar partidas cuyo timestamp esté entre los dos snapshots
         matches_between_snapshots = [
             m for m in matches_in_queue
             if snapshot_before['timestamp'] < m.get('game_end_timestamp', 0) < snapshot_after['timestamp']
         ]
-        
-        # Si hay solo una partida entre snapshots (la nuestra), podemos usar este método
-        if len(matches_between_snapshots) == 0:
-            elo_before = snapshot_before.get('elo', 0)
-            elo_after = snapshot_after.get('elo', 0)
-            
-            if elo_before > 0 and elo_after > 0:
+
+        elo_before = snapshot_before.get('elo', 0)
+        elo_after = snapshot_after.get('elo', 0)
+
+        if elo_before > 0 and elo_after > 0:
+            # Si no hay partidas entre snapshots, asignar directamente (caso simple)
+            if len(matches_between_snapshots) == 0:
                 lp_change = elo_after - elo_before
                 return lp_change, elo_before, elo_after
+
+            # Si hay varias partidas entre snapshots, asignar todo el delta
+            # únicamente al ÚLTIMO partido (mayor timestamp) dentro del intervalo.
+            last_match = max(matches_between_snapshots, key=lambda x: x.get('game_end_timestamp', 0))
+            if last_match.get('match_id') == match_id:
+                lp_change = elo_after - elo_before
+                return lp_change, elo_before, elo_after
+            # Si no somos el último partido, no asignamos aquí.
 
     # === ESTRATEGIA 2: Usar la diferencia entre partidas consecutivas ===
     # Ordenar partidas de la misma cola por tiempo
