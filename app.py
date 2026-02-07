@@ -561,7 +561,7 @@ def obtener_elo(api_key, puuid, riot_id=None):
         print(f"[obtener_elo] No se pudo obtener el Elo para {identifier}.")
         return None
 
-def obtener_historial_partidas(api_key, puuid, count=20):
+def obtener_historial_partidas(api_key, puuid, count=20, start=0):
     """
     Obtiene los últimos IDs de partidas de un jugador desde Riot API.
     NOTA: Solo obtiene partidas NUEVAS (últimas count partidas).
@@ -575,12 +575,13 @@ def obtener_historial_partidas(api_key, puuid, count=20):
     Returns:
         list: Lista de IDs de partidas o None si falla
     """
-    print(f"[obtener_historial_partidas] Obteniendo últimas {count} partidas desde Riot API para PUUID: {puuid}")
-    url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count={count}&api_key={api_key}"
+    print(f"[obtener_historial_partidas] Obteniendo partidas desde Riot API para PUUID: {puuid} (start={start}, count={count})")
+    url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}&api_key={api_key}"
     response = make_api_request(url)
     if response:
-        print(f"[obtener_historial_partidas] ✓ Obtenidas {count} partidas más recientes para PUUID: {puuid}.")
-        return response.json()
+        ids = response.json()
+        print(f"[obtener_historial_partidas] ✓ Obtenidas {len(ids)} partidas para PUUID: {puuid} (start={start}).")
+        return ids
     else:
         print(f"[obtener_historial_partidas] Error: No se pudo obtener partidas recientes para {puuid}.")
         return None
@@ -1563,16 +1564,38 @@ def procesar_jugador(args_tuple):
         print(f"  [3/5] {riot_id}: Jugador NUEVO detectado (sin historial en GitHub) - Cargando TODAS las partidas...")
         # Cargar todas las partidas desde la API (en lotes de 100)
         all_match_ids_for_new_player = []
-        batch_num = 1
+        batch_num = 0
         while True:
-            batch = obtener_historial_partidas(api_key_main, puuid, count=100)
+            start_offset = len(all_match_ids_for_new_player)
+            batch = obtener_historial_partidas(api_key_main, puuid, count=100, start=start_offset)
             if not batch or len(batch) == 0:
                 break
-            all_match_ids_for_new_player.extend(batch)
-            print(f"    Lote {batch_num}: Obtenidas {len(batch)} partidas (total: {len(all_match_ids_for_new_player)})")
-            if len(batch) < 100:  # Última página
-                break
+
+            # If the oldest match in this batch is already before season start, stop paginating
+            try:
+                last_match_id_in_batch = batch[-1]
+                last_match_info = obtener_info_partida((last_match_id_in_batch, puuid, api_key_main))
+                if last_match_info and (last_match_info.get('game_end_timestamp', 0) / 1000) < SEASON_START_TIMESTAMP:
+                    # We reached matches older than season start; stop fetching more pages
+                    # Still deduplicate and add those not already present (we will filter by timestamp later when processing details)
+                    new_ids = [mid for mid in batch if mid not in all_match_ids_for_new_player]
+                    all_match_ids_for_new_player.extend(new_ids)
+                    batch_num += 1
+                    print(f"    Lote {batch_num}: Obtenidas {len(new_ids)} partidas (total: {len(all_match_ids_for_new_player)}) - Detected partida anterior al inicio de temporada, deteniendo paginación.")
+                    break
+            except Exception:
+                # If any error occurs while fetching match info, fall back to normal behavior
+                pass
+
+            # Deduplicate in case Riot API returns overlapping results
+            new_ids = [mid for mid in batch if mid not in all_match_ids_for_new_player]
+            all_match_ids_for_new_player.extend(new_ids)
             batch_num += 1
+            print(f"    Lote {batch_num}: Obtenidas {len(new_ids)} partidas (total: {len(all_match_ids_for_new_player)})")
+
+            # Stop if API returned fewer than requested (last page) or no new ids
+            if len(batch) < 100 or len(new_ids) == 0:
+                break
         
         tiempo_3 = time.time() - inicio_3
         print(f"  [3/5] {riot_id}: Cargadas TODAS las partidas desde API - {tiempo_3*1000:.0f}ms (total: {len(all_match_ids_for_new_player)} partidas)")
