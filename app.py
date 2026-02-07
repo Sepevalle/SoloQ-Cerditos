@@ -1815,9 +1815,10 @@ def actualizar_cache():
             continue
         
         # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
-        # OPTIMIZACIÓN RENDER: Limitar a 30 partidas para calcular estádísticas de 24h
-        # 30 partidas = ~1-2 semanas, más que suficiente para datos de 24h
-        historial = get_player_match_history(puuid, riot_id=jugador.get('game_name'), limit=30) 
+        # OPTIMIZACIÓN RENDER: Cargar TODAS las partidas para calcular top 3 champions correctamente
+        # Antes limitaba a 30, pero esto causaba desalineación con jugador.html que carga todas
+        # Ahora usamos todas para que el top 3 sea consistente con el historial mostrado
+        historial = get_player_match_history(puuid, riot_id=jugador.get('game_name'), limit=-1) 
         all_matches_for_player = historial.get('matches', [])
 
         # CALCULAR DINÁMICAMENTE el resumen de 24h
