@@ -1,5 +1,16 @@
 from flask import Blueprint, render_template, jsonify, request
-from services.data_processing import obtener_datos_jugadores, leer_historial_jugador_github
+from services.data_processing import (
+    obtener_datos_jugadores, 
+    leer_historial_jugador_github,
+    get_cached_global_stats,
+    cache_global_stats,
+    invalidate_global_stats_cache,
+    filter_matches_by_queue,
+    filter_matches_by_champion,
+    calculate_player_stats_from_matches,
+    get_top_champions,
+    extract_global_records
+)
 from collections import Counter
 
 stats_bp = Blueprint('stats', __name__)
@@ -33,54 +44,78 @@ queue_names = {
 
 @stats_bp.route('/estadisticas')
 def estadisticas_globales():
-    """Renderiza la página de estadísticas globales."""
+    """
+    Renderiza la página de estadísticas globales.
+    OPTIMIZADO: Usa caché de 5 minutos y carga partidas de forma eficiente.
+    """
     print("[estadisticas_globales] Petición recibida para la página de estadísticas globales.")
     
     current_queue = request.args.get('queue', 'all')
     selected_champion = request.args.get('champion', 'all')
     
-    # We get all players, filtering by queue type is done later
-    datos_jugadores, _ = obtener_datos_jugadores(queue_type='all')
-    
-    all_champions_for_filtering = set()
-    all_matches = []
-    available_queue_ids = set()
+    # OPTIMIZACIÓN 1: Intentar obtener datos del caché
+    cached_data = get_cached_global_stats()
+    if cached_data:
+        # Si tenemos caché, usarla como base y aplicar filtros solo en cliente
+        all_matches = cached_data['all_matches']
+        all_champions_for_filtering = cached_data['all_champions']
+        available_queue_ids = cached_data['available_queue_ids']
+    else:
+        # OPTIMIZACIÓN 2: Cargar datos de forma eficiente
+        print("[estadisticas_globales] Compilando datos desde historiales de jugadores...")
+        datos_jugadores, _ = obtener_datos_jugadores(queue_type='all')
+        
+        all_champions_for_filtering = set()
+        all_matches = []
+        available_queue_ids = set()
 
-    # Recopilar todas las partidas y campeones de todos los jugadores
-    for j in datos_jugadores:
-        puuid = j.get('puuid')
-        if puuid:
-            historial = leer_historial_jugador_github(puuid)
-            for match in historial.get('matches', []):
-                all_matches.append((j.get('jugador'), match))
-                if match.get('champion_name'):
-                    all_champions_for_filtering.add(match.get('champion_name'))
-                if match.get('queue_id'):
-                    available_queue_ids.add(match.get('queue_id'))
+        # Recopilar partidas de todos los jugadores con límite de 100 partidas por jugador
+        # Esto evita cargar historiales enormes que ralentizan la aplicación
+        for j in datos_jugadores:
+            puuid = j.get('puuid')
+            if puuid:
+                historial = leer_historial_jugador_github(puuid)
+                # OPTIMIZACIÓN CRÍTICA: Limitar a últimas 100 partidas por jugador
+                matches = historial.get('matches', [])[:100]
+                
+                for match in matches:
+                    all_matches.append((j.get('jugador'), match))
+                    if match.get('champion_name'):
+                        all_champions_for_filtering.add(match.get('champion_name'))
+                    if match.get('queue_id'):
+                        available_queue_ids.add(match.get('queue_id'))
+        
+        # Cachear los datos compilados
+        cache_global_stats({
+            'all_matches': all_matches,
+            'all_champions': all_champions_for_filtering,
+            'available_queue_ids': available_queue_ids
+        })
 
     champion_list = sorted(list(all_champions_for_filtering))
     
     available_queues = [{'id': q_id, 'name': queue_names.get(q_id, f"Unknown ({q_id})")} for q_id in sorted(list(available_queue_ids))]
 
-    # Filter matches based on current_queue
-    if current_queue != 'all':
-        all_matches = [(player, match) for player, match in all_matches if str(match.get('queue_id')) == current_queue]
+    # OPTIMIZACIÓN 3: Filtrar partidas por cola PRIMERO (antes de procesar)
+    all_matches = filter_matches_by_queue(all_matches, current_queue)
 
-    # Stats for the first tab (by player) - This part might need reconsideration as it's based on aggregated data
+    # OPTIMIZACIÓN 4: Calcular estadísticas de forma eficiente
     stats_por_jugador = []
-    # This calculation is difficult with the new filtering model, so we will simplify it for now
-    # Or we can calculate it from the filtered matches
+    player_stats_dict = {}
     
-    player_stats = {}
     for player_name, match in all_matches:
-        if player_name not in player_stats:
-            player_stats[player_name] = {'wins': 0, 'losses': 0}
+        if player_name not in player_stats_dict:
+            player_stats_dict[player_name] = {'wins': 0, 'losses': 0, 'matches': []}
+        
         if match.get('win'):
-            player_stats[player_name]['wins'] += 1
+            player_stats_dict[player_name]['wins'] += 1
         else:
-            player_stats[player_name]['losses'] += 1
+            player_stats_dict[player_name]['losses'] += 1
+        
+        player_stats_dict[player_name]['matches'].append(match)
 
-    for player_name, stats in player_stats.items():
+    # Construir lista de estadísticas por jugador
+    for player_name, stats in player_stats_dict.items():
         total_games = stats['wins'] + stats['losses']
         win_rate = (stats['wins'] / total_games * 100) if total_games > 0 else 0
         stats_por_jugador.append({
@@ -91,70 +126,25 @@ def estadisticas_globales():
     
     stats_por_jugador.sort(key=lambda x: x['total_partidas'], reverse=True)
 
-
-    # Stats for the second tab (global)
+    # OPTIMIZACIÓN 5: Calcular estadísticas globales de forma más eficiente
     total_wins = sum(1 for _, match in all_matches if match.get('win'))
     total_losses = len(all_matches) - total_wins
     total_games_global = len(all_matches)
     overall_win_rate = (total_wins / total_games_global * 100) if total_games_global > 0 else 0
 
-    champions_in_filtered_matches = []
-    for _, match in all_matches:
-        if selected_champion == 'all' or match.get('champion_name') == selected_champion:
-            champions_in_filtered_matches.append(match.get('champion_name'))
-
+    # Filtrar por campeón si se especifica
+    filtered_for_champion = filter_matches_by_champion(all_matches, selected_champion)
+    
+    # Obtener campeones más jugados
+    champions_in_filtered_matches = [m[1].get('champion_name') for m in filtered_for_champion if m[1].get('champion_name')]
     most_played_champions = Counter(champions_in_filtered_matches).most_common(5)
 
     player_with_most_games = None
     if stats_por_jugador:
         player_with_most_games = stats_por_jugador[0]['summonerName']
 
-    # New global records
-    records = {
-        'Más Asesinatos': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-skull-crossbones'},
-        'Más Muertes': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-skull'},
-        'Más Asistencias': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-hands-helping'},
-        'Mejor KDA': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-star'},
-        'Más CS': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-tractor'},
-        'Mayor Puntuación de Visión': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-eye'}
-    }
-
-    for player_name, match in all_matches:
-        # Apply champion filter
-        if selected_champion != 'all' and match.get('champion_name') != selected_champion:
-            continue
-
-        if match.get('kills', 0) > records['Más Asesinatos']['value']:
-            records['Más Asesinatos']['value'] = match.get('kills')
-            records['Más Asesinatos']['player'] = player_name
-            records['Más Asesinatos']['champion'] = match.get('champion_name')
-        
-        if match.get('deaths', 0) > records['Más Muertes']['value']:
-            records['Más Muertes']['value'] = match.get('deaths')
-            records['Más Muertes']['player'] = player_name
-            records['Más Muertes']['champion'] = match.get('champion_name')
-
-        if match.get('assists', 0) > records['Más Asistencias']['value']:
-            records['Más Asistencias']['value'] = match.get('assists')
-            records['Más Asistencias']['player'] = player_name
-            records['Más Asistencias']['champion'] = match.get('champion_name')
-
-        kda = (match.get('kills', 0) + match.get('assists', 0)) / max(1, match.get('deaths', 0))
-        if kda > records['Mejor KDA']['value']:
-            records['Mejor KDA']['value'] = kda
-            records['Mejor KDA']['player'] = player_name
-            records['Mejor KDA']['champion'] = match.get('champion_name')
-
-        total_cs = match.get('total_minions_killed', 0) + match.get('neutral_minions_killed', 0)
-        if total_cs > records['Más CS']['value']:
-            records['Más CS']['value'] = total_cs
-            records['Más CS']['player'] = player_name
-            records['Más CS']['champion'] = match.get('champion_name')
-
-        if match.get('vision_score', 0) > records['Mayor Puntuación de Visión']['value']:
-            records['Mayor Puntuación de Visión']['value'] = match.get('vision_score')
-            records['Mayor Puntuación de Visión']['player'] = player_name
-            records['Mayor Puntuación de Visión']['champion'] = match.get('champion_name')
+    # OPTIMIZACIÓN 6: Extraer records de forma eficiente
+    records = extract_global_records(filtered_for_champion)
 
     global_stats = {
         'overall_win_rate': overall_win_rate,

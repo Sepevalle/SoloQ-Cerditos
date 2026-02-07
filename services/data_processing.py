@@ -201,3 +201,127 @@ def process_player_match_history(matches, player_lp_history):
                     match['post_game_valor_clasificacion'] = elo_after
 
     return matches_sorted
+
+# ===== FUNCIONES OPTIMIZADAS PARA ESTADÍSTICAS GLOBALES =====
+import threading
+import time
+
+# Caché global para estadísticas compiladas
+GLOBAL_STATS_CACHE = {
+    'data': None,
+    'timestamp': 0,
+    'lock': threading.Lock(),
+    'cache_timeout': 5 * 60  # 5 minutos
+}
+
+def invalidate_global_stats_cache():
+    """Invalida el caché de estadísticas globales cuando se actualiza un jugador."""
+    with GLOBAL_STATS_CACHE['lock']:
+        GLOBAL_STATS_CACHE['data'] = None
+        GLOBAL_STATS_CACHE['timestamp'] = 0
+    print("[invalidate_global_stats_cache] Caché de estadísticas globales invalidado")
+
+
+def get_cached_global_stats():
+    """Obtiene estadísticas globales del caché si están disponibles y frescas."""
+    with GLOBAL_STATS_CACHE['lock']:
+        if (GLOBAL_STATS_CACHE['data'] is not None and 
+            time.time() - GLOBAL_STATS_CACHE['timestamp'] < GLOBAL_STATS_CACHE['cache_timeout']):
+            print("[get_cached_global_stats] Devolviendo estadísticas del caché")
+            return GLOBAL_STATS_CACHE['data']
+    return None
+
+
+def cache_global_stats(stats_data):
+    """Guarda estadísticas globales en caché."""
+    with GLOBAL_STATS_CACHE['lock']:
+        GLOBAL_STATS_CACHE['data'] = stats_data
+        GLOBAL_STATS_CACHE['timestamp'] = time.time()
+    print("[cache_global_stats] Estadísticas globales cacheadas")
+
+
+def filter_matches_by_queue(matches, queue_id):
+    """Filtra partidas por ID de cola."""
+    if queue_id == 'all':
+        return matches
+    return [m for m in matches if str(m.get('queue_id')) == str(queue_id)]
+
+
+def filter_matches_by_champion(matches, champion_name):
+    """Filtra partidas por nombre de campeón."""
+    if champion_name == 'all':
+        return matches
+    return [m for m in matches if m.get('champion_name') == champion_name]
+
+
+def calculate_player_stats_from_matches(player_name, matches):
+    """Calcula estadísticas básicas de un jugador desde sus partidas."""
+    if not matches:
+        return {'summonerName': player_name, 'total_partidas': 0, 'win_rate': 0}
+    
+    wins = sum(1 for m in matches if m.get('win'))
+    total = len(matches)
+    win_rate = (wins / total * 100) if total > 0 else 0
+    
+    return {
+        'summonerName': player_name,
+        'total_partidas': total,
+        'win_rate': win_rate
+    }
+
+
+def get_top_champions(matches, limit=5):
+    """Obtiene los campeones más jugados desde las partidas."""
+    from collections import Counter
+    if not matches:
+        return []
+    
+    champion_counts = Counter([m.get('champion_name') for m in matches if m.get('champion_name')])
+    return champion_counts.most_common(limit)
+
+
+def extract_global_records(all_matches):
+    """Extrae records globales de las partidas de forma eficiente."""
+    records = {
+        'Más Asesinatos': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-skull-crossbones'},
+        'Más Muertes': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-skull'},
+        'Más Asistencias': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-hands-helping'},
+        'Mejor KDA': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-star'},
+        'Más CS': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-tractor'},
+        'Mayor Puntuación de Visión': {'value': 0, 'player': '', 'champion': '', 'icon': 'fas fa-eye'}
+    }
+    
+    for player_name, match in all_matches:
+        if match.get('kills', 0) > records['Más Asesinatos']['value']:
+            records['Más Asesinatos']['value'] = match.get('kills')
+            records['Más Asesinatos']['player'] = player_name
+            records['Más Asesinatos']['champion'] = match.get('champion_name')
+        
+        if match.get('deaths', 0) > records['Más Muertes']['value']:
+            records['Más Muertes']['value'] = match.get('deaths')
+            records['Más Muertes']['player'] = player_name
+            records['Más Muertes']['champion'] = match.get('champion_name')
+
+        if match.get('assists', 0) > records['Más Asistencias']['value']:
+            records['Más Asistencias']['value'] = match.get('assists')
+            records['Más Asistencias']['player'] = player_name
+            records['Más Asistencias']['champion'] = match.get('champion_name')
+
+        kda = (match.get('kills', 0) + match.get('assists', 0)) / max(1, match.get('deaths', 0))
+        if kda > records['Mejor KDA']['value']:
+            records['Mejor KDA']['value'] = kda
+            records['Mejor KDA']['player'] = player_name
+            records['Mejor KDA']['champion'] = match.get('champion_name')
+
+        total_cs = match.get('total_minions_killed', 0) + match.get('neutral_minions_killed', 0)
+        if total_cs > records['Más CS']['value']:
+            records['Más CS']['value'] = total_cs
+            records['Más CS']['player'] = player_name
+            records['Más CS']['champion'] = match.get('champion_name')
+
+        if match.get('vision_score', 0) > records['Mayor Puntuación de Visión']['value']:
+            records['Mayor Puntuación de Visión']['value'] = match.get('vision_score')
+            records['Mayor Puntuación de Visión']['player'] = player_name
+            records['Mayor Puntuación de Visión']['champion'] = match.get('champion_name')
+    
+    return records

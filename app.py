@@ -1,4 +1,4 @@
-from services.data_processing import process_player_match_history
+from services.data_processing import process_player_match_history, invalidate_global_stats_cache
 from services.lp_tracker import elo_tracker_worker
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 import requests
@@ -1635,7 +1635,12 @@ def procesar_jugador(args_tuple):
                 'data': updated_historial_data,
                 'timestamp': time.time()
             }
+        
+        # OPTIMIZACIÓN: Invalidar caché de estadísticas globales cuando se actualiza un jugador
+        invalidate_global_stats_cache()
+        
         print(f"[procesar_jugador] Historial de partidas de {riot_id} actualizado y guardado en GitHub (solo SoloQ/Flex).")
+
     
     # Continuar con el procesamiento de datos del jugador para la visualización en el frontend
     riot_id_modified = riot_id.replace("#", "-")
