@@ -1131,8 +1131,6 @@ def _apply_match_history_limit(historial_data, limit=None):
 
     return historial_data
 
-        return historial_from_github
-
 
 def guardar_historial_jugador_github(puuid, historial_data, riot_id=None):
     """Guarda o actualiza el historial de partidas de un jugador en GitHub."""
