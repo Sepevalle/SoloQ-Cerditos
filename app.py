@@ -200,7 +200,8 @@ GLOBAL_STATS_CACHE = {
     "timestamp": 0
 }
 GLOBAL_STATS_LOCK = threading.Lock()
-GLOBAL_STATS_UPDATE_INTERVAL = 3600 # Update global stats every hour (3600 seconds)
+GLOBAL_STATS_CALCULATING = False  # Flag para evitar cálculos concurrentes
+GLOBAL_STATS_UPDATE_INTERVAL = 86400 # 24 horas: calcular bajo demanda o cada 24h máximo
 
 # --- CACHÉ PARA PEAK ELO ---
 PEAK_ELO_CACHE = {
@@ -221,11 +222,11 @@ PERSONAL_RECORDS_UPDATE_INTERVAL = 3600 # Update personal records every hour (36
 # --- NUEVA CACHÉ EN MEMORIA PARA EL HISTORIAL DE PARTIDAS DE LOS JUGADORES ---
 # Almacena el historial completo de partidas por PUUID en memoria.
 # { puuid: { 'data': historial_json, 'timestamp': last_update_time } }
-# OPTIMIZACIÓN: Limitar tamaño de caché + tiempo de expiración más agresivo
+# OPTIMIZACIÓN RENDER: Timeouts agresivos para liberar memoria rápidamente
 PLAYER_MATCH_HISTORY_CACHE = {}
 PLAYER_MATCH_HISTORY_LOCK = threading.Lock()
-PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 60  # 1 minuto (mantener corto para liberar memoria rápidamente)
-PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE = 25  # Mantener al menos 25 jugadores en caché como requisito
+PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 300  # 5 minutos (aumentado para reducir llamadas a GitHub)
+PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE = 15  # Limitar a 15 jugadores máximo (reducido de 25)
 PLAYER_MATCH_HISTORY_MAX_MATCHES = None  # None = conservar 100% del historial en caché
 
 # --- CONFIGURACIÓN DE SPLITS ---
@@ -1511,7 +1512,9 @@ def procesar_jugador(args_tuple):
             )
 
     # Obtener historial de partidas existente (si lo hay)
-    player_match_history_data = get_player_match_history(puuid, riot_id=riot_id)
+    # OPTIMIZACIÓN RENDER: Limitar a 150 partidas (procesar_jugador)
+    # 150 es suficiente ya que se actualiza cada 5 minutos y solo necesita datos frescos
+    player_match_history_data = get_player_match_history(puuid, riot_id=riot_id, limit=150)
     existing_matches = player_match_history_data.get('matches', [])
     existing_match_ids = {m['match_id'] for m in existing_matches}
     
@@ -1581,16 +1584,20 @@ def procesar_jugador(args_tuple):
         for new_match in new_matches_details:
             updated_matches[new_match['match_id']] = new_match
         
-        # Reconvertir a lista y ordenar por fecha (más reciente primero)
+        # OPTIMIZACIÓN: Filtrar SOLO partidas de SoloQ (420) y Flex (440) para guardar
+        # Esto reduce drásticamente el tamaño del historial guardado
         all_matches_for_player = sorted(updated_matches.values(), key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+        ranked_only_matches = [m for m in all_matches_for_player if m.get('queue_id') in [420, 440]]
         
-        # OPTIMIZACIÓN: Recalcular LP para partidas históricas que no lo tienen
-        # Se ejecuta UNA sola vez la primera vez que se cargan los datos
-        matches_sin_lp = sum(1 for m in all_matches_for_player if m.get('lp_change_this_game') is None)
-        if matches_sin_lp > 0 and len(new_matches_details) == 0:
-            # Solo si hay matches sin LP y NO hay nuevas partidas (indica carga inicial)
-            all_matches_for_player = _recalcular_lp_partidas_historicas(puuid, all_matches_for_player)
-            print(f"[procesar_jugador] LP recalculado para partidas históricas de {riot_id}")
+        print(f"[procesar_jugador] Filtrando historial: {len(all_matches_for_player)} total -> {len(ranked_only_matches)} SoloQ/Flex para guardar")
+        
+        # OPTIMIZACIÓN RENDER: DESHABILITADO recálculo de LP para partidas históricas
+        # Se removió para reducir consumo de memoria en servidor Render free
+        # Las partidas antiguas mantienen sus LP originales sin recálculo
+        # matches_sin_lp = sum(1 for m in all_matches_for_player if m.get('lp_change_this_game') is None)
+        # if matches_sin_lp > 0 and len(new_matches_details) == 0:
+        #     all_matches_for_player = _recalcular_lp_partidas_historicas(puuid, all_matches_for_player)
+        print(f"[procesar_jugador] Processamiento de partidas históricas de {riot_id} completado (sin recálculo de LP para optimizar memoria)")
 
         # Actualizar los remakes guardados (si se detectaron nuevos remakes durante obtener_info_partida)
         newly_detected_remakes = {
@@ -1601,9 +1608,9 @@ def procesar_jugador(args_tuple):
         updated_remakes = remakes_guardados.union(newly_detected_remakes)
 
 
-        # Guardar historial actualizado en GitHub
+        # Guardar historial actualizado en GitHub (SOLO SoloQ y Flex)
         updated_historial_data = {
-            'matches': all_matches_for_player,
+            'matches': ranked_only_matches,  # Usar solo SoloQ/Flex
             'last_updated': time.time(),
             'remakes': list(updated_remakes)
         }
@@ -1615,7 +1622,7 @@ def procesar_jugador(args_tuple):
                 'data': updated_historial_data,
                 'timestamp': time.time()
             }
-        print(f"[procesar_jugador] Historial de partidas de {riot_id} actualizado y guardado en GitHub.")
+        print(f"[procesar_jugador] Historial de partidas de {riot_id} actualizado y guardado en GitHub (solo SoloQ/Flex).")
     
     # Continuar con el procesamiento de datos del jugador para la visualización en el frontend
     riot_id_modified = riot_id.replace("#", "-")
@@ -1753,7 +1760,9 @@ def actualizar_cache():
             continue
         
         # AHORA LEE DE LA NUEVA FUNCIÓN QUE USA LA CACHÉ
-        historial = get_player_match_history(puuid, riot_id=jugador.get('game_name')) 
+        # OPTIMIZACIÓN RENDER: Limitar a 30 partidas para calcular estádísticas de 24h
+        # 30 partidas = ~1-2 semanas, más que suficiente para datos de 24h
+        historial = get_player_match_history(puuid, riot_id=jugador.get('game_name'), limit=30) 
         all_matches_for_player = historial.get('matches', [])
 
         # CALCULAR DINÁMICAMENTE el resumen de 24h
@@ -1790,10 +1799,9 @@ def actualizar_cache():
                p.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP
         ]
 
-        # Sobrescribir victorias y derrotas con los datos calculados localmente para la temporada actual.
-        # Esto fuerza que se muestren a 0 si no hay partidas nuevas, ignorando los datos "viejos" de la API de Riot.
-        jugador['wins'] = sum(1 for p in partidas_jugador if p.get('win'))
-        jugador['losses'] = len(partidas_jugador) - jugador['wins']
+        # NOTA: wins/losses SIEMPRE vienen de Riot API (línea 1664-1665)
+        # NUNCA se recalculan desde el historial local
+        # El historial local es parcial (solo últimas 150), Riot API es completo y oficial
 
         # Calcular KDA general para la temporada
         total_kills = sum(p.get('kills', 0) for p in partidas_jugador)
@@ -2129,7 +2137,9 @@ def _get_player_profile_data(game_name):
     historial_partidas_completo = {}
     processed_matches = []
     if puuid:
-        historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name)
+        # OPTIMIZACIÓN RENDER: Limitar a 400 partidas para procesar LP
+        # Se mantiene en 400 para precision en peak ELO y máximos históricos
+        historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name, limit=400)
         matches = historial_partidas_completo.get('matches', [])
         processed_matches = process_player_match_history(matches, player_lp_history)
 
@@ -2825,10 +2835,11 @@ def estadisticas_globales():
         all_matches = GLOBAL_STATS_CACHE.get('all_matches', [])
         timestamp = GLOBAL_STATS_CACHE['timestamp']
 
-    # If cache is empty or too old, try to recalculate
-    if not all_global_stats or not all_matches or (time.time() - timestamp > GLOBAL_STATS_UPDATE_INTERVAL):
-        print("[estadisticas_globales] La caché de estadísticas globales está vacía o desactualizada. Intentando recalcular...")
-        _calculate_and_cache_global_stats() # Force update
+    # Si caché vacía O más de 24h sin actualizar: intentar recalcular (solo si no está calculando)
+    global GLOBAL_STATS_CALCULATING
+    if (not all_global_stats or not all_matches or (time.time() - timestamp > GLOBAL_STATS_UPDATE_INTERVAL)) and not GLOBAL_STATS_CALCULATING:
+        print("[estadisticas_globales] Estadísticas globales vacías o desactualizadas (>24h). Recalculando...")
+        _calculate_and_cache_global_stats()  # Recalcular automático cada 24h
         with GLOBAL_STATS_LOCK:
             all_global_stats = GLOBAL_STATS_CACHE['data']
             all_matches = GLOBAL_STATS_CACHE.get('all_matches', [])
@@ -2909,7 +2920,9 @@ def _get_player_personal_records(puuid, player_display_name, riot_id, champion_f
             return cached_data
 
     print(f"[_get_player_personal_records] Calculando récords personales para: {cache_key} (no cacheados o estancados).")
-    historial = get_player_match_history(puuid, riot_id=riot_id) 
+    # OPTIMIZACIÓN RENDER: Limitar a 150 partidas para récords personales
+    # 150 es suficiente para máximos/mínimos consistentes (sin perder precisión)
+    historial = get_player_match_history(puuid, riot_id=riot_id, limit=150) 
     all_matches_for_player = historial.get('matches', [])
 
     # Filter matches by champion if a filter is provided
@@ -3000,19 +3013,36 @@ def _get_player_personal_records(puuid, player_display_name, riot_id, champion_f
 
 @app.route('/api/player/<puuid>/champions')
 def get_player_champions(puuid):
-    """API endpoint to get the list of champions a player has played."""
+    """
+    API endpoint para obtener lista COMPLETA de campeones (todos del juego, no solo jugados).
+    Retorna todos los campeones con flag 'played' indicando si el jugador los ha jugado.
+    OPTIMIZACIÓN: Permite búsqueda en frontend con filtro de texto.
+    """
     try:
         print(f"[get_player_champions] Petición recibida para los campeones del PUUID: {puuid}.")
         if not puuid:
             return jsonify({"error": "PUUID no proporcionado"}), 400
 
-        historial = get_player_match_history(puuid)
+        # Obtener campeones jugados (solo últimas 50 partidas, solo lo essencial)
+        historial = get_player_match_history(puuid, limit=50)
         matches = historial.get('matches', [])
+        played_champions = set(m['champion_name'] for m in matches if 'champion_name' in m)
         
-        champions = sorted(list(set(m['champion_name'] for m in matches if 'champion_name' in m)))
+        # CAMBIO: Retornar TODOS los campeones del diccionario con flag de "jugado"
+        champions_with_played_flag = [
+            {
+                'id': champ_id,
+                'name': champ_name,
+                'played': champ_name in played_champions
+            }
+            for champ_id, champ_name in ALL_CHAMPIONS.items()
+        ]
         
-        print(f"[get_player_champions] Devolviendo {len(champions)} campeones únicos para el PUUID: {puuid}.")
-        return jsonify(champions)
+        # Ordenar: primero jugados, luego alfabético
+        champions_with_played_flag.sort(key=lambda x: (not x['played'], x['name']))
+        
+        print(f"[get_player_champions] Devolviendo {len(ALL_CHAMPIONS)} campeones totales ({len(played_champions)} jugados) para el PUUID: {puuid}.")
+        return jsonify(champions_with_played_flag)
     except Exception as e:
         print(f"[get_player_champions] ERROR: {e}")
         return jsonify({"error": "Ocurrió un error inesperado en el servidor."}), 500
@@ -3123,8 +3153,9 @@ def _calculate_and_cache_global_stats():
             continue
 
         try:
-            # Obtener el historial completo (requisito), pero procesar sólo SoloQ/Flex
-            historial = get_player_match_history(puuid, riot_id=riot_id)
+            # OPTIMIZACIÓN RENDER: Limitar a 100 partidas para estadísticas globales
+            # Suficiente para tendencias del equipo (3-4 semanas de datos)
+            historial = get_player_match_history(puuid, riot_id=riot_id, limit=100)
             matches = historial.get('matches', [])
 
             for match in matches:
@@ -3163,17 +3194,57 @@ def _calculate_and_cache_global_stats():
         GLOBAL_STATS_CACHE['timestamp'] = time.time()
     print("[_calculate_and_cache_global_stats] Cálculo de estadísticas globales completado y caché actualizada para todas las colas.")
 
-# --- New function for background global stats calculation ---
 def _calculate_and_cache_global_stats_periodically():
-    """Hilo para calcular y cachear las estadísticas globales periódicamente."""
-    print("[_calculate_and_cache_global_stats_periodically] Hilo de cálculo de estadísticas globales iniciado.")
-    while True:
+    """Hilo para calcular estadísticas globales (ahora optimizado para bajo demanda).
+    Ya no se ejecuta automáticamente, solo manualmente o cada 24h si se solicita.
+    """
+    print("[_calculate_and_cache_global_stats_periodically] Hilo de estadísticas globales iniciado (modo bajo demanda).")
+    # Este hilo ya no hace nada automático, solo mantiene el endpoint disponible
+    pass
+
+@app.route('/api/update-global-stats', methods=['POST'])
+def request_global_stats_update():
+    """Endpoint para disparar cálculo manual de estadísticas globales.
+    Bloquea peticiones concurrentes para evitar saturación del servidor.
+    """
+    global GLOBAL_STATS_CALCULATING
+    
+    try:
+        # Si ya se está calculando, rechazar la petición
+        if GLOBAL_STATS_CALCULATING:
+            return jsonify({
+                "status": "already_calculating",
+                "message": "El cálculo de estadísticas globales ya está en progreso. Espera a que termine."
+            }), 429  # Too Many Requests
+        
+        # Marcar como calculando
+        GLOBAL_STATS_CALCULATING = True
+        print("[request_global_stats_update] Iniciando cálculo manual de estadísticas globales...")
+        
         try:
+            # Ejecutar el cálculo
             _calculate_and_cache_global_stats()
-            print(f"[_calculate_and_cache_global_stats_periodically] Próximo cálculo en {GLOBAL_STATS_UPDATE_INTERVAL / 60} minutos.")
-        except Exception as e:
-            print(f"[_calculate_and_cache_global_stats_periodically] ERROR en el hilo de cálculo de estadísticas globales: {e}")
-        time.sleep(GLOBAL_STATS_UPDATE_INTERVAL)
+            
+            with GLOBAL_STATS_LOCK:
+                timestamp = GLOBAL_STATS_CACHE.get('timestamp', time.time())
+            
+            return jsonify({
+                "status": "success",
+                "message": "Estadísticas globales actualizado correctamente.",
+                "updated_at": timestamp
+            }), 200
+        finally:
+            # Siempre desmarcar como calculando al terminar
+            GLOBAL_STATS_CALCULATING = False
+            print("[request_global_stats_update] Cálculo de estadísticas globales completado.")
+    
+    except Exception as e:
+        GLOBAL_STATS_CALCULATING = False  # Asegurar que se desmarque aunque haya error
+        print(f"[request_global_stats_update] ERROR: {e}")
+        return jsonify({
+            "status": "error",
+            "message": f"Error al calcular estadísticas: {str(e)}"
+        }), 500
 
 @app.route('/api/analisis-ia/<puuid>', methods=['GET'])
 def analizar_partidas_gemini(puuid):
@@ -3191,7 +3262,8 @@ def analizar_partidas_gemini(puuid):
         # 2. Obtener las últimas 5 partidas de SoloQ
         riot_id_info = next((rid for rid, p in leer_puuids().items() if p == puuid), None)
         print(f"[analizar_partidas_gemini] Riot ID encontrado: {riot_id_info}")
-        historial = get_player_match_history(puuid, riot_id=riot_id_info)
+        # OPTIMIZACIÓN RENDER: Limitar a 20 partidas (suficiente para obtener 10 de SoloQ)
+        historial = get_player_match_history(puuid, riot_id=riot_id_info, limit=20)
         matches_soloq = sorted(
             [m for m in historial.get('matches', []) if m.get('queue_id') == 420],
             key=lambda x: x.get('game_end_timestamp', 0), reverse=True
@@ -3205,32 +3277,68 @@ def analizar_partidas_gemini(puuid):
         current_signature = "-".join(sorted([str(m['match_id']) for m in matches_soloq]))
         print(f"[analizar_partidas_gemini] Firma actual: {current_signature}")
 
-        # 3. Revisar si ya existe un análisis previo
+        # 3. Revisar si ya existe un análisis previo EN GITHUB (no en caché)
         analisis_previo, player_sha = obtener_analisis_github(puuid)
-        print(f"[analizar_partidas_gemini] Análisis previo encontrado: {analisis_previo is not None}")
+        print(f"[analizar_partidas_gemini] Análisis previo en GitHub: {analisis_previo is not None}")
 
-        # LÓGICA DE DECISIÓN
-        if tiene_permiso == False:
-            if analisis_previo:
-                # Si son las mismas partidas, damos la caché (es gratis)
-                if analisis_previo.get('signature') == current_signature:
-                    print("[analizar_partidas_gemini] Devolviendo caché")
-                    return jsonify({"origen": "cache", **analisis_previo['data']}), 200
+        # Preparar metadata del análisis previo (si existe)
+        resultado_con_metadata = None
+        horas_antiguo = 0
+        
+        if analisis_previo:
+            timestamp_analisis = analisis_previo.get('timestamp', 0)
+            signature_analisis = analisis_previo.get('signature', '')
+            horas_antiguo = (time.time() - timestamp_analisis) / 3600
+            dias_antiguo = horas_antiguo / 24
+            
+            # Formato de fecha humano
+            from datetime import datetime as dt
+            fecha_generacion = dt.fromtimestamp(timestamp_analisis).strftime('%d/%m/%Y %H:%M')
+            
+            resultado_con_metadata = {
+                **analisis_previo['data'],
+                '_metadata': {
+                    'generated_at': fecha_generacion,
+                    'timestamp': timestamp_analisis,
+                    'is_outdated': horas_antiguo > 24,
+                    'hours_old': round(horas_antiguo, 1),
+                    'days_old': round(dias_antiguo, 1),
+                    'button_label': f"Análisis antiguo ({fecha_generacion})" if horas_antiguo > 24 else f"Generado: {fecha_generacion}"
+                }
+            }
+            
+            # Si son las mismas partidas, devolver directamente
+            if signature_analisis == current_signature:
+                print("[analizar_partidas_gemini] Mismo análisis, devolviendo de GitHub")
+                return jsonify({"origen": "github", **resultado_con_metadata}), 200
+            
+            # Si son partidas nuevas pero no tiene permiso Y análisis reciente, aplicar cooldown
+            if not tiene_permiso and horas_antiguo < 24:
+                horas_espera = int(24 - horas_antiguo)
+                print(f"[analizar_partidas_gemini] Cooldown activo: debe esperar {horas_espera}h")
+                return jsonify({
+                    "error": "Cooldown",
+                    "mensaje": f"Espera {horas_espera}h más o pide rehabilitación manual.",
+                    "analisis_previo": resultado_con_metadata
+                }), 429
 
-                # Si son nuevas, aplicar cooldown de 24h
-                horas = (time.time() - analisis_previo.get('timestamp', 0)) / 3600
-                if horas < 24:
-                    print(f"[analizar_partidas_gemini] Cooldown activo: {horas} horas")
-                    return jsonify({
-                        "error": "Cooldown",
-                        "mensaje": f"Espera {int(24-horas)}h o pide rehabilitación manual."
-                    }), 429
+        # 4. LÓGICA DE PERMISOS Y ANÁLISIS PREVIO
+        # Si NO tiene permiso → devolverlo si existe, rechazar si no existe
+        if not tiene_permiso:
+            if resultado_con_metadata:
+                # Devolver análisis anterior aunque sea antiguo (sin restricción si no tiene permiso)
+                print(f"[analizar_partidas_gemini] Usuario sin permiso mostrando análisis anterior ({horas_antiguo:.1f}h)")
+                return jsonify({"origen": "github_antiguo", **resultado_con_metadata}), 200
             else:
-                print("[analizar_partidas_gemini] Usuario bloqueado")
-                return jsonify({"error": "Bloqueado", "mensaje": "No tienes permiso activo."}), 403
-
-        # 4. EJECUCIÓN DE LLAMADA A GEMINI
-        print("[analizar_partidas_gemini] Preparando datos masivos para Gemini")
+                # No hay análisis previo y no tiene permiso
+                print("[analizar_partidas_gemini] Usuario no autorizado y sin análisis previo")
+                return jsonify({
+                    "error": "Bloqueado", 
+                    "mensaje": "No tienes permiso activo y no hay análisis anterior disponible."
+                }), 403
+        
+        # Si TIENE permiso → calcular nuevo análisis
+        print("[analizar_partidas_gemini] Usuario autorizado, calculando nuevo análisis")
         
         # Enviamos las partidas completas, pero eliminamos campos que Gemini no necesita 
         # para ahorrar tokens (como metadatos de la API o enlaces de imágenes)
@@ -3291,7 +3399,20 @@ def analizar_partidas_gemini(puuid):
         actualizar_archivo_github(f"config/permisos/{puuid}.json", estado_bloqueado, permiso_sha)
         print("[analizar_partidas_gemini] Permiso bloqueado")
 
-        return jsonify({"origen": "nuevo", **resultado_final}), 200
+        # Incluir metadata de generación con el análisis
+        resultado_con_metadata = {
+            **resultado_final,
+            '_metadata': {
+                'generated_at': datetime.now().strftime('%d/%m/%Y %H:%M'),
+                'timestamp': time.time(),
+                'is_outdated': False,
+                'hours_old': 0,
+                'days_old': 0,
+                'button_label': f"Análisis nuevo ({datetime.now().strftime('%d/%m/%Y %H:%M')})"
+            }
+        }
+
+        return jsonify({"origen": "nuevo", **resultado_con_metadata}), 200
 
     except Exception as e:
         print(f"[analizar_partidas_gemini] ERROR: {e}")
