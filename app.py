@@ -1544,34 +1544,67 @@ def procesar_jugador(args_tuple):
             )
 
     # Obtener historial de partidas existente (si lo hay)
-    # OPTIMIZACIÓN RENDER: Limitar a 150 partidas (procesar_jugador)
-    # 150 es suficiente ya que se actualiza cada 5 minutos y solo necesita datos frescos
+    # CARGAR TODO: Sin límite (-1) para tener el historial COMPLETO desde el inicio de la temporada
+    # Esto es crítico para:
+    # - Calcular top 3 champions correctamente (sin perder partidas antiguas)
+    # - Detectar nuevas partidas (comparar con lista completa)
+    # - Mantener precisión en todos los cálculos
     inicio_3 = time.time()
-    player_match_history_data = get_player_match_history(puuid, riot_id=riot_id, limit=150)
-    tiempo_3 = time.time() - inicio_3
-    print(f"  [3/5] {riot_id}: Leer historial GitHub - {tiempo_3*1000:.0f}ms ({len(player_match_history_data.get('matches', []))} partidas)")
+    player_match_history_data = get_player_match_history(puuid, riot_id=riot_id, limit=-1)
     existing_matches = player_match_history_data.get('matches', [])
     existing_match_ids = {m['match_id'] for m in existing_matches}
     
     # Filtrar remakes guardados para no volver a procesarlos
     remakes_guardados = set(player_match_history_data.get('remakes', []))
+    
+    # DETECCIÓN: Si historial está vacío, es jugador nuevo → cargar TODO desde la API
+    is_new_player = len(existing_matches) == 0
+    if is_new_player:
+        print(f"  [3/5] {riot_id}: Jugador NUEVO detectado (sin historial en GitHub) - Cargando TODAS las partidas...")
+        # Cargar todas las partidas desde la API (en lotes de 100)
+        all_match_ids_for_new_player = []
+        batch_num = 1
+        while True:
+            batch = obtener_historial_partidas(api_key_main, puuid, count=100)
+            if not batch or len(batch) == 0:
+                break
+            all_match_ids_for_new_player.extend(batch)
+            print(f"    Lote {batch_num}: Obtenidas {len(batch)} partidas (total: {len(all_match_ids_for_new_player)})")
+            if len(batch) < 100:  # Última página
+                break
+            batch_num += 1
+        
+        tiempo_3 = time.time() - inicio_3
+        print(f"  [3/5] {riot_id}: Cargadas TODAS las partidas desde API - {tiempo_3*1000:.0f}ms (total: {len(all_match_ids_for_new_player)} partidas)")
+    else:
+        tiempo_3 = time.time() - inicio_3
+        print(f"  [3/5] {riot_id}: Leer historial GitHub - {tiempo_3*1000:.0f}ms ({len(existing_matches)} partidas)")
 
     new_matches_details = [] # Para almacenar los detalles de las partidas recién obtenidas
 
-    if needs_full_update:
+    new_matches_details = [] # Para almacenar los detalles de las partidas recién obtenidas
+
+    if needs_full_update or is_new_player:
         inicio_4 = time.time()
-        print(f"  [4/5] {riot_id}: Actualizar historial (estado: {'en partida' if is_currently_in_game else 'recién terminada'})...")
-        
-        # 3. Obtener solo las ÚLTIMAS partidas de Riot API (partidas NUEVAS, no todas)
-        # El historial COMPLETO ya está en GitHub, solo buscamos las nuevas (últimas 30)
-        all_match_ids = obtener_historial_partidas(api_key_main, puuid, count=30)
-        if all_match_ids:
-            # Filtrar partidas nuevas (no guardadas previamente)
-            new_match_ids_to_process = []
-            for match_id in all_match_ids:
-                # Comprobar si la partida ya fue procesada o es un remake conocido
-                if match_id not in existing_match_ids and match_id not in remakes_guardados:
-                    new_match_ids_to_process.append(match_id)
+        if is_new_player:
+            print(f"  [4/5] {riot_id}: Procesando TODAS las {len(all_match_ids_for_new_player)} partidas del jugador nuevo...")
+            new_match_ids_to_process = all_match_ids_for_new_player
+            MAX_NEW_MATCHES_PER_UPDATE = 100  # Mayor para jugador nuevo
+        else:
+            print(f"  [4/5] {riot_id}: Actualizar historial (estado: {'en partida' if is_currently_in_game else 'recién terminada'})...")
+            
+            # 3. Obtener solo las ÚLTIMAS partidas de Riot API (partidas NUEVAS, no todas)
+            # El historial COMPLETO ya está en GitHub, solo buscamos las nuevas (últimas 30)
+            all_match_ids = obtener_historial_partidas(api_key_main, puuid, count=30)
+            if all_match_ids:
+                # Filtrar partidas nuevas (no guardadas previamente)
+                new_match_ids_to_process = []
+                for match_id in all_match_ids:
+                    # Comprobar si la partida ya fue procesada o es un remake conocido
+                    if match_id not in existing_match_ids and match_id not in remakes_guardados:
+                        new_match_ids_to_process.append(match_id)
+            else:
+                new_match_ids_to_process = []
             
             # Limitar a un número razonable de nuevas partidas para procesar en un ciclo
             # para evitar sobrecargar la API en caso de que un jugador tenga muchas partidas nuevas.
@@ -1581,40 +1614,38 @@ def procesar_jugador(args_tuple):
                 new_match_ids_to_process = new_match_ids_to_process[:MAX_NEW_MATCHES_PER_UPDATE]
 
 
-            if new_match_ids_to_process:
-                print(f"    Procesando {len(new_match_ids_to_process)} nuevas partidas para {riot_id}...")
-                tareas_partidas = [
-                    (match_id, puuid, api_key_main, riot_id) for match_id in new_match_ids_to_process
-                ]
-                with ThreadPoolExecutor(max_workers=5) as executor:
-                    resultados_partidas = executor.map(obtener_info_partida, tareas_partidas)
-                
-                # OPTIMIZACIÓN: Pre-indexar partidas por cola para _calcular_lp_inmediato O(n) -> O(1)
-                matches_by_queue = defaultdict(list)
-                for m in existing_matches:
-                    matches_by_queue[m.get('queue_id')].append(m)
-                
-                for resultado in resultados_partidas:
-                    if resultado:
-                        # Asegurarse de que el game_end_timestamp sea posterior al inicio de la temporada
-                        if resultado.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP:
-                            # OPTIMIZACIÓN: Calcular LP inmediatamente cuando se obtiene la partida
-                            lp_info = _calcular_lp_inmediato(resultado, current_elo_by_queue, matches_by_queue)
-                            if lp_info:
-                                resultado['lp_change_this_game'] = lp_info['lp_change']
-                                resultado['pre_game_valor_clasificacion'] = lp_info['pre_game_elo']
-                                resultado['post_game_valor_clasificacion'] = lp_info['post_game_elo']
-                            
-                            new_matches_details.append(resultado)
-                        else:
-                            print(f"    Ignorando partida {resultado.get('match_id')} (anterior a season_start)")
+        if new_match_ids_to_process:
+            print(f"    Procesando {len(new_match_ids_to_process)} partidas para {riot_id}...")
+            tareas_partidas = [
+                (match_id, puuid, api_key_main, riot_id) for match_id in new_match_ids_to_process
+            ]
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                resultados_partidas = executor.map(obtener_info_partida, tareas_partidas)
+            
+            # OPTIMIZACIÓN: Pre-indexar partidas por cola para _calcular_lp_inmediato O(n) -> O(1)
+            matches_by_queue = defaultdict(list)
+            for m in existing_matches:
+                matches_by_queue[m.get('queue_id')].append(m)
+            
+            for resultado in resultados_partidas:
+                if resultado:
+                    # Asegurarse de que el game_end_timestamp sea posterior al inicio de la temporada
+                    if resultado.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP:
+                        # OPTIMIZACIÓN: Calcular LP inmediatamente cuando se obtiene la partida
+                        lp_info = _calcular_lp_inmediato(resultado, current_elo_by_queue, matches_by_queue)
+                        if lp_info:
+                            resultado['lp_change_this_game'] = lp_info['lp_change']
+                            resultado['pre_game_valor_clasificacion'] = lp_info['pre_game_elo']
+                            resultado['post_game_valor_clasificacion'] = lp_info['post_game_elo']
+                        
+                        new_matches_details.append(resultado)
                     else:
-                        print(f"    Advertencia: No se pudo procesar una partida para {riot_id}")
-                print(f"    {len(new_matches_details)} nuevas partidas procesadas exitosamente")
-            else:
-                print(f"    No hay nuevas partidas para procesar")
+                        print(f"    Ignorando partida {resultado.get('match_id')} (anterior a season_start)")
+                else:
+                    print(f"    Advertencia: No se pudo procesar una partida para {riot_id}")
+            print(f"    {len(new_matches_details)} partidas procesadas exitosamente")
         else:
-            print(f"    No se pudo obtener IDs de partidas de la API")
+            print(f"    No hay partidas para procesar")
         
         # Combinar partidas existentes con las nuevas, eliminando duplicados si los hubiera
         updated_matches = {m['match_id']: m for m in existing_matches}
@@ -2981,9 +3012,9 @@ def _get_player_personal_records(puuid, player_display_name, riot_id, champion_f
             return cached_data
 
     print(f"[_get_player_personal_records] Calculando récords personales para: {cache_key} (no cacheados o estancados).")
-    # OPTIMIZACIÓN RENDER: Limitar a 150 partidas para récords personales
-    # 150 es suficiente para máximos/mínimos consistentes (sin perder precisión)
-    historial = get_player_match_history(puuid, riot_id=riot_id, limit=150) 
+    # CARGAR TODO: Sin límite (-1) para encontrar VERDADEROS máximos/mínimos
+    # Los récords deben ser absolutamente precisos, comparando TODAS las partidas
+    historial = get_player_match_history(puuid, riot_id=riot_id, limit=-1) 
     all_matches_for_player = historial.get('matches', [])
 
     # Filter matches by champion if a filter is provided
@@ -3084,8 +3115,9 @@ def get_player_champions(puuid):
         if not puuid:
             return jsonify({"error": "PUUID no proporcionado"}), 400
 
-        # Obtener campeones jugados (solo últimas 50 partidas, solo lo essencial)
-        historial = get_player_match_history(puuid, limit=50)
+        # Obtener campeones jugados (TODAS las partidas desde el inicio de la temporada)
+        # Necesita cargar TODO para saber TODOS los campeones disponibles
+        historial = get_player_match_history(puuid, limit=-1)
         matches = historial.get('matches', [])
         played_champions = set(m['champion_name'] for m in matches if 'champion_name' in m)
         
@@ -3214,9 +3246,9 @@ def _calculate_and_cache_global_stats():
             continue
 
         try:
-            # OPTIMIZACIÓN RENDER: Limitar a 100 partidas para estadísticas globales
-            # Suficiente para tendencias del equipo (3-4 semanas de datos)
-            historial = get_player_match_history(puuid, riot_id=riot_id, limit=100)
+            # CARGAR TODO: Sin límite (-1) para estadísticas globales precisas
+            # Necesita TODAS las partidas para cálculos correctos del equipo
+            historial = get_player_match_history(puuid, riot_id=riot_id, limit=-1)
             matches = historial.get('matches', [])
 
             for match in matches:
