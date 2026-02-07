@@ -224,8 +224,9 @@ PERSONAL_RECORDS_UPDATE_INTERVAL = 3600 # Update personal records every hour (36
 # OPTIMIZACIÓN: Limitar tamaño de caché + tiempo de expiración más agresivo
 PLAYER_MATCH_HISTORY_CACHE = {}
 PLAYER_MATCH_HISTORY_LOCK = threading.Lock()
-PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 180  # 3 minutos (reducido de 5 para liberar memoria)
-PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE = 25  # Máximo 25 jugadores en caché simultaneamente
+PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 60  # 1 minuto (mantener corto para liberar memoria rápidamente)
+PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE = 25  # Mantener al menos 25 jugadores en caché como requisito
+PLAYER_MATCH_HISTORY_MAX_MATCHES = None  # None = conservar 100% del historial en caché
 
 # --- CONFIGURACIÓN DE SPLITS ---
 SPLITS = {
@@ -244,7 +245,7 @@ API_RESPONSE_EVENTS = {} # Diccionario para almacenar eventos de respuesta por I
 API_RESPONSE_DATA = {} # Diccionario para almacenar los datos de respuesta por ID de petición
 REQUEST_ID_COUNTER = 0 # Contador para IDs de petición únicos
 REQUEST_ID_COUNTER_LOCK = threading.Lock() # Bloqueo para el contador
-API_RESPONSE_CLEANUP_THRESHOLD = 300  # OPTIMIZACIÓN: Limpiar si excede 300 respuestas pendientes
+API_RESPONSE_CLEANUP_THRESHOLD = 50  # OPTIMIZACIÓN RENDER: Limpiar si excede 50 respuestas pendientes (reducido de 300)
 
 # OPTIMIZACIÓN: Función para limpiar cachés cuando se quedan sin espacio
 def cleanup_memory_caches():
@@ -275,12 +276,12 @@ def cleanup_memory_caches():
                 del PLAYER_MATCH_HISTORY_CACHE[puuid]
                 print(f"[cleanup_memory_caches] Eliminado del caché: {puuid[:16]}...")
     
-    # Limpiar respuestas de API antiguas
+    # Limpiar respuestas de API antiguas de forma más agresiva
     with REQUEST_ID_COUNTER_LOCK:
         if len(API_RESPONSE_EVENTS) > API_RESPONSE_CLEANUP_THRESHOLD:
-            # Mantener solo las últimas 100 respuestas
+            # Mantener solo las últimas 50 respuestas (reducido de 100 para Render free)
             event_keys = sorted(API_RESPONSE_EVENTS.keys())
-            keys_to_delete = event_keys[:-100]
+            keys_to_delete = event_keys[:-50]
             for key in keys_to_delete:
                 API_RESPONSE_EVENTS.pop(key, None)
                 API_RESPONSE_DATA.pop(key, None)
@@ -1065,11 +1066,14 @@ def _read_player_match_history_from_github(puuid, riot_id=None):
         print(f"[_read_player_match_history_from_github] Error leyendo el historial para {identifier} de API GitHub: {e}")
     return {}
 
-def get_player_match_history(puuid, riot_id=None):
+def get_player_match_history(puuid, riot_id=None, limit=None):
     """
     Obtiene el historial de partidas de un jugador, usando la caché en memoria primero.
     Si no está en caché o está expirado, lo lee desde GitHub y lo cachea.
     Si la lectura de GitHub falla, devuelve datos cacheados antiguos si existen.
+    
+    OPTIMIZACIÓN RENDER: Si limit es None, devuelve solo últimas PLAYER_MATCH_HISTORY_MAX_MATCHES.
+    Para acceder al historial completo, pasar limit=-1 explícitamente.
     """
     identifier = riot_id if riot_id else f"PUUID: {puuid}"
     with PLAYER_MATCH_HISTORY_LOCK:
@@ -1078,7 +1082,9 @@ def get_player_match_history(puuid, riot_id=None):
         # Si hay datos frescos en la caché, se devuelven.
         if cached_data and (time.time() - cached_data['timestamp'] < PLAYER_MATCH_HISTORY_CACHE_TIMEOUT):
             print(f"[get_player_match_history] Devolviendo historial cacheados para {identifier}.")
-            return cached_data['data']
+            data = cached_data['data']
+            # Aplicar límite si se requiere para optimizar memoria
+            return _apply_match_history_limit(data, limit)
         
         print(f"[get_player_match_history] Historial para {identifier} no cacheados o estancados. Leyendo de GitHub.")
         historial_from_github = _read_player_match_history_from_github(puuid, riot_id=riot_id)
@@ -1087,16 +1093,44 @@ def get_player_match_history(puuid, riot_id=None):
         if not historial_from_github and cached_data:
             print(f"[get_player_match_history] Error al leer de GitHub para {identifier}. Usando datos cacheados antiguos.")
             # No actualizamos el timestamp, para que la próxima vez intente leer de GitHub de nuevo.
-            return cached_data['data']
+            data = cached_data['data']
+            return _apply_match_history_limit(data, limit)
 
         # Si obtuvimos algo de GitHub, actualizamos la caché.
         # Esto también maneja el caso en que el historial es legítimamente vacío (jugador nuevo).
-        # NOTA: Se guarda el historial COMPLETO desde el inicio de la temporada
+        # NOTA: Se guarda el historial COMPLETO desde el inicio de la temporada (por requisito)
         PLAYER_MATCH_HISTORY_CACHE[puuid] = {
             'data': historial_from_github,
             'timestamp': time.time()
         }
         print(f"[get_player_match_history] Historial para {identifier} leído de GitHub y cacheado.")
+        return _apply_match_history_limit(historial_from_github, limit)
+
+
+def _apply_match_history_limit(historial_data, limit=None):
+    """
+    Aplica un límite de partidas al historial para optimizar memoria.
+    OPTIMIZACIÓN: Por defecto devuelve el historial completo (PLAYER_MATCH_HISTORY_MAX_MATCHES=None).
+    """
+    if not historial_data or 'matches' not in historial_data:
+        return historial_data
+    
+    # Si limit es explícitamente -1, devolver todo
+    if limit == -1:
+        return historial_data
+    # Si no se especifica limit, devolver todo (mantener 100% del historial)
+    if limit is None:
+        return historial_data
+
+    # Si se especifica un límite positivo, aplicar la paginación
+    if limit > 0 and len(historial_data.get('matches', [])) > limit:
+        result = dict(historial_data)
+        result['matches'] = historial_data['matches'][:limit]
+        result['_total_matches'] = len(historial_data['matches'])  # Guardar count total
+        return result
+
+    return historial_data
+
         return historial_from_github
 
 
@@ -3077,25 +3111,43 @@ def _calculate_and_cache_personal_records_periodically():
 def _calculate_and_cache_global_stats():
     """
     Calcula todas las estadísticas globales para diferentes colas y las almacena en la caché global.
+    OPTIMIZACIÓN RENDER: Procesa jugadores secuencialmente y libera memoria después de cada uno.
     """
     print("[_calculate_and_cache_global_stats] Iniciando el cálculo de estadísticas globales para todas las colas.")
     puuid_dict = leer_puuids()
     cuentas = leer_cuentas()
     all_matches = []
-    for riot_id, jugador_nombre in cuentas:
+    
+    # Procesar jugadores uno a uno para evitar cargar todo en memoria simultáneamente
+    for idx, (riot_id, jugador_nombre) in enumerate(cuentas):
         puuid = puuid_dict.get(riot_id)
         if not puuid:
             continue
 
-        historial = get_player_match_history(puuid, riot_id=riot_id)
-        matches = historial.get('matches', [])
-        for match in matches:
-            if match.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP:
-                match['jugador_nombre'] = jugador_nombre
-                match['riot_id'] = riot_id
-                all_matches.append(match)
-    # Define the queue filters
+        try:
+            # Obtener el historial completo (requisito), pero procesar sólo SoloQ/Flex
+            historial = get_player_match_history(puuid, riot_id=riot_id)
+            matches = historial.get('matches', [])
 
+            for match in matches:
+                # Solo procesar partidas clasificatorias SoloQ (420) y Flex (440)
+                if match.get('queue_id') not in [420, 440]:
+                    continue
+
+                if match.get('game_end_timestamp', 0) / 1000 >= SEASON_START_TIMESTAMP:
+                    match['jugador_nombre'] = jugador_nombre
+                    match['riot_id'] = riot_id
+                    all_matches.append(match)
+
+            # Limpiar memoria después de procesar cada 5 jugadores
+            if (idx + 1) % 5 == 0:
+                cleanup_memory_caches()
+                print(f"[_calculate_and_cache_global_stats] Procesados {idx + 1}/{len(cuentas)} jugadores. RAM limpiada.")
+        except Exception as e:
+            print(f"[_calculate_and_cache_global_stats] Error procesando {riot_id}: {e}")
+            continue
+    
+    # Define the queue filters
     queue_filters = {
         'all': None,
         'all_rankeds': [420, 440],
