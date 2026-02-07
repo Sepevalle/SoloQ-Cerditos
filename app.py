@@ -2155,9 +2155,14 @@ def _get_player_profile_data(game_name):
     historial_partidas_completo = {}
     processed_matches = []
     if puuid:
-        # OPTIMIZACIÓN RENDER: Limitar a 400 partidas para procesar LP
-        # Se mantiene en 400 para precision en peak ELO y máximos históricos
-        historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name, limit=400)
+        # ESTRATEGIA: Cargar TODAS las partidas para precisión completa
+        # El límite anterior de 400 causaba:
+        # - Estadísticas por campeón incompletas
+        # - Peak ELO incorrecto si era > partida 400
+        # - Records globales incompletos
+        # 
+        # Ahora cargamos TODO pero con caché en memory (_get_player_profile_data se cachea en PLAYER_PROFILE_CACHE)
+        historial_partidas_completo = get_player_match_history(puuid, riot_id=game_name, limit=-1)  # -1 = sin límite
         matches = historial_partidas_completo.get('matches', [])
         processed_matches = process_player_match_history(matches, player_lp_history)
 
