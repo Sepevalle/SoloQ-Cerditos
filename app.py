@@ -562,15 +562,27 @@ def obtener_elo(api_key, puuid, riot_id=None):
         return None
 
 def obtener_historial_partidas(api_key, puuid, count=20):
-    """Obtiene el historial de partidas de un jugador dado su PUUID."""
-    print(f"[obtener_historial_partidas] Intentando obtener historial de partidas para PUUID: {puuid}. Cantidad: {count}")
+    """
+    Obtiene los últimos IDs de partidas de un jugador desde Riot API.
+    NOTA: Solo obtiene partidas NUEVAS (últimas count partidas).
+    El historial COMPLETO ya está guardado en GitHub y se lee desde allí.
+    
+    Args:
+        api_key: Clave de API de Riot Games
+        puuid: PUUID del jugador
+        count: Número máximo de IDs a obtener (default: 20)
+    
+    Returns:
+        list: Lista de IDs de partidas o None si falla
+    """
+    print(f"[obtener_historial_partidas] Obteniendo últimas {count} partidas desde Riot API para PUUID: {puuid}")
     url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count={count}&api_key={api_key}"
     response = make_api_request(url)
     if response:
-        print(f"[obtener_historial_partidas] Historial de partidas obtenido para PUUID: {puuid}.")
+        print(f"[obtener_historial_partidas] ✓ Obtenidas {count} partidas más recientes para PUUID: {puuid}.")
         return response.json()
     else:
-        print(f"[obtener_historial_partidas] No se pudo obtener el historial de partidas para {puuid}.")
+        print(f"[obtener_historial_partidas] Error: No se pudo obtener partidas recientes para {puuid}.")
         return None
 
 def esta_en_partida(api_key, puuid, riot_id=None):
@@ -1526,10 +1538,11 @@ def procesar_jugador(args_tuple):
     if needs_full_update:
         print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
         
-        # 3. Obtener nuevos IDs de partidas de la API - SOLO SI ES NECESARIO
-        all_match_ids = obtener_historial_partidas(api_key_main, puuid, count=100) # Pedir más partidas
+        # 3. Obtener solo las ÚLTIMAS partidas de Riot API (partidas NUEVAS, no todas)
+        # El historial COMPLETO ya está en GitHub, solo buscamos las nuevas (últimas 30)
+        all_match_ids = obtener_historial_partidas(api_key_main, puuid, count=30)
         if all_match_ids:
-            # Filtrar partidas de la temporada actual y nuevas (no guardadas previamente)
+            # Filtrar partidas nuevas (no guardadas previamente)
             new_match_ids_to_process = []
             for match_id in all_match_ids:
                 # Comprobar si la partida ya fue procesada o es un remake conocido
