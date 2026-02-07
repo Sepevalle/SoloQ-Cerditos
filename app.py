@@ -1482,7 +1482,21 @@ def procesar_jugador(args_tuple):
     Procesa los datos de un solo jugador.
     Implementa una lógica de actualización inteligente para reducir llamadas a la API.
     Solo realiza operaciones costosas si el jugador está o acaba de estar en partida.
+    
+    TAREAS POR JUGADOR:
+    1. Sondeo en partida (100-200ms)
+    2. Obtener ELO (200-300ms)
+    3. Leer historial de GitHub (100-200ms)
+    4. Si needs_full_update:
+       - Obtener últimas 30 partidas de API (300-500ms)
+       - Procesar cada nueva partida en paralelo (50-100ms c/u)
+       - Guardar historial en GitHub (200-500ms)
+    5. Calcular champions top 3 y estadísticas (50-100ms)
+    
+    Total por jugador (sin nuevas partidas): ~500-700ms
+    Total por jugador (con nuevas partidas): ~1-3 segundos
     """
+    inicio_total = time.time()
     cuenta, puuid, api_key_main, api_key_spectator, old_data_list, check_in_game_this_update = args_tuple
     riot_id, jugador_nombre = cuenta
     # print(f"[procesar_jugador] Procesando jugador: {riot_id}")
@@ -1492,8 +1506,11 @@ def procesar_jugador(args_tuple):
         return []
 
     # 1. Sondeo ligero: usar la clave secundaria para esta llamada frecuente.
+    inicio_1 = time.time()
     game_data = esta_en_partida(api_key_spectator, puuid, riot_id=riot_id)
+    tiempo_1 = time.time() - inicio_1
     is_currently_in_game = game_data is not None
+    print(f"  [1/5] {riot_id}: Sondeo en partida - {tiempo_1*1000:.0f}ms (en_partida={is_currently_in_game})")
 
     # 2. Decisión inteligente: ¿necesitamos una actualización completa?
     was_in_game_before = old_data_list and any(d.get('en_partida') for d in old_data_list)
@@ -1507,7 +1524,10 @@ def procesar_jugador(args_tuple):
     # solucionando el bug donde la clasificación no se refrescaba.
     
     # Ahora se obtiene el Elo en cada ciclo de actualización para todos los jugadores.
+    inicio_2 = time.time()
     elo_info = obtener_elo(api_key_main, puuid, riot_id=riot_id)
+    tiempo_2 = time.time() - inicio_2
+    print(f"  [2/5] {riot_id}: Obtener ELO - {tiempo_2*1000:.0f}ms")
     if not elo_info:
         print(f"[procesar_jugador] No se pudo obtener el Elo para {riot_id}. No se puede rastrear LP ni actualizar datos.")
         return old_data_list if old_data_list else []
@@ -1526,7 +1546,10 @@ def procesar_jugador(args_tuple):
     # Obtener historial de partidas existente (si lo hay)
     # OPTIMIZACIÓN RENDER: Limitar a 150 partidas (procesar_jugador)
     # 150 es suficiente ya que se actualiza cada 5 minutos y solo necesita datos frescos
+    inicio_3 = time.time()
     player_match_history_data = get_player_match_history(puuid, riot_id=riot_id, limit=150)
+    tiempo_3 = time.time() - inicio_3
+    print(f"  [3/5] {riot_id}: Leer historial GitHub - {tiempo_3*1000:.0f}ms ({len(player_match_history_data.get('matches', []))} partidas)")
     existing_matches = player_match_history_data.get('matches', [])
     existing_match_ids = {m['match_id'] for m in existing_matches}
     
@@ -1536,7 +1559,8 @@ def procesar_jugador(args_tuple):
     new_matches_details = [] # Para almacenar los detalles de las partidas recién obtenidas
 
     if needs_full_update:
-        print(f"[procesar_jugador] Actualizando datos completos para {riot_id} (estado: {'en partida' if is_currently_in_game else 'recién terminada'}).")
+        inicio_4 = time.time()
+        print(f"  [4/5] {riot_id}: Actualizar historial (estado: {'en partida' if is_currently_in_game else 'recién terminada'})...")
         
         # 3. Obtener solo las ÚLTIMAS partidas de Riot API (partidas NUEVAS, no todas)
         # El historial COMPLETO ya está en GitHub, solo buscamos las nuevas (últimas 30)
@@ -1553,12 +1577,12 @@ def procesar_jugador(args_tuple):
             # para evitar sobrecargar la API en caso de que un jugador tenga muchas partidas nuevas.
             MAX_NEW_MATCHES_PER_UPDATE = 30
             if len(new_match_ids_to_process) > MAX_NEW_MATCHES_PER_UPDATE:
-                print(f"[procesar_jugador] Limiting new matches for {riot_id} from {len(new_match_ids_to_process)} to {MAX_NEW_MATCHES_PER_UPDATE}.")
+                print(f"    Limitando {len(new_match_ids_to_process)} -> {MAX_NEW_MATCHES_PER_UPDATE} nuevas partidas")
                 new_match_ids_to_process = new_match_ids_to_process[:MAX_NEW_MATCHES_PER_UPDATE]
 
 
             if new_match_ids_to_process:
-                print(f"[procesar_jugador] Procesando {len(new_match_ids_to_process)} nuevas partidas para {riot_id}.")
+                print(f"    Procesando {len(new_match_ids_to_process)} nuevas partidas para {riot_id}...")
                 tareas_partidas = [
                     (match_id, puuid, api_key_main, riot_id) for match_id in new_match_ids_to_process
                 ]
@@ -1583,14 +1607,14 @@ def procesar_jugador(args_tuple):
                             
                             new_matches_details.append(resultado)
                         else:
-                            print(f"[procesar_jugador] Ignorando partida {resultado.get('match_id')} para {riot_id} por ser anterior a la temporada actual.")
+                            print(f"    Ignorando partida {resultado.get('match_id')} (anterior a season_start)")
                     else:
-                        print(f"[procesar_jugador] Advertencia: Una de las nuevas partidas para {riot_id} no se pudo procesar.")
-                print(f"[procesar_jugador] {len(new_matches_details)} partidas nuevas procesadas exitosamente para {riot_id}.")
+                        print(f"    Advertencia: No se pudo procesar una partida para {riot_id}")
+                print(f"    {len(new_matches_details)} nuevas partidas procesadas exitosamente")
             else:
-                print(f"[procesar_jugador] No hay nuevas partidas para procesar para {riot_id} en la temporada actual.")
+                print(f"    No hay nuevas partidas para procesar")
         else:
-            print(f"[procesar_jugador] No se pudo obtener ningún ID de partida de la API para {riot_id}.")
+            print(f"    No se pudo obtener IDs de partidas de la API")
         
         # Combinar partidas existentes con las nuevas, eliminando duplicados si los hubiera
         updated_matches = {m['match_id']: m for m in existing_matches}
@@ -1602,15 +1626,14 @@ def procesar_jugador(args_tuple):
         all_matches_for_player = sorted(updated_matches.values(), key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
         ranked_only_matches = [m for m in all_matches_for_player if m.get('queue_id') in [420, 440]]
         
-        print(f"[procesar_jugador] Filtrando historial: {len(all_matches_for_player)} total -> {len(ranked_only_matches)} SoloQ/Flex para guardar")
-        
+        print(f"    Filtrando historial: {len(all_matches_for_player)} total -> {len(ranked_only_matches)} SoloQ/Flex")
+
         # OPTIMIZACIÓN RENDER: DESHABILITADO recálculo de LP para partidas históricas
         # Se removió para reducir consumo de memoria en servidor Render free
         # Las partidas antiguas mantienen sus LP originales sin recálculo
         # matches_sin_lp = sum(1 for m in all_matches_for_player if m.get('lp_change_this_game') is None)
         # if matches_sin_lp > 0 and len(new_matches_details) == 0:
         #     all_matches_for_player = _recalcular_lp_partidas_historicas(puuid, all_matches_for_player)
-        print(f"[procesar_jugador] Processamiento de partidas históricas de {riot_id} completado (sin recálculo de LP para optimizar memoria)")
 
         # Actualizar los remakes guardados (si se detectaron nuevos remakes durante obtener_info_partida)
         newly_detected_remakes = {
@@ -1639,10 +1662,15 @@ def procesar_jugador(args_tuple):
         # OPTIMIZACIÓN: Invalidar caché de estadísticas globales cuando se actualiza un jugador
         invalidate_global_stats_cache()
         
-        print(f"[procesar_jugador] Historial de partidas de {riot_id} actualizado y guardado en GitHub (solo SoloQ/Flex).")
+        tiempo_4 = time.time() - inicio_4
+        print(f"  [4/5] {riot_id}: Historial actualizado - {tiempo_4*1000:.0f}ms ({len(new_matches_details)} partidas nuevas)")
+    else:
+        print(f"  [4/5] {riot_id}: Sin actualización (inactivo)")
+
 
     
     # Continuar con el procesamiento de datos del jugador para la visualización en el frontend
+    inicio_5 = time.time()
     riot_id_modified = riot_id.replace("#", "-")
     url_perfil = f"https://www.op.gg/summoners/euw/{riot_id_modified}"
     url_ingame = f"https://www.op.gg/summoners/euw/{riot_id_modified}/ingame"
@@ -1661,7 +1689,7 @@ def procesar_jugador(args_tuple):
                 elif champ_name_from_game_data:
                     current_champion_id = ALL_CHAMPION_NAMES_TO_IDS.get(champ_name_from_game_data)
                     if current_champion_id is None:
-                        print(f"[procesar_jugador] ADVERTENCIA: No se pudo encontrar championId para '{champ_name_from_game_data}' en ALL_CHAMPION_NAMES_TO_IDS para el jugador {riot_id} en partida activa.")
+                        print(f"    ADVERTENCIA: No se encontró championId para '{champ_name_from_game_data}'")
                 break
 
     for entry in elo_info:
@@ -1695,7 +1723,10 @@ def procesar_jugador(args_tuple):
     # OPTIMIZACIÓN: Registrar snapshot de LP sin hacer llamadas extras
     _registrar_snapshot_lp(puuid, elo_info, riot_id)
     
-    print(f"[procesar_jugador] Datos de {riot_id} procesados y listos para caché.")
+    tiempo_5 = time.time() - inicio_5
+    tiempo_total = time.time() - inicio_total
+    print(f"  [5/5] {riot_id}: Procesar datos jugador - {tiempo_5*1000:.0f}ms")
+    print(f"✓ {riot_id} completado en {tiempo_total*1000:.0f}ms total")
     return datos_jugador_list
 
 def actualizar_cache():
@@ -1756,13 +1787,19 @@ def actualizar_cache():
         tareas.append((cuenta, puuid, api_key_main, api_key_spectator, 
                       old_data_for_player, check_in_game_this_update))
 
-    print(f"[actualizar_cache] Procesando {len(tareas)} jugadores en paralelo.")
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        resultados = executor.map(procesar_jugador, tareas)
-
-    for datos_jugador_list in resultados:
+    print(f"[actualizar_cache] Procesando {len(tareas)} jugadores de forma SECUENCIAL (sin paralelización).")
+    inicio_procesamiento = time.time()
+    
+    # CAMBIO A EJECUCIÓN SECUENCIAL: Sin ThreadPoolExecutor, procesamos uno por uno
+    for i, tarea in enumerate(tareas, 1):
+        print(f"\n[{i}/{len(tareas)}] Iniciando procesamiento secuencial...")
+        datos_jugador_list = procesar_jugador(tarea)
         if datos_jugador_list:
             todos_los_datos.extend(datos_jugador_list)
+    
+    tiempo_procesamiento = time.time() - inicio_procesamiento
+    print(f"\n[actualizar_cache] ✓ Todos los {len(tareas)} jugadores procesados en {tiempo_procesamiento:.1f}s")
+    print(f"[actualizar_cache] Promedio: {tiempo_procesamiento/max(len(tareas),1):.1f}s por jugador")
 
     print(f"[actualizar_cache] Calculando estadísticas de campeones y LP en 24h para {len(todos_los_datos)} entradas de jugador.")
     queue_map = {"RANKED_SOLO_5x5": 420, "RANKED_FLEX_SR": 440}
