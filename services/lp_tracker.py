@@ -92,11 +92,24 @@ def _write_to_github(file_path, data, sha, token):
         if response.status_code in (200, 201):
             print(f"[LP_TRACKER] Archivo {file_path} actualizado correctamente en GitHub.")
             return True
+        elif response.status_code == 422 and "sha" in response.text.lower():
+            # Error 422: el archivo puede haber sido creado/modificado por otro proceso
+            # Releer el SHA actual y reintentar una vez
+            print(f"[LP_TRACKER] Error 422 (sha issue), reintentando con SHA actualizado...")
+            _, new_sha = _read_json_from_github(file_path, token)
+            if new_sha and new_sha != sha:
+                payload["sha"] = new_sha
+                response = requests.put(url, headers=headers, json=payload, timeout=30)
+                if response.status_code in (200, 201):
+                    print(f"[LP_TRACKER] Archivo {file_path} actualizado correctamente en reintento.")
+                    return True
+            print(f"[LP_TRACKER] Error al actualizar {file_path} en GitHub: {response.status_code} - {response.text}")
         else:
             print(f"[LP_TRACKER] Error al actualizar {file_path} en GitHub: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"[LP_TRACKER] Excepción al escribir en GitHub para {file_path}: {e}")
     return False
+
 
 # --- LÓGICA DE LA API DE RIOT (SIMPLIFICADA) ---
 
