@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, request, flash, redirect, url_for
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from config.settings import DDRAGON_VERSION, QUEUE_NAMES
 from services.cache_service import player_cache
 from services.github_service import read_global_stats, save_global_stats
@@ -8,6 +8,12 @@ from services.match_service import get_player_match_history, filter_matches_by_q
 from services.stats_service import extract_global_records, calculate_global_stats
 
 stats_bp = Blueprint('stats', __name__)
+
+# Tiempo mínimo entre cálculos de estadísticas (en segundos)
+# 24 horas = 86400 segundos
+MIN_TIME_BETWEEN_CALCULATIONS = 86400
+
+
 
 
 def _compile_all_matches():
@@ -98,7 +104,33 @@ def _calculate_and_save_global_stats():
     champion_counts = Counter(m[1].get('champion_name') for m in all_matches if m[1].get('champion_name'))
     most_played_champions = champion_counts.most_common(10)
     
-    # Construir objeto final
+    # Calcular estadísticas por campeón
+    stats_by_champion = {}
+    for champion_name in compiled['all_champions']:
+        champion_matches = [m for m in all_matches if m[1].get('champion_name') == champion_name]
+        if champion_matches:
+            stats_by_champion[champion_name] = {
+                'total_matches': len(champion_matches),
+                'wins': sum(1 for _, m in champion_matches if m.get('win')),
+                'losses': sum(1 for _, m in champion_matches if not m.get('win')),
+                'records': extract_global_records(champion_matches)
+            }
+    
+    # Calcular estadísticas por jugador
+    stats_by_player = {}
+    for player_name, stats in player_stats.items():
+        player_matches = [m for m in all_matches if m[0] == player_name]
+        total = stats['wins'] + stats['losses']
+        stats_by_player[player_name] = {
+            'total_matches': total,
+            'wins': stats['wins'],
+            'losses': stats['losses'],
+            'win_rate': (stats['wins'] / total * 100) if total > 0 else 0,
+            'records': extract_global_records([(player_name, m) for m in player_matches]),
+            'champions_played': list(set(m[1].get('champion_name') for m in player_matches if m[1].get('champion_name')))
+        }
+    
+    # Construir objeto final con todas las desagregaciones
     global_stats_data = {
         'all_matches_count': len(all_matches),
         'total_players': compiled['total_players'],
@@ -108,8 +140,11 @@ def _calculate_and_save_global_stats():
         'most_played_champions': most_played_champions,
         'global_records': all_records,
         'stats_by_queue': stats_by_queue,
+        'stats_by_champion': stats_by_champion,
+        'stats_by_player': stats_by_player,
         'calculated_at': datetime.now(timezone.utc).isoformat()
     }
+
     
     # Guardar en GitHub
     success = save_global_stats(global_stats_data)
@@ -190,11 +225,20 @@ def estadisticas_globales():
         total = total_wins + total_losses
         overall_win_rate = (total_wins / total * 100) if total > 0 else 0
     
-    # Filtrar por campeón (esto se hace en memoria sobre los datos cargados)
+    # Filtrar por campeón usando datos pre-calculados
     if selected_champion != 'all':
-        # Necesitamos recompilar para filtrar por campeón (no guardado en GitHub)
-        # Esto es una limitación - solo mostramos mensaje
-        flash(f'Filtrado por campeón "{selected_champion}" requiere recalcular estadísticas', 'info')
+        champion_stats = stats_data.get('stats_by_champion', {}).get(selected_champion, {})
+        if champion_stats:
+            global_records = champion_stats.get('records', {})
+            total_matches = champion_stats.get('total_matches', 0)
+            wins = champion_stats.get('wins', 0)
+            overall_win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
+            # Actualizar campeones más jugados para mostrar solo este campeón
+            most_played_champions = [(selected_champion, total_matches)]
+        else:
+            flash(f'No hay datos para el campeón "{selected_champion}"', 'warning')
+            overall_win_rate = 0
+
     
     # Construir objeto global_stats para el template
     global_stats = {
@@ -217,6 +261,9 @@ def estadisticas_globales():
     available_queues = [{'id': q_id, 'name': QUEUE_NAMES.get(q_id, f"Unknown ({q_id})")} 
                        for q_id in sorted(available_queue_ids)]
 
+    # Obtener tiempo restante para próximo cálculo
+    can_calc, seconds_left, time_str = _get_time_until_next_calculation()
+
     return render_template(
         'estadisticas.html', 
         stats=player_stats, 
@@ -227,16 +274,86 @@ def estadisticas_globales():
         current_queue=current_queue,
         available_queues=available_queues,
         needs_update=False,
-        last_updated=last_updated
+        last_updated=last_updated,
+        can_calculate=can_calc,
+        seconds_remaining=seconds_left,
+        time_remaining=time_str
     )
+
+
+
+def _get_time_until_next_calculation():
+    """
+    Calcula el tiempo restante hasta el próximo cálculo permitido.
+    Retorna (puede_calcular, segundos_restantes, tiempo_formateado)
+    """
+    success, stats_data = read_global_stats()
+    
+    if not success or not stats_data:
+        return True, 0, "0s"
+    
+    calculated_at = stats_data.get('calculated_at')
+    if not calculated_at:
+        return True, 0, "0s"
+    
+    try:
+        last_calc = datetime.fromisoformat(calculated_at)
+        now = datetime.now(timezone.utc)
+        elapsed = (now - last_calc).total_seconds()
+        
+        if elapsed >= MIN_TIME_BETWEEN_CALCULATIONS:
+            return True, 0, "0s"
+        
+        remaining = MIN_TIME_BETWEEN_CALCULATIONS - elapsed
+        
+        # Formatear tiempo restante (horas, minutos, segundos)
+        hours = int(remaining // 3600)
+        minutes = int((remaining % 3600) // 60)
+        seconds = int(remaining % 60)
+        
+        parts = []
+        if hours > 0:
+            parts.append(f"{hours}h")
+        if minutes > 0:
+            parts.append(f"{minutes}m")
+        if seconds > 0 or not parts:
+            parts.append(f"{seconds}s")
+        
+        time_str = " ".join(parts)
+
+        
+        return False, int(remaining), time_str
+        
+    except Exception as e:
+        print(f"[_get_time_until_next_calculation] Error: {e}")
+        return True, 0, "0s"
 
 
 @stats_bp.route('/estadisticas/actualizar', methods=['POST'])
 def actualizar_estadisticas():
     """
     Endpoint para solicitar actualización de estadísticas globales.
+    Verifica que no se haya calculado recientemente.
     """
     print("[actualizar_estadisticas] Solicitud de actualización recibida")
+    
+    # Verificar tiempo desde último cálculo
+    can_calculate, seconds_remaining, time_str = _get_time_until_next_calculation()
+    
+    if not can_calculate:
+        message = f'Las estadísticas se calcularon recientemente. Espera {time_str} antes de solicitar un nuevo cálculo.'
+        print(f"[actualizar_estadisticas] {message}")
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': False,
+                'error': message,
+                'seconds_remaining': seconds_remaining,
+                'time_remaining': time_str
+            }), 429  # Too Many Requests
+        
+        flash(message, 'warning')
+        return redirect(url_for('stats.estadisticas_globales'))
     
     try:
         stats_data = _calculate_and_save_global_stats()

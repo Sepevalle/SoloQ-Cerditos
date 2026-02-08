@@ -155,9 +155,15 @@
     <div class="text-center mb-4">
         <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
             <form action="{{ url_for('stats.actualizar_estadisticas') }}" method="post" class="m-0">
+                {% if can_calculate %}
                 <button type="submit" class="btn btn-warning btn-lg">
                     <i class="fas fa-sync-alt me-2"></i>Actualizar Estadísticas
                 </button>
+                {% else %}
+                <button type="button" class="btn btn-secondary btn-lg" disabled>
+                    <i class="fas fa-clock me-2"></i>Espera {{ time_remaining }}
+                </button>
+                {% endif %}
             </form>
             {% if last_updated %}
             <span class="text-muted">
@@ -170,8 +176,15 @@
             <i class="fas fa-info-circle me-2"></i>No hay estadísticas globales calculadas. 
             Haz clic en "Actualizar Estadísticas" para generarlas.
         </div>
+        {% elif not can_calculate %}
+        <div class="alert alert-warning mt-3" role="alert">
+            <i class="fas fa-hourglass-half me-2"></i>Las estadísticas se calcularon recientemente. 
+            Debes esperar <strong>{{ time_remaining }}</strong> antes de solicitar un nuevo cálculo.
+            <br><small class="text-muted">Las estadísticas solo pueden calcularse una vez cada 24 horas.</small>
+        </div>
         {% endif %}
     </div>
+
 
     <div class="text-center mb-4">
         <form action="{{ url_for('stats.estadisticas_globales') }}" method="get" class="row justify-content-center align-items-center g-2">
@@ -196,7 +209,6 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
             </div>
         </form>
     </div>
