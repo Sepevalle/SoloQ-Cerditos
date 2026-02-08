@@ -4,8 +4,13 @@ Funciones utilitarias y helpers del proyecto.
 
 import base64
 import json
+import os
+import requests
+import time
 from datetime import datetime, timezone
-from config.settings import TARGET_TIMEZONE, TIER_ORDER, RANK_ORDER
+from config.settings import TARGET_TIMEZONE, TIER_ORDER, RANK_ORDER, PORT
+
+
 
 
 def calcular_valor_clasificacion(tier, rank, league_points):
@@ -103,15 +108,44 @@ def parse_json_safe(json_str, default=None):
 
 
 def keep_alive():
-    """Hilo que mantiene la aplicación activa con pings periódicos."""
-    import time
-    from datetime import datetime, timezone
+    """Hilo que mantiene la aplicación activa con pings periódicos a sí misma."""
     
-    print("[keep_alive] Hilo keep_alive iniciado.")
+    # URL fija de la aplicación en Render
+    APP_URL = "https://soloq-cerditos.onrender.com"
+    
+    # Intentar obtener la URL de variables de entorno como fallback
+    render_url = os.environ.get('RENDER_EXTERNAL_URL') or os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+    if render_url and not render_url.startswith('http'):
+        render_url = f"https://{render_url}"
+    
+    # Usar URL fija o la de entorno
+    ping_url = f"{APP_URL}/" if not render_url else f"{render_url}/"
+    
+    print(f"[keep_alive] Hilo keep_alive iniciado")
+    print(f"[keep_alive] Ping URL: {ping_url}")
+    print(f"[keep_alive] URL base configurada: {APP_URL}")
+
+    
+    # Esperar a que la app termine de iniciar completamente
+    time.sleep(45)
+    
+    # Hacer ping inicial
+    try:
+        response = requests.get(ping_url, timeout=30)
+        print(f"[keep_alive] Ping inicial exitoso: {response.status_code}")
+    except Exception as e:
+        print(f"[keep_alive] Ping inicial falló (normal si aún está iniciando): {e}")
+    
+    # Loop de pings periódicos
     while True:
         try:
-            time.sleep(600)  # 10 minutos
-            print(f"[keep_alive] Ping: {datetime.now(timezone.utc)}")
+            time.sleep(600)  # 10 minutos entre pings
+            
+            # Hacer petición GET a la página principal
+            response = requests.get(ping_url, timeout=30)
+            print(f"[keep_alive] Ping exitoso: {response.status_code} - {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}")
+            
         except Exception as e:
-            print(f"[keep_alive] Error: {e}")
+            print(f"[keep_alive] Error en ping: {e}")
+            # Si falla, esperar menos tiempo antes de reintentar
             time.sleep(60)
