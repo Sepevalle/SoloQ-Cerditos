@@ -60,23 +60,32 @@ def _read_json_from_github(file_path, token):
         if resp.status_code == 200:
             content = resp.json()
             file_content = base64.b64decode(content['content']).decode('utf-8')
-            return json.loads(file_content), content.get('sha')
+            # Manejar archivo vacío
+            if not file_content or not file_content.strip():
+                print(f"[LP_TRACKER] Archivo {file_path} está vacío. Inicializando...")
+                return {}, content.get('sha')
+            try:
+                return json.loads(file_content), content.get('sha')
+            except json.JSONDecodeError:
+                print(f"[LP_TRACKER] Archivo {file_path} tiene JSON inválido. Inicializando...")
+                return {}, content.get('sha')
         elif resp.status_code == 404:
             print(f"[LP_TRACKER] Archivo no encontrado en GitHub: {file_path}. Se creará uno nuevo.")
             return {}, None
         else:
             print(f"[LP_TRACKER] Error al leer {file_path} desde GitHub: {resp.status_code}")
-            resp.raise_for_status()
+            return {}, None
     except Exception as e:
         print(f"[LP_TRACKER] Excepción al leer {file_path} de GitHub: {e}")
     return {}, None
+
 
 def _write_to_github(file_path, data, sha, token):
     """Escribe o actualiza un archivo en el repositorio de GitHub."""
     url = f"{GITHUB_API_BASE_URL}{file_path}"
     headers = {"Authorization": f"token {token}"}
     
-    content_json = json.dumps(data, indent=2)
+    content_json = json.dumps(data, indent=2, ensure_ascii=False)
     content_b64 = base64.b64encode(content_json.encode('utf-8')).decode('utf-8')
     
     payload = {
@@ -86,7 +95,6 @@ def _write_to_github(file_path, data, sha, token):
     }
     
     # Solo incluir SHA si existe (para actualizar archivo existente)
-    # Si sha es None, estamos creando un archivo nuevo
     if sha:
         payload["sha"] = sha
 
@@ -96,33 +104,35 @@ def _write_to_github(file_path, data, sha, token):
             print(f"[LP_TRACKER] Archivo {file_path} actualizado correctamente en GitHub.")
             return True
         elif response.status_code == 422:
-            # Error 422: puede ser por SHA incorrecto o archivo no existe
-            error_text = response.text.lower()
-            if "sha" in error_text or "wasn't supplied" in error_text:
-                # Releer el SHA actual y reintentar una vez
-                print(f"[LP_TRACKER] Error 422 (sha issue), reintentando con SHA actualizado...")
-                _, new_sha = _read_json_from_github(file_path, token)
-                
-                # Si el archivo ahora existe, usar el nuevo SHA
-                if new_sha:
-                    payload["sha"] = new_sha
-                elif "sha" in payload:
-                    # Si no existe y teníamos un SHA incorrecto, quitarlo
-                    del payload["sha"]
-                
+            # Error 422: intentar sin SHA (crear nuevo archivo)
+            print(f"[LP_TRACKER] Error 422, intentando crear archivo nuevo...")
+            if "sha" in payload:
+                del payload["sha"]
+            
+            response = requests.put(url, headers=headers, json=payload, timeout=30)
+            if response.status_code in (200, 201):
+                print(f"[LP_TRACKER] Archivo {file_path} creado correctamente en GitHub.")
+                return True
+            
+            # Si sigue fallando, intentar obtener SHA fresco
+            print(f"[LP_TRACKER] Reintentando con SHA actualizado...")
+            _, fresh_sha = _read_json_from_github(file_path, token)
+            if fresh_sha:
+                payload["sha"] = fresh_sha
                 response = requests.put(url, headers=headers, json=payload, timeout=30)
                 if response.status_code in (200, 201):
-                    print(f"[LP_TRACKER] Archivo {file_path} actualizado correctamente en reintento.")
+                    print(f"[LP_TRACKER] Archivo {file_path} actualizado con SHA fresco.")
                     return True
             
-            print(f"[LP_TRACKER] Error al actualizar {file_path} en GitHub: {response.status_code} - {response.text}")
+            print(f"[LP_TRACKER] Error al actualizar {file_path}: {response.status_code} - {response.text}")
             return False
         else:
-            print(f"[LP_TRACKER] Error al actualizar {file_path} en GitHub: {response.status_code} - {response.text}")
+            print(f"[LP_TRACKER] Error al actualizar {file_path}: {response.status_code} - {response.text}")
             return False
     except Exception as e:
         print(f"[LP_TRACKER] Excepción al escribir en GitHub para {file_path}: {e}")
         return False
+
 
 
 

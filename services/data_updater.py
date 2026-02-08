@@ -256,8 +256,11 @@ def _calculate_and_cache_personal_records_periodically():
                     print(f"[_calculate_personal_records] Error con {jugador_nombre}: {e}")
                     continue
             
-            personal_records_cache.set(all_records)
+            # Guardar cada conjunto de récords con su puuid como clave
+            for puuid, records in all_records.items():
+                personal_records_cache.set(f"{puuid}_all_all", records)
             print(f"[_calculate_personal_records] Cacheados récords para {len(all_records)} jugadores")
+
             
         except Exception as e:
             print(f"[_calculate_personal_records] Error: {e}")
