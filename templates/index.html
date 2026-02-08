@@ -553,28 +553,29 @@
                         {% endif %}
                     </td> 
                     <td > {# Columna de LP en 24h con más detalle #}
-                        {% if jugador.wins_24h > 0 or jugador.losses_24h > 0 %}
-                            {% set lp_val = jugador.lp_change_24h %}
+                        {% if jugador.get('wins_24h', 0) > 0 or jugador.get('losses_24h', 0) > 0 %}
+                            {% set lp_val = jugador.get('lp_change_24h', 0) %}
                             <span class="{{ 'lp-change-positive' if lp_val > 0 else 'lp-change-negative' if lp_val < 0 else 'lp-change-neutral' }}">
                                 {{ '%+d'|format(lp_val) if lp_val != 0 else '0' }} LP
                             </span>
                             <br>
                             <span class="small-text-stats">
-                                ({{ jugador.wins_24h }}V-{{ jugador.losses_24h }}D)
+                                ({{ jugador.get('wins_24h', 0) }}V-{{ jugador.get('losses_24h', 0) }}D)
                             </span>
                         {% else %}
                              <span class="lp-change-neutral">0 LP</span>
                         {% endif %}
                     </td>
                     <td> {# Columna para la Racha Actual #}
-                        {% if jugador.current_win_streak > 0 %}
-                            <span class="lp-change-positive">{{ jugador.current_win_streak }}V</span>
-                        {% elif jugador.current_loss_streak > 0 %}
-                            <span class="lp-change-negative">{{ jugador.current_loss_streak }}D</span>
+                        {% if jugador.get('current_win_streak', 0) > 0 %}
+                            <span class="lp-change-positive">{{ jugador.get('current_win_streak', 0) }}V</span>
+                        {% elif jugador.get('current_loss_streak', 0) > 0 %}
+                            <span class="lp-change-negative">{{ jugador.get('current_loss_streak', 0) }}D</span>
                         {% else %}
                             <span class="lp-change-neutral">—</span>
                         {% endif %}
                     </td>
+
                     <td class="elo-diferencia"></td>
                     <td>
                         <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
