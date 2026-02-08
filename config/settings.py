@@ -103,6 +103,9 @@ DDRAGON_VERSION = "14.9.1"
 
 PORT = int(os.environ.get("PORT", 5000))
 HOST = "0.0.0.0"
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
+SECRET_KEY = os.environ.get("SECRET_KEY", "soloq-cerditos-dev-key-change-in-production")
+
 
 # ============================================================================
 # MAPEO DE COLAS

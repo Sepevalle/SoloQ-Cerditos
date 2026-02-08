@@ -100,3 +100,18 @@ def parse_json_safe(json_str, default=None):
         return json.loads(json_str)
     except (json.JSONDecodeError, TypeError):
         return default if default is not None else {}
+
+
+def keep_alive():
+    """Hilo que mantiene la aplicación activa con pings periódicos."""
+    import time
+    from datetime import datetime, timezone
+    
+    print("[keep_alive] Hilo keep_alive iniciado.")
+    while True:
+        try:
+            time.sleep(600)  # 10 minutos
+            print(f"[keep_alive] Ping: {datetime.now(timezone.utc)}")
+        except Exception as e:
+            print(f"[keep_alive] Error: {e}")
+            time.sleep(60)
