@@ -1,11 +1,15 @@
 from flask import Blueprint, render_template, jsonify, request, flash, redirect, url_for
 from collections import Counter
 from datetime import datetime, timezone, timedelta
+import gc
+import time
+
 from config.settings import DDRAGON_VERSION, QUEUE_NAMES
-from services.cache_service import player_cache
+from services.cache_service import player_cache, global_stats_cache
 from services.github_service import read_global_stats, save_global_stats, read_stats_reload_config, save_stats_reload_config
 from services.match_service import get_player_match_history, filter_matches_by_queue, filter_matches_by_champion
 from services.stats_service import extract_global_records, calculate_global_stats
+
 
 
 stats_bp = Blueprint('stats', __name__)
@@ -17,10 +21,11 @@ MIN_TIME_BETWEEN_CALCULATIONS = 86400
 
 
 
-def _compile_all_matches():
+def _compile_all_matches(batch_size=50):
     """
     Compila todas las partidas de todos los jugadores.
     Esta operación es costosa y solo debe ejecutarse bajo demanda.
+    Versión optimizada para Render Free Tier con procesamiento por lotes.
     """
     print("[stats] Compilando todas las partidas de todos los jugadores...")
     datos_jugadores, _ = player_cache.get()
@@ -28,135 +33,194 @@ def _compile_all_matches():
     all_champions = set()
     all_matches = []
     available_queue_ids = set()
-
-    for j in datos_jugadores:
+    total_players = len(datos_jugadores)
+    
+    # Procesar por lotes para evitar timeouts en Render
+    for i, j in enumerate(datos_jugadores):
         puuid = j.get('puuid')
         if puuid:
-            historial = get_player_match_history(puuid, limit=-1)
-            matches = historial.get('matches', [])
-            
-            for match in matches:
-                all_matches.append((j.get('jugador'), match))
-                if match.get('champion_name'):
-                    all_champions.add(match.get('champion_name'))
-                if match.get('queue_id'):
-                    available_queue_ids.add(match.get('queue_id'))
+            try:
+                historial = get_player_match_history(puuid, limit=-1)
+                matches = historial.get('matches', [])
+                
+                for match in matches:
+                    all_matches.append((j.get('jugador'), match))
+                    if match.get('champion_name'):
+                        all_champions.add(match.get('champion_name'))
+                    if match.get('queue_id'):
+                        available_queue_ids.add(match.get('queue_id'))
+                
+                # Liberar memoria cada batch_size jugadores
+                if (i + 1) % batch_size == 0:
+                    print(f"[stats] Procesados {i + 1}/{total_players} jugadores...")
+                    gc.collect()
+                    
+            except Exception as e:
+                print(f"[stats] Error procesando jugador {j.get('jugador')}: {e}")
+                continue
     
-    print(f"[stats] Compiladas {len(all_matches)} partidas de {len(datos_jugadores)} jugadores")
+    print(f"[stats] Compiladas {len(all_matches)} partidas de {total_players} jugadores")
     
     return {
         'all_matches': all_matches,
         'all_champions': list(all_champions),
         'available_queue_ids': list(available_queue_ids),
-        'total_players': len(datos_jugadores)
+        'total_players': total_players
     }
+
 
 
 def _calculate_and_save_global_stats():
     """
     Calcula las estadísticas globales y las guarda en GitHub.
+    Versión optimizada para Render Free Tier con manejo de memoria eficiente.
     Retorna los datos calculados.
     """
     print("[stats] Iniciando cálculo completo de estadísticas globales...")
+    start_time = time.time()
     
-    # Compilar todas las partidas
-    compiled = _compile_all_matches()
-    all_matches = compiled['all_matches']
-    
-    # Calcular estadísticas por cola
-    stats_by_queue = {}
-    for queue_id in compiled['available_queue_ids']:
-        queue_matches = [m for m in all_matches if m[1].get('queue_id') == queue_id]
-        stats_by_queue[str(queue_id)] = {
-            'total_matches': len(queue_matches),
-            'wins': sum(1 for _, m in queue_matches if m.get('win')),
-            'losses': sum(1 for _, m in queue_matches if not m.get('win')),
-            'records': extract_global_records(queue_matches)
-        }
-    
-    # Calcular estadísticas generales (todas las colas)
-    all_records = extract_global_records(all_matches)
-    
-    # Calcular stats por jugador
-    player_stats = {}
-    for player_name, match in all_matches:
-        if player_name not in player_stats:
-            player_stats[player_name] = {'wins': 0, 'losses': 0, 'matches': []}
-        player_stats[player_name]['matches'].append(match)
-        if match.get('win'):
-            player_stats[player_name]['wins'] += 1
+    # Verificar si hay cálculo en progreso
+    if global_stats_cache.is_calculating():
+        print("[stats] Cálculo ya en progreso, esperando...")
+        # Esperar hasta 60 segundos
+        for _ in range(60):
+            if not global_stats_cache.is_calculating():
+                break
+            time.sleep(1)
         else:
-            player_stats[player_name]['losses'] += 1
+            print("[stats] Timeout esperando cálculo previo")
+            return None
     
-    # Formatear stats por jugador
-    formatted_player_stats = []
-    for player_name, stats in player_stats.items():
-        total = stats['wins'] + stats['losses']
-        formatted_player_stats.append({
-            'summonerName': player_name,
-            'total_partidas': total,
-            'wins': stats['wins'],
-            'losses': stats['losses'],
-            'win_rate': (stats['wins'] / total * 100) if total > 0 else 0
-        })
-    formatted_player_stats.sort(key=lambda x: x['total_partidas'], reverse=True)
+    global_stats_cache.set_calculating(True)
     
-    # Campeones más jugados
-    champion_counts = Counter(m[1].get('champion_name') for m in all_matches if m[1].get('champion_name'))
-    most_played_champions = champion_counts.most_common(10)
-    
-    # Calcular estadísticas por campeón
-    stats_by_champion = {}
-    for champion_name in compiled['all_champions']:
-        champion_matches = [m for m in all_matches if m[1].get('champion_name') == champion_name]
-        if champion_matches:
-            stats_by_champion[champion_name] = {
-                'total_matches': len(champion_matches),
-                'wins': sum(1 for _, m in champion_matches if m.get('win')),
-                'losses': sum(1 for _, m in champion_matches if not m.get('win')),
-                'records': extract_global_records(champion_matches)
+    try:
+        # Compilar todas las partidas con procesamiento por lotes
+        compiled = _compile_all_matches(batch_size=50)
+        all_matches = compiled['all_matches']
+        
+        # Calcular estadísticas por cola (procesar en lotes pequeños)
+        stats_by_queue = {}
+        for queue_id in compiled['available_queue_ids']:
+            queue_matches = [m for m in all_matches if m[1].get('queue_id') == queue_id]
+            if queue_matches:  # Solo procesar si hay partidas
+                stats_by_queue[str(queue_id)] = {
+                    'total_matches': len(queue_matches),
+                    'wins': sum(1 for _, m in queue_matches if m.get('win')),
+                    'losses': sum(1 for _, m in queue_matches if not m.get('win')),
+                    'records': extract_global_records(queue_matches)
+                }
+                # Liberar memoria
+                del queue_matches
+                gc.collect()
+        
+        # Calcular estadísticas generales (todas las colas)
+        all_records = extract_global_records(all_matches)
+        
+        # Calcular stats por jugador (usando generador para ahorrar memoria)
+        player_stats = {}
+        for player_name, match in all_matches:
+            if player_name not in player_stats:
+                player_stats[player_name] = {'wins': 0, 'losses': 0, 'matches': []}
+            player_stats[player_name]['matches'].append(match)
+            if match.get('win'):
+                player_stats[player_name]['wins'] += 1
+            else:
+                player_stats[player_name]['losses'] += 1
+        
+        # Formatear stats por jugador
+        formatted_player_stats = []
+        for player_name, stats in player_stats.items():
+            total = stats['wins'] + stats['losses']
+            formatted_player_stats.append({
+                'summonerName': player_name,
+                'total_partidas': total,
+                'wins': stats['wins'],
+                'losses': stats['losses'],
+                'win_rate': (stats['wins'] / total * 100) if total > 0 else 0
+            })
+        formatted_player_stats.sort(key=lambda x: x['total_partidas'], reverse=True)
+        
+        # Campeones más jugados (usando generador)
+        champion_counts = Counter(m[1].get('champion_name') for m in all_matches if m[1].get('champion_name'))
+        most_played_champions = champion_counts.most_common(10)
+        
+        # Calcular estadísticas por campeón (procesar en lotes)
+        stats_by_champion = {}
+        for i, champion_name in enumerate(compiled['all_champions']):
+            champion_matches = [m for m in all_matches if m[1].get('champion_name') == champion_name]
+            if champion_matches:
+                stats_by_champion[champion_name] = {
+                    'total_matches': len(champion_matches),
+                    'wins': sum(1 for _, m in champion_matches if m.get('win')),
+                    'losses': sum(1 for _, m in champion_matches if not m.get('win')),
+                    'records': extract_global_records(champion_matches)
+                }
+            # Liberar memoria cada 10 campeones
+            if (i + 1) % 10 == 0:
+                del champion_matches
+                gc.collect()
+        
+        # Calcular estadísticas por jugador (optimizado)
+        stats_by_player = {}
+        for player_name, stats in player_stats.items():
+            player_matches = [m for m in all_matches if m[0] == player_name]
+            total = stats['wins'] + stats['losses']
+            
+            # Optimización: no guardar todas las partidas en stats_by_player
+            # Solo guardar referencias necesarias para filtros
+            stats_by_player[player_name] = {
+                'total_matches': total,
+                'wins': stats['wins'],
+                'losses': stats['losses'],
+                'win_rate': (stats['wins'] / total * 100) if total > 0 else 0,
+                'records': extract_global_records([(player_name, m) for m in player_matches]),
+                'champions_played': list(set(m[1].get('champion_name') for m in player_matches if m[1].get('champion_name'))),
+                # NO guardar todas las partidas aquí - ocupa demasiada memoria
+                'match_count': len(player_matches)
             }
-    
-    # Calcular estadísticas por jugador
-    stats_by_player = {}
-    for player_name, stats in player_stats.items():
-        player_matches = [m for m in all_matches if m[0] == player_name]
-        total = stats['wins'] + stats['losses']
-        stats_by_player[player_name] = {
-            'total_matches': total,
-            'wins': stats['wins'],
-            'losses': stats['losses'],
-            'win_rate': (stats['wins'] / total * 100) if total > 0 else 0,
-            'records': extract_global_records([(player_name, m) for m in player_matches]),
-            'champions_played': list(set(m[1].get('champion_name') for m in player_matches if m[1].get('champion_name'))),
-            'matches': [m[1] for m in player_matches]  # Guardar partidas para filtrado dinámico
+            
+            # Liberar memoria
+            del player_matches
+            if len(stats_by_player) % 5 == 0:
+                gc.collect()
+
+        
+        # Construir objeto final con todas las desagregaciones
+        global_stats_data = {
+            'all_matches_count': len(all_matches),
+            'total_players': compiled['total_players'],
+            'all_champions': compiled['all_champions'],
+            'available_queue_ids': compiled['available_queue_ids'],
+            'player_stats': formatted_player_stats,
+            'most_played_champions': most_played_champions,
+            'global_records': all_records,
+            'stats_by_queue': stats_by_queue,
+            'stats_by_champion': stats_by_champion,
+            'stats_by_player': stats_by_player,
+            'calculated_at': datetime.now(timezone.utc).isoformat()
         }
 
-    
-    # Construir objeto final con todas las desagregaciones
-    global_stats_data = {
-        'all_matches_count': len(all_matches),
-        'total_players': compiled['total_players'],
-        'all_champions': compiled['all_champions'],
-        'available_queue_ids': compiled['available_queue_ids'],
-        'player_stats': formatted_player_stats,
-        'most_played_champions': most_played_champions,
-        'global_records': all_records,
-        'stats_by_queue': stats_by_queue,
-        'stats_by_champion': stats_by_champion,
-        'stats_by_player': stats_by_player,
-        'calculated_at': datetime.now(timezone.utc).isoformat()
-    }
+        
+        # Guardar en caché para acceso rápido
+        global_stats_cache.set(global_stats_data, all_matches)
+        
+        # Guardar en GitHub
+        success = save_global_stats(global_stats_data)
+        if success:
+            elapsed = time.time() - start_time
+            print(f"[stats] Estadísticas globales guardadas correctamente en GitHub (tiempo: {elapsed:.2f}s)")
+        else:
+            print("[stats] ⚠️ Error guardando estadísticas globales en GitHub")
+        
+        # Liberar memoria
+        del all_matches
+        gc.collect()
+        
+        return global_stats_data
+        
+    finally:
+        global_stats_cache.set_calculating(False)
 
-    
-    # Guardar en GitHub
-    success = save_global_stats(global_stats_data)
-    if success:
-        print("[stats] Estadísticas globales guardadas correctamente en GitHub")
-    else:
-        print("[stats] ⚠️ Error guardando estadísticas globales en GitHub")
-    
-    return global_stats_data
 
 
 @stats_bp.route('/estadisticas')
@@ -209,12 +273,20 @@ def estadisticas_globales():
     if current_queue != 'all' or selected_champion != 'all':
         print(f"[estadisticas_globales] Aplicando filtros - Cola: {current_queue}, Campeón: {selected_champion}")
         
-        # Obtener todas las partidas y aplicar filtros
-        all_matches = []
-        for player_name in stats_data.get('stats_by_player', {}):
-            player_data = stats_data['stats_by_player'][player_name]
-            for match in player_data.get('matches', []):
-                all_matches.append((player_name, match))
+        # OPTIMIZACIÓN: Usar caché si está disponible para evitar reconstruir all_matches
+        cache_data = global_stats_cache.get()
+        if cache_data.get('all_matches'):
+            all_matches = cache_data['all_matches']
+            print(f"[estadisticas_globales] Usando {len(all_matches)} partidas desde caché")
+        else:
+            # Fallback: reconstruir desde stats_by_player (solo si es necesario)
+            all_matches = []
+            for player_name in stats_data.get('stats_by_player', {}):
+                # Ya no tenemos 'matches' en stats_by_player por optimización de memoria
+                # Saltar filtros dinámicos si no hay datos en caché
+                print(f"[estadisticas_globales] No hay datos en caché para filtros dinámicos")
+                flash('Los filtros dinámicos requieren recalcular estadísticas. Por favor, actualiza las estadísticas primero.', 'warning')
+                return redirect(url_for('stats.estadisticas_globales'))
         
         # Aplicar filtro de cola
         if current_queue != 'all':
@@ -242,7 +314,7 @@ def estadisticas_globales():
             champion_counts = Counter(m.get('champion_name') for _, m in all_matches if m.get('champion_name'))
             most_played_champions = champion_counts.most_common(10)
             
-            # Calcular estadísticas por jugador
+            # Calcular estadísticas por jugador (optimizado)
             player_stats_filtered = {}
             for player_name, match in all_matches:
                 if player_name not in player_stats_filtered:
@@ -268,6 +340,10 @@ def estadisticas_globales():
             
             # Actualizar conteo total
             all_matches_count = total_matches
+            
+            # Liberar memoria
+            del all_matches
+            gc.collect()
         else:
             # No hay partidas con estos filtros - inicializar récords vacíos
             from services.stats_service import _default_record, PERSONAL_RECORD_KEYS
@@ -279,6 +355,7 @@ def estadisticas_globales():
             most_played_champions = []
             player_stats = []
             all_matches_count = 0
+
 
     else:
         # Sin filtros - usar datos pre-calculados

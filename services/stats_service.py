@@ -561,10 +561,25 @@ def extract_global_records(all_matches):
     matches_by_player = defaultdict(list)
     for player_name, match in all_matches:
         # Fix: Handle nested tuple case from caller
+        # Sometimes match can be a tuple if caller passes [(p, m) for m in (p, m) tuples]
+        actual_match = match
         if isinstance(match, tuple):
-            match = match[1]
-        match["jugador_nombre"] = player_name
-        matches_by_player[match.get("puuid")].append(match)
+            # If match is a tuple, it could be (player_name, match_dict) or deeper nesting
+            actual_match = match[1] if len(match) > 1 else match[0]
+        
+        # Ensure we have a dictionary, not a tuple
+        if isinstance(actual_match, tuple):
+            actual_match = actual_match[1] if len(actual_match) > 1 else actual_match[0]
+        
+        # Skip if we couldn't extract a valid match dict
+        if not isinstance(actual_match, dict):
+            continue
+            
+        # Create a copy to avoid modifying original data
+        match_copy = dict(actual_match)
+        match_copy["jugador_nombre"] = player_name
+        matches_by_player[match_copy.get("puuid")].append(match_copy)
+
 
     
     # Calcular rachas por jugador
@@ -608,48 +623,64 @@ def extract_global_records(all_matches):
     # Calcular récords individuales
     for player_name, match in all_matches:
         # Fix: Handle nested tuple case from caller
+        actual_match = match
         if isinstance(match, tuple):
-            match = match[1]
-        total_cs = match.get("total_minions_killed", 0) + match.get("neutral_minions_killed", 0)
-        kda = (match.get("kills", 0) + match.get("assists", 0)) / max(1, match.get("deaths", 0))
-        kp = match.get("kill_participation", 0)
+            actual_match = match[1] if len(match) > 1 else match[0]
+        
+        # Ensure we have a dictionary
+        if isinstance(actual_match, tuple):
+            actual_match = actual_match[1] if len(actual_match) > 1 else actual_match[0]
+        
+        if not isinstance(actual_match, dict):
+            continue
+        
+        # Use the match copy from earlier if available, otherwise create new copy
+        total_cs = actual_match.get("total_minions_killed", 0) + actual_match.get("neutral_minions_killed", 0)
+        kda = (actual_match.get("kills", 0) + actual_match.get("assists", 0)) / max(1, actual_match.get("deaths", 0))
+        kp = actual_match.get("kill_participation", 0)
+
 
         
         records_to_check = {
-            "longest_game": match.get("game_duration", 0),
-            "most_kills": match.get("kills", 0),
-            "most_deaths": match.get("deaths", 0),
-            "most_assists": match.get("assists", 0),
+            "longest_game": actual_match.get("game_duration", 0),
+            "most_kills": actual_match.get("kills", 0),
+            "most_deaths": actual_match.get("deaths", 0),
+            "most_assists": actual_match.get("assists", 0),
             "highest_kda": kda,
             "most_cs": total_cs,
-            "most_damage_dealt": match.get("total_damage_dealt_to_champions", 0),
-            "most_gold_earned": match.get("gold_earned", 0),
-            "most_vision_score": match.get("vision_score", 0),
-            "largest_killing_spree": match.get("largest_killing_spree", 0),
-            "largest_multikill": match.get("largestMultiKill", 0),
-            "most_time_spent_dead": match.get("total_time_spent_dead", 0),
-            "most_wards_placed": match.get("wards_placed", 0),
-            "most_wards_killed": match.get("wards_killed", 0),
-            "most_turret_kills": match.get("turret_kills", 0),
-            "most_inhibitor_kills": match.get("inhibitor_kills", 0),
-            "most_baron_kills": match.get("baron_kills", 0),
-            "most_dragon_kills": match.get("dragon_kills", 0),
-            "most_damage_taken": match.get("total_damage_taken", 0),
-            "most_total_heal": match.get("total_heal", 0),
-            "most_damage_shielded_on_teammates": match.get("total_damage_shielded_on_teammates", 0),
-            "most_time_ccing_others": match.get("time_ccing_others", 0),
-            "most_objectives_stolen": match.get("objectives_stolen", 0),
+            "most_damage_dealt": actual_match.get("total_damage_dealt_to_champions", 0),
+            "most_gold_earned": actual_match.get("gold_earned", 0),
+            "most_vision_score": actual_match.get("vision_score", 0),
+            "largest_killing_spree": actual_match.get("largest_killing_spree", 0),
+            "largest_multikill": actual_match.get("largestMultiKill", 0),
+            "most_time_spent_dead": actual_match.get("total_time_spent_dead", 0),
+            "most_wards_placed": actual_match.get("wards_placed", 0),
+            "most_wards_killed": actual_match.get("wards_killed", 0),
+            "most_turret_kills": actual_match.get("turret_kills", 0),
+            "most_inhibitor_kills": actual_match.get("inhibitor_kills", 0),
+            "most_baron_kills": actual_match.get("baron_kills", 0),
+            "most_dragon_kills": actual_match.get("dragon_kills", 0),
+            "most_damage_taken": actual_match.get("total_damage_taken", 0),
+            "most_total_heal": actual_match.get("total_heal", 0),
+            "most_damage_shielded_on_teammates": actual_match.get("total_damage_shielded_on_teammates", 0),
+            "most_time_ccing_others": actual_match.get("time_ccing_others", 0),
+            "most_objectives_stolen": actual_match.get("objectives_stolen", 0),
             "highest_kill_participation": kp,
-            "most_double_kills": match.get("doubleKills", 0),
-            "most_triple_kills": match.get("tripleKills", 0),
-            "most_quadra_kills": match.get("quadraKills", 0),
-            "most_penta_kills": match.get("pentaKills", 0),
+            "most_double_kills": actual_match.get("doubleKills", 0),
+            "most_triple_kills": actual_match.get("tripleKills", 0),
+            "most_quadra_kills": actual_match.get("quadraKills", 0),
+            "most_penta_kills": actual_match.get("pentaKills", 0),
         }
+        
+        # Create a copy with player_name for record creation
+        match_for_record = dict(actual_match)
+        match_for_record["jugador_nombre"] = player_name
         
         for record_key, value in records_to_check.items():
             records[record_key] = _update_record(
-                records[record_key], value, match, record_key
+                records[record_key], value, match_for_record, record_key
             )
+
     
     return records
 

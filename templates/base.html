@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cerditos y Valientes{% endblock %}</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .banner-img {
+            margin-top: 40px;
+            width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+        }
+        .small-text {
+            font-size: 0.6em;
+            font-weight: normal;
+        }
+        .small-text-stats {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        .win-rate-alto {
+            color: #228B22 !important;
+        }
+        .win-rate-bajo {
+            color: tomato !important;
+        }
+        .peak-elo {
+            color: gold;
+            font-weight: bold;
+        }
+        .estado-en-partida {
+            color: #007BFF !important;
+            font-weight: bold;
+        }
+        .table a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .link-estado {
+            color: #007BFF;
+        }
+        .link-perfil:hover, .link-estado:hover {
+            text-decoration: underline;
+        }
+        .opgg-link {
+            display: inline-block;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: white !important;
+            background-color: #0056b3;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .opgg-link:hover {
+            background-color: #004494;
+        }
+        .dark-mode .opgg-link {
+            background-color: #0056b3;
+            color: white !important;
+        }
+        .dark-mode .opgg-link:hover {
+            background-color: #003d82;
+        }
+        .dark-mode .link-estado {
+            color: #66b3ff;
+        }
+        .dark-mode .link-estado:hover {
+            color: #99ccff;
+        }
+        .dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .dark-mode .navbar {
+            background-color: #343a40 !important;
+            color: white;
+        }
+        .dark-mode .navbar-brand {
+            color: white !important;
+        }
+        .dark-mode .nav-link {
+            color: white !important;
+        }
+        .dark-mode .navbar-toggler-icon {
+            filter: invert(1) grayscale(100%) brightness(2);
+        }
+        .dark-mode .form-select,
+        .dark-mode .form-control {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .form-select option {
+            background-color: #343a40;
+            color: #fff;
+        }
+        .dark-mode .table tbody td {
+            border-color: #6c757d !important;
+        }
+        .dark-mode label {
+            color: #e0e0e0;
+        }
+        .dark-mode #lastUpdated {
+            color: #adb5bd;
+        }
+        .dark-mode .small-text {
+            color: #adb5bd;
+        }
+        .dark-mode .small-text-stats {
+            color: #adb5bd;
+        }
+        .dark-mode a {
+            color: #66b3ff;
+        }
+        .dark-mode a:hover {
+            color: #99ccff;
+        }
+        .table td, .table th {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .jugador-columna {
+            text-align: left;
+        }
+        .hidden {
+            display: none;
+        }
+        .imagen-jugador {
+            width: 30px;
+            height: 30px;
+            vertical-align: middle;
+            display: inline-block;
+            margin-right: 8px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .lateral-img {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 150px;
+            height: auto;
+            object-fit: cover;
+            display: none;
+        }
+        @media (min-width: 1500px) {
+            .lateral-img {
+                display: block;
+            }
+            #main-content {
+                padding-left: calc(150px + 40px);
+                padding-right: calc(150px + 40px);
+            }
+        }
+        .left-img {
+            left: 20px;
+        }
+        .right-img {
+            right: 20px;
+        }
+        #volumeSlider {
+            width: 100px;
+            margin-left: 10px;
+            vertical-align: middle;
+            height: 20px;
+            padding: 0;
+        }
+        #volumeSlider::-webkit-slider-runnable-track {
+            background: #6c757d;
+            height: 0.2em;
+            border-radius: 1em;
+        }
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #333;
+            border-radius: 50%;
+            margin-top: -6.5px;
+        }
+        #volumeSlider::-moz-range-track {
+            background: #6c757d;
+            height: 0.2em;
+            border-radius: 1em;
+        }
+        #volumeSlider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #333;
+            border: none;
+            border-radius: 50px;
+        }
+        .dark-mode #volumeSlider::-webkit-slider-runnable-track,
+        .dark-mode #volumeSlider::-moz-range-track {
+            background: #495057;
+        }
+        .dark-mode #volumeSlider::-webkit-slider-thumb {
+            background: #fff;
+        }
+        .dark-mode #volumeSlider::-moz-range-thumb {
+            background: #fff;
+        }
+        #toggle-mode {
+            font-weight: bold;
+        }
+        .table td {
+            white-space: nowrap;
+        }
+        .elo-columna {
+            text-align: center !important;
+            position: relative;
+        }
+        .elo-columna .elo-image {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            position: absolute;
+        }
+        .elo-columna .w-100 {
+            margin-left: 40px;
+            display: inline-block;
+            width: calc(100% - 40px);
+            text-align: center;
+        }
+        .lp-change-positive {
+            color: #228B22;
+            font-weight: bold;
+        }
+        .lp-change-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .lp-change-neutral {
+            color: #6c757d;
+            font-weight: normal;
+        }
+        .elo-diff-positive {
+            color: #228B22;
+            font-weight: bold;
+        }
+        .elo-diff-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .elo-diff-neutral {
+            color: #6c757d;
+            font-weight: normal;
+        }
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        #loading-screen img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+        {% block extra_styles %}{% endblock %}
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+<div id="loading-screen">
+    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Pantalla_de_carga.png" alt="Cargando...">
+</div>
+
+<div id="main-content" class="hidden">
+
+<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
+<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
+
+<audio id="backgroundAudio" loop>
+    <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
+    Tu navegador no soporta el elemento audio.
+</audio>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">
+            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+            Cerditos y Valientes
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'stats.estadisticas_globales' %}active{% endif %}" href="{{ url_for('stats.estadisticas_globales') }}">Estadísticas Globales</a>
+                </li>
+                {% block nav_items %}{% endblock %}
+            </ul>
+            <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
+                <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
+                <div class="d-flex align-items-center ms-lg-2">
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                        <i id="muteIcon" class="fas fa-microphone-slash"></i>
+                    </button>
+                    <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+</div> <!-- Cierre de main-content -->
+
+{% block modals %}{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<div id="template-data" data-has-player='{{ has_player_data | tojson if has_player_data is defined else "false" }}' style="display:none"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        var hasPlayerData = JSON.parse(document.getElementById('template-data').dataset.hasPlayer || 'false');
+        if (hasPlayerData) {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('main-content').classList.remove('hidden');
+        }
+
+        const backgroundAudio = document.getElementById('backgroundAudio');
+        const toggleAudioButton = document.getElementById('toggleAudio');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const muteIcon = document.getElementById('muteIcon');
+
+        const savedVolume = localStorage.getItem('backgroundAudioVolume');
+        if (savedVolume !== null) {
+            backgroundAudio.volume = parseFloat(savedVolume);
+            volumeSlider.value = parseFloat(savedVolume);
+        } else {
+            backgroundAudio.volume = 1.0;
+            volumeSlider.value = 1.0;
+        }
+
+        const savedMuteState = localStorage.getItem('backgroundAudioMuted');
+        if (savedMuteState === 'true') {
+            backgroundAudio.muted = true;
+            muteIcon.className = 'fas fa-microphone-slash';
+            toggleAudioButton.title = 'Desmutear Música';
+        } else {
+            backgroundAudio.muted = false;
+            muteIcon.className = 'fas fa-microphone-alt';
+            toggleAudioButton.title = 'Silenciar Música';
+            const playPromise = backgroundAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => console.log("Autoplay de audio bloqueado:", error));
+            }
+        }
+
+        toggleAudioButton.addEventListener('click', () => {
+            backgroundAudio.muted = !backgroundAudio.muted;
+            if (backgroundAudio.muted) {
+                muteIcon.className = 'fas fa-microphone-slash';
+                toggleAudioButton.title = 'Desmutear Música';
+                localStorage.setItem('backgroundAudioMuted', 'true');
+            } else {
+                muteIcon.className = 'fas fa-microphone-alt';
+                toggleAudioButton.title = 'Silenciar Música';
+                backgroundAudio.play().catch(e => console.log("Play fallido tras desmutear:", e));
+                localStorage.setItem('backgroundAudioMuted', 'false');
+            }
+        });
+
+        volumeSlider.addEventListener('input', function() {
+            backgroundAudio.volume = this.value;
+            localStorage.setItem('backgroundAudioVolume', this.value);
+            if (this.value > 0 && backgroundAudio.muted) {
+                toggleAudioButton.click();
+            } else if (this.value == 0 && !backgroundAudio.muted) {
+                toggleAudioButton.click();
+            }
+        });
+
+        const toggleModeButton = document.getElementById("toggle-mode");
+        const body = document.body;
+
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            toggleModeButton.textContent = 'Modo Claro';
+        } else {
+            toggleModeButton.textContent = 'Modo Oscuro';
+        }
+
+        toggleModeButton.addEventListener('click', function() {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            toggleModeButton.textContent = isDarkMode ? 'Modo Claro' : 'Modo Oscuro';
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+        });
+
+        const imagenesElo = {
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/PLATINUM.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
+            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/DIAMOND.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/MASTER.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/GRANDMASTER.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/CHALLENGER.png"
+        };
+
+        document.querySelectorAll(".elo-image").forEach(el => {
+            const elo = el.alt.toUpperCase();
+            if (imagenesElo[elo]) el.src = imagenesElo[elo];
+        });
+    });
+</script>
+
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>
