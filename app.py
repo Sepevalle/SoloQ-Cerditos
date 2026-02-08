@@ -98,8 +98,9 @@ def start_background_services(riot_api_key, github_token):
     start_rate_limiter()
     time.sleep(0.5)  # Pequeña pausa entre inicios
     
-    # 2. Servicio de Caché
-    start_cache_service()
+    # 2. Servicio de Caché (en thread daemon)
+    cache_thread = threading.Thread(target=start_cache_service, daemon=True)
+    cache_thread.start()
     time.sleep(0.5)
     
     # 3. Servicio de GitHub
@@ -114,9 +115,11 @@ def start_background_services(riot_api_key, github_token):
     start_data_updater(riot_api_key)
     time.sleep(0.5)
     
-    # 6. Stats Calculator (cálculo de estadísticas)
-    start_stats_calculator()
+    # 6. Stats Calculator (cálculo de estadísticas - en thread daemon)
+    stats_thread = threading.Thread(target=start_stats_calculator, daemon=True)
+    stats_thread.start()
     time.sleep(0.5)
+
     
     # 7. Keep Alive (mantener app activa)
     keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
