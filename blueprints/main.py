@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS, DDRAGON_VERSION
 from services.cache_service import player_cache
-from services.github_service import read_peak_elo, save_peak_elo
+from services.github_service import read_peak_elo, save_peak_elo, read_lp_history
 from services.stats_service import get_top_champions_for_player
-from services.match_service import get_player_match_history
+from services.match_service import get_player_match_history, calculate_streaks
 from utils.helpers import calcular_valor_clasificacion
+
 
 
 main_bp = Blueprint('main', __name__)
@@ -45,10 +46,16 @@ def index():
         for jugador in datos_jugadores:
             jugador["peak_elo"] = jugador["valor_clasificacion"]
 
-    # Calcular estadísticas de campeones para cada jugador
+    # Leer historial de LP para calcular cambios
+    _, lp_history = read_lp_history()
+    
+    # Calcular estadísticas adicionales para cada jugador
     for jugador in datos_jugadores:
         try:
             puuid = jugador.get('puuid')
+            queue_type = jugador.get('queue_type')
+            queue_id = 420 if queue_type == 'RANKED_SOLO_5x5' else 440 if queue_type == 'RANKED_FLEX_SR' else None
+            
             if puuid:
                 # Obtener historial de partidas del jugador
                 match_history = get_player_match_history(puuid, limit=50)
@@ -57,11 +64,64 @@ def index():
                 # Calcular top campeones
                 top_champions = get_top_champions_for_player(matches, limit=3)
                 jugador['top_champion_stats'] = top_champions
+                
+                # Calcular racha actual para esta cola
+                if queue_id:
+                    queue_matches = [m for m in matches if m.get('queue_id') == queue_id]
+                    streaks = calculate_streaks(queue_matches)
+                    jugador['current_win_streak'] = streaks.get('current_win_streak', 0)
+                    jugador['current_loss_streak'] = streaks.get('current_loss_streak', 0)
+                else:
+                    jugador['current_win_streak'] = 0
+                    jugador['current_loss_streak'] = 0
+                
+                # Calcular LP 24h para esta cola
+                if queue_id:
+                    now_utc = datetime.now(timezone.utc)
+                    one_day_ago = int((now_utc - timedelta(days=1)).timestamp() * 1000)
+                    
+                    lp_24h = 0
+                    wins_24h = 0
+                    losses_24h = 0
+                    
+                    # Filtrar partidas de las últimas 24h en esta cola
+                    recent_matches = [
+                        m for m in matches 
+                        if m.get('queue_id') == queue_id and m.get('game_end_timestamp', 0) > one_day_ago
+                    ]
+                    
+                    for m in recent_matches:
+                        lp_change = m.get('lp_change_this_game')
+                        if lp_change is not None:
+                            lp_24h += lp_change
+                        if m.get('win'):
+                            wins_24h += 1
+                        else:
+                            losses_24h += 1
+                    
+                    jugador['lp_change_24h'] = lp_24h
+                    jugador['wins_24h'] = wins_24h
+                    jugador['losses_24h'] = losses_24h
+                else:
+                    jugador['lp_change_24h'] = 0
+                    jugador['wins_24h'] = 0
+                    jugador['losses_24h'] = 0
             else:
                 jugador['top_champion_stats'] = []
+                jugador['current_win_streak'] = 0
+                jugador['current_loss_streak'] = 0
+                jugador['lp_change_24h'] = 0
+                jugador['wins_24h'] = 0
+                jugador['losses_24h'] = 0
         except Exception as e:
-            print(f"[index] Error calculando top campeones para {jugador.get('jugador', 'unknown')}: {e}")
+            print(f"[index] Error calculando estadísticas para {jugador.get('jugador', 'unknown')}: {e}")
             jugador['top_champion_stats'] = []
+            jugador['current_win_streak'] = 0
+            jugador['current_loss_streak'] = 0
+            jugador['lp_change_24h'] = 0
+            jugador['wins_24h'] = 0
+            jugador['losses_24h'] = 0
+
 
 
     # El timestamp de la caché está en segundos UTC (de time.time())

@@ -84,6 +84,9 @@ def _write_to_github(file_path, data, sha, token):
         "content": content_b64,
         "branch": "main"
     }
+    
+    # Solo incluir SHA si existe (para actualizar archivo existente)
+    # Si sha es None, estamos creando un archivo nuevo
     if sha:
         payload["sha"] = sha
 
@@ -92,23 +95,35 @@ def _write_to_github(file_path, data, sha, token):
         if response.status_code in (200, 201):
             print(f"[LP_TRACKER] Archivo {file_path} actualizado correctamente en GitHub.")
             return True
-        elif response.status_code == 422 and "sha" in response.text.lower():
-            # Error 422: el archivo puede haber sido creado/modificado por otro proceso
-            # Releer el SHA actual y reintentar una vez
-            print(f"[LP_TRACKER] Error 422 (sha issue), reintentando con SHA actualizado...")
-            _, new_sha = _read_json_from_github(file_path, token)
-            if new_sha and new_sha != sha:
-                payload["sha"] = new_sha
+        elif response.status_code == 422:
+            # Error 422: puede ser por SHA incorrecto o archivo no existe
+            error_text = response.text.lower()
+            if "sha" in error_text or "wasn't supplied" in error_text:
+                # Releer el SHA actual y reintentar una vez
+                print(f"[LP_TRACKER] Error 422 (sha issue), reintentando con SHA actualizado...")
+                _, new_sha = _read_json_from_github(file_path, token)
+                
+                # Si el archivo ahora existe, usar el nuevo SHA
+                if new_sha:
+                    payload["sha"] = new_sha
+                elif "sha" in payload:
+                    # Si no existe y teníamos un SHA incorrecto, quitarlo
+                    del payload["sha"]
+                
                 response = requests.put(url, headers=headers, json=payload, timeout=30)
                 if response.status_code in (200, 201):
                     print(f"[LP_TRACKER] Archivo {file_path} actualizado correctamente en reintento.")
                     return True
+            
             print(f"[LP_TRACKER] Error al actualizar {file_path} en GitHub: {response.status_code} - {response.text}")
+            return False
         else:
             print(f"[LP_TRACKER] Error al actualizar {file_path} en GitHub: {response.status_code} - {response.text}")
+            return False
     except Exception as e:
         print(f"[LP_TRACKER] Excepción al escribir en GitHub para {file_path}: {e}")
-    return False
+        return False
+
 
 
 # --- LÓGICA DE LA API DE RIOT (SIMPLIFICADA) ---
