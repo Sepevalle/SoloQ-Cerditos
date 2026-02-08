@@ -3,7 +3,9 @@ Servicio de estadísticas y récords.
 Calcula estadísticas globales y personales, récords de partidas.
 """
 
+import time
 from collections import Counter, defaultdict
+
 from config.constants import (
     RECORD_DISPLAY_NAMES, 
     RECORD_ICONS, 
