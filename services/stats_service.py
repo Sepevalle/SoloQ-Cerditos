@@ -560,8 +560,12 @@ def extract_global_records(all_matches):
     # Agrupar por jugador para rachas
     matches_by_player = defaultdict(list)
     for player_name, match in all_matches:
+        # Fix: Handle nested tuple case from caller
+        if isinstance(match, tuple):
+            match = match[1]
         match["jugador_nombre"] = player_name
         matches_by_player[match.get("puuid")].append(match)
+
     
     # Calcular rachas por jugador
     for puuid, player_matches in matches_by_player.items():
@@ -603,9 +607,13 @@ def extract_global_records(all_matches):
     
     # Calcular récords individuales
     for player_name, match in all_matches:
+        # Fix: Handle nested tuple case from caller
+        if isinstance(match, tuple):
+            match = match[1]
         total_cs = match.get("total_minions_killed", 0) + match.get("neutral_minions_killed", 0)
         kda = (match.get("kills", 0) + match.get("assists", 0)) / max(1, match.get("deaths", 0))
         kp = match.get("kill_participation", 0)
+
         
         records_to_check = {
             "longest_game": match.get("game_duration", 0),

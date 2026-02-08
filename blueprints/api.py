@@ -48,16 +48,29 @@ def get_personal_records(puuid):
         champion_filter = request.args.get('champion')
         if champion_filter == 'all':
             champion_filter = None
+            
+        queue_filter = request.args.get('queue')
+        if queue_filter == 'all':
+            queue_filter = None
 
         # Obtener historial de partidas
         historial = get_player_match_history(puuid, riot_id=riot_id, limit=-1)
         matches = historial.get('matches', [])
+        
+        # Aplicar filtro de cola si está presente
+        if queue_filter:
+            try:
+                queue_id = int(queue_filter)
+                matches = [m for m in matches if m.get('queue_id') == queue_id]
+            except (ValueError, TypeError):
+                pass
 
         # Calcular récords
         records = calculate_personal_records(
             puuid, matches, player_name, riot_id, 
             champion_filter=champion_filter
         )
+
 
         # Convertir a lista para JSON
         display_records = []

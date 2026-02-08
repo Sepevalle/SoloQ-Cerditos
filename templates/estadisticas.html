@@ -556,10 +556,16 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const champions = await response.json();
-                champions.forEach(champion => {
+                // Filter only played champions and extract names
+                const playedChampions = champions
+                    .filter(c => c.played)
+                    .map(c => c.name)
+                    .sort();
+                
+                playedChampions.forEach(championName => {
                     const option = document.createElement('option');
-                    option.value = champion;
-                    option.textContent = champion;
+                    option.value = championName;
+                    option.textContent = championName;
                     championSelect.appendChild(option);
                 });
                 championSelect.disabled = false;
@@ -567,6 +573,7 @@
                 console.error('Error fetching player champions:', error);
             }
         }
+
 
         // Enable show button and fetch champions when an account is selected
         accountSelect.addEventListener('change', function() {
