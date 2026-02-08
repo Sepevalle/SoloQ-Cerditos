@@ -379,8 +379,9 @@
                                 KDA: {{ record.kills | thousands_separator }}/{{ record.deaths | thousands_separator }}/{{ record.assists | thousands_separator }} ({{ '%.2f' % record.kda }})<br>
                                 Fecha: {{ record.game_date | format_timestamp }}<br>
                                 Duración: {{ (record.game_duration / 60) | int }}m {{ (record.game_duration % 60) | int }}s
-                                {% if record.value > 0 and record.game_date > 0 and record.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
+                                {% if record.value is not none and record.value > 0 and record.game_date > 0 and record.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
                             </small>
+
                         </div>
                     </div>
                 </div>
