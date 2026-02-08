@@ -3,7 +3,10 @@ from datetime import datetime, timezone
 from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS, DDRAGON_VERSION
 from services.cache_service import player_cache
 from services.github_service import read_peak_elo, save_peak_elo
+from services.stats_service import get_top_champions_for_player
+from services.match_service import get_player_match_history
 from utils.helpers import calcular_valor_clasificacion
+
 
 main_bp = Blueprint('main', __name__)
 
@@ -41,6 +44,25 @@ def index():
         print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
         for jugador in datos_jugadores:
             jugador["peak_elo"] = jugador["valor_clasificacion"]
+
+    # Calcular estadísticas de campeones para cada jugador
+    for jugador in datos_jugadores:
+        try:
+            puuid = jugador.get('puuid')
+            if puuid:
+                # Obtener historial de partidas del jugador
+                match_history = get_player_match_history(puuid, limit=50)
+                matches = match_history.get('matches', [])
+                
+                # Calcular top campeones
+                top_champions = get_top_champions_for_player(matches, limit=3)
+                jugador['top_champion_stats'] = top_champions
+            else:
+                jugador['top_champion_stats'] = []
+        except Exception as e:
+            print(f"[index] Error calculando top campeones para {jugador.get('jugador', 'unknown')}: {e}")
+            jugador['top_champion_stats'] = []
+
 
     # El timestamp de la caché está en segundos UTC (de time.time())
     dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)

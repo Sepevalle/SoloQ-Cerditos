@@ -93,31 +93,17 @@ def _build_player_profile(game_name):
         streaks = calculate_streaks(flexq_matches_rachas)
         perfil['flexq'].update(streaks)
     
-    # Estadísticas por campeón
-    champion_stats = {}
-    for match in matches:
-        champ = match.get('champion_name')
-        if champ and champ != 'Desconocido':
-            if champ not in champion_stats:
-                champion_stats[champ] = {
-                    'games_played': 0, 'wins': 0, 'losses': 0,
-                    'kills': 0, 'deaths': 0, 'assists': 0
-                }
-            cs = champion_stats[champ]
-            cs['games_played'] += 1
-            if match.get('win'):
-                cs['wins'] += 1
-            else:
-                cs['losses'] += 1
-            cs['kills'] += match.get('kills', 0)
-            cs['deaths'] += match.get('deaths', 0)
-            cs['assists'] += match.get('assists', 0)
+    # Estadísticas por campeón para cada cola
+    # SoloQ (queue_id 420)
+    if 'soloq' in perfil:
+        soloq_matches_for_champs = [m for m in matches if m.get('queue_id') == 420]
+        perfil['soloq']['top_champion_stats'] = get_top_champions_for_player(soloq_matches_for_champs, limit=3)
     
-    for champ, stats in champion_stats.items():
-        stats['win_rate'] = (stats['wins'] / stats['games_played'] * 100) if stats['games_played'] > 0 else 0
-        stats['kda'] = (stats['kills'] + stats['assists']) / max(1, stats['deaths'])
-    
-    perfil['champion_stats'] = sorted(champion_stats.items(), key=lambda x: x[1]['games_played'], reverse=True)
+    # FlexQ (queue_id 440)
+    if 'flexq' in perfil:
+        flexq_matches_for_champs = [m for m in matches if m.get('queue_id') == 440]
+        perfil['flexq']['top_champion_stats'] = get_top_champions_for_player(flexq_matches_for_champs, limit=3)
+
     
     # Ordenar historial por fecha
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
