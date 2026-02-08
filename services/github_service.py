@@ -148,51 +148,66 @@ def read_puuids():
     """Lee el archivo de PUUIDs."""
     content, _ = read_file_from_github("puuids.json")
     if content and isinstance(content, dict):
-        return content
-    return {}
+        return True, content
+    return False, {}
+
 
 
 def save_puuids(puuid_dict):
     """Guarda el diccionario de PUUIDs."""
+    # Leer primero para obtener el SHA si existe
+    _, sha = read_file_from_github("puuids.json", use_raw=False)
     return write_file_to_github(
         "puuids.json",
         puuid_dict,
-        message="Actualizar PUUIDs"
+        message="Actualizar PUUIDs",
+        sha=sha
     )
+
 
 
 def read_peak_elo():
     """Lee el archivo de peak ELO."""
     content, _ = read_file_from_github("peak_elo.json")
     if content and isinstance(content, dict):
-        return content
-    return {}
+        return True, content
+    return False, {}
+
 
 
 def save_peak_elo(peak_elo_dict):
     """Guarda el diccionario de peak ELO."""
+    # Leer primero para obtener el SHA si existe
+    _, sha = read_file_from_github("peak_elo.json", use_raw=False)
     return write_file_to_github(
         "peak_elo.json",
         peak_elo_dict,
-        message="Actualizar Peak ELO"
+        message="Actualizar Peak ELO",
+        sha=sha
     )
+
 
 
 def read_lp_history():
     """Lee el archivo de historial de LP."""
     content, _ = read_file_from_github("lp_history.json")
     if content and isinstance(content, dict):
-        return content
-    return {}
+        return True, content
+    return False, {}
+
 
 
 def save_lp_history(lp_history):
     """Guarda el historial de LP."""
+    # Leer primero para obtener el SHA si existe
+    _, sha = read_file_from_github("lp_history.json", use_raw=False)
     return write_file_to_github(
         "lp_history.json",
         lp_history,
-        message="Actualizar LP History"
+        message="Actualizar LP History",
+        sha=sha
     )
+
 
 
 def read_player_match_history(puuid):
@@ -207,11 +222,15 @@ def read_player_match_history(puuid):
 def save_player_match_history(puuid, historial_data):
     """Guarda el historial de partidas de un jugador."""
     file_path = f"match_history/{puuid}.json"
+    # Leer primero para obtener el SHA si existe
+    _, sha = read_file_from_github(file_path, use_raw=False)
     return write_file_to_github(
         file_path,
         historial_data,
-        message=f"Actualizar historial de partidas para {puuid}"
+        message=f"Actualizar historial de partidas para {puuid}",
+        sha=sha
     )
+
 
 
 def read_analysis(puuid):

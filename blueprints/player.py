@@ -39,8 +39,9 @@ def _build_player_profile(game_name):
         entry['peak_elo'] = peak
     
     # Obtener historial de partidas
-    lp_history = read_lp_history()
+    _, lp_history = read_lp_history()
     player_lp = lp_history.get(puuid, {})
+
     
     historial = get_player_match_history(puuid, riot_id=game_name, limit=-1)
     matches = historial.get('matches', [])

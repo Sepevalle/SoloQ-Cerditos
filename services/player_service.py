@@ -15,7 +15,9 @@ def get_all_accounts():
 
 def get_all_puuids():
     """Obtiene el diccionario completo de PUUIDs."""
-    return read_puuids()
+    success, puuids = read_puuids()
+    return puuids if success else {}
+
 
 
 def get_puuid_for_riot_id(riot_id):
