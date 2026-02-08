@@ -104,7 +104,8 @@ def start_background_services(riot_api_key, github_token):
     time.sleep(0.5)
     
     # 3. Servicio de GitHub
-    start_github_service(github_token)
+    start_github_service()
+
     time.sleep(0.5)
     
     # 4. LP Tracker (tracker de ELO)
