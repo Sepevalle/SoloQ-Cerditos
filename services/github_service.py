@@ -300,7 +300,45 @@ def save_player_permission(puuid, content, sha=None):
     )
 
 
+def read_global_stats():
+    """
+    Lee las estadísticas globales calculadas desde GitHub.
+    
+    Returns:
+        tuple: (exito, datos) donde datos incluye las estadísticas y timestamp
+    """
+    content, _ = read_file_from_github("global_stats.json")
+    if content and isinstance(content, dict):
+        return True, content
+    return False, {}
+
+
+def save_global_stats(stats_data):
+    """
+    Guarda las estadísticas globales en GitHub.
+    
+    Args:
+        stats_data: Diccionario con estadísticas globales
+    
+    Returns:
+        bool: True si se guardó correctamente
+    """
+    # Añadir timestamp de cuándo se calcularon
+    from datetime import datetime, timezone
+    stats_data['calculated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    # Leer primero para obtener el SHA si existe
+    _, sha = read_file_from_github("global_stats.json", use_raw=False)
+    return write_file_to_github(
+        "global_stats.json",
+        stats_data,
+        message="Actualizar estadísticas globales",
+        sha=sha
+    )
+
+
 def start_github_service():
+
     """
     Función de inicio para el servicio de GitHub.
     Verifica la conectividad con GitHub al iniciar.

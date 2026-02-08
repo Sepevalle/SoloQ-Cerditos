@@ -150,9 +150,32 @@
 
 <div class="container mt-5 pt-5">
     <h1 class="text-center mb-4">Estadísticas Globales de la Temporada</h1>
+    
+    <!-- Botón de actualización y estado -->
+    <div class="text-center mb-4">
+        <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
+            <form action="{{ url_for('stats.actualizar_estadisticas') }}" method="post" class="m-0">
+                <button type="submit" class="btn btn-warning btn-lg">
+                    <i class="fas fa-sync-alt me-2"></i>Actualizar Estadísticas
+                </button>
+            </form>
+            {% if last_updated %}
+            <span class="text-muted">
+                <i class="fas fa-clock me-1"></i>Última actualización: {{ last_updated }}
+            </span>
+            {% endif %}
+        </div>
+        {% if needs_update %}
+        <div class="alert alert-info mt-3" role="alert">
+            <i class="fas fa-info-circle me-2"></i>No hay estadísticas globales calculadas. 
+            Haz clic en "Actualizar Estadísticas" para generarlas.
+        </div>
+        {% endif %}
+    </div>
 
     <div class="text-center mb-4">
         <form action="{{ url_for('stats.estadisticas_globales') }}" method="get" class="row justify-content-center align-items-center g-2">
+
 
             <div class="col-md-3">
                 <label for="queue" class="visually-hidden">Cola</label>
