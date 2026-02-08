@@ -317,7 +317,8 @@
                                 {% endif %}
                                 KDA: {{ global_stats.global_records.largest_multikill.kills | thousands_separator }}/{{ global_stats.global_records.largest_multikill.deaths | thousands_separator }}/{{ global_stats.global_records.largest_multikill.assists | thousands_separator }} ({{ '%.2f' % global_stats.global_records.largest_multikill.kda }})<br>
                                 Fecha: {{ global_stats.global_records.largest_multikill.game_date | format_timestamp }}
-                                {% if global_stats.global_records.largest_multikill.value > 0 and global_stats.global_records.largest_multikill.game_date > 0 and global_stats.global_records.largest_multikill.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
+                                {% if global_stats.global_records.largest_multikill.value and global_stats.global_records.largest_multikill.value > 0 and global_stats.global_records.largest_multikill.game_date and global_stats.global_records.largest_multikill.game_date > 0 and global_stats.global_records.largest_multikill.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
+
                             </small>
                         </div>
                     </div>
