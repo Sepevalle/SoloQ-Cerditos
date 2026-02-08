@@ -337,8 +337,47 @@ def save_global_stats(stats_data):
     )
 
 
-def start_github_service():
+def read_stats_reload_config():
+    """
+    Lee la configuración de recarga forzada de estadísticas.
+    Similar al sistema de permisos de IA.
+    
+    Returns:
+        tuple: (forzar_recarga, sha, contenido_completo)
+    """
+    file_path = "config/stats_reload.json"
+    content, sha = read_file_from_github(file_path)
+    
+    if content and isinstance(content, dict):
+        return content.get("forzar_recarga") == "SI", sha, content
+    
+    # Si no existe, crear por defecto con recarga desactivada
+    default_content = {"forzar_recarga": "NO", "razon": "Inicializado"}
+    save_stats_reload_config(default_content)
+    return False, None, default_content
 
+
+def save_stats_reload_config(content, sha=None):
+    """
+    Guarda la configuración de recarga forzada de estadísticas.
+    
+    Args:
+        content: Diccionario con la configuración
+        sha: SHA del archivo existente (opcional)
+    
+    Returns:
+        bool: True si se guardó correctamente
+    """
+    file_path = "config/stats_reload.json"
+    return write_file_to_github(
+        file_path,
+        content,
+        message="Actualizar configuración de recarga de estadísticas",
+        sha=sha
+    )
+
+
+def start_github_service():
     """
     Función de inicio para el servicio de GitHub.
     Verifica la conectividad con GitHub al iniciar.

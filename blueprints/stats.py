@@ -3,9 +3,10 @@ from collections import Counter
 from datetime import datetime, timezone, timedelta
 from config.settings import DDRAGON_VERSION, QUEUE_NAMES
 from services.cache_service import player_cache
-from services.github_service import read_global_stats, save_global_stats
+from services.github_service import read_global_stats, save_global_stats, read_stats_reload_config, save_stats_reload_config
 from services.match_service import get_player_match_history, filter_matches_by_queue, filter_matches_by_champion
 from services.stats_service import extract_global_records, calculate_global_stats
+
 
 stats_bp = Blueprint('stats', __name__)
 
@@ -332,8 +333,18 @@ def estadisticas_globales():
 def _get_time_until_next_calculation():
     """
     Calcula el tiempo restante hasta el próximo cálculo permitido.
+    Verifica también si hay una recarga forzada configurada en GitHub.
     Retorna (puede_calcular, segundos_restantes, tiempo_formateado)
     """
+    # Verificar si hay recarga forzada desde GitHub
+    try:
+        forzar_recarga, sha, config = read_stats_reload_config()
+        if forzar_recarga:
+            print("[_get_time_until_next_calculation] Recarga forzada detectada desde GitHub")
+            return True, 0, "0s (forzado)"
+    except Exception as e:
+        print(f"[_get_time_until_next_calculation] Error leyendo config de recarga: {e}")
+    
     success, stats_data = read_global_stats()
     
     if not success or not stats_data:
@@ -376,48 +387,75 @@ def _get_time_until_next_calculation():
         return True, 0, "0s"
 
 
+
 @stats_bp.route('/estadisticas/actualizar', methods=['POST'])
 def actualizar_estadisticas():
     """
     Endpoint para solicitar actualización de estadísticas globales.
-    Verifica que no se haya calculado recientemente.
+    Verifica que no se haya calculado recientemente, a menos que haya recarga forzada.
     """
     print("[actualizar_estadisticas] Solicitud de actualización recibida")
     
-    # Verificar tiempo desde último cálculo
-    can_calculate, seconds_remaining, time_str = _get_time_until_next_calculation()
+    # Verificar si hay recarga forzada
+    forzar_recarga = False
+    config_sha = None
+    try:
+        forzar_recarga, config_sha, config = read_stats_reload_config()
+    except Exception as e:
+        print(f"[actualizar_estadisticas] Error leyendo config de recarga: {e}")
     
-    if not can_calculate:
-        message = f'Las estadísticas se calcularon recientemente. Espera {time_str} antes de solicitar un nuevo cálculo.'
-        print(f"[actualizar_estadisticas] {message}")
+    # Verificar tiempo desde último cálculo (solo si no hay recarga forzada)
+    if not forzar_recarga:
+        can_calculate, seconds_remaining, time_str = _get_time_until_next_calculation()
         
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({
-                'success': False,
-                'error': message,
-                'seconds_remaining': seconds_remaining,
-                'time_remaining': time_str
-            }), 429  # Too Many Requests
-        
-        flash(message, 'warning')
-        return redirect(url_for('stats.estadisticas_globales'))
+        if not can_calculate:
+            message = f'Las estadísticas se calcularon recientemente. Espera {time_str} antes de solicitar un nuevo cálculo.'
+            print(f"[actualizar_estadisticas] {message}")
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': False,
+                    'error': message,
+                    'seconds_remaining': seconds_remaining,
+                    'time_remaining': time_str
+                }), 429  # Too Many Requests
+            
+            flash(message, 'warning')
+            return redirect(url_for('stats.estadisticas_globales'))
+    
+    if forzar_recarga:
+        print("[actualizar_estadisticas] Recarga forzada activada - ignorando límite de tiempo")
     
     try:
         stats_data = _calculate_and_save_global_stats()
         
+        # Si había recarga forzada, desactivarla después de usarla
+        if forzar_recarga and config_sha:
+            try:
+                new_config = {"forzar_recarga": "NO", "razon": "Recarga completada automáticamente"}
+                save_stats_reload_config(new_config, sha=config_sha)
+                print("[actualizar_estadisticas] Configuración de recarga reseteada a NO")
+            except Exception as e:
+                print(f"[actualizar_estadisticas] Error reseteando config: {e}")
+        
         # Calcular tiempo de procesamiento
         calculated_at = stats_data.get('calculated_at', 'Desconocido')
+        
+        success_message = 'Estadísticas globales actualizadas correctamente'
+        if forzar_recarga:
+            success_message += ' (recarga forzada desde GitHub)'
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
                 'success': True,
-                'message': 'Estadísticas actualizadas correctamente',
+                'message': success_message,
                 'calculated_at': calculated_at,
                 'total_matches': stats_data.get('all_matches_count', 0),
-                'total_players': stats_data.get('total_players', 0)
+                'total_players': stats_data.get('total_players', 0),
+                'forced_reload': forzar_recarga
             })
         
-        flash('Estadísticas globales actualizadas correctamente', 'success')
+        flash(success_message, 'success')
         return redirect(url_for('stats.estadisticas_globales'))
         
     except Exception as e:
