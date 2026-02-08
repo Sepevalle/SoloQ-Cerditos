@@ -1056,28 +1056,54 @@ def guardar_puuids_en_github(puuid_dict):
 def _read_player_match_history_from_github(puuid, riot_id=None):
     """Lee el historial de partidas de un jugador directamente desde la API de GitHub."""
     identifier = riot_id if riot_id else f"PUUID: {puuid}"
-    url = f"https://api.github.com/repos/Sepevalle/SoloQ-Cerditos/contents/match_history/{puuid}.json"
+    # Primero intentar leer desde raw.githubusercontent (más rápido para archivos grandes públicos)
+    raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/match_history/{puuid}.json"
+    try:
+        raw_resp = requests.get(raw_url, timeout=30)
+        if raw_resp.status_code == 200:
+            try:
+                print(f"[_read_player_match_history_from_github] Historial para {identifier} leído desde raw.githubusercontent (primario).")
+                return raw_resp.json()
+            except Exception:
+                try:
+                    return json.loads(raw_resp.text)
+                except Exception as e_raw_parse:
+                    print(f"[_read_player_match_history_from_github] Error parseando JSON desde raw para {identifier}: {e_raw_parse}")
+        else:
+            print(f"[_read_player_match_history_from_github] raw.githubusercontent devolvió {raw_resp.status_code} para {identifier}. Usando Contents API.")
+    except Exception as e_raw:
+        print(f"[_read_player_match_history_from_github] Error leyendo raw.githubusercontent para {identifier}: {e_raw}. Usando Contents API.")
+
+    # Fallback: usar GitHub Contents API (necesario para repos privados y para obtener SHA al escribir)
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/match_history/{puuid}.json"
     token = os.environ.get('GITHUB_TOKEN')
     headers = {"Accept": "application/vnd.github.v3+json"}
     if token:
         headers["Authorization"] = f"token {token}"
 
-    print(f"[_read_player_match_history_from_github] Leyendo historial para {identifier} desde API: {url}")
+    print(f"[_read_player_match_history_from_github] Leyendo historial para {identifier} desde Contents API: {url}")
     try:
         resp = requests.get(url, headers=headers, timeout=30)
         if resp.status_code == 200:
             content = resp.json()
-            file_content = base64.b64decode(content['content']).decode('utf-8')
-            print(f"[_read_player_match_history_from_github] Historial para {identifier} leído exitosamente de API GitHub.")
-            return json.loads(file_content)
+            try:
+                file_content = base64.b64decode(content['content']).decode('utf-8')
+                print(f"[_read_player_match_history_from_github] Historial para {identifier} leído exitosamente desde Contents API.")
+                return json.loads(file_content)
+            except Exception as e_dec:
+                print(f"[_read_player_match_history_from_github] Error decodificando content desde Contents API para {identifier}: {e_dec}")
+                try:
+                    return json.loads(content.get('content', ''))
+                except Exception:
+                    pass
         elif resp.status_code == 404:
-            print(f"[_read_player_match_history_from_github] No se encontró historial para {identifier} en API GitHub. Se creará uno nuevo.")
+            print(f"[_read_player_match_history_from_github] No se encontró historial para {identifier} en Contents API. Se creará uno nuevo.")
             return {}
         else:
-            print(f"[_read_player_match_history_from_github] Error API: {resp.status_code}")
+            print(f"[_read_player_match_history_from_github] Error Contents API: {resp.status_code}")
             resp.raise_for_status()
     except Exception as e:
-        print(f"[_read_player_match_history_from_github] Error leyendo el historial para {identifier} de API GitHub: {e}")
+        print(f"[_read_player_match_history_from_github] Error leyendo el historial para {identifier} de Contents API: {e}")
     return {}
 
 def get_player_match_history(puuid, riot_id=None, limit=None):
@@ -2343,6 +2369,43 @@ def _get_player_profile_data(game_name):
     perfil['champion_stats'] = sorted(champion_stats.items(), key=lambda x: x[1]['games_played'], reverse=True)
 
     perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+
+    # Ajuste para la vista de jugador: recalcular `lp_change_24h` usando
+    # únicamente las ÚLTIMAS 30 partidas por cola. Esto deja el resto de
+    # cálculos (estadísticas globales, top champions, etc.) usando el
+    # historial completo.
+    try:
+        now_utc = datetime.now(timezone.utc)
+        one_day_ago_timestamp_ms = int((now_utc - timedelta(days=1)).timestamp() * 1000)
+
+        # Para cada cola (soloq/flexq) recalcular usando sólo las últimas 30 partidas
+        queue_limits = [('soloq', 420), ('flexq', 440)]
+        for queue_key, queue_id in queue_limits:
+            if queue_key in perfil:
+                # Seleccionar partidas de la cola, ya están ordenadas por timestamp desc
+                partidas_cola = [p for p in perfil['historial_partidas'] if p.get('queue_id') == queue_id]
+                últimas_30 = partidas_cola[:30]
+
+                lp_24h = 0
+                wins_24h = 0
+                losses_24h = 0
+
+                for m in últimas_30:
+                    if m.get('game_end_timestamp', 0) > one_day_ago_timestamp_ms:
+                        lp_change = m.get('lp_change_this_game')
+                        if lp_change is not None:
+                            lp_24h += lp_change
+                        if m.get('win'):
+                            wins_24h += 1
+                        else:
+                            losses_24h += 1
+
+                perfil[queue_key]['lp_change_24h'] = lp_24h
+                perfil[queue_key]['wins_24h'] = wins_24h
+                perfil[queue_key]['losses_24h'] = losses_24h
+    except Exception as e:
+        print(f"[_get_player_profile_data] Error recalculando lp_change_24h para jugador {game_name}: {e}")
+
     print(f"[_get_player_profile_data] Perfil de {game_name} preparado.")
     return perfil
 
