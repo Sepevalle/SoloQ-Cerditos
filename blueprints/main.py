@@ -1,24 +1,30 @@
 from flask import Blueprint, render_template
-from services.data_processing import obtener_datos_jugadores, leer_peak_elo, get_peak_elo_key, guardar_peak_elo_en_github
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
+from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS, DDRAGON_VERSION
+from services.cache_service import player_cache
+from services.github_service import read_peak_elo, save_peak_elo
+from utils.helpers import calcular_valor_clasificacion
 
 main_bp = Blueprint('main', __name__)
 
-# --- CONFIGURACIÓN DE ZONA HORARIA ---
-TARGET_TIMEZONE = timezone(timedelta(hours=2))
+
+def _get_peak_elo_key(jugador):
+    """Genera la clave para peak elo basada en jugador."""
+    return f"{ACTIVE_SPLIT_KEY}|{jugador['queue_type']}|{jugador['puuid']}"
+
 
 @main_bp.route('/')
 def index():
     """Renderiza la página principal con la lista de jugadores."""
     print("[index] Petición recibida para la página principal.")
-    datos_jugadores, timestamp = obtener_datos_jugadores()
+    datos_jugadores, timestamp = player_cache.get()
     
-    lectura_exitosa, peak_elo_dict = leer_peak_elo()
+    lectura_exitosa, peak_elo_dict = read_peak_elo()
 
     if lectura_exitosa:
         actualizado = False
         for jugador in datos_jugadores:
-            key = get_peak_elo_key(jugador)
+            key = _get_peak_elo_key(jugador)
             peak = peak_elo_dict.get(key, 0)
 
             valor = jugador["valor_clasificacion"]
@@ -30,7 +36,7 @@ def index():
             jugador["peak_elo"] = peak
 
         if actualizado:
-            guardar_peak_elo_en_github(peak_elo_dict)
+            save_peak_elo(peak_elo_dict)
     else:
         print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
         for jugador in datos_jugadores:
@@ -42,7 +48,12 @@ def index():
     dt_target = dt_utc.astimezone(TARGET_TIMEZONE)
     ultima_actualizacion = dt_target.strftime("%d/%m/%Y %H:%M:%S")
     
+    split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
+    
     print("[index] Renderizando index.html.")
-    return render_template('index.html', datos_jugadores=datos_jugadores,
+    return render_template('index.html', 
+                           datos_jugadores=datos_jugadores,
                            ultima_actualizacion=ultima_actualizacion,
-                           ddragon_version="14.9.1")
+                           ddragon_version=DDRAGON_VERSION,
+                           split_activo_nombre=split_activo_nombre,
+                           has_player_data=bool(datos_jugadores))
