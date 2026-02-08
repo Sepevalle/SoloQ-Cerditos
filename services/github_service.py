@@ -341,12 +341,14 @@ def read_stats_reload_config():
     """
     Lee la configuración de recarga forzada de estadísticas.
     Similar al sistema de permisos de IA.
+    SIEMPRE usa la API (no raw) para evitar caché de GitHub.
     
     Returns:
         tuple: (forzar_recarga, sha, contenido_completo)
     """
     file_path = "config/stats_reload.json"
-    content, sha = read_file_from_github(file_path)
+    # Forzar uso de API para obtener siempre la versión más reciente
+    content, sha = read_file_from_github(file_path, use_raw=False)
     
     if content and isinstance(content, dict):
         return content.get("forzar_recarga") == "SI", sha, content
@@ -355,6 +357,7 @@ def read_stats_reload_config():
     default_content = {"forzar_recarga": "NO", "razon": "Inicializado"}
     save_stats_reload_config(default_content)
     return False, None, default_content
+
 
 
 def save_stats_reload_config(content, sha=None):
