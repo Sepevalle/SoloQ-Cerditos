@@ -245,7 +245,9 @@ def elo_tracker_worker(riot_api_key, github_token):
 
             # 4. Guardar el historial actualizado en GitHub
             if snapshots_added > 0:
-                _write_to_github(LP_HISTORY_FILE_PATH, lp_history, lp_history_sha, github_token)
+                # RELEER PARA OBTENER SHA ACTUAL (puede haber cambiado)
+                _, current_sha = _read_json_from_github(LP_HISTORY_FILE_PATH, github_token)
+                _write_to_github(LP_HISTORY_FILE_PATH, lp_history, current_sha, github_token)
                 print(f"[{datetime.now()}] [LP_TRACKER] Snapshot de ELO completado. "
                       f"Añadidos: {snapshots_added}, Saltados: {snapshots_skipped}. "
                       f"Próxima ejecución en 5 minutos.")

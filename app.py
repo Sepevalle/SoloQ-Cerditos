@@ -108,9 +108,11 @@ def start_background_services(riot_api_key, github_token):
 
     time.sleep(0.5)
     
-    # 4. LP Tracker (tracker de ELO)
-    start_lp_tracker(riot_api_key, github_token)
+    # 4. LP Tracker (tracker de ELO - en thread daemon)
+    lp_thread = threading.Thread(target=start_lp_tracker, args=(riot_api_key, github_token), daemon=True)
+    lp_thread.start()
     time.sleep(0.5)
+
     
     # 5. Data Updater (actualización de datos)
     start_data_updater(riot_api_key)
