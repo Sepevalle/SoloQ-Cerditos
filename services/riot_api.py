@@ -144,7 +144,10 @@ def make_api_request(url, retries=3, backoff_factor=0.5, is_spectator_api=False)
     
     return response
 
-DDRAGON_VERSION = "14.9.1"
+# Import config.settings to update the version there too
+import config.settings as settings
+
+DDRAGON_VERSION = settings.DDRAGON_VERSION
 
 def actualizar_version_ddragon():
     global DDRAGON_VERSION
@@ -153,12 +156,16 @@ def actualizar_version_ddragon():
         url = f"{BASE_URL_DDRAGON}/api/versions.json"
         response = requests.get(url, timeout=5)
         if response.status_code == 200:
-            DDRAGON_VERSION = response.json()[0]
+            new_version = response.json()[0]
+            DDRAGON_VERSION = new_version
+            # Also update the version in config.settings so blueprints see the new version
+            settings.DDRAGON_VERSION = new_version
             print(f"[actualizar_version_ddragon] Versión de Data Dragon establecida a: {DDRAGON_VERSION}")
         else:
-            print(f"[actualizar_version_ddragon] Error al obtener la versión de Data Dragon. Status: {response.status_code}. Usando versión de respaldo: {DDRAGON_VERSION}")
+            print(f"[actualizar_version_ddragon] Error al obtener la versión de Data Dragon. Status: {response.status_code}. Usando versión: {DDRAGON_VERSION}")
     except requests.exceptions.RequestException as e:
-        print(f"[actualizar_version_ddragon] Error al obtener la versión de Data Dragon: {e}. Usando versión de respaldo: {DDRAGON_VERSION}")
+        print(f"[actualizar_version_ddragon] Error al obtener la versión de Data Dragon: {e}. Usando versión: {DDRAGON_VERSION}")
+
 
 ALL_CHAMPIONS = {}
 ALL_RUNES = {}

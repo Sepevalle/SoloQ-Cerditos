@@ -44,6 +44,10 @@ from services import (
     start_rate_limiter
 )
 
+# Importar función para actualizar versión de Data Dragon
+from services.riot_api import actualizar_version_ddragon
+
+
 
 def create_app():
     """
@@ -140,7 +144,13 @@ def main():
     print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
     print("="*60 + "\n")
     
+    # Actualizar versión de Data Dragon al inicio
+    print("[main] Actualizando versión de Data Dragon...")
+    actualizar_version_ddragon()
+    print("[main] ✓ Versión de Data Dragon actualizada")
+    
     # Validar configuración esencial
+
     if not RIOT_API_KEY:
         print("⚠️  ADVERTENCIA: RIOT_API_KEY no está configurada")
         print("    Algunas funciones no estarán disponibles")

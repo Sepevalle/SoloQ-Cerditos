@@ -95,7 +95,10 @@ LP_SNAPSHOTS_SAVE_INTERVAL = 3600  # 1 hora
 # CONFIGURACIÓN DE DATA DRAGON
 # ============================================================================
 
-DDRAGON_VERSION = "14.9.1"
+# Esta versión se actualiza automáticamente al iniciar la aplicación
+# mediante la función actualizar_version_ddragon() en services/riot_api.py
+DDRAGON_VERSION = "15.1.1"
+
 
 # ============================================================================
 # CONFIGURACIÓN DEL SERVIDOR
