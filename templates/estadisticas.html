@@ -122,13 +122,15 @@
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
+                    <a class="nav-link" href="{{ url_for('main.index') }}">Inicio</a>
+
                 </li>
                 {# <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('h2h') }}">Comparador</a>
                 </li> #}
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="{{ url_for('estadisticas_globales') }}">Estadísticas Globales</a>
+                    <a class="nav-link active" aria-current="page" href="{{ url_for('stats.estadisticas_globales') }}">Estadísticas Globales</a>
+
                 </li>
                 
                 
@@ -150,7 +152,8 @@
     <h1 class="text-center mb-4">Estadísticas Globales de la Temporada</h1>
 
     <div class="text-center mb-4">
-        <form action="{{ url_for('estadisticas_globales') }}" method="get" class="row justify-content-center align-items-center g-2">
+        <form action="{{ url_for('stats.estadisticas_globales') }}" method="get" class="row justify-content-center align-items-center g-2">
+
             <div class="col-md-3">
                 <label for="queue" class="visually-hidden">Cola</label>
                 <select name="queue" id="queue" class="form-select">

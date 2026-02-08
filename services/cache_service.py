@@ -323,3 +323,22 @@ def invalidate_global_stats():
     """Invalida el caché de estadísticas globales."""
     global_stats_cache.invalidate()
     print("[invalidate_global_stats] Caché de estadísticas globales invalidado")
+
+
+def start_cache_service():
+    """
+    Función de inicio para el servicio de caché.
+    Se ejecuta en un thread en segundo plano para mantener
+    el caché limpio y actualizado.
+    """
+    print("[cache_service] Servicio de caché iniciado")
+    
+    while True:
+        try:
+            # Limpiar cachés periódicamente
+            time.sleep(300)  # Cada 5 minutos
+            cleanup_all_caches()
+            
+        except Exception as e:
+            print(f"[cache_service] Error: {e}")
+            time.sleep(60)  # Esperar 1 minuto antes de reintentar

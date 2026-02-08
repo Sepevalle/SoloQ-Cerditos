@@ -264,3 +264,44 @@ def _calculate_and_cache_personal_records_periodically():
             traceback.print_exc()
         
         time.sleep(3600)  # 1 hora
+
+
+def start_data_updater(riot_api_key):
+    """
+    Función de inicio para el servicio de actualización de datos.
+    Inicia todos los workers de actualización en segundo plano.
+    
+    Args:
+        riot_api_key: API key de Riot Games
+    """
+    print("[data_updater] Iniciando servicio de actualización de datos...")
+    
+    if not riot_api_key:
+        print("[data_updater] ⚠ Advertencia: RIOT_API_KEY no configurada")
+        print("[data_updater] El servicio de actualización no funcionará correctamente")
+        return
+    
+    # Iniciar workers en threads separados
+    import threading
+    
+    # Worker de caché
+    cache_thread = threading.Thread(target=actualizar_cache_periodicamente, daemon=True)
+    cache_thread.start()
+    print("[data_updater] ✓ Worker de caché iniciado")
+    
+    # Worker de historial de partidas
+    history_thread = threading.Thread(target=actualizar_historial_partidas_en_segundo_plano, daemon=True)
+    history_thread.start()
+    print("[data_updater] ✓ Worker de historial iniciado")
+    
+    # Worker de estadísticas globales
+    stats_thread = threading.Thread(target=_calculate_and_cache_global_stats_periodically, daemon=True)
+    stats_thread.start()
+    print("[data_updater] ✓ Worker de estadísticas globales iniciado")
+    
+    # Worker de récords personales
+    records_thread = threading.Thread(target=_calculate_and_cache_personal_records_periodically, daemon=True)
+    records_thread.start()
+    print("[data_updater] ✓ Worker de récords personales iniciado")
+    
+    print("[data_updater] Todos los workers de actualización iniciados")

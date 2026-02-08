@@ -1,167 +1,166 @@
 """
-SoloQ-Cerditos - Punto de entrada principal de la aplicación Flask.
+SoloQ-Cerditos - Aplicación Flask principal
 
-Esta aplicación ha sido reorganizada en una arquitectura de servicios:
-- config/: Configuración centralizada
-- services/: Lógica de negocio (API Riot, caché, GitHub, etc.)
-- blueprints/: Rutas Flask organizadas por funcionalidad
-- utils/: Funciones utilitarias y filtros Jinja2
+Punto de entrada principal de la aplicación.
+Organiza y coordina todos los servicios en segundo plano.
 """
 
 import os
+import sys
 import threading
 import time
+from datetime import datetime, timezone
+
 from flask import Flask
 
 # Importar configuración
 from config.settings import (
-    TARGET_TIMEZONE, DDRAGON_VERSION, PORT, 
-    CACHE_UPDATE_INTERVAL, LP_TRACKER_INTERVAL
+    RIOT_API_KEY,
+    GITHUB_TOKEN,
+    PORT,
+    DEBUG,
+    SECRET_KEY
 )
+
+# Importar utilidades
+from utils.filters import register_filters
+from utils.helpers import keep_alive
 
 # Importar blueprints
-from blueprints import register_blueprints
-
-# Importar filtros Jinja2
-from utils.filters import register_filters
-
-# Importar servicios para inicialización
-from services.cache_service import player_cache
-from services.lp_tracker import elo_tracker_worker
-from services.riot_api import _api_rate_limiter_worker
-from services.data_updater import (
-    keep_alive, 
-    actualizar_cache_periodicamente,
-    actualizar_historial_partidas_en_segundo_plano,
-    _calculate_and_cache_global_stats_periodically,
-    _calculate_and_cache_personal_records_periodically
+from blueprints import (
+    main_bp,
+    player_bp,
+    stats_bp,
+    api_bp
 )
 
+# Importar servicios
+from services import (
+    start_cache_service,
+    start_github_service,
+    start_lp_tracker,
+    start_data_updater,
+    start_stats_calculator,
+    start_rate_limiter
+)
 
 
 def create_app():
-    """Factory function para crear la aplicación Flask."""
+    """
+    Factory function para crear la aplicación Flask.
+    Configura la app, registra blueprints y filtros.
+    """
     app = Flask(__name__)
+    app.secret_key = SECRET_KEY
     
     # Inyectar 'str' en el contexto de Jinja2
     @app.context_processor
     def utility_processor():
         return dict(str=str)
     
-    # Registrar filtros Jinja2 personalizados
+    # Registrar filtros personalizados
     register_filters(app)
     
-    # Registrar blueprints
-    register_blueprints(app)
+    # Registrar blueprints con prefijos URL
+    app.register_blueprint(main_bp, url_prefix='/')
+    app.register_blueprint(player_bp, url_prefix='/jugador')
+    app.register_blueprint(stats_bp, url_prefix='/stats')
+    app.register_blueprint(api_bp, url_prefix='/api')
     
-    print("[create_app] Aplicación Flask creada y configurada")
+    # Manejador de error 404
+    @app.errorhandler(404)
+    def not_found_error(error):
+        from flask import render_template
+        return render_template('404.html'), 404
+    
+    # Manejador de error 500
+    @app.errorhandler(500)
+    def internal_error(error):
+        from flask import render_template
+        return render_template('404.html'), 500
+    
     return app
 
 
-def start_background_threads(app):
-    """Inicia todos los hilos de background necesarios."""
-    threads = []
+def start_background_services(riot_api_key, github_token):
+    """
+    Inicia todos los servicios en segundo plano.
     
-    # 1. Control de tasa de API
-    api_rate_limiter_thread = threading.Thread(
-        target=_api_rate_limiter_worker,
-        name="api_rate_limiter"
-    )
-    api_rate_limiter_thread.daemon = True
-    api_rate_limiter_thread.start()
-    threads.append(api_rate_limiter_thread)
-    print("[start_background_threads] Hilo 'api_rate_limiter' iniciado")
+    Args:
+        riot_api_key: API key de Riot Games
+        github_token: Token de GitHub para operaciones de archivo
+    """
+    print("\n" + "="*60)
+    print("INICIANDO SERVICIOS EN SEGUNDO PLANO")
+    print("="*60 + "\n")
     
-    # 2. Keep-alive (ping periódico)
-    keep_alive_thread = threading.Thread(
-        target=keep_alive,
-        name="keep_alive"
-    )
-    keep_alive_thread.daemon = True
+    # 1. Rate Limiter (para API de Riot)
+    start_rate_limiter()
+    time.sleep(0.5)  # Pequeña pausa entre inicios
+    
+    # 2. Servicio de Caché
+    start_cache_service()
+    time.sleep(0.5)
+    
+    # 3. Servicio de GitHub
+    start_github_service(github_token)
+    time.sleep(0.5)
+    
+    # 4. LP Tracker (tracker de ELO)
+    start_lp_tracker(riot_api_key, github_token)
+    time.sleep(0.5)
+    
+    # 5. Data Updater (actualización de datos)
+    start_data_updater(riot_api_key)
+    time.sleep(0.5)
+    
+    # 6. Stats Calculator (cálculo de estadísticas)
+    start_stats_calculator()
+    time.sleep(0.5)
+    
+    # 7. Keep Alive (mantener app activa)
+    keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
     keep_alive_thread.start()
-    threads.append(keep_alive_thread)
-    print("[start_background_threads] Hilo 'keep_alive' iniciado")
+    print("[main] ✓ Keep-alive iniciado")
     
-    # 3. Actualización periódica de caché de jugadores
-    cache_thread = threading.Thread(
-        target=actualizar_cache_periodicamente,
-        name="cache_updater"
-    )
-    cache_thread.daemon = True
-    cache_thread.start()
-    threads.append(cache_thread)
-    print("[start_background_threads] Hilo 'actualizar_cache_periodicamente' iniciado")
-    
-    # 4. Actualización de historial de partidas
-    stats_thread = threading.Thread(
-        target=actualizar_historial_partidas_en_segundo_plano,
-        name="match_history_updater"
-    )
-    stats_thread.daemon = True
-    stats_thread.start()
-    threads.append(stats_thread)
-    print("[start_background_threads] Hilo 'actualizar_historial_partidas_en_segundo_plano' iniciado")
-    
-    # 5. Cálculo de estadísticas globales
-    global_stats_thread = threading.Thread(
-        target=_calculate_and_cache_global_stats_periodically,
-        name="global_stats_calculator"
-    )
-    global_stats_thread.daemon = True
-    global_stats_thread.start()
-    threads.append(global_stats_thread)
-    print("[start_background_threads] Hilo 'actualizar_estadisticas_globales_periodicamente' iniciado")
-    
-    # 6. Cálculo de récords personales
-    personal_records_thread = threading.Thread(
-        target=_calculate_and_cache_personal_records_periodically,
-        name="personal_records_calculator"
-    )
-    personal_records_thread.daemon = True
-    personal_records_thread.start()
-    threads.append(personal_records_thread)
-    print("[start_background_threads] Hilo 'actualizar_records_personales_periodicamente' iniciado")
-    
-    # 7. Tracker de ELO/LP (CRÍTICO para calcular cambio de LP)
-    from config.settings import RIOT_API_KEY, GITHUB_TOKEN
-    if RIOT_API_KEY and GITHUB_TOKEN:
-        lp_tracker_thread = threading.Thread(
-            target=elo_tracker_worker,
-            args=(RIOT_API_KEY, GITHUB_TOKEN),
-            name="lp_tracker"
-        )
-        lp_tracker_thread.daemon = True
-        lp_tracker_thread.start()
-        threads.append(lp_tracker_thread)
-        print("[start_background_threads] Hilo 'elo_tracker_worker' iniciado")
-    else:
-        print("[start_background_threads] ADVERTENCIA: RIOT_API_KEY o GITHUB_TOKEN no configurados. LP tracker no iniciado.")
-    
-    return threads
+    print("\n" + "="*60)
+    print("TODOS LOS SERVICIOS INICIADOS CORRECTAMENTE")
+    print("="*60 + "\n")
 
 
 def main():
-    """Función principal de entrada."""
-    print("=" * 60)
-    print("SoloQ-Cerditos - Iniciando aplicación")
-    print("=" * 60)
+    """Punto de entrada principal de la aplicación."""
+    print("\n" + "="*60)
+    print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
+    print("="*60 + "\n")
+    
+    # Validar configuración esencial
+    if not RIOT_API_KEY:
+        print("⚠️  ADVERTENCIA: RIOT_API_KEY no está configurada")
+        print("    Algunas funciones no estarán disponibles")
+    
+    if not GITHUB_TOKEN:
+        print("⚠️  ADVERTENCIA: GITHUB_TOKEN no está configurado")
+        print("    El almacenamiento persistente no funcionará")
     
     # Crear aplicación Flask
     app = create_app()
+    print("[main] ✓ Aplicación Flask creada")
     
-    # Iniciar hilos de background
-    threads = start_background_threads(app)
-    
-    print(f"\n[main] {len(threads)} hilos de background iniciados")
-    print(f"[main] Aplicación Flask ejecutándose en http://0.0.0.0:{PORT}")
-    print("=" * 60)
+    # Iniciar servicios en segundo plano
+    start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
     
     # Iniciar servidor Flask
+    print(f"\n[main] 🚀 Iniciando servidor en http://0.0.0.0:{PORT}")
+    print(f"[main] Modo DEBUG: {DEBUG}")
+    print("[main] Presiona Ctrl+C para detener\n")
+    
     app.run(
         host='0.0.0.0',
         port=PORT,
-        debug=False,  # No usar debug en producción
-        threaded=True
+        debug=DEBUG,
+        threaded=True,
+        use_reloader=False  # Importante: desactivar reloader para evitar doble inicio de servicios
     )
 
 

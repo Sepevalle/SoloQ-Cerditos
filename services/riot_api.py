@@ -444,3 +444,16 @@ def obtener_info_partida(args):
     except (json.JSONDecodeError, KeyError) as e:
         print(f"[obtener_info_partida] Error procesando los detalles de la partida {match_id}: {e}")
     return None
+
+
+def start_rate_limiter():
+    """
+    Función de inicio para el servicio de rate limiting.
+    Inicia el worker del rate limiter en un thread en segundo plano.
+    """
+    print("[riot_api] Iniciando servicio de rate limiting...")
+    
+    # Iniciar el worker en un thread daemon
+    rate_limiter_thread = threading.Thread(target=_api_rate_limiter_worker, daemon=True)
+    rate_limiter_thread.start()
+    print("[riot_api] ✓ Rate limiter iniciado correctamente")

@@ -153,8 +153,9 @@ def _build_player_profile(game_name):
     return perfil
 
 
-@player_bp.route('/jugador/<path:game_name>')
+@player_bp.route('/<path:game_name>')
 def perfil_jugador(game_name):
+
     """
     Muestra una página de perfil para un jugador específico, detectando
     el tipo de dispositivo para renderizar la plantilla adecuada.

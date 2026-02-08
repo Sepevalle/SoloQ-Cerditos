@@ -279,3 +279,26 @@ def save_player_permission(puuid, content, sha=None):
         message=f"Actualizar permiso para {puuid}",
         sha=sha
     )
+
+
+def start_github_service():
+    """
+    Función de inicio para el servicio de GitHub.
+    Verifica la conectividad con GitHub al iniciar.
+    """
+    print("[github_service] Servicio de GitHub iniciado")
+    
+    if not GITHUB_TOKEN:
+        print("[github_service] ⚠ Advertencia: GITHUB_TOKEN no configurado")
+        print("[github_service] Las operaciones de escritura no funcionarán")
+        return
+    
+    # Verificar conectividad leyendo un archivo simple
+    try:
+        content, _ = read_file_from_github("cuentas.txt", use_raw=True)
+        if content:
+            print("[github_service] ✓ Conexión con GitHub verificada")
+        else:
+            print("[github_service] ⚠ No se pudo verificar conexión con GitHub")
+    except Exception as e:
+        print(f"[github_service] ⚠ Error verificando conexión: {e}")

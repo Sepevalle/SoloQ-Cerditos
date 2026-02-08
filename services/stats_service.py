@@ -642,3 +642,25 @@ def extract_global_records(all_matches):
             )
     
     return records
+
+
+def start_stats_calculator():
+    """
+    Función de inicio para el servicio de cálculo de estadísticas.
+    Mantiene el caché de estadísticas actualizado periódicamente.
+    """
+    print("[stats_service] Servicio de cálculo de estadísticas iniciado")
+    
+    while True:
+        try:
+            # Verificar si el caché necesita actualización
+            if global_stats_cache.is_stale():
+                print("[stats_service] Actualizando estadísticas globales...")
+                # La actualización real se hace en data_updater
+                # Este servicio solo mantiene el estado del caché
+            
+            time.sleep(60)  # Verificar cada minuto
+            
+        except Exception as e:
+            print(f"[stats_service] Error: {e}")
+            time.sleep(60)

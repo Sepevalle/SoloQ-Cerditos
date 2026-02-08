@@ -257,3 +257,26 @@ def elo_tracker_worker(riot_api_key, github_token):
             print(f"[LP_TRACKER] Error inesperado en el worker de ELO: {e}")
             
         time.sleep(1800) # OPTIMIZACIÓN RENDER: 30 minutos (1800 seg) en lugar de 5 minutos
+
+
+def start_lp_tracker(riot_api_key, github_token):
+    """
+    Función de inicio para el servicio de seguimiento de LP.
+    Wrapper que inicia el worker principal.
+    
+    Args:
+        riot_api_key: API key de Riot Games
+        github_token: Token de GitHub para persistencia
+    """
+    print("[lp_tracker] Iniciando servicio de seguimiento de LP...")
+    
+    if not riot_api_key:
+        print("[lp_tracker] ⚠ Error: RIOT_API_KEY no configurada")
+        return
+    
+    if not github_token:
+        print("[lp_tracker] ⚠ Error: GITHUB_TOKEN no configurado")
+        return
+    
+    # Iniciar el worker principal
+    elo_tracker_worker(riot_api_key, github_token)
