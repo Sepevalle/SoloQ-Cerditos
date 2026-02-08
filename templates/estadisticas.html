@@ -366,7 +366,7 @@
                                 {% endif %}
                             </h5>
                             <p class="card-text fs-4">
-                                {% if record.value is none %}N/A
+                                {% if record.value is none or record.value == 0 or record.player == 'N/A' %}N/A
                                 {% elif key in ['longest_game', 'most_time_spent_dead', 'most_time_ccing_others'] %}
                                     {{ (record.value / 60) | int }}m {{ (record.value % 60) | int }}s
                                 {# Apply formatting for percentage/KDA records #}
@@ -380,6 +380,11 @@
                                     {{ record.value | thousands_separator }}
                                 {% endif %}
                             </p>
+                            {% if record.value is none or record.value == 0 or record.player == 'N/A' %}
+                            <small class="text-muted">
+                                <em>Sin registro en esta temporada</em>
+                            </small>
+                            {% else %}
                             <small class="text-muted">
                                 Jugador: {{ record.player }} ({{ record.riot_id }})<br>
                                 {% if record.champion_id and record.champion_id != 'N/A' and record.champion_name and record.champion_name != 'N/A' %}
@@ -393,8 +398,11 @@
                                 KDA: {{ record.kills | thousands_separator }}/{{ record.deaths | thousands_separator }}/{{ record.assists | thousands_separator }} ({{ '%.2f' % record.kda }})<br>
                                 Fecha: {{ record.game_date | format_timestamp }}<br>
                                 Duración: {{ (record.game_duration / 60) | int }}m {{ (record.game_duration % 60) | int }}s
-                                {% if record.value is not none and record.value > 0 and record.game_date > 0 and record.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
+                                {% if record.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
                             </small>
+                            {% endif %}
+
+
 
                         </div>
                     </div>

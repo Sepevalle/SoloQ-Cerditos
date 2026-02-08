@@ -127,8 +127,10 @@ def _calculate_and_save_global_stats():
             'losses': stats['losses'],
             'win_rate': (stats['wins'] / total * 100) if total > 0 else 0,
             'records': extract_global_records([(player_name, m) for m in player_matches]),
-            'champions_played': list(set(m[1].get('champion_name') for m in player_matches if m[1].get('champion_name')))
+            'champions_played': list(set(m[1].get('champion_name') for m in player_matches if m[1].get('champion_name'))),
+            'matches': [m[1] for m in player_matches]  # Guardar partidas para filtrado dinámico
         }
+
     
     # Construir objeto final con todas las desagregaciones
     global_stats_data = {
@@ -193,7 +195,7 @@ def estadisticas_globales():
             last_updated=None
         )
     
-    # Extraer datos
+    # Extraer datos base
     all_matches_count = stats_data.get('all_matches_count', 0)
     player_stats = stats_data.get('player_stats', [])
     most_played_champions = stats_data.get('most_played_champions', [])
@@ -202,43 +204,87 @@ def estadisticas_globales():
     all_champions = stats_data.get('all_champions', [])
     calculated_at = stats_data.get('calculated_at')
     
-    # Filtrar por cola si se especifica
-    if current_queue != 'all':
-        try:
-            queue_id = int(current_queue)
-            queue_stats = stats_data.get('stats_by_queue', {}).get(str(queue_id), {})
-            if queue_stats:
-                # Usar records específicos de la cola
-                global_records = queue_stats.get('records', {})
-                # Recalcular win rate para esta cola
-                total_matches = queue_stats.get('total_matches', 0)
-                wins = queue_stats.get('wins', 0)
-                overall_win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
-            else:
-                overall_win_rate = 0
-        except (ValueError, TypeError):
+    # Si hay filtros aplicados, recalcular estadísticas dinámicamente
+    if current_queue != 'all' or selected_champion != 'all':
+        print(f"[estadisticas_globales] Aplicando filtros - Cola: {current_queue}, Campeón: {selected_champion}")
+        
+        # Obtener todas las partidas y aplicar filtros
+        all_matches = []
+        for player_name in stats_data.get('stats_by_player', {}):
+            player_data = stats_data['stats_by_player'][player_name]
+            for match in player_data.get('matches', []):
+                all_matches.append((player_name, match))
+        
+        # Aplicar filtro de cola
+        if current_queue != 'all':
+            try:
+                queue_id = int(current_queue)
+                all_matches = [(p, m) for p, m in all_matches if m.get('queue_id') == queue_id]
+            except (ValueError, TypeError):
+                pass
+        
+        # Aplicar filtro de campeón
+        if selected_champion != 'all':
+            all_matches = [(p, m) for p, m in all_matches if m.get('champion_name') == selected_champion]
+        
+        # Recalcular todas las estadísticas con los datos filtrados
+        if all_matches:
+            # Calcular récords
+            global_records = extract_global_records(all_matches)
+            
+            # Calcular win rate
+            wins = sum(1 for _, m in all_matches if m.get('win'))
+            total_matches = len(all_matches)
+            overall_win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
+            
+            # Calcular campeones más jugados
+            champion_counts = Counter(m.get('champion_name') for _, m in all_matches if m.get('champion_name'))
+            most_played_champions = champion_counts.most_common(10)
+            
+            # Calcular estadísticas por jugador
+            player_stats_filtered = {}
+            for player_name, match in all_matches:
+                if player_name not in player_stats_filtered:
+                    player_stats_filtered[player_name] = {'wins': 0, 'losses': 0, 'total_partidas': 0}
+                player_stats_filtered[player_name]['total_partidas'] += 1
+                if match.get('win'):
+                    player_stats_filtered[player_name]['wins'] += 1
+                else:
+                    player_stats_filtered[player_name]['losses'] += 1
+            
+            # Formatear player_stats
+            player_stats = []
+            for player_name, stats in player_stats_filtered.items():
+                total = stats['total_partidas']
+                player_stats.append({
+                    'summonerName': player_name,
+                    'total_partidas': total,
+                    'wins': stats['wins'],
+                    'losses': stats['losses'],
+                    'win_rate': (stats['wins'] / total * 100) if total > 0 else 0
+                })
+            player_stats.sort(key=lambda x: x['total_partidas'], reverse=True)
+            
+            # Actualizar conteo total
+            all_matches_count = total_matches
+        else:
+            # No hay partidas con estos filtros - inicializar récords vacíos
+            from services.stats_service import _default_record, PERSONAL_RECORD_KEYS
+            global_records = {key: _default_record() for key in PERSONAL_RECORD_KEYS}
+            # Establecer valores a None para mostrar N/A
+            for key in global_records:
+                global_records[key]['value'] = None
             overall_win_rate = 0
+            most_played_champions = []
+            player_stats = []
+            all_matches_count = 0
+
     else:
-        # Calcular win rate general
-        total_wins = sum(1 for p in player_stats for _ in range(p.get('wins', 0)))
-        total_losses = sum(1 for p in player_stats for _ in range(p.get('losses', 0)))
+        # Sin filtros - usar datos pre-calculados
+        total_wins = sum(p.get('wins', 0) for p in player_stats)
+        total_losses = sum(p.get('losses', 0) for p in player_stats)
         total = total_wins + total_losses
         overall_win_rate = (total_wins / total * 100) if total > 0 else 0
-    
-    # Filtrar por campeón usando datos pre-calculados
-    if selected_champion != 'all':
-        champion_stats = stats_data.get('stats_by_champion', {}).get(selected_champion, {})
-        if champion_stats:
-            global_records = champion_stats.get('records', {})
-            total_matches = champion_stats.get('total_matches', 0)
-            wins = champion_stats.get('wins', 0)
-            overall_win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
-            # Actualizar campeones más jugados para mostrar solo este campeón
-            most_played_champions = [(selected_champion, total_matches)]
-        else:
-            flash(f'No hay datos para el campeón "{selected_champion}"', 'warning')
-            overall_win_rate = 0
-
     
     # Construir objeto global_stats para el template
     global_stats = {
@@ -248,6 +294,7 @@ def estadisticas_globales():
         'player_with_most_games': player_stats[0] if player_stats else None,
         'global_records': global_records
     }
+
     
     # Formatear fecha de última actualización
     last_updated = None
