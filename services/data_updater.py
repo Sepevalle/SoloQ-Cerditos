@@ -92,8 +92,9 @@ def actualizar_cache_periodicamente():
                         })
             
             # Actualizar caché
-            player_cache.set(datos_jugadores, timestamp)
+            player_cache.set(datos_jugadores)
             print(f"[actualizar_cache_periodicamente] Caché actualizada con {len(datos_jugadores)} entradas")
+
             
             # Actualizar datos de DDragon
             actualizar_ddragon_data()
@@ -206,11 +207,11 @@ def _calculate_and_cache_global_stats_periodically():
                         available_queue_ids.add(match.get('queue_id'))
             
             # Cachear datos brutos para estadísticas
-            global_stats_cache.set({
-                'all_matches': all_matches,
-                'all_champions': all_champions,
-                'available_queue_ids': available_queue_ids
-            })
+            global_stats_cache.set(
+                {'all_champions': all_champions, 'available_queue_ids': available_queue_ids},
+                all_matches
+            )
+
             
             print(f"[_calculate_global_stats] Cacheadas {len(all_matches)} partidas")
             

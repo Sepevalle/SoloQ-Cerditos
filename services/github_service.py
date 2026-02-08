@@ -82,6 +82,12 @@ def write_file_to_github(file_path, content, message="Actualización automática
         print(f"[write_file_to_github] Error: Token de GitHub no configurado")
         return False
     
+    # Si no se proporcionó SHA, intentar obtenerlo leyendo el archivo primero
+    if sha is None:
+        _, sha = read_file_from_github(file_path, use_raw=False)
+        if sha:
+            print(f"[write_file_to_github] SHA obtenido para {file_path}: {sha[:8]}...")
+    
     url = get_github_file_url(file_path, raw=False)
     headers = get_github_headers()
     
@@ -108,12 +114,25 @@ def write_file_to_github(file_path, content, message="Actualización automática
         if response.status_code in (200, 201):
             print(f"[write_file_to_github] Archivo {file_path} guardado correctamente")
             return True
+        elif response.status_code == 422 and "sha" in response.text.lower():
+            # Error 422 - intentar re-leer el SHA y reintentar una vez
+            print(f"[write_file_to_github] Error 422, reintentando con SHA actualizado...")
+            _, new_sha = read_file_from_github(file_path, use_raw=False)
+            if new_sha and new_sha != sha:
+                data["sha"] = new_sha
+                response = requests.put(url, headers=headers, json=data, timeout=30)
+                if response.status_code in (200, 201):
+                    print(f"[write_file_to_github] Archivo {file_path} guardado correctamente en reintento")
+                    return True
+            print(f"[write_file_to_github] Error: {response.status_code} - {response.text}")
+            return False
         else:
             print(f"[write_file_to_github] Error: {response.status_code} - {response.text}")
             return False
     except Exception as e:
         print(f"[write_file_to_github] Error en petición: {e}")
         return False
+
 
 
 # ============================================================================
