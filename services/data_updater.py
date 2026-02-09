@@ -144,17 +144,28 @@ def actualizar_historial_partidas_en_segundo_plano():
                     for match_id in new_match_ids:
                         if match_id not in existing_ids:
                             match_info = obtener_info_partida((match_id, puuid, RIOT_API_KEY))
-                            if match_info:
+                            # Filtrar explícitamente valores None (remakes u errores)
+                            if match_info is not None:
                                 matches_to_add.append(match_info)
+                                print(f"[actualizar_historial] Partida {match_id} procesada para {jugador_nombre}")
+                            else:
+                                print(f"[actualizar_historial] Partida {match_id} descartada (None) para {jugador_nombre}")
                     
                     if matches_to_add:
-                        # Combinar y ordenar
+                        # Combinar y ordenar por timestamp descendente (más reciente primero)
                         all_matches = existing_matches + matches_to_add
-                        all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+                        all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0) if x.get('game_end_timestamp') else 0, reverse=True)
+                        
+                        # Verificar ordenación
+                        if all_matches:
+                            newest_ts = all_matches[0].get('game_end_timestamp', 0)
+                            oldest_ts = all_matches[-1].get('game_end_timestamp', 0)
+                            print(f"[actualizar_historial] Ordenación verificada: {len(all_matches)} partidas, más reciente: {newest_ts}, más antigua: {oldest_ts}")
                         
                         # Guardar
                         save_player_match_history(puuid, {'matches': all_matches})
-                        print(f"[actualizar_historial] {len(matches_to_add)} nuevas partidas para {jugador_nombre}")
+                        print(f"[actualizar_historial] {len(matches_to_add)} nuevas partidas guardadas para {jugador_nombre}. Total: {len(all_matches)}")
+
                     
                 except Exception as e:
                     print(f"[actualizar_historial] Error procesando {jugador_nombre}: {e}")
