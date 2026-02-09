@@ -58,10 +58,13 @@ def _build_player_profile(game_name):
     # Añadir datos de colas
     for entry in player_entries:
         queue_type = entry.get('queue_type')
+        # Crear una copia para no modificar el caché directamente
+        entry_copy = dict(entry)
         if queue_type == 'RANKED_SOLO_5x5':
-            perfil['soloq'] = entry
+            perfil['soloq'] = entry_copy
         elif queue_type == 'RANKED_FLEX_SR':
-            perfil['flexq'] = entry
+            perfil['flexq'] = entry_copy
+
     
     # Calcular historial de ELO
     soloq_matches = sorted(
@@ -97,12 +100,21 @@ def _build_player_profile(game_name):
     # SoloQ (queue_id 420)
     if 'soloq' in perfil:
         soloq_matches_for_champs = [m for m in matches if m.get('queue_id') == 420]
-        perfil['soloq']['top_champion_stats'] = get_top_champions_for_player(soloq_matches_for_champs, limit=3)
+        try:
+            perfil['soloq']['top_champion_stats'] = get_top_champions_for_player(soloq_matches_for_champs, limit=3)
+        except Exception as e:
+            print(f"[_build_player_profile] Error calculando stats de campeones SoloQ: {e}")
+            perfil['soloq']['top_champion_stats'] = []
     
     # FlexQ (queue_id 440)
     if 'flexq' in perfil:
         flexq_matches_for_champs = [m for m in matches if m.get('queue_id') == 440]
-        perfil['flexq']['top_champion_stats'] = get_top_champions_for_player(flexq_matches_for_champs, limit=3)
+        try:
+            perfil['flexq']['top_champion_stats'] = get_top_champions_for_player(flexq_matches_for_champs, limit=3)
+        except Exception as e:
+            print(f"[_build_player_profile] Error calculando stats de campeones FlexQ: {e}")
+            perfil['flexq']['top_champion_stats'] = []
+
 
     
     # Ordenar historial por fecha
