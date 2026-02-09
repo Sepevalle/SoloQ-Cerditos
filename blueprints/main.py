@@ -1,11 +1,15 @@
 from flask import Blueprint, render_template
 from datetime import datetime, timezone, timedelta
-from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS, DDRAGON_VERSION
+import config.settings as settings
+from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS
 from services.cache_service import player_cache
+
 from services.github_service import read_peak_elo, save_peak_elo, read_lp_history
 from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
+from services.riot_api import esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
 from utils.helpers import calcular_valor_clasificacion
+
 
 
 
@@ -113,6 +117,30 @@ def index():
                 jugador['lp_change_24h'] = 0
                 jugador['wins_24h'] = 0
                 jugador['losses_24h'] = 0
+            
+            # Verificar si el jugador está en partida
+            try:
+                if puuid and RIOT_API_KEY:
+                    game_data = esta_en_partida(RIOT_API_KEY, puuid)
+                    if game_data:
+                        jugador['en_partida'] = True
+                        # Encontrar el campeón que está jugando
+                        for participant in game_data.get("participants", []):
+                            if participant.get("puuid") == puuid:
+                                champion_id = participant.get("championId")
+                                jugador['nombre_campeon'] = obtener_nombre_campeon(champion_id)
+                                break
+                    else:
+                        jugador['en_partida'] = False
+                        jugador['nombre_campeon'] = None
+                else:
+                    jugador['en_partida'] = False
+                    jugador['nombre_campeon'] = None
+            except Exception as e:
+                print(f"[index] Error verificando estado de partida para {jugador.get('jugador', 'unknown')}: {e}")
+                jugador['en_partida'] = False
+                jugador['nombre_campeon'] = None
+                
         except Exception as e:
             print(f"[index] Error calculando estadísticas para {jugador.get('jugador', 'unknown')}: {e}")
             jugador['top_champion_stats'] = []
@@ -121,6 +149,9 @@ def index():
             jugador['lp_change_24h'] = 0
             jugador['wins_24h'] = 0
             jugador['losses_24h'] = 0
+            jugador['en_partida'] = False
+            jugador['nombre_campeon'] = None
+
 
 
 
@@ -136,6 +167,6 @@ def index():
     return render_template('index.html', 
                            datos_jugadores=datos_jugadores,
                            ultima_actualizacion=ultima_actualizacion,
-                           ddragon_version=DDRAGON_VERSION,
+                           ddragon_version=settings.DDRAGON_VERSION,
                            split_activo_nombre=split_activo_nombre,
                            has_player_data=bool(datos_jugadores))

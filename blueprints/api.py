@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, request
-from config.settings import DDRAGON_VERSION, SEASON_START_TIMESTAMP
+import config.settings as settings
+from config.settings import SEASON_START_TIMESTAMP
+
 from services.player_service import get_all_accounts, get_all_puuids, get_player_display_name, get_riot_id_for_puuid
 from services.match_service import get_player_match_history
 from services.stats_service import calculate_personal_records

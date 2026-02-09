@@ -149,6 +149,14 @@ import config.settings as settings
 
 DDRAGON_VERSION = settings.DDRAGON_VERSION
 
+def get_ddragon_version():
+    """
+    Retorna la versión actual de Data Dragon.
+    Esta función siempre retorna el valor actualizado de settings.DDRAGON_VERSION,
+    a diferencia de importar DDRAGON_VERSION directamente que puede quedar desactualizado.
+    """
+    return settings.DDRAGON_VERSION
+
 def actualizar_version_ddragon():
     global DDRAGON_VERSION
     print("[actualizar_version_ddragon] Intentando obtener la última versión de Data Dragon.")
@@ -165,6 +173,7 @@ def actualizar_version_ddragon():
             print(f"[actualizar_version_ddragon] Error al obtener la versión de Data Dragon. Status: {response.status_code}. Usando versión: {DDRAGON_VERSION}")
     except requests.exceptions.RequestException as e:
         print(f"[actualizar_version_ddragon] Error al obtener la versión de Data Dragon: {e}. Usando versión: {DDRAGON_VERSION}")
+
 
 
 ALL_CHAMPIONS = {}

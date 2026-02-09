@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, request
 from datetime import datetime, timezone, timedelta
-from config.settings import TARGET_TIMEZONE, DDRAGON_VERSION, ACTIVE_SPLIT_KEY
+import config.settings as settings
+from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY
+
 from services.cache_service import player_cache
 from services.player_service import get_puuid_for_riot_id, get_player_display_name
 from services.match_service import get_player_match_history, calculate_streaks, filter_matches_by_queue
@@ -173,6 +175,7 @@ def perfil_jugador(game_name):
 
     return render_template(template_name,
                            perfil=perfil,
-                           ddragon_version=DDRAGON_VERSION,
+                           ddragon_version=settings.DDRAGON_VERSION,
+
                            datetime=datetime,
                            now=datetime.now())
