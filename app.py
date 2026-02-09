@@ -138,37 +138,40 @@ def start_background_services(riot_api_key, github_token):
     print("="*60 + "\n")
 
 
-def main():
-    """Punto de entrada principal de la aplicación."""
-    print("\n" + "="*60)
-    print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
-    print("="*60 + "\n")
-    
-    # Actualizar versión de Data Dragon al inicio
-    print("[main] Actualizando versión de Data Dragon...")
-    actualizar_version_ddragon()
-    print("[main] ✓ Versión de Data Dragon actualizada")
-    
-    # Validar configuración esencial
+# Crear aplicación Flask a nivel de módulo (para Gunicorn)
+print("\n" + "="*60)
+print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
+print("="*60 + "\n")
 
-    if not RIOT_API_KEY:
-        print("⚠️  ADVERTENCIA: RIOT_API_KEY no está configurada")
-        print("    Algunas funciones no estarán disponibles")
-    
-    if not GITHUB_TOKEN:
-        print("⚠️  ADVERTENCIA: GITHUB_TOKEN no está configurado")
-        print("    El almacenamiento persistente no funcionará")
-    
-    # Crear aplicación Flask
-    app = create_app()
-    print("[main] ✓ Aplicación Flask creada")
-    
-    # Iniciar servicios en segundo plano
-    start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
-    
-    # Iniciar servidor Flask
-    print(f"\n[main] 🚀 Iniciando servidor en http://0.0.0.0:{PORT}")
-    print(f"[main] Modo DEBUG: {DEBUG}")
+# Actualizar versión de Data Dragon al inicio
+print("[main] Actualizando versión de Data Dragon...")
+actualizar_version_ddragon()
+print("[main] ✓ Versión de Data Dragon actualizada")
+
+# Validar configuración esencial
+if not RIOT_API_KEY:
+    print("⚠️  ADVERTENCIA: RIOT_API_KEY no está configurada")
+    print("    Algunas funciones no estarán disponibles")
+
+if not GITHUB_TOKEN:
+    print("⚠️  ADVERTENCIA: GITHUB_TOKEN no está configurado")
+    print("    El almacenamiento persistente no funcionará")
+
+# Crear aplicación Flask
+app = create_app()
+print("[main] ✓ Aplicación Flask creada")
+
+# Iniciar servicios en segundo plano
+start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
+
+print(f"\n[main] 🚀 Aplicación lista para servir en http://0.0.0.0:{PORT}")
+print(f"[main] Modo DEBUG: {DEBUG}\n")
+
+
+def main():
+    """Punto de entrada principal para desarrollo local."""
+    # Iniciar servidor Flask (solo para desarrollo local)
+    print(f"[main] Iniciando servidor de desarrollo en http://0.0.0.0:{PORT}")
     print("[main] Presiona Ctrl+C para detener\n")
     
     app.run(
