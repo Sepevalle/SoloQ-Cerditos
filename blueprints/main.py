@@ -65,9 +65,14 @@ def index():
                 match_history = get_player_match_history(puuid, limit=50)
                 matches = match_history.get('matches', [])
                 
-                # Calcular top campeones
-                top_champions = get_top_champions_for_player(matches, limit=3)
+                # Calcular top campeones SOLO para la cola actual del jugador
+                if queue_id:
+                    queue_matches_for_champs = [m for m in matches if m.get('queue_id') == queue_id]
+                    top_champions = get_top_champions_for_player(queue_matches_for_champs, limit=3)
+                else:
+                    top_champions = get_top_champions_for_player(matches, limit=3)
                 jugador['top_champion_stats'] = top_champions
+
                 
                 # Calcular racha actual para esta cola
                 if queue_id:
