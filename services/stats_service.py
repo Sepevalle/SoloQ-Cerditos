@@ -88,39 +88,61 @@ def _update_record(current, new_value, match, record_type):
     return current
 
 
-def calculate_personal_records(puuid, matches, player_name, riot_id, champion_filter=None):
+def calculate_personal_records(puuid, matches, player_name, riot_id, champion_filter=None, queue_filter=None):
     """
     Calcula los récords personales de un jugador.
+    
+    Args:
+        puuid: ID único del jugador
+        matches: Lista de partidas del jugador
+        player_name: Nombre del jugador
+        riot_id: Riot ID del jugador
+        champion_filter: Filtro opcional por nombre de campeón
+        queue_filter: Filtro opcional por ID de cola (420 para SoloQ, 440 para Flex)
     """
-    cache_key = f"{puuid}_{champion_filter or 'all'}"
+    # Crear cache key que incluya ambos filtros
+    cache_key = f"{puuid}_{champion_filter or 'all'}_{queue_filter or 'all'}"
     
     # Verificar caché
     cached = personal_records_cache.get(cache_key)
     if cached:
         return cached
     
+    # Aplicar filtros
+    filtered_matches = matches
+    
     # Filtrar por campeón si es necesario
     if champion_filter:
-        matches = [m for m in matches if m.get("champion_name") == champion_filter]
+        filtered_matches = [m for m in filtered_matches if m.get("champion_name") == champion_filter]
     
-    if not matches:
+    # Filtrar por cola si es necesario
+    if queue_filter:
+        try:
+            queue_id = int(queue_filter)
+            filtered_matches = [m for m in filtered_matches if m.get("queue_id") == queue_id]
+            print(f"[calculate_personal_records] Filtrando por cola {queue_id}: {len(filtered_matches)} partidas")
+        except (ValueError, TypeError) as e:
+            print(f"[calculate_personal_records] Error convirtiendo queue_filter '{queue_filter}': {e}")
+    
+    if not filtered_matches:
+        print(f"[calculate_personal_records] No hay partidas después de aplicar filtros")
         return {key: _default_record() for key in PERSONAL_RECORD_KEYS}
     
     # Inicializar récords
     records = {key: _default_record() for key in PERSONAL_RECORD_KEYS}
     
     # Añadir metadata a las partidas
-    for match in matches:
+    for match in filtered_matches:
         match["jugador_nombre"] = player_name
         match["riot_id"] = riot_id
     
     # Calcular rachas
-    streaks = calculate_streaks(matches)
+    streaks = calculate_streaks(filtered_matches)
     if streaks["max_win_streak"] > 0:
         # Encontrar última partida de la racha
         win_streak_end = None
         current = 0
-        for match in matches:
+        for match in filtered_matches:
             if match.get("win"):
                 current += 1
                 if current == streaks["max_win_streak"]:
@@ -140,7 +162,7 @@ def calculate_personal_records(puuid, matches, player_name, riot_id, champion_fi
     if streaks["max_loss_streak"] > 0:
         loss_streak_end = None
         current = 0
-        for match in matches:
+        for match in filtered_matches:
             if not match.get("win"):
                 current += 1
                 if current == streaks["max_loss_streak"]:
@@ -158,7 +180,7 @@ def calculate_personal_records(puuid, matches, player_name, riot_id, champion_fi
             )
     
     # Calcular récords individuales
-    for match in matches:
+    for match in filtered_matches:
         # Campeón
         champion_id = match.get("championId")
         champion_name = match.get("champion_name", "Desconocido")
