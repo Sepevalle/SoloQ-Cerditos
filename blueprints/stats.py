@@ -245,6 +245,9 @@ def estadisticas_globales():
     # Leer desde GitHub
     success, stats_data = read_global_stats()
     
+    # Obtener tiempo restante para próximo cálculo (siempre necesario para el botón)
+    can_calc, seconds_left, time_str = _get_time_until_next_calculation()
+    
     if not success or not stats_data:
         print("[estadisticas_globales] No hay estadísticas guardadas. Mostrando mensaje de actualización.")
         return render_template(
@@ -257,8 +260,12 @@ def estadisticas_globales():
             current_queue=current_queue,
             available_queues=[],
             needs_update=True,
-            last_updated=None
+            last_updated=None,
+            can_calculate=can_calc,
+            seconds_remaining=seconds_left,
+            time_remaining=time_str
         )
+
     
     # Extraer datos base
     all_matches_count = stats_data.get('all_matches_count', 0)
