@@ -107,25 +107,24 @@ def get_player_champions(puuid):
         # Obtener campeones jugados
         historial = get_player_match_history(puuid, limit=-1)
         matches = historial.get('matches', [])
-        played_champions = set(m.get('champion_name') for m in matches if m.get('champion_name'))
         
-        # Construir lista con todos los campeones
-        champions_list = [
-            {
-                'id': champ_id,
-                'name': champ_name,
-                'played': champ_name in played_champions
-            }
-            for champ_id, champ_name in ALL_CHAMPIONS.items()
-        ]
+        # Get unique champion names from matches
+        played_champions = set()
+        for m in matches:
+            champ_name = m.get('champion_name')
+            if champ_name and champ_name != 'Desconocido':
+                played_champions.add(champ_name)
         
-        # Ordenar: primero jugados, luego alfabético
-        champions_list.sort(key=lambda x: (not x['played'], x['name']))
+        # Return only played champions, sorted alphabetically
+        champions_list = sorted(list(played_champions))
         
         return jsonify(champions_list)
     except Exception as e:
         print(f"[get_player_champions] Error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error al obtener campeones"}), 500
+
 
 
 @api_bp.route('/global_stats', methods=['GET'])
