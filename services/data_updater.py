@@ -108,8 +108,11 @@ def actualizar_cache_periodicamente():
 
 
 def actualizar_historial_partidas_en_segundo_plano():
-    """Actualiza el historial de partidas de todos los jugadores."""
+    """Actualiza el historial de partidas de todos los jugadores desde el inicio de la temporada."""
     print("[actualizar_historial_partidas_en_segundo_plano] Hilo iniciado.")
+    
+    # Importar SEASON_START_TIMESTAMP para filtrar partidas
+    from config.settings import SEASON_START_TIMESTAMP
     
     while True:
         try:
@@ -129,25 +132,79 @@ def actualizar_historial_partidas_en_segundo_plano():
                     existing_matches = historial.get('matches', [])
                     existing_ids = {m.get('match_id') for m in existing_matches}
                     
-                    # Obtener nuevas partidas de la API
+                    # Obtener TODAS las partidas desde el inicio de la temporada usando paginación
                     from services.riot_api import make_api_request
-                    url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count=20&api_key={RIOT_API_KEY}"
-                    response = make_api_request(url)
                     
-                    if not response:
-                        continue
+                    all_new_match_ids = []
+                    start = 0
+                    count = 100  # Máximo permitido por la API
+                    max_iterations = 20  # Límite de seguridad para evitar loops infinitos
+                    iteration = 0
                     
-                    new_match_ids = response.json()
+                    print(f"[actualizar_historial] Cargando historial completo para {jugador_nombre} desde {datetime.fromtimestamp(SEASON_START_TIMESTAMP, tz=timezone.utc)}...")
+                    
+                    while iteration < max_iterations:
+                        url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}&api_key={RIOT_API_KEY}"
+                        response = make_api_request(url)
+                        
+                        if not response:
+                            break
+                        
+                        match_ids = response.json()
+                        
+                        if not match_ids:
+                            break
+                        
+                        # Filtrar partidas que son desde el inicio de la temporada
+                        # La API devuelve partidas ordenadas de más reciente a más antigua
+                        # Necesitamos verificar el timestamp de cada partida
+                        for match_id in match_ids:
+                            # Verificar si ya tenemos esta partida
+                            if match_id in existing_ids:
+                                # Si ya existe, verificar si está dentro de la temporada
+                                existing_match = next((m for m in existing_matches if m.get('match_id') == match_id), None)
+                                if existing_match:
+                                    match_ts = existing_match.get('game_end_timestamp', 0)
+                                    if match_ts >= SEASON_START_TIMESTAMP * 1000:
+                                        all_new_match_ids.append(match_id)
+                                continue
+                            
+                            # Es una partida nueva, la añadimos para procesar
+                            all_new_match_ids.append(match_id)
+                        
+                        # Si recibimos menos de 'count' partidas, hemos llegado al final
+                        if len(match_ids) < count:
+                            break
+                        
+                        # Verificar si la última partida es anterior al inicio de temporada
+                        # Para optimizar, verificamos la última partida del batch
+                        last_match_id = match_ids[-1]
+                        if last_match_id not in existing_ids:
+                            # Necesitamos obtener info de la partida para verificar fecha
+                            # Por ahora, continuamos y filtraremos después
+                            pass
+                        
+                        start += count
+                        iteration += 1
+                        time.sleep(0.5)  # Pequeña pausa entre paginaciones
+                    
+                    print(f"[actualizar_historial] Total de IDs de partidas a procesar para {jugador_nombre}: {len(all_new_match_ids)}")
+                    
                     matches_to_add = []
                     
-                    # Procesar solo partidas nuevas
-                    for match_id in new_match_ids:
+                    # Procesar partidas nuevas (que no existen en el historial)
+                    for match_id in all_new_match_ids:
                         if match_id not in existing_ids:
                             match_info = obtener_info_partida((match_id, puuid, RIOT_API_KEY))
                             # Filtrar explícitamente valores None (remakes u errores)
                             if match_info is not None:
-                                matches_to_add.append(match_info)
-                                print(f"[actualizar_historial] Partida {match_id} procesada para {jugador_nombre}")
+                                # Verificar que la partida sea desde el inicio de la temporada
+                                match_ts = match_info.get('game_end_timestamp', 0)
+                                if match_ts >= SEASON_START_TIMESTAMP * 1000:
+                                    matches_to_add.append(match_info)
+                                    print(f"[actualizar_historial] Partida {match_id} procesada para {jugador_nombre} (fecha: {datetime.fromtimestamp(match_ts/1000, tz=timezone.utc)})")
+                                else:
+                                    print(f"[actualizar_historial] Partida {match_id} descartada (anterior a inicio de temporada) para {jugador_nombre}")
                             else:
                                 print(f"[actualizar_historial] Partida {match_id} descartada (None) para {jugador_nombre}")
                     
@@ -160,19 +217,24 @@ def actualizar_historial_partidas_en_segundo_plano():
                         if all_matches:
                             newest_ts = all_matches[0].get('game_end_timestamp', 0)
                             oldest_ts = all_matches[-1].get('game_end_timestamp', 0)
-                            print(f"[actualizar_historial] Ordenación verificada: {len(all_matches)} partidas, más reciente: {newest_ts}, más antigua: {oldest_ts}")
+                            newest_date = datetime.fromtimestamp(newest_ts/1000, tz=timezone.utc)
+                            oldest_date = datetime.fromtimestamp(oldest_ts/1000, tz=timezone.utc)
+                            print(f"[actualizar_historial] Ordenación verificada: {len(all_matches)} partidas, más reciente: {newest_date}, más antigua: {oldest_date}")
                         
                         # Guardar
                         save_player_match_history(puuid, {'matches': all_matches})
                         print(f"[actualizar_historial] {len(matches_to_add)} nuevas partidas guardadas para {jugador_nombre}. Total: {len(all_matches)}")
-
+                    else:
+                        print(f"[actualizar_historial] No hay partidas nuevas para {jugador_nombre}")
                     
                 except Exception as e:
                     print(f"[actualizar_historial] Error procesando {jugador_nombre}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     continue
                 
-                # Pequeña pausa entre jugadores
-                time.sleep(1)
+                # Pausa entre jugadores
+                time.sleep(2)
             
             print("[actualizar_historial_partidas_en_segundo_plano] Actualización completada")
             
@@ -181,8 +243,9 @@ def actualizar_historial_partidas_en_segundo_plano():
             import traceback
             traceback.print_exc()
         
-        # Esperar 5 minutos antes de la siguiente actualización
-        time.sleep(300)
+        # Esperar 10 minutos antes de la siguiente actualización completa
+        time.sleep(600)
+
 
 
 def _calculate_and_cache_global_stats_periodically():
