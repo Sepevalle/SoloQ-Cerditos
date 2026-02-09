@@ -1151,7 +1151,7 @@
                                 </div>
                             </td>
                             <td>
-                                {% if match.lp_change_this_game is not none %}
+                                {% if match.get('lp_change_this_game') is not none %}
                                     {% if match.lp_change_this_game > 0 %}
                                         <span class="lp-gain">+{{ match.lp_change_this_game }} LP</span>
                                     {% elif match.lp_change_this_game < 0 %}
@@ -1163,6 +1163,7 @@
                                     <span>N/A</span>
                                 {% endif %}
                             </td>
+
                             <td>{{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s</td>
                             <td class="{{ 'text-success' if match.win else 'text-danger' }}">
                                 {{ 'Victoria' if match.win else 'Derrota' }}
