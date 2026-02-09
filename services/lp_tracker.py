@@ -302,7 +302,7 @@ def elo_tracker_worker(riot_api_key, github_token):
 def start_lp_tracker(riot_api_key, github_token):
     """
     Función de inicio para el servicio de seguimiento de LP.
-    Wrapper que inicia el worker principal.
+    Wrapper que inicia el worker principal en un thread separado.
     
     Args:
         riot_api_key: API key de Riot Games
@@ -318,5 +318,13 @@ def start_lp_tracker(riot_api_key, github_token):
         print("[lp_tracker] ⚠ Error: GITHUB_TOKEN no configurado")
         return
     
-    # Iniciar el worker principal
-    elo_tracker_worker(riot_api_key, github_token)
+    # Iniciar el worker principal en un thread separado (daemon)
+    import threading
+    lp_thread = threading.Thread(
+        target=elo_tracker_worker, 
+        args=(riot_api_key, github_token),
+        daemon=True,
+        name="LPTrackerWorker"
+    )
+    lp_thread.start()
+    print("[lp_tracker] ✓ Worker de LP tracker iniciado en thread separado")

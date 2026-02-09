@@ -229,3 +229,74 @@ def analizar_partidas(puuid):
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
+
+
+@api_bp.route('/update-global-stats', methods=['POST'])
+def request_global_stats_update():
+    """
+    Endpoint para disparar cálculo manual de estadísticas globales.
+    Bloquea peticiones concurrentes para evitar saturación del servidor.
+    """
+    from services.cache_service import global_stats_cache
+    from services.stats_service import calculate_global_stats
+    from services.player_service import get_all_accounts, get_all_puuids
+    from services.match_service import get_player_match_history
+    
+    try:
+        # Si ya se está calculando, rechazar la petición
+        if global_stats_cache.is_calculating():
+            return jsonify({
+                "status": "already_calculating",
+                "message": "El cálculo de estadísticas globales ya está en progreso. Espera a que termine."
+            }), 429  # Too Many Requests
+        
+        # Marcar como calculando
+        global_stats_cache.set_calculating(True)
+        print("[request_global_stats_update] Iniciando cálculo manual de estadísticas globales...")
+        
+        try:
+            # Compilar todas las partidas
+            cuentas = get_all_accounts()
+            puuids = get_all_puuids()
+            
+            all_matches = []
+            for riot_id, jugador_nombre in cuentas:
+                puuid = puuids.get(riot_id)
+                if not puuid:
+                    continue
+                
+                historial = get_player_match_history(puuid, limit=-1)
+                matches = historial.get('matches', [])
+                
+                for match in matches:
+                    match['jugador_nombre'] = jugador_nombre
+                    match['riot_id'] = riot_id
+                    all_matches.append(match)
+            
+            # Calcular estadísticas
+            stats = calculate_global_stats(all_matches)
+            
+            # Guardar en caché
+            global_stats_cache.set(stats, all_matches)
+            
+            return jsonify({
+                "status": "success",
+                "message": "Estadísticas globales actualizadas correctamente.",
+                "timestamp": time.time(),
+                "total_matches": len(all_matches)
+            }), 200
+            
+        finally:
+            # Siempre desmarcar como calculando al terminar
+            global_stats_cache.set_calculating(False)
+            print("[request_global_stats_update] Cálculo de estadísticas globales completado.")
+    
+    except Exception as e:
+        global_stats_cache.set_calculating(False)
+        print(f"[request_global_stats_update] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "status": "error",
+            "message": f"Error al calcular estadísticas: {str(e)}"
+        }), 500

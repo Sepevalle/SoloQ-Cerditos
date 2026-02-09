@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Historial Global - Cerditos y Valientes{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('main.historial_global') }}">Historial Global</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'main.records_personales' %}active{% endif %}" href="{{ url_for('main.records_personales') }}">Récords Personales</a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <h1 class="mb-4">Historial Global de Partidas</h1>
+    
+    {% if matches %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Jugador</th>
+                    <th>Campeón</th>
+                    <th>Resultado</th>
+                    <th>KDA</th>
+                    <th>Cola</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for match in matches %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('player.detalle_jugador', puuid=match.puuid) }}" class="link-perfil">
+                            {{ match.jugador_nombre }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if match.champion_name %}
+                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png" 
+                             alt="{{ match.champion_name }}" 
+                             style="width: 30px; height: 30px; border-radius: 50%; margin-right: 5px;">
+                        {{ match.champion_name }}
+                        {% else %}
+                        Desconocido
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if match.win %}
+                        <span class="text-success fw-bold">Victoria</span>
+                        {% else %}
+                        <span class="text-danger fw-bold">Derrota</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ match.kills | default(0) }}/{{ match.deaths | default(0) }}/{{ match.assists | default(0) }}
+                    </td>
+                    <td>
+                        {% if match.queue_id == 420 %}
+                        <span class="badge bg-primary">Solo/Duo</span>
+                        {% elif match.queue_id == 440 %}
+                        <span class="badge bg-info">Flexible</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Otra</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if match.game_end_timestamp %}
+                        {{ (match.game_end_timestamp / 1000) | timestamp_to_date }}
+                        {% else %}
+                        Desconocida
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No hay partidas registradas en el historial global.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

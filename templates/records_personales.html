@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Récords Personales - Cerditos y Valientes{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'main.historial_global' %}active{% endif %}" href="{{ url_for('main.historial_global') }}">Historial Global</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('main.records_personales') }}">Récords Personales</a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <h1 class="mb-4">Récords Personales</h1>
+    
+    {% if records %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Jugador</th>
+                    <th>Récord</th>
+                    <th>Valor</th>
+                    <th>Campeón</th>
+                    <th>Detalles</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('player.detalle_jugador', puuid=record.puuid) }}" class="link-perfil">
+                            {{ record.player }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge bg-warning text-dark">{{ record.record_type_key | replace('_', ' ') | title }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-primary">{{ record.value }}</span>
+                    </td>
+                    <td>
+                        {% if record.champion %}
+                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ record.champion }}.png" 
+                             alt="{{ record.champion }}" 
+                             style="width: 30px; height: 30px; border-radius: 50%; margin-right: 5px;">
+                        {{ record.champion }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if record.match_id %}
+                        <small class="text-muted">Partida: {{ record.match_id }}</small>
+                        {% endif %}
+                        {% if record.timestamp %}
+                        <br><small class="text-muted">{{ (record.timestamp / 1000) | timestamp_to_date }}</small>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No hay récords personales registrados.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
