@@ -225,23 +225,34 @@ def actualizar_historial_partidas_en_segundo_plano():
                             player_lp_history = lp_history_data.get(puuid, {}) if lp_history_data else {}
                             
                             if player_lp_history:
-                                print(f"[actualizar_historial] Calculando LP para {jugador_nombre} usando {len(player_lp_history.get('RANKED_SOLO_5x5', []))} SoloQ y {len(player_lp_history.get('RANKED_FLEX_SR', []))} Flex snapshots...")
+                                # Filtrar solo partidas nuevas que necesitan cálculo de LP (no tienen LP asignado)
+                                matches_needing_lp = [
+                                    m for m in matches_to_add 
+                                    if m.get('lp_change_this_game') is None
+                                ]
                                 
-                                # Combinar partidas existentes con las nuevas para cálculo correcto
-                                all_matches_for_calc = existing_matches + matches_to_add
-                                
-                                # Procesar para calcular LP (asigna a la última partida de cada ventana)
-                                processed_matches = process_player_match_history(all_matches_for_calc, player_lp_history)
-                                
-                                # Separar las partidas nuevas procesadas
-                                processed_new_matches = []
-                                for match in processed_matches:
-                                    if match.get('match_id') in {m.get('match_id') for m in matches_to_add}:
-                                        processed_new_matches.append(match)
-                                
-                                # Reemplazar matches_to_add con las versiones procesadas (con LP calculado)
-                                matches_to_add = processed_new_matches
-                                print(f"[actualizar_historial] LP calculado para {len([m for m in matches_to_add if m.get('lp_change_this_game') is not None])} partidas nuevas")
+                                if matches_needing_lp:
+                                    print(f"[actualizar_historial] Calculando LP para {jugador_nombre}: {len(matches_needing_lp)} partidas nuevas necesitan LP (usando {len(player_lp_history.get('RANKED_SOLO_5x5', []))} SoloQ y {len(player_lp_history.get('RANKED_FLEX_SR', []))} Flex snapshots)...")
+                                    
+                                    # Combinar partidas existentes con las nuevas para cálculo correcto
+                                    all_matches_for_calc = existing_matches + matches_to_add
+                                    
+                                    # Procesar SOLO si hay partidas que necesitan LP
+                                    processed_matches = process_player_match_history(all_matches_for_calc, player_lp_history)
+                                    
+                                    # Extraer solo las partidas nuevas procesadas que necesitaban LP
+                                    new_match_ids = {m.get('match_id') for m in matches_to_add}
+                                    processed_new_matches = [
+                                        m for m in processed_matches 
+                                        if m.get('match_id') in new_match_ids
+                                    ]
+                                    
+                                    # Reemplazar matches_to_add con las versiones procesadas (con LP calculado)
+                                    matches_to_add = processed_new_matches
+                                    calculated_count = len([m for m in matches_to_add if m.get('lp_change_this_game') is not None])
+                                    print(f"[actualizar_historial] LP calculado para {calculated_count} de {len(matches_needing_lp)} partidas nuevas")
+                                else:
+                                    print(f"[actualizar_historial] Todas las partidas nuevas de {jugador_nombre} ya tienen LP asignado, omitiendo cálculo")
                             else:
                                 print(f"[actualizar_historial] No hay historial de LP para {jugador_nombre}, las partidas se guardarán sin cálculo de LP")
                         except Exception as e:
@@ -249,6 +260,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                             import traceback
                             traceback.print_exc()
                             # Continuar sin cálculo de LP si hay error
+
                         
                         # Combinar y ordenar por timestamp descendente (más reciente primero)
                         all_matches = existing_matches + matches_to_add
