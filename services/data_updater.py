@@ -12,7 +12,7 @@ from config.settings import (
     BASE_URL_DDRAGON, DDRAGON_VERSION
 )
 from services.cache_service import player_cache, global_stats_cache, personal_records_cache
-from services.github_service import read_accounts_file, read_puuids, read_player_match_history, save_player_match_history
+from services.github_service import read_accounts_file, read_puuids, read_player_match_history, save_player_match_history, read_lp_history
 from services.riot_api import (
     obtener_puuid, obtener_id_invocador, obtener_elo, 
     obtener_info_partida, actualizar_ddragon_data,
@@ -20,7 +20,9 @@ from services.riot_api import (
 )
 from services.player_service import get_all_accounts, get_all_puuids
 from services.stats_service import calculate_personal_records
+from services.data_processing import process_player_match_history
 from concurrent.futures import ThreadPoolExecutor
+
 
 
 def keep_alive():
@@ -217,6 +219,37 @@ def actualizar_historial_partidas_en_segundo_plano():
                                 print(f"[actualizar_historial] Partida {match_id} descartada (None) para {jugador_nombre}")
                     
                     if matches_to_add:
+                        # Leer historial de LP para calcular cambios de LP
+                        try:
+                            _, lp_history_data = read_lp_history()
+                            player_lp_history = lp_history_data.get(puuid, {}) if lp_history_data else {}
+                            
+                            if player_lp_history:
+                                print(f"[actualizar_historial] Calculando LP para {jugador_nombre} usando {len(player_lp_history.get('RANKED_SOLO_5x5', []))} SoloQ y {len(player_lp_history.get('RANKED_FLEX_SR', []))} Flex snapshots...")
+                                
+                                # Combinar partidas existentes con las nuevas para cálculo correcto
+                                all_matches_for_calc = existing_matches + matches_to_add
+                                
+                                # Procesar para calcular LP (asigna a la última partida de cada ventana)
+                                processed_matches = process_player_match_history(all_matches_for_calc, player_lp_history)
+                                
+                                # Separar las partidas nuevas procesadas
+                                processed_new_matches = []
+                                for match in processed_matches:
+                                    if match.get('match_id') in {m.get('match_id') for m in matches_to_add}:
+                                        processed_new_matches.append(match)
+                                
+                                # Reemplazar matches_to_add con las versiones procesadas (con LP calculado)
+                                matches_to_add = processed_new_matches
+                                print(f"[actualizar_historial] LP calculado para {len([m for m in matches_to_add if m.get('lp_change_this_game') is not None])} partidas nuevas")
+                            else:
+                                print(f"[actualizar_historial] No hay historial de LP para {jugador_nombre}, las partidas se guardarán sin cálculo de LP")
+                        except Exception as e:
+                            print(f"[actualizar_historial] Error calculando LP para {jugador_nombre}: {e}")
+                            import traceback
+                            traceback.print_exc()
+                            # Continuar sin cálculo de LP si hay error
+                        
                         # Combinar y ordenar por timestamp descendente (más reciente primero)
                         all_matches = existing_matches + matches_to_add
                         all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0) if x.get('game_end_timestamp') else 0, reverse=True)
@@ -234,6 +267,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                         print(f"[actualizar_historial] {len(matches_to_add)} nuevas partidas guardadas para {jugador_nombre}. Total: {len(all_matches)}")
                     else:
                         print(f"[actualizar_historial] No hay partidas nuevas para {jugador_nombre}")
+
                     
                 except Exception as e:
                     print(f"[actualizar_historial] Error procesando {jugador_nombre}: {e}")
