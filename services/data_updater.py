@@ -137,16 +137,17 @@ def actualizar_historial_partidas_en_segundo_plano():
                     existing_matches = historial.get('matches', [])
                     existing_ids = {m.get('match_id') for m in existing_matches}
                     
-                    # Obtener TODAS las partidas desde el inicio de la temporada usando paginación
+                    # Obtener solo las últimas partidas para reducir carga en la API
                     from services.riot_api import make_api_request
                     
                     all_new_match_ids = []
                     start = 0
-                    count = 100  # Máximo permitido por la API
-                    max_iterations = 20  # Límite de seguridad para evitar loops infinitos
+                    count = 50  # Reducido de 100 a 50 para optimizar
+                    max_iterations = 2  # Reducido de 20 a 2 (máximo 100 partidas)
                     iteration = 0
+                    old_matches_found = 0  # Contador para detección temprana de partidas antiguas
                     
-                    print(f"[actualizar_historial] Cargando historial completo para {jugador_nombre} desde {datetime.fromtimestamp(SEASON_START_TIMESTAMP, tz=timezone.utc)}...")
+                    print(f"[actualizar_historial] Cargando últimas partidas para {jugador_nombre}...")
                     
                     while iteration < max_iterations:
                         url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}&api_key={RIOT_API_KEY}"
@@ -160,9 +161,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                         if not match_ids:
                             break
                         
-                        # Filtrar partidas que son desde el inicio de la temporada
-                        # La API devuelve partidas ordenadas de más reciente a más antigua
-                        # Necesitamos verificar el timestamp de cada partida
+                        # Procesar IDs de partidas
                         for match_id in match_ids:
                             # Verificar si ya tenemos esta partida
                             if match_id in existing_ids:
@@ -172,6 +171,8 @@ def actualizar_historial_partidas_en_segundo_plano():
                                     match_ts = existing_match.get('game_end_timestamp', 0)
                                     if match_ts >= SEASON_START_TIMESTAMP * 1000:
                                         all_new_match_ids.append(match_id)
+                                    else:
+                                        old_matches_found += 1
                                 continue
                             
                             # Es una partida nueva, la añadimos para procesar
@@ -181,21 +182,22 @@ def actualizar_historial_partidas_en_segundo_plano():
                         if len(match_ids) < count:
                             break
                         
-                        # Verificar si la última partida es anterior al inicio de temporada
-                        # Para optimizar, verificamos la última partida del batch
-                        last_match_id = match_ids[-1]
-                        if last_match_id not in existing_ids:
-                            # Necesitamos obtener info de la partida para verificar fecha
-                            # Por ahora, continuamos y filtraremos después
-                            pass
+                        # Detección temprana: si encontramos muchas partidas antiguas, paramos
+                        if old_matches_found > 20:
+                            print(f"[actualizar_historial] Detectadas {old_matches_found} partidas antiguas, deteniendo paginación")
+                            break
                         
                         start += count
                         iteration += 1
-                        time.sleep(0.5)  # Pequeña pausa entre paginaciones
+                        time.sleep(0.3)  # Pausa reducida
                     
-                    print(f"[actualizar_historial] Total de IDs de partidas a procesar para {jugador_nombre}: {len(all_new_match_ids)}")
+                    print(f"[actualizar_historial] IDs a procesar para {jugador_nombre}: {len(all_new_match_ids)} (descartadas ~{old_matches_found} antiguas)")
+
                     
                     matches_to_add = []
+                    skipped_old = 0
+                    skipped_queue = 0
+                    skipped_none = 0
                     
                     # Procesar partidas nuevas (que no existen en el historial)
                     for match_id in all_new_match_ids:
@@ -210,13 +212,17 @@ def actualizar_historial_partidas_en_segundo_plano():
                                     queue_id = match_info.get('queue_id')
                                     if queue_id in ALLOWED_QUEUE_IDS:
                                         matches_to_add.append(match_info)
-                                        print(f"[actualizar_historial] Partida {match_id} procesada para {jugador_nombre} (cola: {queue_id}, fecha: {datetime.fromtimestamp(match_ts/1000, tz=timezone.utc)})")
                                     else:
-                                        print(f"[actualizar_historial] Partida {match_id} descartada (cola no permitida: {queue_id}) para {jugador_nombre}")
+                                        skipped_queue += 1
                                 else:
-                                    print(f"[actualizar_historial] Partida {match_id} descartada (anterior a inicio de temporada) para {jugador_nombre}")
+                                    skipped_old += 1
                             else:
-                                print(f"[actualizar_historial] Partida {match_id} descartada (None) para {jugador_nombre}")
+                                skipped_none += 1
+                    
+                    # Log resumen de partidas descartadas
+                    if skipped_old > 0 or skipped_queue > 0 or skipped_none > 0:
+                        print(f"[actualizar_historial] Descartadas para {jugador_nombre}: {skipped_old} antiguas, {skipped_queue} cola no permitida, {skipped_none} remakes/error")
+
                     
                     if matches_to_add:
                         # Leer historial de LP para calcular cambios de LP
