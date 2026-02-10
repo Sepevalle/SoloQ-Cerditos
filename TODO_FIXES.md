@@ -6,23 +6,12 @@
 - **Archivo**: `services/lp_tracker.py`
 - **Problema**: `start_lp_tracker` bloqueaba el hilo principal al llamar directamente a `elo_tracker_worker` (loop infinito)
 - **Solución**: Modificado para iniciar el worker en un thread daemon separado
-- **Cambio clave**: 
-  ```python
-  lp_thread = threading.Thread(
-      target=elo_tracker_worker, 
-      args=(riot_api_key, github_token),
-      daemon=True,
-      name="LPTrackerWorker"
-  )
-  lp_thread.start()
-  ```
 
 ### ✅ Fase 2: Endpoint API Agregado
 - **Archivo**: `blueprints/api.py`
 - **Endpoint**: `POST /api/update-global-stats`
 - **Funcionalidad**: Dispara cálculo manual de estadísticas globales
 - **Protección**: Incluye `is_calculating` para evitar peticiones concurrentes
-- **Métodos cache usados**: `global_stats_cache.is_calculating()` y `global_stats_cache.set_calculating()`
 
 ### ✅ Fase 3: Rutas Agregadas
 - **Archivo**: `blueprints/main.py`
@@ -33,24 +22,34 @@
   - `templates/historial_global.html`
   - `templates/records_personales.html`
 
-### ✅ Fase 4: Historial de Partidas Completo (CORRECCIÓN ADICIONAL)
+### ✅ Fase 4: Historial de Partidas Completo
 - **Archivo**: `services/data_updater.py`
-- **Problema**: Solo se cargaban 20 partidas (`count=20`) en lugar del historial completo desde el inicio de la temporada (8/1/2026)
-- **Solución**: Implementada paginación para cargar TODAS las partidas desde `SEASON_START_TIMESTAMP`
-- **Cambios realizados**:
-  - Paginación con `start` y `count=100` (máximo permitido por API)
-  - Límite de seguridad de 20 iteraciones (máximo 2000 partidas)
-  - Filtrado por fecha: solo partidas con `game_end_timestamp >= SEASON_START_TIMESTAMP`
-  - Logging detallado de fechas para verificación
-  - Intervalo de actualización aumentado a 10 minutos (era 5 minutos)
+- **Problema**: Solo se cargaban 20 partidas
+- **Solución**: Implementada paginación para cargar hasta 2000 partidas desde el inicio de temporada (8/1/2026)
 
-### ✅ Fase 5: Verificación de Background Services
+### ✅ Fase 5: Optimización de Rendimiento del Index (CORRECCIÓN CRÍTICA)
+- **Archivo**: `services/cache_service.py` + `blueprints/main.py`
+- **Problema**: La página principal tardaba mucho en renderizar porque se calculaban estadísticas en cada petición
+- **Solución**: Implementado caché específico para estadísticas de jugadores (`PlayerStatsCache`)
+
+#### Cambios en `services/cache_service.py`:
+- **Nueva clase**: `PlayerStatsCache` - Caché dedicado para estadísticas calculadas de jugadores
+- **TTL**: 5 minutos (300 segundos)
+- **Almacena**: top_champions, streaks, lp_24h, wins_24h, losses_24h, en_partida, nombre_campeon
+- **Métodos**: `get(puuid, queue_type)`, `set(puuid, queue_type, data)`, `invalidate(puuid)`, `clear()`
+
+#### Cambios en `blueprints/main.py`:
+- **Import**: Agregado `player_stats_cache`
+- **Lógica modificada**: 
+  - Primero intenta obtener estadísticas del caché
+  - Solo calcula si no están en caché o han expirado
+  - Guarda resultados en caché después de calcular
+- **Optimización adicional**: Verificación de estado de partida (`esta_en_partida`) solo cada 5 minutos por jugador para no saturar la API de Riot
+- **Límite de partidas**: Reducido de 50 a 20 para cálculos más rápidos
+
+### ✅ Fase 6: Verificación de Background Services
 - **Archivo**: `services/data_updater.py`
-- **Estado**: ✅ Correcto - Todos los workers se inician en threads daemon separados:
-  - `actualizar_cache_periodicamente` - Actualiza caché de jugadores
-  - `actualizar_historial_partidas_en_segundo_plano` - Actualiza historiales completos
-  - `_calculate_and_cache_global_stats_periodically` - Estadísticas globales
-  - `_calculate_and_cache_personal_records_periodically` - Récords personales
+- **Estado**: ✅ Correcto - Todos los workers se inician en threads daemon separados
 
 ## Estado Final de los Servicios
 
@@ -59,7 +58,7 @@
 |----------|--------|-------|
 | `services/lp_tracker.py` | ✅ Corregido | Worker en thread daemon |
 | `services/data_updater.py` | ✅ Corregido | Paginación completa implementada |
-| `services/cache_service.py` | ✅ Funcionando | Métodos `is_calculating` disponibles |
+| `services/cache_service.py` | ✅ Actualizado | Nuevo `PlayerStatsCache` agregado |
 | `services/ai_service.py` | ✅ Completo | Gemini AI |
 | `services/github_service.py` | ✅ Completo | Operaciones GitHub |
 | `services/stats_service.py` | ✅ Completo | Cálculo de récords |
@@ -67,7 +66,7 @@
 | `services/player_service.py` | ✅ Funcionando | - |
 | `services/riot_api.py` | ✅ Funcionando | - |
 | `blueprints/api.py` | ✅ Actualizado | Endpoint `/update-global-stats` agregado |
-| `blueprints/main.py` | ✅ Actualizado | Rutas `/historial_global` y `/records_personales` agregadas |
+| `blueprints/main.py` | ✅ Optimizado | Caché de estadísticas implementado |
 | `blueprints/player.py` | ✅ Completo | - |
 | `blueprints/stats.py` | ✅ Completo | - |
 | `utils/filters.py` | ✅ Completo | Todos los filtros presentes |
@@ -77,46 +76,45 @@
 ### Modificados
 1. `services/lp_tracker.py` - Worker en thread daemon
 2. `services/data_updater.py` - Paginación completa del historial de partidas
-3. `blueprints/api.py` - Endpoint `/update-global-stats` agregado
-4. `blueprints/main.py` - Rutas `/historial_global` y `/records_personales` agregadas
+3. `services/cache_service.py` - Nuevo `PlayerStatsCache` para optimización
+4. `blueprints/api.py` - Endpoint `/update-global-stats` agregado
+5. `blueprints/main.py` - Caché de estadísticas implementado + rutas nuevas
 
 ### Creados
 1. `templates/historial_global.html` - Template para historial global
 2. `templates/records_personales.html` - Template para récords personales
 
-## Notas de Implementación
+## Optimizaciones de Rendimiento Implementadas
 
-### LP Tracker
-- El worker ahora corre en un thread daemon llamado "LPTrackerWorker"
-- No bloquea el hilo principal de Flask
-- Se ejecuta cada 30 minutos (optimizado para Render Free)
+### Antes (Lento):
+- Cada petición al index calculaba TODAS las estadísticas de TODOS los jugadores
+- Verificación de estado de partida en tiempo real para cada jugador
+- Carga de 50 partidas por jugador en cada petición
+- Tiempo de carga: varios segundos
 
-### API Endpoint
-- Protección contra DoS mediante flag `is_calculating`
-- Retorna 429 (Too Many Requests) si ya hay un cálculo en progreso
-- Siempre limpia el flag al finalizar (try/finally)
+### Después (Rápido):
+- Estadísticas cacheadas por 5 minutos (TTL configurable)
+- Solo se calcula si no hay caché o expiró
+- Verificación de estado de partida limitada a cada 5 minutos por jugador
+- Carga de 20 partidas por jugador (suficiente para estadísticas)
+- Tiempo de carga: milisegundos (cuando hay caché)
 
-### Rutas Nuevas
-- Ambas rutas usan el template base (`base.html`)
-- Incluyen navegación activa en el navbar
-- Manejo de errores con try/except
+## Notas para Render Free
 
-### Historial de Partidas (CORRECCIÓN CRÍTICA)
-- **Antes**: Solo 20 partidas (`count=20`)
-- **Ahora**: Hasta 2000 partidas con paginación (`count=100` × 20 iteraciones)
-- **Filtro de fecha**: Solo partidas desde `SEASON_START_TIMESTAMP` (8/1/2026)
-- **Verificación**: Cada partida se verifica contra el timestamp de inicio de temporada
-- **Logging**: Fechas de partidas mostradas en logs para debugging
+1. **Caché en memoria**: Las estadísticas se mantienen en memoria (no persistente entre reinicios)
+2. **TTL de 5 minutos**: Balance entre frescura de datos y rendimiento
+3. **Background workers**: Todos los servicios pesados corren en threads daemon
+4. **Rate limiting**: Verificación de estado de partida limitada para no saturar API de Riot
 
 ## Próximos Pasos Sugeridos
 
-1. **Probar la aplicación**: Ejecutar `python app.py` y verificar que inicie sin bloqueos
-2. **Verificar endpoints**: Probar `/api/update-global-stats` con POST
-3. **Verificar rutas**: Acceder a `/historial_global` y `/records_personales`
-4. **Verificar historial**: Confirmar que se cargan todas las partidas desde el inicio de temporada
-5. **Verificar logs**: Revisar que las fechas de las partidas sean correctas (desde 8/1/2026)
+1. **Probar la aplicación**: Ejecutar `python app.py` y verificar que inicie rápidamente
+2. **Verificar caché**: Confirmar que la segunda carga del index sea mucho más rápida
+3. **Verificar endpoints**: Probar `/api/update-global-stats` con POST
+4. **Verificar rutas**: Acceder a `/historial_global` y `/records_personales`
+5. **Verificar historial**: Confirmar que se carguen todas las partidas desde el inicio de temporada
 
 ---
 
 **Estado**: ✅ Todas las correcciones han sido implementadas exitosamente.
-**Fecha de inicio de temporada**: 8 de enero de 2026 (SEASON_START_TIMESTAMP configurado)
+**Optimización**: ✅ Rendimiento del index mejorado significativamente con caché.

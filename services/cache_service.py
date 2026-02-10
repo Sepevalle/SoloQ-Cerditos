@@ -243,6 +243,55 @@ class LpHistoryCache:
 
 
 # ============================================================================
+# CACHÉ DE ESTADÍSTICAS DE JUGADORES (INDEX) - NUEVO PARA RENDIMIENTO
+# ============================================================================
+
+class PlayerStatsCache:
+    """
+    Caché específico para las estadísticas calculadas de jugadores en el index.
+    Almacena: top_champions, streaks, lp_24h, wins_24h, losses_24h, en_partida
+    """
+    def __init__(self):
+        self._cache = {}  # {puuid_queue: {'data': {...}, 'timestamp': ...}}
+        self._lock = threading.Lock()
+        self._ttl = 300  # 5 minutos de TTL
+
+    def _make_key(self, puuid, queue_type):
+        """Genera una clave única para puuid + queue_type."""
+        return f"{puuid}_{queue_type}"
+
+    def get(self, puuid, queue_type):
+        """Obtiene las estadísticas cacheadas de un jugador para una cola específica."""
+        with self._lock:
+            key = self._make_key(puuid, queue_type)
+            cached = self._cache.get(key)
+            if cached and (time.time() - cached["timestamp"] < self._ttl):
+                return cached["data"]
+            return None
+
+    def set(self, puuid, queue_type, data):
+        """Guarda las estadísticas de un jugador."""
+        with self._lock:
+            key = self._make_key(puuid, queue_type)
+            self._cache[key] = {
+                "data": data,
+                "timestamp": time.time()
+            }
+
+    def invalidate(self, puuid):
+        """Invalida todas las entradas de un jugador."""
+        with self._lock:
+            keys_to_remove = [k for k in self._cache.keys() if k.startswith(f"{puuid}_")]
+            for key in keys_to_remove:
+                del self._cache[key]
+
+    def clear(self):
+        """Limpia todo el caché."""
+        with self._lock:
+            self._cache.clear()
+
+
+# ============================================================================
 # CACHÉ DE RESPUESTAS API (PARA RATE LIMITING)
 # ============================================================================
 
@@ -305,6 +354,7 @@ peak_elo_cache = PeakEloCache()
 player_match_history_cache = PlayerMatchHistoryCache()
 personal_records_cache = PersonalRecordsCache()
 lp_history_cache = LpHistoryCache()
+player_stats_cache = PlayerStatsCache()  # NUEVO: Caché para estadísticas de jugadores
 api_response_cache = ApiResponseCache()
 
 
@@ -315,6 +365,7 @@ api_response_cache = ApiResponseCache()
 def cleanup_all_caches():
     """Limpia todos los cachés de memoria."""
     player_match_history_cache.clear()
+    player_stats_cache.clear()  # NUEVO: Limpiar también el caché de estadísticas
     api_response_cache.cleanup()
     print("[cleanup_all_caches] Todos los cachés han sido limpiados")
 
