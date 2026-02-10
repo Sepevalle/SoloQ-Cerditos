@@ -114,6 +114,9 @@ def actualizar_historial_partidas_en_segundo_plano():
     # Importar SEASON_START_TIMESTAMP para filtrar partidas
     from config.settings import SEASON_START_TIMESTAMP
     
+    # IDs de colas permitidas (SoloQ y Flex)
+    ALLOWED_QUEUE_IDS = {420, 440}  # 420 = RANKED_SOLO_5x5, 440 = RANKED_FLEX_SR
+    
     while True:
         try:
             print("[actualizar_historial_partidas_en_segundo_plano] Iniciando actualización de historiales...")
@@ -201,8 +204,13 @@ def actualizar_historial_partidas_en_segundo_plano():
                                 # Verificar que la partida sea desde el inicio de la temporada
                                 match_ts = match_info.get('game_end_timestamp', 0)
                                 if match_ts >= SEASON_START_TIMESTAMP * 1000:
-                                    matches_to_add.append(match_info)
-                                    print(f"[actualizar_historial] Partida {match_id} procesada para {jugador_nombre} (fecha: {datetime.fromtimestamp(match_ts/1000, tz=timezone.utc)})")
+                                    # FILTRAR POR TIPO DE COLA: Solo permitir SoloQ (420) y Flex (440)
+                                    queue_id = match_info.get('queue_id')
+                                    if queue_id in ALLOWED_QUEUE_IDS:
+                                        matches_to_add.append(match_info)
+                                        print(f"[actualizar_historial] Partida {match_id} procesada para {jugador_nombre} (cola: {queue_id}, fecha: {datetime.fromtimestamp(match_ts/1000, tz=timezone.utc)})")
+                                    else:
+                                        print(f"[actualizar_historial] Partida {match_id} descartada (cola no permitida: {queue_id}) para {jugador_nombre}")
                                 else:
                                     print(f"[actualizar_historial] Partida {match_id} descartada (anterior a inicio de temporada) para {jugador_nombre}")
                             else:
