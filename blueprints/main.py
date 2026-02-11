@@ -191,17 +191,20 @@ def index():
     _, lp_history = read_lp_history()
     
     # USAR CACHÉ INMEDIATAMENTE (Stale-While-Revalidate)
-    # No bloquear la página con cálculos pesados
+    # Si hay caché: usarlo inmediatamente (incluso si está antiguo)
+    # Si NO hay caché: calcular sincrónicamente (primera carga tras reinicio)
     for jugador in datos_jugadores:
         try:
             puuid = jugador.get('puuid')
             queue_type = jugador.get('queue_type')
+            queue_id = 420 if queue_type == 'RANKED_SOLO_5x5' else 440 if queue_type == 'RANKED_FLEX_SR' else None
             
             # Intentar obtener estadísticas del caché PRIMERO
             cached_stats = player_stats_cache.get(puuid, queue_type) if puuid and queue_type else None
             
             if cached_stats:
-                # Usar estadísticas cacheadas (incluso si están antiguas)
+                # HAY caché: usarlo inmediatamente (Stale-While-Revalidate)
+                # El background thread actualizará para la próxima vez
                 jugador['top_champion_stats'] = cached_stats.get('top_champion_stats', [])
                 jugador['current_win_streak'] = cached_stats.get('current_win_streak', 0)
                 jugador['current_loss_streak'] = cached_stats.get('current_loss_streak', 0)
@@ -211,19 +214,122 @@ def index():
                 jugador['en_partida'] = cached_stats.get('en_partida', False)
                 jugador['nombre_campeon'] = cached_stats.get('nombre_campeon', None)
             else:
-                # No hay caché, usar valores por defecto y marcar para actualización
-                jugador['top_champion_stats'] = []
-                jugador['current_win_streak'] = 0
-                jugador['current_loss_streak'] = 0
-                jugador['lp_change_24h'] = 0
-                jugador['wins_24h'] = 0
-                jugador['losses_24h'] = 0
-                jugador['en_partida'] = False
-                jugador['nombre_campeon'] = None
-
+                # NO hay caché: calcular sincrónicamente (primera carga)
+                print(f"[index] Sin caché para {jugador.get('jugador', 'unknown')}, calculando sincrónicamente...")
+                if puuid:
+                    # Obtener historial de partidas
+                    match_history = get_player_match_history(puuid, limit=20)
+                    matches = match_history.get('matches', [])
+                    
+                    # Calcular top campeones
+                    if queue_id:
+                        queue_matches_for_champs = [m for m in matches if m.get('queue_id') == queue_id]
+                        top_champions = get_top_champions_for_player(queue_matches_for_champs, limit=3)
+                    else:
+                        top_champions = get_top_champions_for_player(matches, limit=3)
+                    jugador['top_champion_stats'] = top_champions
+                    
+                    # Calcular rachas
+                    if queue_id:
+                        queue_matches = [m for m in matches if m.get('queue_id') == queue_id]
+                        streaks = calculate_streaks(queue_matches)
+                        jugador['current_win_streak'] = streaks.get('current_win_streak', 0)
+                        jugador['current_loss_streak'] = streaks.get('current_loss_streak', 0)
+                    else:
+                        jugador['current_win_streak'] = 0
+                        jugador['current_loss_streak'] = 0
+                    
+                    # Calcular LP 24h
+                    if queue_id:
+                        now_utc = datetime.now(timezone.utc)
+                        one_day_ago = int((now_utc - timedelta(days=1)).timestamp() * 1000)
+                        lp_24h = wins_24h = losses_24h = 0
+                        recent_matches = [
+                            m for m in matches 
+                            if m.get('queue_id') == queue_id and m.get('game_end_timestamp', 0) > one_day_ago
+                        ]
+                        for m in recent_matches:
+                            lp_change = m.get('lp_change_this_game')
+                            if lp_change is not None:
+                                lp_24h += lp_change
+                            if m.get('win'):
+                                wins_24h += 1
+                            else:
+                                losses_24h += 1
+                        jugador['lp_change_24h'] = lp_24h
+                        jugador['wins_24h'] = wins_24h
+                        jugador['losses_24h'] = losses_24h
+                    else:
+                        jugador['lp_change_24h'] = 0
+                        jugador['wins_24h'] = 0
+                        jugador['losses_24h'] = 0
+                    
+                    # Verificar si está en partida (con caché de 60s)
+                    try:
+                        if RIOT_API_KEY:
+                            live_game_key = f"live_{puuid}"
+                            now = time.time()
+                            game_data = esta_en_partida(RIOT_API_KEY, puuid)
+                            if game_data:
+                                jugador['en_partida'] = True
+                                champion_name = None
+                                for participant in game_data.get("participants", []):
+                                    if participant.get("puuid") == puuid:
+                                        champion_id = participant.get("championId")
+                                        champion_name = obtener_nombre_campeon(champion_id)
+                                        jugador['nombre_campeon'] = champion_name
+                                        break
+                                # Guardar en caché de partida
+                                if not hasattr(player_stats_cache, '_live_game_cache'):
+                                    player_stats_cache._live_game_cache = {}
+                                player_stats_cache._live_game_cache[live_game_key] = {
+                                    'en_partida': True,
+                                    'nombre_campeon': champion_name,
+                                    'timestamp': now
+                                }
+                            else:
+                                jugador['en_partida'] = False
+                                jugador['nombre_campeon'] = None
+                                if not hasattr(player_stats_cache, '_live_game_cache'):
+                                    player_stats_cache._live_game_cache = {}
+                                player_stats_cache._live_game_cache[live_game_key] = {
+                                    'en_partida': False,
+                                    'nombre_campeon': None,
+                                    'timestamp': now
+                                }
+                        else:
+                            jugador['en_partida'] = False
+                            jugador['nombre_campeon'] = None
+                    except Exception as e:
+                        print(f"[index] Error verificando partida: {e}")
+                        jugador['en_partida'] = False
+                        jugador['nombre_campeon'] = None
+                    
+                    # Guardar en caché para próximas veces
+                    stats_to_cache = {
+                        'top_champion_stats': jugador['top_champion_stats'],
+                        'current_win_streak': jugador['current_win_streak'],
+                        'current_loss_streak': jugador['current_loss_streak'],
+                        'lp_change_24h': jugador['lp_change_24h'],
+                        'wins_24h': jugador['wins_24h'],
+                        'losses_24h': jugador['losses_24h'],
+                        'en_partida': jugador['en_partida'],
+                        'nombre_campeon': jugador['nombre_campeon']
+                    }
+                    player_stats_cache.set(puuid, queue_type, stats_to_cache)
+                else:
+                    # No hay PUUID
+                    jugador['top_champion_stats'] = []
+                    jugador['current_win_streak'] = 0
+                    jugador['current_loss_streak'] = 0
+                    jugador['lp_change_24h'] = 0
+                    jugador['wins_24h'] = 0
+                    jugador['losses_24h'] = 0
+                    jugador['en_partida'] = False
+                    jugador['nombre_campeon'] = None
                 
         except Exception as e:
-            print(f"[index] Error leyendo caché para {jugador.get('jugador', 'unknown')}: {e}")
+            print(f"[index] Error calculando estadísticas para {jugador.get('jugador', 'unknown')}: {e}")
             jugador['top_champion_stats'] = []
             jugador['current_win_streak'] = 0
             jugador['current_loss_streak'] = 0
@@ -232,6 +338,7 @@ def index():
             jugador['losses_24h'] = 0
             jugador['en_partida'] = False
             jugador['nombre_campeon'] = None
+
 
 
 
