@@ -97,7 +97,7 @@ LP_SNAPSHOTS_SAVE_INTERVAL = 3600  # 1 hora
 
 # Esta versión se actualiza automáticamente al iniciar la aplicación
 # mediante la función actualizar_version_ddragon() en services/riot_api.py
-DDRAGON_VERSION = "15.1.1"
+DDRAGON_VERSION = "16.3.1"
 
 
 # ============================================================================

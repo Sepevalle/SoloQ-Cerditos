@@ -129,7 +129,7 @@ def analyze_matches(puuid, matches, player_name=None):
     
     # Preparar datos para el prompt (simplificados)
     partidas_para_ia = []
-    for m in matches[:10]:  # Máximo 10 partidas
+    for m in matches[:5]:  # Máximo 10 partidas
         partidas_para_ia.append({
             "champion": m.get("champion_name"),
             "win": m.get("win"),
@@ -154,7 +154,7 @@ def analyze_matches(puuid, matches, player_name=None):
         "3) Evolución entre partidas recientes, "
         "4) Áreas de mejora específicas, "
         "5) Puntos fuertes destacables. "
-        "Sé objetivo y constructivo en el análisis. "
+        "Sé objetivo y constructivo en el análisis, pero con un toque critico."
         f"Datos de partidas: {json.dumps(partidas_para_ia)}"
     )
     
