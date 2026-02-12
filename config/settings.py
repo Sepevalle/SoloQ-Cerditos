@@ -59,7 +59,7 @@ SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())
 # ============================================================================
 
 # Caché principal de jugadores
-CACHE_TIMEOUT = 130  # 2 minutos
+CACHE_TIMEOUT = 300  # 5 minutos
 
 # Caché de estadísticas globales
 GLOBAL_STATS_UPDATE_INTERVAL = 86400  # 24 horas
