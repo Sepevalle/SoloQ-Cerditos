@@ -266,8 +266,8 @@ class PlayerStatsCache:
             key = self._make_key(puuid, queue_type)
             cached = self._cache.get(key)
             if cached and (time.time() - cached["timestamp"] < self._ttl):
-                return cached["data"]
-            return None
+                return cached["data"], cached["timestamp"]
+            return None, None
 
     def set(self, puuid, queue_type, data):
         """Guarda las estadísticas de un jugador."""
