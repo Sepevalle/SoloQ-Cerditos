@@ -452,11 +452,8 @@
 <div class="container-fluid px-md-5">
     <div class="d-flex justify-content-between align-items-center">
         <h3>Lista de Jugadores <span class="small-text"></span></h3>
-        <div id="lastUpdated" class="text-end">Actualizado: {{ ultima_actualizacion }}
-            {% if datos_jugadores and datos_jugadores[0].get('stats_timestamp') %}
-                <br><small class="text-muted">Estadísticas: {{ datos_jugadores[0].stats_timestamp | strftime('%d/%m/%Y %H:%M:%S') if datos_jugadores[0].stats_timestamp else 'N/A' }}</small>
-            {% endif %}
-        </div>
+                <div id="lastUpdated" class="text-end">Actualizado: {{ ultima_actualizacion }} </div>
+    </div>
     </div>
     
     <div class="row my-3">

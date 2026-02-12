@@ -317,8 +317,6 @@ def index():
                         'nombre_campeon': jugador['nombre_campeon']
                     }
                     player_stats_cache.set(puuid, queue_type, stats_to_cache)
-                    # Agregar timestamp de estadísticas para debugging
-                    jugador['stats_timestamp'] = time.time()
                 else:
                     # No hay PUUID
                     jugador['top_champion_stats'] = []
