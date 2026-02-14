@@ -327,14 +327,29 @@ def save_global_stats(stats_data):
     from datetime import datetime, timezone
     stats_data['calculated_at'] = datetime.now(timezone.utc).isoformat()
     
+    print(f"[save_global_stats] Intentando guardar estadísticas globales...")
+    print(f"[save_global_stats] Timestamp: {stats_data['calculated_at']}")
+    print(f"[save_global_stats] Total de partidas: {stats_data.get('all_matches_count', 0)}")
+    print(f"[save_global_stats] GITHUB_TOKEN configurado: {bool(GITHUB_TOKEN)}")
+    
     # Leer primero para obtener el SHA si existe
     _, sha = read_file_from_github("global_stats.json", use_raw=False)
-    return write_file_to_github(
+    print(f"[save_global_stats] SHA obtenido: {sha[:8] if sha else 'None (nuevo archivo)'}")
+    
+    success = write_file_to_github(
         "global_stats.json",
         stats_data,
         message="Actualizar estadísticas globales",
         sha=sha
     )
+    
+    if success:
+        print(f"[save_global_stats] ✓ Estadísticas globales guardadas correctamente")
+    else:
+        print(f"[save_global_stats] ✗ ERROR: No se pudieron guardar las estadísticas globales")
+    
+    return success
+
 
 
 def read_stats_reload_config():
