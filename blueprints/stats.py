@@ -444,8 +444,26 @@ def estadisticas_globales():
     }
 
     
-    # La fecha ya viene formateada desde el cálculo, pero mantenemos fallback
-    last_updated = calculated_at if calculated_at else None
+    # La fecha ya viene formateada desde el cálculo, pero manejamos ambos formatos
+    # (ISO antiguo vs nuevo formato formateado)
+    last_updated = None
+    if calculated_at:
+        # Si ya está en formato dd/mm/yyyy, usar directamente
+        if isinstance(calculated_at, str) and len(calculated_at) == 19 and calculated_at[2] == '/' and calculated_at[5] == '/':
+            last_updated = calculated_at
+        else:
+            # Intentar parsear formato ISO
+            try:
+                # Quitar 'Z' si existe y reemplazar con +00:00
+                iso_str = calculated_at.replace('Z', '+00:00')
+                dt = datetime.fromisoformat(iso_str)
+                # Convertir a timezone target
+                dt_target = dt.astimezone(TARGET_TIMEZONE)
+                last_updated = dt_target.strftime("%d/%m/%Y %H:%M:%S")
+            except:
+                # Si falla el parseo, usar el valor original
+                last_updated = str(calculated_at)
+
 
     
     available_queues = [{'id': q_id, 'name': QUEUE_NAMES.get(q_id, f"Unknown ({q_id})")} 
