@@ -7,12 +7,20 @@ import config.settings as settings
 from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS
 from services.cache_service import player_cache, player_stats_cache
 
-
 from services.github_service import read_peak_elo, save_peak_elo, read_lp_history
 from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
 from services.riot_api import esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
 from utils.helpers import calcular_valor_clasificacion
+
+# Importar el generador de JSON para el index
+from services.index_json_generator import (
+    load_index_json, 
+    generate_index_json, 
+    is_json_fresh,
+    INDEX_JSON_PATH
+)
+
 
 
 
@@ -132,239 +140,59 @@ def _actualizar_stats_en_background(datos_jugadores, lp_history):
 
 @main_bp.route('/')
 def index():
-    """Renderiza la página principal con la lista de jugadores (Stale-While-Revalidate)."""
+    """
+    Renderiza la página principal con la lista de jugadores.
+    Usa un JSON pre-generado para carga instantánea.
+    """
     print("[index] Petición recibida para la página principal.")
-    datos_jugadores, timestamp = player_cache.get()
     
-    # Verificar si el caché está antiguo
-    cache_stale = player_cache.is_stale()
-    stats_cache_stale = False
+    # Intentar cargar desde JSON pre-generado
+    json_data = load_index_json()
     
-    # Verificar si las estadísticas individuales están antiguas
-    for jugador in datos_jugadores:
-        puuid = jugador.get('puuid')
-        queue_type = jugador.get('queue_type')
-        if puuid and queue_type:
-            if not player_stats_cache.get(puuid, queue_type):
-                stats_cache_stale = True
-                break
+    # Si no existe JSON o está muy antiguo (>10 min), generarlo sincrónicamente
+    if json_data is None:
+        print("[index] JSON no encontrado, generando sincrónicamente...")
+        if generate_index_json(force=True):
+            json_data = load_index_json()
+        else:
+            # Fallback: usar datos del caché básico sin estadísticas
+            print("[index] ERROR: No se pudo generar JSON, usando caché básico")
+            datos_jugadores, timestamp = player_cache.get()
+            return render_template('index.html',
+                                   datos_jugadores=datos_jugadores,
+                                   ultima_actualizacion="N/A",
+                                   ddragon_version=settings.DDRAGON_VERSION,
+                                   split_activo_nombre=SPLITS[ACTIVE_SPLIT_KEY]['name'],
+                                   has_player_data=bool(datos_jugadores),
+                                   cache_stale=True,
+                                   minutos_desde_actualizacion=999)
     
-    # Si algún caché está antiguo, iniciar actualización en background
-    if cache_stale or stats_cache_stale:
-        print(f"[index] Caché antiguo detectado (player: {cache_stale}, stats: {stats_cache_stale}), actualizando en background...")
-        # Crear copia de datos para el thread
-        import copy
-        datos_copy = copy.deepcopy(datos_jugadores)
-        _, lp_history = read_lp_history()
-        thread = threading.Thread(
-            target=_actualizar_stats_en_background,
-            args=(datos_copy, lp_history),
-            daemon=True
-        )
+    # Si el JSON existe pero está antiguo (>5 min), iniciar regeneración en background
+    elif not is_json_fresh(max_age_seconds=300):
+        print("[index] JSON antiguo detectado, iniciando regeneración en background...")
+        # Iniciar thread para regenerar sin bloquear
+        thread = threading.Thread(target=generate_index_json, daemon=True)
         thread.start()
     
-    lectura_exitosa, peak_elo_dict = read_peak_elo()
-
-
-    if lectura_exitosa:
-        actualizado = False
-        for jugador in datos_jugadores:
-            key = _get_peak_elo_key(jugador)
-            peak = peak_elo_dict.get(key, 0)
-
-            valor = jugador["valor_clasificacion"]
-            if valor > peak:
-                peak_elo_dict[key] = valor
-                peak = valor
-                actualizado = True
-                print(f"[index] Peak Elo actualizado para {jugador['game_name']} en {jugador['queue_type']}: {peak}")
-            jugador["peak_elo"] = peak
-
-        if actualizado:
-            save_peak_elo(peak_elo_dict)
-    else:
-        print("[index] ADVERTENCIA: No se pudo leer el archivo peak_elo.json. Se omitirá la actualización de picos.")
-        for jugador in datos_jugadores:
-            jugador["peak_elo"] = jugador["valor_clasificacion"]
-
-    # Leer historial de LP para calcular cambios
-    _, lp_history = read_lp_history()
+    # Extraer datos del JSON
+    datos_jugadores = json_data.get('datos_jugadores', [])
+    ultima_actualizacion = json_data.get('ultima_actualizacion', 'N/A')
+    minutos_desde_actualizacion = json_data.get('minutos_desde_actualizacion', 0)
+    cache_stale = json_data.get('cache_stale', False)
+    split_activo_nombre = json_data.get('split_activo_nombre', SPLITS[ACTIVE_SPLIT_KEY]['name'])
     
-    # USAR CACHÉ INMEDIATAMENTE (Stale-While-Revalidate)
-    # Si hay caché: usarlo inmediatamente (incluso si está antiguo)
-    # Si NO hay caché: calcular sincrónicamente (primera carga tras reinicio)
-    for jugador in datos_jugadores:
-        try:
-            puuid = jugador.get('puuid')
-            queue_type = jugador.get('queue_type')
-            queue_id = 420 if queue_type == 'RANKED_SOLO_5x5' else 440 if queue_type == 'RANKED_FLEX_SR' else None
-            
-            # Intentar obtener estadísticas del caché PRIMERO
-            cached_stats = player_stats_cache.get(puuid, queue_type) if puuid and queue_type else None
-            
-            if cached_stats:
-                # HAY caché: usarlo inmediatamente (Stale-While-Revalidate)
-                # El background thread actualizará para la próxima vez
-                jugador['top_champion_stats'] = cached_stats.get('top_champion_stats', [])
-                jugador['current_win_streak'] = cached_stats.get('current_win_streak', 0)
-                jugador['current_loss_streak'] = cached_stats.get('current_loss_streak', 0)
-                jugador['lp_change_24h'] = cached_stats.get('lp_change_24h', 0)
-                jugador['wins_24h'] = cached_stats.get('wins_24h', 0)
-                jugador['losses_24h'] = cached_stats.get('losses_24h', 0)
-                jugador['en_partida'] = cached_stats.get('en_partida', False)
-                jugador['nombre_campeon'] = cached_stats.get('nombre_campeon', None)
-            else:
-                # NO hay caché: calcular sincrónicamente (primera carga)
-                print(f"[index] Sin caché para {jugador.get('jugador', 'unknown')}, calculando sincrónicamente...")
-                if puuid:
-                    # Obtener historial de partidas
-                    match_history = get_player_match_history(puuid, limit=20)
-                    matches = match_history.get('matches', [])
-                    
-                    # Calcular top campeones
-                    if queue_id:
-                        queue_matches_for_champs = [m for m in matches if m.get('queue_id') == queue_id]
-                        top_champions = get_top_champions_for_player(queue_matches_for_champs, limit=3)
-                    else:
-                        top_champions = get_top_champions_for_player(matches, limit=3)
-                    jugador['top_champion_stats'] = top_champions
-                    
-                    # Calcular rachas
-                    if queue_id:
-                        queue_matches = [m for m in matches if m.get('queue_id') == queue_id]
-                        streaks = calculate_streaks(queue_matches)
-                        jugador['current_win_streak'] = streaks.get('current_win_streak', 0)
-                        jugador['current_loss_streak'] = streaks.get('current_loss_streak', 0)
-                    else:
-                        jugador['current_win_streak'] = 0
-                        jugador['current_loss_streak'] = 0
-                    
-                    # Calcular LP 24h
-                    if queue_id:
-                        now_utc = datetime.now(timezone.utc)
-                        one_day_ago = int((now_utc - timedelta(days=1)).timestamp() * 1000)
-                        lp_24h = wins_24h = losses_24h = 0
-                        recent_matches = [
-                            m for m in matches 
-                            if m.get('queue_id') == queue_id and m.get('game_end_timestamp', 0) > one_day_ago
-                        ]
-                        for m in recent_matches:
-                            lp_change = m.get('lp_change_this_game')
-                            if lp_change is not None:
-                                lp_24h += lp_change
-                            if m.get('win'):
-                                wins_24h += 1
-                            else:
-                                losses_24h += 1
-                        jugador['lp_change_24h'] = lp_24h
-                        jugador['wins_24h'] = wins_24h
-                        jugador['losses_24h'] = losses_24h
-                    else:
-                        jugador['lp_change_24h'] = 0
-                        jugador['wins_24h'] = 0
-                        jugador['losses_24h'] = 0
-                    
-                    # Verificar si está en partida (con caché de 60s)
-                    try:
-                        if RIOT_API_KEY:
-                            live_game_key = f"live_{puuid}"
-                            now = time.time()
-                            game_data = esta_en_partida(RIOT_API_KEY, puuid)
-                            if game_data:
-                                jugador['en_partida'] = True
-                                champion_name = None
-                                for participant in game_data.get("participants", []):
-                                    if participant.get("puuid") == puuid:
-                                        champion_id = participant.get("championId")
-                                        champion_name = obtener_nombre_campeon(champion_id)
-                                        jugador['nombre_campeon'] = champion_name
-                                        break
-                                # Guardar en caché de partida
-                                if not hasattr(player_stats_cache, '_live_game_cache'):
-                                    player_stats_cache._live_game_cache = {}
-                                player_stats_cache._live_game_cache[live_game_key] = {
-                                    'en_partida': True,
-                                    'nombre_campeon': champion_name,
-                                    'timestamp': now
-                                }
-                            else:
-                                jugador['en_partida'] = False
-                                jugador['nombre_campeon'] = None
-                                if not hasattr(player_stats_cache, '_live_game_cache'):
-                                    player_stats_cache._live_game_cache = {}
-                                player_stats_cache._live_game_cache[live_game_key] = {
-                                    'en_partida': False,
-                                    'nombre_campeon': None,
-                                    'timestamp': now
-                                }
-                        else:
-                            jugador['en_partida'] = False
-                            jugador['nombre_campeon'] = None
-                    except Exception as e:
-                        print(f"[index] Error verificando partida: {e}")
-                        jugador['en_partida'] = False
-                        jugador['nombre_campeon'] = None
-                    
-                    # Guardar en caché para próximas veces
-                    stats_to_cache = {
-                        'top_champion_stats': jugador['top_champion_stats'],
-                        'current_win_streak': jugador['current_win_streak'],
-                        'current_loss_streak': jugador['current_loss_streak'],
-                        'lp_change_24h': jugador['lp_change_24h'],
-                        'wins_24h': jugador['wins_24h'],
-                        'losses_24h': jugador['losses_24h'],
-                        'en_partida': jugador['en_partida'],
-                        'nombre_campeon': jugador['nombre_campeon']
-                    }
-                    player_stats_cache.set(puuid, queue_type, stats_to_cache)
-                else:
-                    # No hay PUUID
-                    jugador['top_champion_stats'] = []
-                    jugador['current_win_streak'] = 0
-                    jugador['current_loss_streak'] = 0
-                    jugador['lp_change_24h'] = 0
-                    jugador['wins_24h'] = 0
-                    jugador['losses_24h'] = 0
-                    jugador['en_partida'] = False
-                    jugador['nombre_campeon'] = None
-                
-        except Exception as e:
-            print(f"[index] Error calculando estadísticas para {jugador.get('jugador', 'unknown')}: {e}")
-            jugador['top_champion_stats'] = []
-            jugador['current_win_streak'] = 0
-            jugador['current_loss_streak'] = 0
-            jugador['lp_change_24h'] = 0
-            jugador['wins_24h'] = 0
-            jugador['losses_24h'] = 0
-            jugador['en_partida'] = False
-            jugador['nombre_campeon'] = None
-
-
-
-
-
-
-
-    # El timestamp de la caché está en segundos UTC (de time.time())
-    dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-    # Convertir a la zona horaria de visualización deseada (UTC+2)
-    dt_target = dt_utc.astimezone(TARGET_TIMEZONE)
-    ultima_actualizacion = dt_target.strftime("%d/%m/%Y %H:%M:%S")
+    print(f"[index] Renderizando index.html con JSON ({len(datos_jugadores)} jugadores, "
+          f"actualizado hace {minutos_desde_actualizacion} min)")
     
-    split_activo_nombre = SPLITS[ACTIVE_SPLIT_KEY]['name']
-    
-    # Calcular minutos desde última actualización
-    minutos_desde_actualizacion = int((time.time() - timestamp) / 60) if timestamp else 0
-    
-    print("[index] Renderizando index.html.")
     return render_template('index.html', 
                            datos_jugadores=datos_jugadores,
                            ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=settings.DDRAGON_VERSION,
                            split_activo_nombre=split_activo_nombre,
                            has_player_data=bool(datos_jugadores),
-                           cache_stale=cache_stale or stats_cache_stale,
+                           cache_stale=cache_stale,
                            minutos_desde_actualizacion=minutos_desde_actualizacion)
+
 
 
 

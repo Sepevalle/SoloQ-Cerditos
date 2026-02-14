@@ -47,6 +47,15 @@ from services import (
 # Importar función para actualizar versión de Data Dragon
 from services.riot_api import actualizar_version_ddragon
 
+# Importar generador de JSON para el index
+from services.index_json_generator import (
+    generate_index_json, 
+    load_index_json, 
+    is_json_fresh,
+    start_json_generator_thread
+)
+
+
 
 
 def create_app():
@@ -164,8 +173,21 @@ print("[main] ✓ Aplicación Flask creada")
 # Iniciar servicios en segundo plano
 start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
 
+# Precargar JSON del index si no existe o está antiguo
+print("[main] Verificando JSON del index...")
+json_data = load_index_json()
+if json_data is None or not is_json_fresh(max_age_seconds=300):
+    print("[main] Generando JSON del index (primera vez o antiguo)...")
+    if generate_index_json(force=True):
+        print("[main] ✓ JSON del index generado correctamente")
+    else:
+        print("[main] ⚠ No se pudo generar el JSON del index")
+else:
+    print("[main] ✓ JSON del index ya existe y está actualizado")
+
 print(f"\n[main] 🚀 Aplicación lista para servir en http://0.0.0.0:{PORT}")
 print(f"[main] Modo DEBUG: {DEBUG}\n")
+
 
 
 def main():

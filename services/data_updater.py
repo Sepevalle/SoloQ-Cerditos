@@ -21,7 +21,9 @@ from services.riot_api import (
 from services.player_service import get_all_accounts, get_all_puuids
 from services.stats_service import calculate_personal_records
 from services.data_processing import process_player_match_history
+from services.index_json_generator import generate_index_json
 from concurrent.futures import ThreadPoolExecutor
+
 
 
 
@@ -97,9 +99,16 @@ def actualizar_cache_periodicamente():
             player_cache.set(datos_jugadores)
             print(f"[actualizar_cache_periodicamente] Caché actualizada con {len(datos_jugadores)} entradas")
 
+            # Generar JSON del index con los nuevos datos
+            print("[actualizar_cache_periodicamente] Generando JSON del index...")
+            if generate_index_json():
+                print("[actualizar_cache_periodicamente] ✓ JSON del index generado correctamente")
+            else:
+                print("[actualizar_cache_periodicamente] ⚠ Error generando JSON del index")
             
             # Actualizar datos de DDragon
             actualizar_ddragon_data()
+
             
         except Exception as e:
             print(f"[actualizar_cache_periodicamente] Error: {e}")
@@ -441,5 +450,10 @@ def start_data_updater(riot_api_key):
     records_thread = threading.Thread(target=_calculate_and_cache_personal_records_periodically, daemon=True)
     records_thread.start()
     print("[data_updater] ✓ Worker de récords personales iniciado")
+    
+    # Worker de generación de JSON para el index
+    from services.index_json_generator import start_json_generator_thread
+    start_json_generator_thread(interval_seconds=130)  # Cada ~2 minutos
+    print("[data_updater] ✓ Worker de generación de JSON iniciado")
     
     print("[data_updater] Todos los workers de actualización iniciados")
