@@ -53,7 +53,8 @@ def _create_record_from_match(match, value, record_type):
         "game_date": match.get("game_end_timestamp", 0),
         "game_duration": int(match.get("game_duration", 0)),
         "champion_name": match.get("champion_name", "N/A"),
-        "champion_id": match.get("championId", "N/A"),
+        "champion_id": match.get("champion_id", "N/A"),
+
         "kills": match.get("kills", 0),
         "deaths": match.get("deaths", 0),
         "assists": match.get("assists", 0),

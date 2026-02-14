@@ -307,14 +307,16 @@
                             </p>
                             <small class="text-muted">
                                 Jugador: {{ global_stats.global_records.largest_multikill.player }} ({{ global_stats.global_records.largest_multikill.riot_id }})<br>
-                                {% if global_stats.global_records.largest_multikill.champion_id and global_stats.global_records.largest_multikill.champion_id != 'N/A' and global_stats.global_records.largest_multikill.champion_name and global_stats.global_records.largest_multikill.champion_name != 'N/A' %}
+                                {% if global_stats.global_records.largest_multikill.champion_id and global_stats.global_records.largest_multikill.champion_id != 'N/A' %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ global_stats.global_records.largest_multikill.champion_id }}.png" alt="{{ global_stats.global_records.largest_multikill.champion_name or global_stats.global_records.largest_multikill.champion_id }}" class="imagen-jugador">
+                                    {{ global_stats.global_records.largest_multikill.champion_name or global_stats.global_records.largest_multikill.champion_id }}<br>
+                                {% elif global_stats.global_records.largest_multikill.champion_name and global_stats.global_records.largest_multikill.champion_name != 'N/A' %}
                                     <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ global_stats.global_records.largest_multikill.champion_name }}.png" alt="{{ global_stats.global_records.largest_multikill.champion_name }}" class="imagen-jugador">
                                     {{ global_stats.global_records.largest_multikill.champion_name }}<br>
-                                {% elif global_stats.global_records.largest_multikill.champion_id and global_stats.global_records.largest_multikill.champion_id != 'N/A' %}
-                                    ID Campeón: {{ global_stats.global_records.largest_multikill.champion_id | thousands_separator }}<br>
                                 {% else %}
                                     Campeón: N/A<br>
                                 {% endif %}
+
                                 KDA: {{ global_stats.global_records.largest_multikill.kills | thousands_separator }}/{{ global_stats.global_records.largest_multikill.deaths | thousands_separator }}/{{ global_stats.global_records.largest_multikill.assists | thousands_separator }} ({{ '%.2f' % global_stats.global_records.largest_multikill.kda }})<br>
                                 Fecha: {{ global_stats.global_records.largest_multikill.game_date | format_timestamp }}
                                 {% if global_stats.global_records.largest_multikill.value and global_stats.global_records.largest_multikill.value > 0 and global_stats.global_records.largest_multikill.game_date and global_stats.global_records.largest_multikill.game_date > 0 and global_stats.global_records.largest_multikill.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
@@ -388,14 +390,16 @@
                             {% else %}
                             <small class="text-muted">
                                 Jugador: {{ record.player }} ({{ record.riot_id }})<br>
-                                {% if record.champion_id and record.champion_id != 'N/A' and record.champion_name and record.champion_name != 'N/A' %}
+                                {% if record.champion_id and record.champion_id != 'N/A' %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ record.champion_id }}.png" alt="{{ record.champion_name or record.champion_id }}" class="imagen-jugador">
+                                    {{ record.champion_name or record.champion_id }}<br>
+                                {% elif record.champion_name and record.champion_name != 'N/A' %}
                                     <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ record.champion_name }}.png" alt="{{ record.champion_name }}" class="imagen-jugador">
                                     {{ record.champion_name }}<br>
-                                {% elif record.champion_id and record.champion_id != 'N/A' %}
-                                    ID Campeón: {{ record.champion_id | thousands_separator }}<br>
                                 {% else %}
                                     Campeón: N/A<br>
                                 {% endif %}
+
                                 KDA: {{ record.kills | thousands_separator }}/{{ record.deaths | thousands_separator }}/{{ record.assists | thousands_separator }} ({{ '%.2f' % record.kda }})<br>
                                 Fecha: {{ record.game_date | format_timestamp }}<br>
                                 Duración: {{ (record.game_duration / 60) | int }}m {{ (record.game_duration % 60) | int }}s
@@ -737,9 +741,13 @@
                                 <p class="card-text fs-4">${valueDisplay}</p>
                                 <small class="text-muted">
                                     Jugador: ${record.player} (${record.riot_id})<br>
-                                    ${record.champion_name && record.champion_name !== 'N/A' ? 
+                                    ${record.champion_id && record.champion_id !== 'N/A' ? 
+                                        `<img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/${record.champion_id}.png" alt="${record.champion_name || record.champion_id}" class="imagen-jugador">
+                                        ${record.champion_name || record.champion_id}<br>` : 
+                                    record.champion_name && record.champion_name !== 'N/A' ?
                                         `<img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/${record.champion_name}.png" alt="${record.champion_name}" class="imagen-jugador">
                                         ${record.champion_name}<br>` : 'Campeón: N/A<br>'}
+
                                     KDA: ${record.kills}/${record.deaths}/${record.assists} (${record.kda.toFixed(2)})<br>
                                     Fecha: ${new Date(record.game_date).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}<br>
                                     Duración: ${Math.floor(record.game_duration / 60)}m ${record.game_duration % 60}s

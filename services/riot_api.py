@@ -392,12 +392,19 @@ def obtener_info_partida(args):
             if len(perks['styles']) > 1:
                 perk_sub_id = perks['styles'][1]['style']
 
+        champion_id_numeric = p.get('championId')
+        champion_name_readable = obtener_nombre_campeon(champion_id_numeric)
+        # Get technical champion ID for Data Dragon images (e.g., "MonkeyKing" instead of "Wukong")
+        champion_id_technical = ALL_CHAMPIONS.get(champion_id_numeric, champion_name_readable)
+        
         print(f"[obtener_info_partida] Información de partida {match_id} procesada para {puuid}.")
         return {
             "match_id": match_id,
             "puuid": puuid,
-            "champion_name": obtener_nombre_campeon(p.get('championId')),
+            "champion_name": champion_name_readable,
+            "champion_id": champion_id_technical,
             "win": p.get('win', False),
+
             "kills": p.get('kills', 0),
             "deaths": p.get('deaths', 0),
             "assists": p.get('assists', 0),
