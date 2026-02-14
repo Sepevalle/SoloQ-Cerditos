@@ -140,8 +140,53 @@ def calculate_lp_change_robust(match, all_matches_for_player, player_queue_lp_hi
             
             return lp_change, elo_before, elo_after
 
+    # === ESTRATEGIA 4: Para la partida más reciente, usar el snapshot más reciente ===
+    # Esta estrategia asegura que la última partida siempre tenga LP calculado
+    # Verificar si esta es la partida más reciente de la cola
+    queue_matches_sorted = sorted(
+        [m for m in all_matches_for_player if m.get('queue_id') == queue_id],
+        key=lambda x: x.get('game_end_timestamp', 0),
+        reverse=True
+    )
+    
+    if queue_matches_sorted and queue_matches_sorted[0].get('match_id') == match_id:
+        # Es la partida más reciente
+        if snapshots:
+            # Usar el snapshot más reciente como referencia
+            latest_snapshot = max(snapshots, key=lambda x: x['timestamp'])
+            latest_snapshot_ts = latest_snapshot['timestamp']
+            latest_elo = latest_snapshot.get('elo', 0)
+            
+            # Si el snapshot es posterior a la partida, podemos estimar
+            if latest_snapshot_ts > game_end_ts and latest_elo > 0:
+                # Buscar el snapshot anterior más cercano para estimar el ELO pre-partida
+                previous_snapshot = None
+                min_time_diff = float('inf')
+                
+                for snapshot in snapshots:
+                    if snapshot['timestamp'] < game_end_ts:
+                        time_diff = game_end_ts - snapshot['timestamp']
+                        if time_diff < min_time_diff:
+                            min_time_diff = time_diff
+                            previous_snapshot = snapshot
+                
+                if previous_snapshot:
+                    elo_before = previous_snapshot.get('elo', 0)
+                    elo_after = latest_elo
+                    
+                    if elo_before > 0:
+                        lp_change = elo_after - elo_before
+                        return lp_change, elo_before, elo_after
+                else:
+                    # No hay snapshot anterior, usar estimación basada en victoria/derrota
+                    # Esto es menos preciso pero da un valor aproximado
+                    is_win = match.get('win', False)
+                    estimated_lp = 15 if is_win else -15  # Estimación estándar
+                    return estimated_lp, latest_elo - estimated_lp, latest_elo
+
     # Fallback: retornar None si no se puede determinar con confianza
     return None, None, None
+
 
 
 def calculate_lp_change(match, all_matches_for_player, player_queue_lp_history):

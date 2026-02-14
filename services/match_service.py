@@ -65,11 +65,12 @@ def save_player_matches(puuid, historial_data, riot_id=None):
 def calculate_lp_for_match(match, all_matches, player_lp_history):
     """
     Calcula el cambio de LP para una partida específica.
-    Usa múltiples estrategias de fallback.
+    Usa múltiples estrategias de fallback, incluyendo una especial para la última partida.
     """
     game_end_ts = match.get("game_end_timestamp", 0)
     queue_id = match.get("queue_id")
     queue_name = QUEUE_TYPE_MAP.get(queue_id)
+    match_id = match.get("match_id")
     
     if not game_end_ts or not queue_name:
         return None, None, None
@@ -77,7 +78,7 @@ def calculate_lp_for_match(match, all_matches, player_lp_history):
     # Estrategia 1: Usar snapshots de LP
     queue_history = player_lp_history.get(queue_name, [])
     if queue_history:
-        lp_info = _calculate_from_snapshots(game_end_ts, queue_history, all_matches, queue_id)
+        lp_info = _calculate_from_snapshots(game_end_ts, queue_history, all_matches, queue_id, match_id)
         if lp_info:
             return lp_info
     
@@ -86,10 +87,15 @@ def calculate_lp_for_match(match, all_matches, player_lp_history):
     if lp_info:
         return lp_info
     
+    # Estrategia 3: Para la partida más reciente, usar el snapshot más reciente
+    lp_info = _calculate_for_latest_match(match, all_matches, queue_id, queue_history)
+    if lp_info:
+        return lp_info
+    
     return None, None, None
 
 
-def _calculate_from_snapshots(game_end_ts, snapshots, all_matches, queue_id):
+def _calculate_from_snapshots(game_end_ts, snapshots, all_matches, queue_id, match_id):
     """Calcula LP usando snapshots históricos."""
     sorted_snapshots = sorted(snapshots, key=lambda x: x["timestamp"])
     
@@ -168,6 +174,71 @@ def _calculate_from_consecutive_matches(match, all_matches, queue_id):
                     "pre_game_elo": elo_before,
                     "post_game_elo": elo_after
                 }
+    
+    return None
+
+
+def _calculate_for_latest_match(match, all_matches, queue_id, snapshots):
+    """
+    Estrategia especial para la partida más reciente.
+    Usa el snapshot más reciente disponible para estimar el LP.
+    """
+    if not snapshots:
+        return None
+    
+    match_id = match.get("match_id")
+    game_end_ts = match.get("game_end_timestamp", 0)
+    
+    # Verificar si esta es la partida más reciente de la cola
+    queue_matches_sorted = sorted(
+        [m for m in all_matches if m.get("queue_id") == queue_id],
+        key=lambda x: x.get("game_end_timestamp", 0),
+        reverse=True
+    )
+    
+    if not queue_matches_sorted or queue_matches_sorted[0].get("match_id") != match_id:
+        return None  # No es la partida más reciente
+    
+    # Es la partida más reciente - usar el snapshot más reciente
+    latest_snapshot = max(snapshots, key=lambda x: x["timestamp"])
+    latest_snapshot_ts = latest_snapshot["timestamp"]
+    latest_elo = latest_snapshot.get("elo", 0)
+    
+    # El snapshot debe ser posterior a la partida
+    if latest_snapshot_ts <= game_end_ts or latest_elo <= 0:
+        return None
+    
+    # Buscar el snapshot anterior más cercano
+    previous_snapshot = None
+    min_time_diff = float("inf")
+    
+    for snapshot in snapshots:
+        if snapshot["timestamp"] < game_end_ts:
+            time_diff = game_end_ts - snapshot["timestamp"]
+            if time_diff < min_time_diff:
+                min_time_diff = time_diff
+                previous_snapshot = snapshot
+    
+    if previous_snapshot:
+        elo_before = previous_snapshot.get("elo", 0)
+        elo_after = latest_elo
+        
+        if elo_before > 0:
+            return {
+                "lp_change": elo_after - elo_before,
+                "pre_game_elo": elo_before,
+                "post_game_elo": elo_after
+            }
+    else:
+        # No hay snapshot anterior, usar estimación basada en victoria/derrota
+        is_win = match.get("win", False)
+        estimated_lp = 15 if is_win else -15  # Estimación estándar
+        
+        return {
+            "lp_change": estimated_lp,
+            "pre_game_elo": latest_elo - estimated_lp,
+            "post_game_elo": latest_elo
+        }
     
     return None
 
