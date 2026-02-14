@@ -44,9 +44,13 @@ def _compile_all_matches(batch_size=50):
                 matches = historial.get('matches', [])
                 
                 for match in matches:
+                    # Include both player name and riot_id for record display
+                    match['jugador_nombre'] = j.get('jugador', 'N/A')
+                    match['riot_id'] = j.get('game_name', 'N/A')
                     all_matches.append((j.get('jugador'), match))
                     if match.get('champion_name'):
                         all_champions.add(match.get('champion_name'))
+
                     if match.get('queue_id'):
                         available_queue_ids.add(match.get('queue_id'))
                 
@@ -429,21 +433,38 @@ def _get_time_until_next_calculation():
     except Exception as e:
         print(f"[_get_time_until_next_calculation] Error leyendo config de recarga: {e}")
     
-    success, stats_data = read_global_stats()
+    # Leer estadísticas globales desde GitHub
+    try:
+        success, stats_data = read_global_stats()
+        print(f"[_get_time_until_next_calculation] read_global_stats: success={success}, has_data={bool(stats_data)}")
+    except Exception as e:
+        print(f"[_get_time_until_next_calculation] Error leyendo global_stats: {e}")
+        success, stats_data = False, {}
     
+    # Si no hay estadísticas o falló la lectura, permitir cálculo inmediato
     if not success or not stats_data:
+        print("[_get_time_until_next_calculation] No hay estadísticas previas, permitiendo cálculo inmediato")
         return True, 0, "0s"
     
     calculated_at = stats_data.get('calculated_at')
     if not calculated_at:
+        print("[_get_time_until_next_calculation] No hay timestamp de cálculo, permitiendo cálculo inmediato")
         return True, 0, "0s"
     
     try:
-        last_calc = datetime.fromisoformat(calculated_at)
+        # Parsear timestamp con manejo de timezone
+        last_calc = datetime.fromisoformat(calculated_at.replace('Z', '+00:00'))
+        # Asegurar que last_calc tenga timezone info
+        if last_calc.tzinfo is None:
+            last_calc = last_calc.replace(tzinfo=timezone.utc)
+        
         now = datetime.now(timezone.utc)
         elapsed = (now - last_calc).total_seconds()
         
+        print(f"[_get_time_until_next_calculation] Último cálculo: {last_calc}, Ahora: {now}, Transcurrido: {elapsed:.0f}s")
+        
         if elapsed >= MIN_TIME_BETWEEN_CALCULATIONS:
+            print(f"[_get_time_until_next_calculation] Tiempo mínimo cumplido ({MIN_TIME_BETWEEN_CALCULATIONS}s), permitiendo cálculo")
             return True, 0, "0s"
         
         remaining = MIN_TIME_BETWEEN_CALCULATIONS - elapsed
@@ -462,13 +483,15 @@ def _get_time_until_next_calculation():
             parts.append(f"{seconds}s")
         
         time_str = " ".join(parts)
-
         
+        print(f"[_get_time_until_next_calculation] Debe esperar {time_str} ({remaining:.0f}s)")
         return False, int(remaining), time_str
         
     except Exception as e:
-        print(f"[_get_time_until_next_calculation] Error: {e}")
+        print(f"[_get_time_until_next_calculation] Error parseando timestamp: {e}")
+        # En caso de error, permitir cálculo para no bloquear al usuario
         return True, 0, "0s"
+
 
 
 
@@ -483,18 +506,25 @@ def actualizar_estadisticas():
     # Verificar si hay recarga forzada
     forzar_recarga = False
     config_sha = None
+    config = None
     try:
         forzar_recarga, config_sha, config = read_stats_reload_config()
+        print(f"[actualizar_estadisticas] Config recarga: forzar={forzar_recarga}, sha={config_sha[:8] if config_sha else 'None'}")
     except Exception as e:
         print(f"[actualizar_estadisticas] Error leyendo config de recarga: {e}")
+        import traceback
+        traceback.print_exc()
     
     # Verificar tiempo desde último cálculo (solo si no hay recarga forzada)
     if not forzar_recarga:
+        print("[actualizar_estadisticas] Verificando tiempo desde último cálculo...")
         can_calculate, seconds_remaining, time_str = _get_time_until_next_calculation()
+        
+        print(f"[actualizar_estadisticas] Resultado: can_calculate={can_calculate}, time_str={time_str}")
         
         if not can_calculate:
             message = f'Las estadísticas se calcularon recientemente. Espera {time_str} antes de solicitar un nuevo cálculo.'
-            print(f"[actualizar_estadisticas] {message}")
+            print(f"[actualizar_estadisticas] BLOQUEADO: {message}")
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({
@@ -506,19 +536,22 @@ def actualizar_estadisticas():
             
             flash(message, 'warning')
             return redirect(url_for('stats.estadisticas_globales'))
-    
-    if forzar_recarga:
+    else:
         print("[actualizar_estadisticas] Recarga forzada activada - ignorando límite de tiempo")
     
     try:
+        print("[actualizar_estadisticas] Iniciando cálculo de estadísticas...")
         stats_data = _calculate_and_save_global_stats()
+        
+        if stats_data is None:
+            raise Exception("El cálculo de estadísticas retornó None")
         
         # Si había recarga forzada, desactivarla después de usarla
         if forzar_recarga and config_sha:
             try:
                 new_config = {"forzar_recarga": "NO", "razon": "Recarga completada automáticamente"}
-                save_stats_reload_config(new_config, sha=config_sha)
-                print("[actualizar_estadisticas] Configuración de recarga reseteada a NO")
+                save_success = save_stats_reload_config(new_config, sha=config_sha)
+                print(f"[actualizar_estadisticas] Configuración de recarga reseteada: {save_success}")
             except Exception as e:
                 print(f"[actualizar_estadisticas] Error reseteando config: {e}")
         
@@ -528,6 +561,8 @@ def actualizar_estadisticas():
         success_message = 'Estadísticas globales actualizadas correctamente'
         if forzar_recarga:
             success_message += ' (recarga forzada desde GitHub)'
+        
+        print(f"[actualizar_estadisticas] ÉXITO: {success_message}")
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
@@ -543,15 +578,16 @@ def actualizar_estadisticas():
         return redirect(url_for('stats.estadisticas_globales'))
         
     except Exception as e:
-        print(f"[actualizar_estadisticas] Error: {e}")
+        error_msg = str(e)
+        print(f"[actualizar_estadisticas] ERROR: {error_msg}")
         import traceback
         traceback.print_exc()
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
                 'success': False,
-                'error': str(e)
+                'error': error_msg
             }), 500
         
-        flash(f'Error al actualizar estadísticas: {str(e)}', 'error')
+        flash(f'Error al actualizar estadísticas: {error_msg}', 'error')
         return redirect(url_for('stats.estadisticas_globales'))
