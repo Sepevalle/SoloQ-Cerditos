@@ -110,14 +110,25 @@ def write_file_to_github(file_path, content, message="Actualización automática
     if sha:
         data["sha"] = sha
     
+    # Verificar tamaño del archivo (GitHub tiene límite de 100MB, pero la API puede fallar antes)
+    content_size_mb = len(content_json) / (1024 * 1024)
+    print(f"[write_file_to_github] Tamaño del contenido: {len(content_json)} bytes ({content_size_mb:.2f} MB)")
+    
+    if content_size_mb > 50:
+        print(f"[write_file_to_github] ⚠️ ADVERTENCIA: Archivo muy grande ({content_size_mb:.2f} MB), puede fallar en GitHub")
+    
     print(f"[write_file_to_github] Enviando petición a GitHub...")
     print(f"[write_file_to_github] URL: {url}")
     print(f"[write_file_to_github] Incluye SHA: {bool(sha)}")
-    print(f"[write_file_to_github] Tamaño del contenido: {len(content_json)} bytes")
+    print(f"[write_file_to_github] Tamaño base64: {len(content_b64)} bytes")
     
     try:
-        response = requests.put(url, headers=headers, json=data, timeout=30)
+        response = requests.put(url, headers=headers, json=data, timeout=60)  # Aumentar timeout para archivos grandes
         print(f"[write_file_to_github] Respuesta: {response.status_code}")
+        if response.status_code != 200 and response.status_code != 201:
+            print(f"[write_file_to_github] Respuesta completa: {response.text[:1000]}")
+
+
         
         if response.status_code in (200, 201):
             print(f"[write_file_to_github] ✓ Archivo {file_path} guardado correctamente")
@@ -368,14 +379,26 @@ def save_global_stats(stats_data):
     Returns:
         bool: True si se guardó correctamente
     """
-    # Añadir timestamp de cuándo se calcularon
-    from datetime import datetime, timezone
-    stats_data['calculated_at'] = datetime.now(timezone.utc).isoformat()
-    
+    # El timestamp ya viene formateado desde _calculate_and_save_global_stats
+    # No sobrescribir para mantener el formato consistente
     print(f"[save_global_stats] Intentando guardar estadísticas globales...")
-    print(f"[save_global_stats] Timestamp: {stats_data['calculated_at']}")
+
+    print(f"[save_global_stats] Timestamp: {stats_data.get('calculated_at', 'N/A')}")
     print(f"[save_global_stats] Total de partidas: {stats_data.get('all_matches_count', 0)}")
     print(f"[save_global_stats] GITHUB_TOKEN configurado: {bool(GITHUB_TOKEN)}")
+    
+    # Verificar tamaño estimado antes de intentar guardar
+    import json
+    temp_json = json.dumps(stats_data, indent=2, ensure_ascii=False)
+    size_mb = len(temp_json) / (1024 * 1024)
+    print(f"[save_global_stats] Tamaño estimado del JSON: {len(temp_json)} bytes ({size_mb:.2f} MB)")
+    
+    # Si el archivo es muy grande, intentar sin indentación para reducir tamaño
+    if size_mb > 10:
+        print(f"[save_global_stats] Archivo grande detectado, usando formato compacto...")
+        stats_data_compact = stats_data.copy()
+        # No modificar el original, pero el write_file_to_github usará el formato compacto
+        # al serializar sin indentación
     
     # Leer primero para obtener el SHA si existe
     _, sha = read_file_from_github("global_stats.json", use_raw=False)
@@ -392,8 +415,10 @@ def save_global_stats(stats_data):
         print(f"[save_global_stats] ✓ Estadísticas globales guardadas correctamente")
     else:
         print(f"[save_global_stats] ✗ ERROR: No se pudieron guardar las estadísticas globales")
+        print(f"[save_global_stats] Posible causa: Archivo demasiado grande para GitHub API")
     
     return success
+
 
 
 
