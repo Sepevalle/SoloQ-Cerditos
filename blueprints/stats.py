@@ -30,6 +30,13 @@ def _compile_all_matches(batch_size=50):
     print("[stats] Compilando todas las partidas de todos los jugadores...")
     datos_jugadores, _ = player_cache.get()
     
+    # Log estructura del primer jugador para diagnosticar
+    if datos_jugadores:
+        first_player = datos_jugadores[0]
+        print(f"[_compile_all_matches] Estructura del primer jugador: {list(first_player.keys())}")
+        print(f"[_compile_all_matches] Primer jugador - jugador: {first_player.get('jugador')}, game_name: {first_player.get('game_name')}, riot_id: {first_player.get('riot_id')}")
+
+    
     all_champions = set()
     all_matches = []
     available_queue_ids = set()
