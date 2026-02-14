@@ -577,8 +577,17 @@ def extract_global_records(all_matches):
     if not all_matches:
         return {key: _default_record() for key in PERSONAL_RECORD_KEYS}
     
+    # Log first match to diagnose riot_id issue
+    if all_matches:
+        first_player, first_match = all_matches[0]
+        if isinstance(first_match, tuple):
+            first_match = first_match[1] if len(first_match) > 1 else first_match[0]
+        if isinstance(first_match, dict):
+            print(f"[extract_global_records] First match: player={first_player}, riot_id={first_match.get('riot_id', 'N/A')}, keys={list(first_match.keys())[:8]}")
+    
     # Inicializar récords
     records = {key: _default_record() for key in PERSONAL_RECORD_KEYS}
+
     
     # Agrupar por jugador para rachas
     matches_by_player = defaultdict(list)

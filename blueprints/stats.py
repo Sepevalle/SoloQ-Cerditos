@@ -43,11 +43,15 @@ def _compile_all_matches(batch_size=50):
                 historial = get_player_match_history(puuid, limit=-1)
                 matches = historial.get('matches', [])
                 
-                for match in matches:
+                for idx, match in enumerate(matches):
                     # Include both player name and riot_id for record display
                     match['jugador_nombre'] = j.get('jugador', 'N/A')
                     match['riot_id'] = j.get('game_name', 'N/A')
+                    # Log first match to verify riot_id is being set
+                    if idx == 0 and i < 3:  # Log first 3 players' first match
+                        print(f"[_compile_all_matches] Player {j.get('jugador')}: game_name={j.get('game_name', 'N/A')}, riot_id set to: {match.get('riot_id', 'N/A')}")
                     all_matches.append((j.get('jugador'), match))
+
                     if match.get('champion_name'):
                         all_champions.add(match.get('champion_name'))
 
@@ -65,7 +69,13 @@ def _compile_all_matches(batch_size=50):
     
     print(f"[stats] Compiladas {len(all_matches)} partidas de {total_players} jugadores")
     
+    # Verify sample match has riot_id
+    if all_matches:
+        sample_player, sample_match = all_matches[0]
+        print(f"[_compile_all_matches] Sample match: player={sample_player}, riot_id={sample_match.get('riot_id', 'N/A')}, keys={list(sample_match.keys())[:5]}")
+    
     return {
+
         'all_matches': all_matches,
         'all_champions': list(all_champions),
         'available_queue_ids': list(available_queue_ids),
