@@ -380,6 +380,39 @@ def save_stats_reload_config(content, sha=None):
     )
 
 
+def read_stats_index():
+    """
+    Lee el archivo de estadísticas del index (stats_index.json).
+    
+    Returns:
+        tuple: (exito, datos) donde datos es el diccionario con las estadísticas
+    """
+    content, _ = read_file_from_github("stats_index.json")
+    if content and isinstance(content, dict):
+        return True, content
+    return False, {}
+
+
+def save_stats_index(stats_data):
+    """
+    Guarda las estadísticas del index en GitHub.
+    
+    Args:
+        stats_data: Diccionario con las estadísticas del index
+    
+    Returns:
+        bool: True si se guardó correctamente
+    """
+    # Leer primero para obtener el SHA si existe
+    _, sha = read_file_from_github("stats_index.json", use_raw=False)
+    return write_file_to_github(
+        "stats_index.json",
+        stats_data,
+        message="Actualizar estadísticas del index",
+        sha=sha
+    )
+
+
 def start_github_service():
     """
     Función de inicio para el servicio de GitHub.
