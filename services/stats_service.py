@@ -695,14 +695,18 @@ def extract_global_records(all_matches):
             "most_penta_kills": actual_match.get("pentaKills", 0),
         }
         
-        # Create a copy with player_name for record creation
+        # Create a copy with player_name and riot_id for record creation
         match_for_record = dict(actual_match)
         match_for_record["jugador_nombre"] = player_name
+        # Ensure riot_id is preserved from original match data
+        if "riot_id" not in match_for_record or match_for_record.get("riot_id") == "N/A":
+            match_for_record["riot_id"] = actual_match.get("riot_id", "N/A")
         
         for record_key, value in records_to_check.items():
             records[record_key] = _update_record(
                 records[record_key], value, match_for_record, record_key
             )
+
 
     
     return records

@@ -248,9 +248,19 @@ def estadisticas_globales():
     
     # Leer desde GitHub
     success, stats_data = read_global_stats()
+    print(f"[estadisticas_globales] read_global_stats: success={success}, has_data={bool(stats_data)}")
+    if stats_data:
+        print(f"[estadisticas_globales] stats_data keys: {list(stats_data.keys())}")
+        global_records_check = stats_data.get('global_records', {})
+        print(f"[estadisticas_globales] global_records count: {len(global_records_check)}")
+        if global_records_check:
+            first_key = list(global_records_check.keys())[0]
+            first_record = global_records_check[first_key]
+            print(f"[estadisticas_globales] Sample record ({first_key}): player={first_record.get('player')}, riot_id={first_record.get('riot_id')}, value={first_record.get('value')}")
     
     # Obtener tiempo restante para próximo cálculo (siempre necesario para el botón)
     can_calc, seconds_left, time_str = _get_time_until_next_calculation()
+
     
     if not success or not stats_data:
         print("[estadisticas_globales] No hay estadísticas guardadas. Mostrando mensaje de actualización.")
