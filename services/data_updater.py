@@ -317,9 +317,90 @@ def actualizar_historial_partidas_en_segundo_plano():
 
 
 
+def recalcular_lp_partidas_existentes():
+    """
+    Recalcula el LP para partidas existentes que no lo tienen calculado.
+    Esto asegura que partidas antiguas también tengan LP asignado.
+    """
+    print("[recalcular_lp] Iniciando recálculo de LP para partidas existentes...")
+    
+    try:
+        from services.match_service import get_player_match_history, save_player_matches
+        
+        cuentas = get_all_accounts()
+        puuids = get_all_puuids()
+        _, lp_history_data = read_lp_history()
+        
+        total_recalculadas = 0
+        total_jugadores = 0
+        
+        for riot_id, jugador_nombre in cuentas:
+            puuid = puuids.get(riot_id)
+            if not puuid:
+                continue
+            
+            try:
+                # Leer historial del jugador
+                historial = get_player_match_history(puuid, riot_id=riot_id, limit=-1)
+                matches = historial.get('matches', [])
+                
+                if not matches:
+                    continue
+                
+                # Contar partidas sin LP
+                matches_sin_lp = [
+                    m for m in matches 
+                    if m.get('lp_change_this_game') is None and m.get('queue_id') in [420, 440]
+                ]
+                
+                if not matches_sin_lp:
+                    continue  # Todas las partidas tienen LP
+                
+                print(f"[recalcular_lp] {jugador_nombre}: {len(matches_sin_lp)} partidas sin LP")
+                
+                # Obtener historial de LP del jugador
+                player_lp_history = lp_history_data.get(puuid, {}) if lp_history_data else {}
+                
+                if not player_lp_history:
+                    print(f"[recalcular_lp] {jugador_nombre}: No hay historial de LP disponible")
+                    continue
+                
+                # Recalcular LP para todas las partidas
+                from services.data_processing import process_player_match_history
+                matches_procesadas = process_player_match_history(matches, player_lp_history)
+                
+                # Contar cuántas se recalcularon
+                recalculadas = len([
+                    m for m in matches_procesadas 
+                    if m.get('lp_change_this_game') is not None and m.get('match_id') in 
+                       [x.get('match_id') for x in matches_sin_lp]
+                ])
+                
+                if recalculadas > 0:
+                    # Guardar historial actualizado
+                    save_player_matches(puuid, {'matches': matches_procesadas}, riot_id=riot_id)
+                    print(f"[recalcular_lp] {jugador_nombre}: ✓ {recalculadas} partidas actualizadas con LP")
+                    total_recalculadas += recalculadas
+                    total_jugadores += 1
+                
+            except Exception as e:
+                print(f"[recalcular_lp] Error procesando {jugador_nombre}: {e}")
+                continue
+        
+        print(f"[recalcular_lp] Total: {total_recalculadas} partidas recalculadas en {total_jugadores} jugadores")
+        return total_recalculadas
+        
+    except Exception as e:
+        print(f"[recalcular_lp] Error general: {e}")
+        import traceback
+        traceback.print_exc()
+        return 0
+
+
 def _calculate_and_cache_global_stats_periodically():
     """Calcula y cachea estadísticas globales periódicamente."""
     print("[_calculate_and_cache_global_stats_periodically] Hilo iniciado.")
+
     
     while True:
         try:
@@ -440,6 +521,24 @@ def start_data_updater(riot_api_key):
     history_thread = threading.Thread(target=actualizar_historial_partidas_en_segundo_plano, daemon=True)
     history_thread.start()
     print("[data_updater] ✓ Worker de historial iniciado")
+    
+    # Worker de recálculo de LP (cada 30 minutos)
+    def _recalcular_lp_periodicamente():
+        """Recalcula LP para partidas existentes periódicamente."""
+        # Esperar 5 minutos antes de la primera ejecución
+        time.sleep(300)
+        while True:
+            try:
+                recalcular_lp_partidas_existentes()
+            except Exception as e:
+                print(f"[_recalcular_lp_periodicamente] Error: {e}")
+            # Esperar 30 minutos entre ejecuciones
+            time.sleep(1800)
+    
+    lp_recalc_thread = threading.Thread(target=_recalcular_lp_periodicamente, daemon=True)
+    lp_recalc_thread.start()
+    print("[data_updater] ✓ Worker de recálculo de LP iniciado")
+
     
     # Worker de estadísticas globales
     stats_thread = threading.Thread(target=_calculate_and_cache_global_stats_periodically, daemon=True)
