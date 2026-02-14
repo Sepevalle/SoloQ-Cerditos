@@ -307,92 +307,116 @@ def estadisticas_globales():
     all_champions = stats_data.get('all_champions', [])
     calculated_at = stats_data.get('calculated_at')
     
-    # Si hay filtros aplicados, recalcular estadísticas dinámicamente
+    # Si hay filtros aplicados, usar datos pre-calculados o recalcular
     if current_queue != 'all' or selected_champion != 'all':
         print(f"[estadisticas_globales] Aplicando filtros - Cola: {current_queue}, Campeón: {selected_champion}")
         
-        # OPTIMIZACIÓN: Usar caché si está disponible para evitar reconstruir all_matches
-        cache_data = global_stats_cache.get()
-        if cache_data.get('all_matches'):
-            all_matches = cache_data['all_matches']
-            print(f"[estadisticas_globales] Usando {len(all_matches)} partidas desde caché")
+        # Si solo se filtra por cola (sin filtro de campeón), usar datos pre-calculados
+        if current_queue != 'all' and selected_champion == 'all':
+            try:
+                queue_id_str = str(int(current_queue))
+                stats_by_queue = stats_data.get('stats_by_queue', {})
+                
+                if queue_id_str in stats_by_queue:
+                    queue_stats = stats_by_queue[queue_id_str]
+                    print(f"[estadisticas_globales] Usando datos pre-calculados para cola {queue_id_str}")
+                    
+                    # Usar récords pre-calculados
+                    global_records = queue_stats.get('records', {})
+                    all_matches_count = queue_stats.get('total_matches', 0)
+                    wins = queue_stats.get('wins', 0)
+                    losses = queue_stats.get('losses', 0)
+                    overall_win_rate = (wins / all_matches_count * 100) if all_matches_count > 0 else 0
+                    
+                    # Para campeones más jugados y stats por jugador, necesitamos recalcular o usar caché
+                    # Por ahora, usamos los datos globales como aproximación
+                    print(f"[estadisticas_globales] Réccords cargados: {len(global_records)} récords")
+                else:
+                    print(f"[estadisticas_globales] No hay datos pre-calculados para cola {queue_id_str}")
+                    # No hay datos para esta cola - mostrar vacío
+                    from services.stats_service import _default_record, PERSONAL_RECORD_KEYS
+                    global_records = {key: _default_record() for key in PERSONAL_RECORD_KEYS}
+                    for key in global_records:
+                        global_records[key]['value'] = None
+                    overall_win_rate = 0
+                    all_matches_count = 0
+                    
+            except (ValueError, TypeError) as e:
+                print(f"[estadisticas_globales] Error convirtiendo queue_id: {e}")
         else:
-            # Fallback: reconstruir desde stats_by_player (solo si es necesario)
-            all_matches = []
-            for player_name in stats_data.get('stats_by_player', {}):
-                # Ya no tenemos 'matches' en stats_by_player por optimización de memoria
-                # Saltar filtros dinámicos si no hay datos en caché
+            # Filtro combinado o solo por campeón - requiere recálculo desde caché
+            print(f"[estadisticas_globales] Filtro combinado/campeón - requiere recálculo")
+            
+            # OPTIMIZACIÓN: Usar caché si está disponible
+            cache_data = global_stats_cache.get()
+            if cache_data.get('all_matches'):
+                all_matches = cache_data['all_matches']
+                print(f"[estadisticas_globales] Usando {len(all_matches)} partidas desde caché")
+                
+                # Aplicar filtros
+                if current_queue != 'all':
+                    try:
+                        queue_id = int(current_queue)
+                        all_matches = [(p, m) for p, m in all_matches if m.get('queue_id') == queue_id]
+                    except (ValueError, TypeError):
+                        pass
+                
+                if selected_champion != 'all':
+                    all_matches = [(p, m) for p, m in all_matches if m.get('champion_name') == selected_champion]
+                
+                # Recalcular estadísticas
+                if all_matches:
+                    global_records = extract_global_records(all_matches)
+                    wins = sum(1 for _, m in all_matches if m.get('win'))
+                    total_matches = len(all_matches)
+                    overall_win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
+                    all_matches_count = total_matches
+                    
+                    # Recalcular campeones más jugados
+                    champion_counts = Counter(m.get('champion_name') for _, m in all_matches if m.get('champion_name'))
+                    most_played_champions = champion_counts.most_common(10)
+                    
+                    # Recalcular stats por jugador
+                    player_stats_filtered = {}
+                    for player_name, match in all_matches:
+                        if player_name not in player_stats_filtered:
+                            player_stats_filtered[player_name] = {'wins': 0, 'losses': 0, 'total_partidas': 0}
+                        player_stats_filtered[player_name]['total_partidas'] += 1
+                        if match.get('win'):
+                            player_stats_filtered[player_name]['wins'] += 1
+                        else:
+                            player_stats_filtered[player_name]['losses'] += 1
+                    
+                    player_stats = []
+                    for player_name, stats in player_stats_filtered.items():
+                        total = stats['total_partidas']
+                        player_stats.append({
+                            'summonerName': player_name,
+                            'total_partidas': total,
+                            'wins': stats['wins'],
+                            'losses': stats['losses'],
+                            'win_rate': (stats['wins'] / total * 100) if total > 0 else 0
+                        })
+                    player_stats.sort(key=lambda x: x['total_partidas'], reverse=True)
+                    
+                    del all_matches
+                    gc.collect()
+                else:
+                    # No hay partidas con estos filtros
+                    from services.stats_service import _default_record, PERSONAL_RECORD_KEYS
+                    global_records = {key: _default_record() for key in PERSONAL_RECORD_KEYS}
+                    for key in global_records:
+                        global_records[key]['value'] = None
+                    overall_win_rate = 0
+                    most_played_champions = []
+                    player_stats = []
+                    all_matches_count = 0
+            else:
+                # No hay caché disponible
                 print(f"[estadisticas_globales] No hay datos en caché para filtros dinámicos")
                 flash('Los filtros dinámicos requieren recalcular estadísticas. Por favor, actualiza las estadísticas primero.', 'warning')
                 return redirect(url_for('stats.estadisticas_globales'))
-        
-        # Aplicar filtro de cola
-        if current_queue != 'all':
-            try:
-                queue_id = int(current_queue)
-                all_matches = [(p, m) for p, m in all_matches if m.get('queue_id') == queue_id]
-            except (ValueError, TypeError):
-                pass
-        
-        # Aplicar filtro de campeón
-        if selected_champion != 'all':
-            all_matches = [(p, m) for p, m in all_matches if m.get('champion_name') == selected_champion]
-        
-        # Recalcular todas las estadísticas con los datos filtrados
-        if all_matches:
-            # Calcular récords
-            global_records = extract_global_records(all_matches)
-            
-            # Calcular win rate
-            wins = sum(1 for _, m in all_matches if m.get('win'))
-            total_matches = len(all_matches)
-            overall_win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
-            
-            # Calcular campeones más jugados
-            champion_counts = Counter(m.get('champion_name') for _, m in all_matches if m.get('champion_name'))
-            most_played_champions = champion_counts.most_common(10)
-            
-            # Calcular estadísticas por jugador (optimizado)
-            player_stats_filtered = {}
-            for player_name, match in all_matches:
-                if player_name not in player_stats_filtered:
-                    player_stats_filtered[player_name] = {'wins': 0, 'losses': 0, 'total_partidas': 0}
-                player_stats_filtered[player_name]['total_partidas'] += 1
-                if match.get('win'):
-                    player_stats_filtered[player_name]['wins'] += 1
-                else:
-                    player_stats_filtered[player_name]['losses'] += 1
-            
-            # Formatear player_stats
-            player_stats = []
-            for player_name, stats in player_stats_filtered.items():
-                total = stats['total_partidas']
-                player_stats.append({
-                    'summonerName': player_name,
-                    'total_partidas': total,
-                    'wins': stats['wins'],
-                    'losses': stats['losses'],
-                    'win_rate': (stats['wins'] / total * 100) if total > 0 else 0
-                })
-            player_stats.sort(key=lambda x: x['total_partidas'], reverse=True)
-            
-            # Actualizar conteo total
-            all_matches_count = total_matches
-            
-            # Liberar memoria
-            del all_matches
-            gc.collect()
-        else:
-            # No hay partidas con estos filtros - inicializar récords vacíos
-            from services.stats_service import _default_record, PERSONAL_RECORD_KEYS
-            global_records = {key: _default_record() for key in PERSONAL_RECORD_KEYS}
-            # Establecer valores a None para mostrar N/A
-            for key in global_records:
-                global_records[key]['value'] = None
-            overall_win_rate = 0
-            most_played_champions = []
-            player_stats = []
-            all_matches_count = 0
+
 
 
     else:
