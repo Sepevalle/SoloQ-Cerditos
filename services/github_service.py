@@ -118,14 +118,28 @@ def write_file_to_github(file_path, content, message="Actualización automática
             # Error 422 - intentar re-leer el SHA y reintentar una vez
             print(f"[write_file_to_github] Error 422, reintentando con SHA actualizado...")
             _, new_sha = read_file_from_github(file_path, use_raw=False)
+            print(f"[write_file_to_github] Nuevo SHA obtenido: {new_sha[:8] if new_sha else 'None (archivo no existe)'}")
+            
             if new_sha and new_sha != sha:
+                # El archivo existe pero el SHA cambió, actualizar con nuevo SHA
                 data["sha"] = new_sha
                 response = requests.put(url, headers=headers, json=data, timeout=30)
                 if response.status_code in (200, 201):
-                    print(f"[write_file_to_github] Archivo {file_path} guardado correctamente en reintento")
+                    print(f"[write_file_to_github] Archivo {file_path} guardado correctamente en reintento (SHA actualizado)")
                     return True
+            elif not new_sha:
+                # El archivo no existe, intentar crear sin SHA
+                print(f"[write_file_to_github] Archivo no existe, intentando crear sin SHA...")
+                if "sha" in data:
+                    del data["sha"]
+                response = requests.put(url, headers=headers, json=data, timeout=30)
+                if response.status_code in (200, 201):
+                    print(f"[write_file_to_github] Archivo {file_path} creado correctamente (sin SHA)")
+                    return True
+            
             print(f"[write_file_to_github] Error: {response.status_code} - {response.text}")
             return False
+
         else:
             print(f"[write_file_to_github] Error: {response.status_code} - {response.text}")
             return False
