@@ -101,6 +101,7 @@ def write_file_to_github(file_path, content, message="Actualización automática
     if not content_b64:
         return False
     
+    # Construir data - solo incluir SHA si existe
     data = {
         "message": message,
         "content": content_b64,
@@ -109,42 +110,72 @@ def write_file_to_github(file_path, content, message="Actualización automática
     if sha:
         data["sha"] = sha
     
+    print(f"[write_file_to_github] Enviando petición a GitHub...")
+    print(f"[write_file_to_github] URL: {url}")
+    print(f"[write_file_to_github] Incluye SHA: {bool(sha)}")
+    print(f"[write_file_to_github] Tamaño del contenido: {len(content_json)} bytes")
+    
     try:
         response = requests.put(url, headers=headers, json=data, timeout=30)
+        print(f"[write_file_to_github] Respuesta: {response.status_code}")
+        
         if response.status_code in (200, 201):
-            print(f"[write_file_to_github] Archivo {file_path} guardado correctamente")
+            print(f"[write_file_to_github] ✓ Archivo {file_path} guardado correctamente")
             return True
-        elif response.status_code == 422 and "sha" in response.text.lower():
-            # Error 422 - intentar re-leer el SHA y reintentar una vez
-            print(f"[write_file_to_github] Error 422, reintentando con SHA actualizado...")
-            _, new_sha = read_file_from_github(file_path, use_raw=False)
-            print(f"[write_file_to_github] Nuevo SHA obtenido: {new_sha[:8] if new_sha else 'None (archivo no existe)'}")
+        elif response.status_code == 422:
+            error_text = response.text
+            print(f"[write_file_to_github] Error 422 detallado: {error_text}")
             
-            if new_sha and new_sha != sha:
-                # El archivo existe pero el SHA cambió, actualizar con nuevo SHA
-                data["sha"] = new_sha
-                response = requests.put(url, headers=headers, json=data, timeout=30)
-                if response.status_code in (200, 201):
-                    print(f"[write_file_to_github] Archivo {file_path} guardado correctamente en reintento (SHA actualizado)")
-                    return True
-            elif not new_sha:
-                # El archivo no existe, intentar crear sin SHA
-                print(f"[write_file_to_github] Archivo no existe, intentando crear sin SHA...")
-                if "sha" in data:
-                    del data["sha"]
-                response = requests.put(url, headers=headers, json=data, timeout=30)
-                if response.status_code in (200, 201):
-                    print(f"[write_file_to_github] Archivo {file_path} creado correctamente (sin SHA)")
-                    return True
+            # Si el error es sobre SHA, intentar estrategia alternativa
+            if "sha" in error_text.lower():
+                print(f"[write_file_to_github] Error relacionado con SHA, intentando estrategia alternativa...")
+                
+                # Estrategia 1: Intentar obtener SHA fresco y reintentar
+                _, fresh_sha = read_file_from_github(file_path, use_raw=False)
+                print(f"[write_file_to_github] SHA fresco obtenido: {fresh_sha[:8] if fresh_sha else 'None'}")
+                
+                if fresh_sha:
+                    # El archivo existe, actualizar con SHA fresco
+                    data["sha"] = fresh_sha
+                    print(f"[write_file_to_github] Reintentando con SHA fresco...")
+                    response2 = requests.put(url, headers=headers, json=data, timeout=30)
+                    print(f"[write_file_to_github] Respuesta del reintento: {response2.status_code}")
+                    
+                    if response2.status_code in (200, 201):
+                        print(f"[write_file_to_github] ✓ Archivo {file_path} guardado correctamente en reintento")
+                        return True
+                    else:
+                        print(f"[write_file_to_github] Reintento falló: {response2.status_code} - {response2.text}")
+                else:
+                    # El archivo no existe, intentar crear sin SHA
+                    print(f"[write_file_to_github] El archivo no existe en el repositorio")
+                    print(f"[write_file_to_github] Verificando que no haya SHA en los datos...")
+                    
+                    # Asegurar que no hay SHA en los datos
+                    data_clean = {
+                        "message": message,
+                        "content": content_b64,
+                        "branch": "main"
+                    }
+                    
+                    print(f"[write_file_to_github] Intentando crear archivo nuevo sin SHA...")
+                    response3 = requests.put(url, headers=headers, json=data_clean, timeout=30)
+                    print(f"[write_file_to_github] Respuesta de creación: {response3.status_code}")
+                    
+                    if response3.status_code in (200, 201):
+                        print(f"[write_file_to_github] ✓ Archivo {file_path} creado correctamente")
+                        return True
+                    else:
+                        print(f"[write_file_to_github] Creación falló: {response3.status_code} - {response3.text}")
             
-            print(f"[write_file_to_github] Error: {response.status_code} - {response.text}")
             return False
-
         else:
             print(f"[write_file_to_github] Error: {response.status_code} - {response.text}")
             return False
     except Exception as e:
         print(f"[write_file_to_github] Error en petición: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
