@@ -4,7 +4,8 @@ from datetime import datetime, timezone, timedelta
 import gc
 import time
 
-from config.settings import DDRAGON_VERSION, QUEUE_NAMES
+from config.settings import DDRAGON_VERSION, QUEUE_NAMES, TARGET_TIMEZONE
+
 from services.cache_service import player_cache, global_stats_cache
 from services.github_service import read_global_stats, save_global_stats, read_stats_reload_config, save_stats_reload_config
 from services.match_service import get_player_match_history, filter_matches_by_queue, filter_matches_by_champion
@@ -207,6 +208,11 @@ def _calculate_and_save_global_stats():
 
         
         # Construir objeto final con todas las desagregaciones
+        # Usar el mismo formato de hora que index_json_generator
+        dt_utc = datetime.now(timezone.utc)
+        dt_target = dt_utc.astimezone(TARGET_TIMEZONE)
+        calculated_at_formatted = dt_target.strftime("%d/%m/%Y %H:%M:%S")
+        
         global_stats_data = {
             'all_matches_count': len(all_matches),
             'total_players': compiled['total_players'],
@@ -218,8 +224,10 @@ def _calculate_and_save_global_stats():
             'stats_by_queue': stats_by_queue,
             'stats_by_champion': stats_by_champion,
             'stats_by_player': stats_by_player,
-            'calculated_at': datetime.now(timezone.utc).isoformat()
+            'calculated_at': calculated_at_formatted,
+            'calculated_at_iso': datetime.now(timezone.utc).isoformat()  # Mantener ISO para compatibilidad
         }
+
 
         
         # Guardar en caché para acceso rápido
@@ -436,14 +444,9 @@ def estadisticas_globales():
     }
 
     
-    # Formatear fecha de última actualización
-    last_updated = None
-    if calculated_at:
-        try:
-            dt = datetime.fromisoformat(calculated_at)
-            last_updated = dt.strftime("%d/%m/%Y %H:%M:%S")
-        except:
-            last_updated = calculated_at
+    # La fecha ya viene formateada desde el cálculo, pero mantenemos fallback
+    last_updated = calculated_at if calculated_at else None
+
     
     available_queues = [{'id': q_id, 'name': QUEUE_NAMES.get(q_id, f"Unknown ({q_id})")} 
                        for q_id in sorted(available_queue_ids)]
