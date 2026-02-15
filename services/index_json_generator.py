@@ -230,17 +230,27 @@ def _calculate_player_stats(
         # Verificar si está en partida (con timeout corto para no bloquear)
         try:
             if RIOT_API_KEY:
+                print(f"[_calculate_player_stats] Verificando estado en partida para {jugador.get('jugador', 'unknown')} (PUUID: {puuid[:8]}...)")
                 game_data = esta_en_partida(RIOT_API_KEY, puuid)
                 if game_data:
+                    print(f"[_calculate_player_stats] ✓ {jugador.get('jugador', 'unknown')} está en partida activa")
                     stats['en_partida'] = True
                     for participant in game_data.get("participants", []):
                         if participant.get("puuid") == puuid:
                             champion_id = participant.get("championId")
                             stats['nombre_campeon'] = obtener_nombre_campeon(champion_id)
+                            print(f"[_calculate_player_stats] Campeón en partida: {stats['nombre_campeon']}")
                             break
+                else:
+                    print(f"[_calculate_player_stats] ✗ {jugador.get('jugador', 'unknown')} no está en partida")
+            else:
+                print(f"[_calculate_player_stats] ⚠ RIOT_API_KEY no configurada, saltando verificación de partida")
         except Exception as e:
-            # No bloquear si falla la verificación de partida
-            pass
+            # No bloquear si falla la verificación de partida, pero loggear el error
+            print(f"[_calculate_player_stats] ⚠ Error verificando partida para {jugador.get('jugador', 'unknown')}: {e}")
+            import traceback
+            traceback.print_exc()
+
             
     except Exception as e:
         # Si falla el cálculo, usar valores por defecto

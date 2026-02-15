@@ -474,9 +474,10 @@
                 {% for jugador in datos_jugadores %}
                 {% set total_games = jugador.wins + jugador.losses %}
                 {% set win_rate = (jugador.wins / total_games * 100) if total_games > 0 else 0 %}
-                <tr class="queue-type {{ jugador.queue_type }}">
+                <tr class="queue-type {{ jugador.queue_type }}" data-puuid="{{ jugador.puuid }}" data-jugador="{{ jugador.jugador }}">
                     <td></td>
                     <td class="jugador-columna">
+
                         <div class="d-flex align-items-center">
                             <img
                                 src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/{{ jugador.jugador }}.png"
@@ -559,18 +560,22 @@
                     </td>
 
                     <td class="elo-diferencia"></td>
-                    <td>
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado">
+                    <td class="estado-celda">
+                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado" id="estado-{{ jugador.puuid }}">
                             {% if jugador.en_partida %}
                                 <span class="estado-en-partida">In Game</span>
                                 <img src="http://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" 
                                      alt="{{ jugador.nombre_campeon }}" 
+                                     class="champion-ingame" 
+                                     id="champion-{{ jugador.puuid }}"
                                      style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
                             {% else %}
-                                Inactivo
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-{{ jugador.puuid }}" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
                             {% endif %}
                         </a>
                     </td>
+
 
                 </tr>
                 {% endfor %}
@@ -847,8 +852,65 @@
             rightBanner.src = imagePaths[currentImageIndex];
         }
         setInterval(cambiarImagenes, 5000);
+        
+        // --- VERIFICACIÓN EN TIEMPO REAL DE PARTIDAS ACTIVAS ---
+        async function checkLiveGames() {
+            const rows = document.querySelectorAll('#jugadoresTable tbody tr[data-puuid]');
+            const ddragonVersion = '{{ ddragon_version }}';
+            
+            for (const row of rows) {
+                const puuid = row.getAttribute('data-puuid');
+                const jugador = row.getAttribute('data-jugador');
+                const estadoLink = document.getElementById(`estado-${puuid}`);
+                const championImg = document.getElementById(`champion-${puuid}`);
+                
+                if (!puuid || !estadoLink) continue;
+                
+                try {
+                    const response = await fetch(`/api/player/${puuid}/live-game`);
+                    if (!response.ok) {
+                        console.log(`[LiveGame] Error verificando ${jugador}: ${response.status}`);
+                        continue;
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.en_partida) {
+                        // Jugador está en partida
+                        estadoLink.innerHTML = `<span class="estado-en-partida">In Game</span>`;
+                        if (data.nombre_campeon) {
+                            championImg.src = `http://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${data.nombre_campeon}.png`;
+                            championImg.alt = data.nombre_campeon;
+                            championImg.classList.remove('hidden');
+                            estadoLink.appendChild(championImg);
+                        }
+                        console.log(`[LiveGame] ✓ ${jugador} está en partida con ${data.nombre_campeon}`);
+                    } else {
+                        // Jugador no está en partida
+                        estadoLink.innerHTML = `<span class="estado-texto">Inactivo</span>`;
+                        championImg.src = '';
+                        championImg.alt = '';
+                        championImg.classList.add('hidden');
+                    }
+                } catch (e) {
+                    console.error(`[LiveGame] Error verificando ${jugador}:`, e);
+                }
+                
+                // Pequeña pausa entre peticiones para no saturar la API
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+        
+        // Verificar partidas al cargar la página
+        console.log('[LiveGame] Iniciando verificación de partidas activas...');
+        checkLiveGames();
+        
+        // Verificar partidas cada 60 segundos
+        setInterval(checkLiveGames, 60000);
+        // --- FIN VERIFICACIÓN EN TIEMPO REAL ---
     });
 </script>
+
 
 </body>
 </html>

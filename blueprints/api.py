@@ -7,7 +7,8 @@ from services.match_service import get_player_match_history
 from services.stats_service import calculate_personal_records
 from services.cache_service import global_stats_cache
 from services.ai_service import check_player_permission, analyze_matches, block_player_permission
-from services.riot_api import ALL_CHAMPIONS
+from services.riot_api import ALL_CHAMPIONS, esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
+
 import time
 
 api_bp = Blueprint('api', __name__)
@@ -231,8 +232,54 @@ def analizar_partidas(puuid):
         return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
 
 
+@api_bp.route('/player/<puuid>/live-game', methods=['GET'])
+def check_live_game(puuid):
+    """
+    Verifica si un jugador está en partida activa en tiempo real.
+    Retorna el estado actual sin depender del caché del JSON.
+    """
+    try:
+        if not puuid:
+            return jsonify({"error": "PUUID no proporcionado"}), 400
+            
+        if not RIOT_API_KEY:
+            return jsonify({"error": "API key no configurada"}), 500
+        
+        print(f"[check_live_game] Verificando partida activa para PUUID: {puuid[:8]}...")
+        game_data = esta_en_partida(RIOT_API_KEY, puuid)
+        
+        if game_data:
+            # Buscar el campeón del jugador
+            champion_name = None
+            for participant in game_data.get("participants", []):
+                if participant.get("puuid") == puuid:
+                    champion_id = participant.get("championId")
+                    champion_name = obtener_nombre_campeon(champion_id)
+                    break
+            
+            return jsonify({
+                "en_partida": True,
+                "nombre_campeon": champion_name,
+                "game_mode": game_data.get("gameMode", "Unknown"),
+                "game_type": game_data.get("gameType", "Unknown"),
+                "map_id": game_data.get("mapId", 0)
+            })
+        else:
+            return jsonify({
+                "en_partida": False,
+                "nombre_campeon": None
+            })
+            
+    except Exception as e:
+        print(f"[check_live_game] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Error al verificar estado de partida"}), 500
+
+
 @api_bp.route('/update-global-stats', methods=['POST'])
 def request_global_stats_update():
+
     """
     Endpoint para disparar cálculo manual de estadísticas globales.
     Bloquea peticiones concurrentes para evitar saturación del servidor.
