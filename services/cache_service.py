@@ -345,8 +345,59 @@ class ApiResponseCache:
 
 
 # ============================================================================
+# CACHÉ DE ESTADO EN PARTIDA (Live Game)
+# ============================================================================
+
+class LiveGameCache:
+    """
+    Caché específico para el estado "en partida" de jugadores.
+    TTL corto (30 segundos) para detectar partidas activas rápidamente.
+    """
+    def __init__(self, ttl_seconds=30):
+        self._cache = {}  # puuid -> {"data": game_data, "timestamp": time}
+        self._lock = threading.Lock()
+        self._ttl = ttl_seconds
+    
+    def get(self, puuid):
+        """Obtiene el estado en partida si está en caché y no ha expirado."""
+        with self._lock:
+            entry = self._cache.get(puuid)
+            if not entry:
+                return None
+            
+            # Verificar si expiró
+            if time.time() - entry["timestamp"] > self._ttl:
+                del self._cache[puuid]
+                return None
+            
+            return entry["data"]
+    
+    def set(self, puuid, game_data):
+        """Guarda el estado en partida en el caché."""
+        with self._lock:
+            self._cache[puuid] = {
+                "data": game_data,
+                "timestamp": time.time()
+            }
+    
+    def is_valid(self, puuid):
+        """Verifica si hay datos válidos en caché para el jugador."""
+        with self._lock:
+            entry = self._cache.get(puuid)
+            if not entry:
+                return False
+            return time.time() - entry["timestamp"] <= self._ttl
+    
+    def clear(self):
+        """Limpia todo el caché."""
+        with self._lock:
+            self._cache.clear()
+
+
+# ============================================================================
 # INSTANCIAS GLOBALES
 # ============================================================================
+
 
 player_cache = PlayerCache()
 global_stats_cache = GlobalStatsCache()
@@ -356,6 +407,8 @@ personal_records_cache = PersonalRecordsCache()
 lp_history_cache = LpHistoryCache()
 player_stats_cache = PlayerStatsCache()  # NUEVO: Caché para estadísticas de jugadores
 api_response_cache = ApiResponseCache()
+live_game_cache = LiveGameCache(ttl_seconds=30)  # NUEVO: Caché para estado en partida
+
 
 
 # ============================================================================

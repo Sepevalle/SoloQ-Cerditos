@@ -273,32 +273,56 @@ def esta_en_partida(api_key, puuid):
     """
     Comprueba si un jugador está en una partida activa.
     Retorna los datos completos de la partida si está en una, None si no.
+    Usa caché de 30 segundos para evitar saturar la API.
     """
-    print(f"[esta_en_partida] Verificando si el jugador {puuid} está en partida.")
+    from services.cache_service import live_game_cache
+    
+    # Primero verificar en caché
+    cached_data = live_game_cache.get(puuid)
+    if cached_data is not None:
+        print(f"[esta_en_partida] Usando caché para {puuid[:8]}... - {'en partida' if cached_data else 'no en partida'}")
+        return cached_data if cached_data else None
+    
+    print(f"[esta_en_partida] Verificando API si el jugador {puuid[:8]}... está en partida.")
     try:
         url = f"https://euw1.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={api_key}"
         response = make_api_request(url, is_spectator_api=True)
 
         if response and response.status_code == 200:
             game_data = response.json()
+            # Verificar que el jugador está realmente en los participantes
+            player_found = False
             for participant in game_data.get("participants", []):
-                if participant["puuid"] == puuid:
-                    print(f"[esta_en_partida] Jugador {puuid} está en partida activa.")
-                    return game_data
-            print(f"[esta_en_partida] Advertencia: Jugador {puuid} está en partida pero no se encontró en la lista de participantes.")
-            return None
+                if participant.get("puuid") == puuid:
+                    player_found = True
+                    break
+            
+            if player_found:
+                print(f"[esta_en_partida] ✓ Jugador {puuid[:8]}... está en partida activa (gameMode: {game_data.get('gameMode', 'Unknown')})")
+                live_game_cache.set(puuid, game_data)
+                return game_data
+            else:
+                print(f"[esta_en_partida] ⚠ Jugador {puuid[:8]}... no se encontró en lista de participantes")
+                live_game_cache.set(puuid, None)  # Cachear resultado negativo
+                return None
+                
         elif response and response.status_code == 404:
-            print(f"[esta_en_partida] Jugador {puuid} no está en partida activa (404 Not Found).")
+            print(f"[esta_en_partida] ✗ Jugador {puuid[:8]}... no está en partida (404)")
+            live_game_cache.set(puuid, None)  # Cachear resultado negativo
             return None
+            
         elif response is None:
-            print(f"[esta_en_partida] make_api_request devolvió None para {puuid}. Posible timeout o error persistente.")
+            print(f"[esta_en_partida] ⚠ Timeout/Error para {puuid[:8]}... - no se cachea")
             return None
+            
         else:
-            print(f"[esta_en_partida] Error inesperado al verificar partida para {puuid}. Status: {response.status_code}")
-            response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f"[esta_en_partida] Error al verificar si el jugador {puuid} está en partida: {e}")
+            print(f"[esta_en_partida] ⚠ Error inesperado para {puuid[:8]}... Status: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        print(f"[esta_en_partida] ✗ Error verificando {puuid[:8]}...: {e}")
         return None
+
 
 def obtener_info_partida(args):
     """

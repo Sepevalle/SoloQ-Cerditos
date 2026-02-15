@@ -896,17 +896,21 @@
                     console.error(`[LiveGame] Error verificando ${jugador}:`, e);
                 }
                 
-                // Pequeña pausa entre peticiones para no saturar la API
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Pausa de 2 segundos entre peticiones para respetar rate limits de Riot API
+                await new Promise(resolve => setTimeout(resolve, 2000));
             }
         }
         
-        // Verificar partidas al cargar la página
-        console.log('[LiveGame] Iniciando verificación de partidas activas...');
-        checkLiveGames();
+        // Verificar partidas al cargar la página (con delay inicial para no bloquear carga)
+        console.log('[LiveGame] Programando verificación de partidas activas...');
+        setTimeout(() => {
+            console.log('[LiveGame] Iniciando verificación de partidas activas...');
+            checkLiveGames();
+        }, 3000); // Esperar 3 segundos después de cargar la página
         
         // Verificar partidas cada 60 segundos
         setInterval(checkLiveGames, 60000);
+
         // --- FIN VERIFICACIÓN EN TIEMPO REAL ---
     });
 </script>
