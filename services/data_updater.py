@@ -521,8 +521,8 @@ def _check_all_players_live_games():
                 total_verificados += 1
                 
                 try:
-                    # Verificar si está en partida (usa el caché interno de 30s)
-                    game_data = esta_en_partida(RIOT_API_KEY, puuid)
+                    # Verificar si está en partida (usa RIOT_API_KEY_2 para separar llamadas)
+                    game_data = esta_en_partida(RIOT_API_KEY_2, puuid)
                     
                     if game_data:
                         # Buscar el campeón del jugador
