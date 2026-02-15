@@ -8,7 +8,7 @@ import threading
 import requests
 from datetime import datetime, timezone, timedelta
 from config.settings import (
-    RIOT_API_KEY, GITHUB_TOKEN, CACHE_UPDATE_INTERVAL,
+    RIOT_API_KEY, RIOT_API_KEY_2, GITHUB_TOKEN, CACHE_UPDATE_INTERVAL,
     BASE_URL_DDRAGON, DDRAGON_VERSION
 )
 from services.cache_service import player_cache, global_stats_cache, personal_records_cache
@@ -494,6 +494,68 @@ def _calculate_and_cache_personal_records_periodically():
         time.sleep(3600)  # 1 hora
 
 
+def _check_all_players_live_games():
+    """
+    Verifica el estado 'en partida' de todos los jugadores y actualiza el caché.
+    Este hilo se ejecuta independientemente de la generación del JSON.
+    """
+    print("[_check_all_players_live_games] Hilo iniciado.")
+    
+    from services.riot_api import esta_en_partida, obtener_nombre_campeon
+    
+    while True:
+        try:
+            print("[_check_all_players_live_games] Verificando estado de todos los jugadores...")
+            
+            cuentas = get_all_accounts()
+            puuids = get_all_puuids()
+            
+            jugadores_en_partida = 0
+            total_verificados = 0
+            
+            for riot_id, jugador_nombre in cuentas:
+                puuid = puuids.get(riot_id)
+                if not puuid:
+                    continue
+                
+                total_verificados += 1
+                
+                try:
+                    # Verificar si está en partida (usa el caché interno de 30s)
+                    game_data = esta_en_partida(RIOT_API_KEY, puuid)
+                    
+                    if game_data:
+                        # Buscar el campeón del jugador
+                        champion_name = None
+                        for participant in game_data.get("participants", []):
+                            if participant.get("puuid") == puuid:
+                                champion_id = participant.get("championId")
+                                champion_name = obtener_nombre_campeon(champion_id)
+                                break
+                        
+                        print(f"[_check_all_players_live_games] ✓ {jugador_nombre}: EN PARTIDA con {champion_name}")
+                        jugadores_en_partida += 1
+                    else:
+                        print(f"[_check_all_players_live_games] ✗ {jugador_nombre}: Inactivo")
+                    
+                    # Pausa entre jugadores para no saturar la API
+                    time.sleep(1)
+                    
+                except Exception as e:
+                    print(f"[_check_all_players_live_games] Error verificando {jugador_nombre}: {e}")
+                    continue
+            
+            print(f"[_check_all_players_live_games] ✓ Verificación completada: {jugadores_en_partida}/{total_verificados} jugadores en partida")
+            
+        except Exception as e:
+            print(f"[_check_all_players_live_games] Error general: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        # Verificar cada 2 minutos (120 segundos)
+        time.sleep(120)
+
+
 def start_data_updater(riot_api_key):
     """
     Función de inicio para el servicio de actualización de datos.
@@ -549,6 +611,11 @@ def start_data_updater(riot_api_key):
     records_thread = threading.Thread(target=_calculate_and_cache_personal_records_periodically, daemon=True)
     records_thread.start()
     print("[data_updater] ✓ Worker de récords personales iniciado")
+    
+    # Worker de verificación de estado "en partida" (INDEPENDIENTE del JSON)
+    live_game_thread = threading.Thread(target=_check_all_players_live_games, daemon=True)
+    live_game_thread.start()
+    print("[data_updater] ✓ Worker de verificación de 'en partida' iniciado (cada 2 min)")
     
     # Worker de generación de JSON para el index
     from services.index_json_generator import start_json_generator_thread
