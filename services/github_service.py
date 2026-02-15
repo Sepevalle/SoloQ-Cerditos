@@ -191,6 +191,36 @@ def write_file_to_github(file_path, content, message="Actualización automática
         return False
 
 
+def get_file_sha_only(file_path):
+    """
+    Obtiene solo el SHA de un archivo sin intentar leer su contenido.
+    Útil para archivos grandes donde el contenido no es necesario.
+    
+    Returns:
+        str: SHA del archivo o None si no existe/error
+    """
+    url = get_github_file_url(file_path, raw=False)
+    headers = get_github_headers()
+    
+    # Usar un timeout corto y no seguir redirects para obtener solo metadata
+    try:
+        response = requests.get(url, headers=headers, timeout=10, allow_redirects=False)
+        if response.status_code == 200:
+            data = response.json()
+            sha = data.get('sha')
+            print(f"[get_file_sha_only] SHA obtenido para {file_path}: {sha[:8] if sha else 'None'}")
+            return sha
+        elif response.status_code == 404:
+            print(f"[get_file_sha_only] Archivo no existe: {file_path}")
+            return None
+        else:
+            print(f"[get_file_sha_only] Error {response.status_code} para {file_path}")
+            return None
+    except Exception as e:
+        print(f"[get_file_sha_only] Error: {e}")
+        return None
+
+
 def save_global_stats(stats_data):
     """
     Guarda las estadísticas globales en GitHub.
@@ -202,20 +232,20 @@ def save_global_stats(stats_data):
     
     file_path = "global_stats.json"
     
-    # PASO 1: Eliminar archivo existente si hay
-    print(f"[save_global_stats] Paso 1: Verificando si existe archivo anterior...")
-    _, existing_sha = read_file_from_github(file_path, use_raw=False)
+    # PASO 1: Obtener solo el SHA (más eficiente para archivos grandes)
+    print(f"[save_global_stats] Paso 1: Obteniendo SHA del archivo existente...")
+    existing_sha = get_file_sha_only(file_path)
     
     if existing_sha:
         print(f"[save_global_stats] Archivo existente encontrado (SHA: {existing_sha[:8]}), eliminando...")
-        deleted = delete_file_from_github(file_path, message="Eliminar para regenerar", sha=existing_sha)
+        deleted = delete_file_from_github(file_path, message="Eliminar para regenerar estadísticas", sha=existing_sha)
         if deleted:
-            print(f"[save_global_stats] Esperando 3 segundos para que GitHub procese...")
+            print(f"[save_global_stats] Archivo eliminado, esperando 3 segundos...")
             time.sleep(3)
         else:
-            print(f"[save_global_stats] No se pudo eliminar, intentando sobrescribir...")
+            print(f"[save_global_stats] ⚠ No se pudo eliminar archivo, intentando sobrescribir...")
     else:
-        print(f"[save_global_stats] No existe archivo anterior")
+        print(f"[save_global_stats] No existe archivo anterior o no se pudo obtener SHA")
     
     # PASO 2: Crear archivo nuevo (sin SHA)
     print(f"[save_global_stats] Paso 2: Creando archivo nuevo...")
@@ -232,6 +262,7 @@ def save_global_stats(stats_data):
         print(f"[save_global_stats] ✗ ERROR al guardar estadísticas")
     
     return success
+
 
 
 # ============================================================================
