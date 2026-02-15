@@ -523,11 +523,27 @@ def _get_time_until_next_calculation():
         return True, 0, "0s"
     
     try:
-        # Parsear timestamp con manejo de timezone
-        last_calc = datetime.fromisoformat(calculated_at.replace('Z', '+00:00'))
-        # Asegurar que last_calc tenga timezone info
-        if last_calc.tzinfo is None:
-            last_calc = last_calc.replace(tzinfo=timezone.utc)
+        # Parsear timestamp - soporta dos formatos:
+        # 1. Nuevo formato: "%d/%m/%Y %H:%M:%S" (ej: "15/01/2025 14:30:00")
+        # 2. Viejo formato ISO (para compatibilidad hacia atrás)
+        
+        last_calc = None
+        
+        # Intentar parsear formato dd/mm/yyyy HH:MM:SS primero
+        if isinstance(calculated_at, str) and len(calculated_at) == 19 and calculated_at[2] == '/' and calculated_at[5] == '/':
+            try:
+                last_calc = datetime.strptime(calculated_at, "%d/%m/%Y %H:%M:%S")
+                last_calc = last_calc.replace(tzinfo=TARGET_TIMEZONE)
+            except ValueError:
+                pass
+        
+        # Si no funcionó, intentar formato ISO
+        if last_calc is None:
+            last_calc = datetime.fromisoformat(calculated_at.replace('Z', '+00:00'))
+            # Asegurar que last_calc tenga timezone info
+            if last_calc.tzinfo is None:
+                last_calc = last_calc.replace(tzinfo=timezone.utc)
+
         
         now = datetime.now(timezone.utc)
         elapsed = (now - last_calc).total_seconds()
