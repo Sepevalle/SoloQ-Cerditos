@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 import gc
 import time
 
-from config.settings import DDRAGON_VERSION, QUEUE_NAMES, TARGET_TIMEZONE
+from config.settings import DDRAGON_VERSION, QUEUE_NAMES, TARGET_TIMEZONE, GLOBAL_STATS_UPDATE_INTERVAL
 
 from services.cache_service import player_cache, global_stats_cache
 from services.github_service import read_global_stats, save_global_stats, read_stats_reload_config, save_stats_reload_config
@@ -16,8 +16,7 @@ from services.stats_service import extract_global_records, calculate_global_stat
 stats_bp = Blueprint('stats', __name__)
 
 # Tiempo mínimo entre cálculos de estadísticas (en segundos)
-# 24 horas = 86400 segundos
-MIN_TIME_BETWEEN_CALCULATIONS = 86400
+# Se lee desde config/settings.py (GLOBAL_STATS_UPDATE_INTERVAL)
 
 
 
@@ -535,11 +534,12 @@ def _get_time_until_next_calculation():
         
         print(f"[_get_time_until_next_calculation] Último cálculo: {last_calc}, Ahora: {now}, Transcurrido: {elapsed:.0f}s")
         
-        if elapsed >= MIN_TIME_BETWEEN_CALCULATIONS:
-            print(f"[_get_time_until_next_calculation] Tiempo mínimo cumplido ({MIN_TIME_BETWEEN_CALCULATIONS}s), permitiendo cálculo")
+        if elapsed >= GLOBAL_STATS_UPDATE_INTERVAL:
+            print(f"[_get_time_until_next_calculation] Tiempo mínimo cumplido ({GLOBAL_STATS_UPDATE_INTERVAL}s), permitiendo cálculo")
             return True, 0, "0s"
         
-        remaining = MIN_TIME_BETWEEN_CALCULATIONS - elapsed
+        remaining = GLOBAL_STATS_UPDATE_INTERVAL - elapsed
+
         
         # Formatear tiempo restante (horas, minutos, segundos)
         hours = int(remaining // 3600)
