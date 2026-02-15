@@ -84,9 +84,12 @@ def write_file_to_github(file_path, content, message="Actualización automática
     
     # Si no se proporcionó SHA, intentar obtenerlo leyendo el archivo primero
     if sha is None:
+        print(f"[write_file_to_github] Obteniendo SHA para {file_path}...")
         _, sha = read_file_from_github(file_path, use_raw=False)
+        print(f"[write_file_to_github] Resultado de lectura: SHA={'Obtenido' if sha else 'None'}")
         if sha:
-            print(f"[write_file_to_github] SHA obtenido para {file_path}: {sha[:8]}...")
+            print(f"[write_file_to_github] SHA obtenido: {sha[:8]}...")
+
     
     url = get_github_file_url(file_path, raw=False)
     headers = get_github_headers()
