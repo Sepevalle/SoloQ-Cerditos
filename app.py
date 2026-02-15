@@ -44,10 +44,11 @@ from services import (
     start_rate_limiter
 )
 
-# Importar función para actualizar versión de Data Dragon
-from services.riot_api import actualizar_version_ddragon
+# Importar función para actualizar versión y datos de Data Dragon
+from services.riot_api import actualizar_version_ddragon, actualizar_ddragon_data
 
 # Importar generador de JSON para el index
+
 from services.index_json_generator import (
     generate_index_json, 
     load_index_json, 
@@ -152,10 +153,15 @@ print("\n" + "="*60)
 print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
 print("="*60 + "\n")
 
-# Actualizar versión de Data Dragon al inicio
+# Actualizar versión y datos de Data Dragon al inicio (DEBE SER PRIMERO)
 print("[main] Actualizando versión de Data Dragon...")
 actualizar_version_ddragon()
 print("[main] ✓ Versión de Data Dragon actualizada")
+
+print("[main] Cargando datos de campeones, runas y hechizos de Data Dragon...")
+actualizar_ddragon_data()
+print("[main] ✓ Datos de Data Dragon cargados correctamente")
+
 
 # Validar configuración esencial
 if not RIOT_API_KEY:
