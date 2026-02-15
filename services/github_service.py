@@ -390,9 +390,60 @@ def read_global_stats():
     return False, {}
 
 
+def delete_file_from_github(file_path, message="Eliminar archivo", sha=None):
+    """
+    Elimina un archivo de GitHub.
+    
+    Args:
+        file_path: Ruta del archivo en el repositorio
+        message: Mensaje del commit
+        sha: SHA del archivo (requerido)
+    
+    Returns:
+        bool: True si se eliminó correctamente
+    """
+    if not GITHUB_TOKEN:
+        print(f"[delete_file_from_github] Error: Token de GitHub no configurado")
+        return False
+    
+    # Si no se proporcionó SHA, intentar obtenerlo
+    if sha is None:
+        _, sha = read_file_from_github(file_path, use_raw=False)
+    
+    if not sha:
+        print(f"[delete_file_from_github] No se puede eliminar: archivo no existe o no se puede leer")
+        return False
+    
+    url = get_github_file_url(file_path, raw=False)
+    headers = get_github_headers()
+    
+    data = {
+        "message": message,
+        "sha": sha,
+        "branch": "main"
+    }
+    
+    print(f"[delete_file_from_github] Eliminando {file_path}...")
+    
+    try:
+        response = requests.delete(url, headers=headers, json=data, timeout=30)
+        print(f"[delete_file_from_github] Respuesta: {response.status_code}")
+        
+        if response.status_code in (200, 204):
+            print(f"[delete_file_from_github] ✓ Archivo {file_path} eliminado correctamente")
+            return True
+        else:
+            print(f"[delete_file_from_github] Error: {response.status_code} - {response.text[:500]}")
+            return False
+    except Exception as e:
+        print(f"[delete_file_from_github] Error en petición: {e}")
+        return False
+
+
 def save_global_stats(stats_data):
     """
     Guarda las estadísticas globales en GitHub.
+    Estrategia: Eliminar archivo existente y crear uno nuevo para evitar problemas con SHA.
     
     Args:
         stats_data: Diccionario con estadísticas globales
@@ -401,7 +452,6 @@ def save_global_stats(stats_data):
         bool: True si se guardó correctamente
     """
     # El timestamp ya viene formateado desde _calculate_and_save_global_stats
-    # No sobrescribir para mantener el formato consistente
     print(f"[save_global_stats] Intentando guardar estadísticas globales...")
 
     print(f"[save_global_stats] Timestamp: {stats_data.get('calculated_at', 'N/A')}")
@@ -414,31 +464,37 @@ def save_global_stats(stats_data):
     size_mb = len(temp_json) / (1024 * 1024)
     print(f"[save_global_stats] Tamaño estimado del JSON: {len(temp_json)} bytes ({size_mb:.2f} MB)")
     
-    # Si el archivo es muy grande, intentar sin indentación para reducir tamaño
-    if size_mb > 10:
-        print(f"[save_global_stats] Archivo grande detectado, usando formato compacto...")
-        stats_data_compact = stats_data.copy()
-        # No modificar el original, pero el write_file_to_github usará el formato compacto
-        # al serializar sin indentación
+    # ESTRATEGIA: Eliminar archivo existente primero, luego crear nuevo
+    file_path = "global_stats.json"
     
-    # Leer primero para obtener el SHA si existe
-    _, sha = read_file_from_github("global_stats.json", use_raw=False)
-    print(f"[save_global_stats] SHA obtenido: {sha[:8] if sha else 'None (nuevo archivo)'}")
+    # Paso 1: Intentar obtener SHA y eliminar archivo existente
+    _, existing_sha = read_file_from_github(file_path, use_raw=False)
+    if existing_sha:
+        print(f"[save_global_stats] Archivo existente detectado, eliminando primero...")
+        deleted = delete_file_from_github(file_path, message="Eliminar para regenerar estadísticas", sha=existing_sha)
+        if deleted:
+            print(f"[save_global_stats] Archivo anterior eliminado, esperando 2 segundos...")
+            import time
+            time.sleep(2)  # Esperar a que GitHub procese la eliminación
+        else:
+            print(f"[save_global_stats] No se pudo eliminar archivo anterior, intentando sobrescribir...")
     
+    # Paso 2: Crear archivo nuevo (sin SHA, ya que lo eliminamos o no existe)
+    print(f"[save_global_stats] Creando archivo nuevo...")
     success = write_file_to_github(
-        "global_stats.json",
+        file_path,
         stats_data,
         message="Actualizar estadísticas globales",
-        sha=sha
+        sha=None  # Sin SHA = crear nuevo archivo
     )
     
     if success:
         print(f"[save_global_stats] ✓ Estadísticas globales guardadas correctamente")
     else:
         print(f"[save_global_stats] ✗ ERROR: No se pudieron guardar las estadísticas globales")
-        print(f"[save_global_stats] Posible causa: Archivo demasiado grande para GitHub API")
     
     return success
+
 
 
 
