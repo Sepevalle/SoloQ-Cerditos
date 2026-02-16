@@ -351,10 +351,10 @@ class ApiResponseCache:
 class LiveGameCache:
     """
     Caché específico para el estado "en partida" de jugadores.
-    TTL corto (30 segundos) para detectar partidas activas rápidamente.
+    TTL de 180 segundos (3 minutos) para mantener datos entre verificaciones del worker.
     """
-    def __init__(self, ttl_seconds=30):
-        self._cache = {}  # puuid -> {"data": game_data, "timestamp": time}
+    def __init__(self, ttl_seconds=180):
+        self._cache = {}  # puuid -> {"data": game_data, "timestamp": time, "has_data": bool}
         self._lock = threading.Lock()
         self._ttl = ttl_seconds
     
@@ -371,6 +371,23 @@ class LiveGameCache:
                 return None
             
             return entry["data"]
+    
+    def get_with_status(self, puuid):
+        """
+        Obtiene el estado en partida con información de si hay entrada en caché.
+        Retorna: (data, has_cache_entry) donde has_cache_entry es True si hay datos válidos en caché
+        """
+        with self._lock:
+            entry = self._cache.get(puuid)
+            if not entry:
+                return None, False
+            
+            # Verificar si expiró
+            if time.time() - entry["timestamp"] > self._ttl:
+                del self._cache[puuid]
+                return None, False
+            
+            return entry["data"], True
     
     def set(self, puuid, game_data):
         """Guarda el estado en partida en el caché."""
@@ -394,6 +411,7 @@ class LiveGameCache:
             self._cache.clear()
 
 
+
 # ============================================================================
 # INSTANCIAS GLOBALES
 # ============================================================================
@@ -407,7 +425,8 @@ personal_records_cache = PersonalRecordsCache()
 lp_history_cache = LpHistoryCache()
 player_stats_cache = PlayerStatsCache()  # NUEVO: Caché para estadísticas de jugadores
 api_response_cache = ApiResponseCache()
-live_game_cache = LiveGameCache(ttl_seconds=30)  # NUEVO: Caché para estado en partida
+live_game_cache = LiveGameCache(ttl_seconds=180)  # NUEVO: Caché para estado en partida (3 min TTL)
+
 
 
 

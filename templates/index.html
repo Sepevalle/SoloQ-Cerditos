@@ -858,59 +858,81 @@
             const rows = document.querySelectorAll('#jugadoresTable tbody tr[data-puuid]');
             const ddragonVersion = '{{ ddragon_version }}';
             
-            for (const row of rows) {
-                const puuid = row.getAttribute('data-puuid');
-                const jugador = row.getAttribute('data-jugador');
-                const estadoLink = document.getElementById(`estado-${puuid}`);
-                const championImg = document.getElementById(`champion-${puuid}`);
+            console.log(`[LiveGame] Iniciando verificación batch para ${rows.length} jugadores...`);
+            
+            try {
+                // Obtener todos los estados de partida en una sola llamada
+                const response = await fetch('/api/live-games/all');
+                if (!response.ok) {
+                    console.error(`[LiveGame] Error obteniendo estados: ${response.status}`);
+                    return;
+                }
                 
-                if (!puuid || !estadoLink) continue;
+                const allLiveGames = await response.json();
+                console.log(`[LiveGame] Datos recibidos para ${Object.keys(allLiveGames).length} jugadores`);
                 
-                try {
-                    const response = await fetch(`/api/player/${puuid}/live-game`);
-                    if (!response.ok) {
-                        console.log(`[LiveGame] Error verificando ${jugador}: ${response.status}`);
+                for (const row of rows) {
+                    const puuid = row.getAttribute('data-puuid');
+                    const jugador = row.getAttribute('data-jugador');
+                    const estadoLink = document.getElementById(`estado-${puuid}`);
+                    
+                    if (!puuid || !estadoLink) {
+                        console.log(`[LiveGame] Saltando ${jugador}: falta puuid o estadoLink`);
                         continue;
                     }
                     
-                    const data = await response.json();
+                    const data = allLiveGames[puuid];
+                    if (!data) {
+                        console.log(`[LiveGame] No hay datos para ${jugador}`);
+                        continue;
+                    }
                     
-                    // Remove old status span if exists (preserve the image element)
-                    const oldStatus = estadoLink.querySelector('.estado-texto, .estado-en-partida');
-                    if (oldStatus) oldStatus.remove();
+                    // Limpiar contenido actual
+                    estadoLink.innerHTML = '';
                     
                     if (data.en_partida) {
-                        // Jugador está en partida - create new status span
+                        // Jugador está en partida
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'estado-en-partida';
                         statusSpan.textContent = 'In Game';
-                        estadoLink.insertBefore(statusSpan, championImg);
+                        statusSpan.style.color = '#007BFF';
+                        statusSpan.style.fontWeight = 'bold';
+                        estadoLink.appendChild(statusSpan);
                         
-                        if (data.nombre_campeon) {
-                            championImg.src = `http://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${data.nombre_campeon}.png`;
-                            championImg.alt = data.nombre_campeon;
-                            championImg.classList.remove('hidden');
+                        if (data.nombre_campeon && data.nombre_campeon !== 'Desconocido') {
+                            // Crear nueva imagen del campeón
+                            const img = document.createElement('img');
+                            img.src = `https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${data.nombre_campeon}.png`;
+                            img.alt = data.nombre_campeon;
+                            img.style.width = '25px';
+                            img.style.height = '25px';
+                            img.style.verticalAlign = 'middle';
+                            img.style.marginLeft = '5px';
+                            img.onerror = function() {
+                                console.log(`[LiveGame] Error cargando imagen para ${data.nombre_campeon}`);
+                                this.style.display = 'none';
+                            };
+                            estadoLink.appendChild(img);
+                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA con ${data.nombre_campeon}`);
+                        } else {
+                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA (campeón desconocido)`);
                         }
-                        console.log(`[LiveGame] ✓ ${jugador} está en partida con ${data.nombre_campeon}`);
                     } else {
-                        // Jugador no está en partida - create new status span
+                        // Jugador no está en partida
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'estado-texto';
                         statusSpan.textContent = 'Inactivo';
-                        estadoLink.insertBefore(statusSpan, championImg);
-                        
-                        championImg.src = '';
-                        championImg.alt = '';
-                        championImg.classList.add('hidden');
+                        estadoLink.appendChild(statusSpan);
                     }
-                } catch (e) {
-                    console.error(`[LiveGame] Error verificando ${jugador}:`, e);
                 }
                 
-                // Pausa de 2 segundos entre peticiones para respetar rate limits de Riot API
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                console.log('[LiveGame] Verificación completada');
+            } catch (e) {
+                console.error('[LiveGame] Error en verificación batch:', e);
             }
         }
+
+
 
         
         // Verificar partidas al cargar la página (con delay inicial para no bloquear carga)

@@ -240,9 +240,11 @@ def check_live_game(puuid):
     """
     try:
         if not puuid:
+            print("[check_live_game] ERROR: PUUID no proporcionado")
             return jsonify({"error": "PUUID no proporcionado"}), 400
             
         if not RIOT_API_KEY:
+            print("[check_live_game] ERROR: API key no configurada")
             return jsonify({"error": "API key no configurada"}), 500
         
         print(f"[check_live_game] Verificando partida activa para PUUID: {puuid[:8]}...")
@@ -251,11 +253,14 @@ def check_live_game(puuid):
         if game_data:
             # Buscar el campeón del jugador
             champion_name = None
+            champion_id = None
             for participant in game_data.get("participants", []):
                 if participant.get("puuid") == puuid:
                     champion_id = participant.get("championId")
                     champion_name = obtener_nombre_campeon(champion_id)
                     break
+            
+            print(f"[check_live_game] ✓ Jugador {puuid[:8]}... EN PARTIDA con {champion_name} (ID: {champion_id})")
             
             return jsonify({
                 "en_partida": True,
@@ -265,16 +270,72 @@ def check_live_game(puuid):
                 "map_id": game_data.get("mapId", 0)
             })
         else:
+            print(f"[check_live_game] ✗ Jugador {puuid[:8]}... NO está en partida")
             return jsonify({
                 "en_partida": False,
                 "nombre_campeon": None
             })
             
     except Exception as e:
-        print(f"[check_live_game] Error: {e}")
+        print(f"[check_live_game] ERROR: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Error al verificar estado de partida"}), 500
+
+
+@api_bp.route('/live-games/all', methods=['GET'])
+def get_all_live_games():
+    """
+    Obtiene el estado de partida de todos los jugadores desde el caché.
+    Retorna un diccionario con puuid como clave y datos de partida como valor.
+    """
+    try:
+        from services.cache_service import live_game_cache
+        from services.player_service import get_all_accounts, get_all_puuids
+        
+        cuentas = get_all_accounts()
+        puuids = get_all_puuids()
+        
+        result = {}
+        
+        for riot_id, jugador_nombre in cuentas:
+            puuid = puuids.get(riot_id)
+            if not puuid:
+                continue
+            
+            # Obtener del caché sin hacer llamada a API
+            game_data = live_game_cache.get(puuid)
+            
+            if game_data:
+                # Buscar el campeón del jugador
+                champion_name = None
+                for participant in game_data.get("participants", []):
+                    if participant.get("puuid") == puuid:
+                        champion_id = participant.get("championId")
+                        champion_name = obtener_nombre_campeon(champion_id)
+                        break
+                
+                result[puuid] = {
+                    "en_partida": True,
+                    "nombre_campeon": champion_name,
+                    "game_mode": game_data.get("gameMode", "Unknown"),
+                    "game_type": game_data.get("gameType", "Unknown")
+                }
+            else:
+                result[puuid] = {
+                    "en_partida": False,
+                    "nombre_campeon": None
+                }
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"[get_all_live_games] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Error al obtener estados de partida"}), 500
+
+
 
 
 @api_bp.route('/update-global-stats', methods=['POST'])
