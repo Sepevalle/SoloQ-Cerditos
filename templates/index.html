@@ -901,6 +901,12 @@
                         statusSpan.style.fontWeight = 'bold';
                         estadoLink.appendChild(statusSpan);
                         
+                        // Si el caché es viejo (>90s), añadir indicador visual
+                        if (data.cache_age_seconds && data.cache_age_seconds > 90) {
+                            statusSpan.style.opacity = '0.7';
+                            statusSpan.title = `Datos de hace ${data.cache_age_seconds}s - puede haber cambiado`;
+                        }
+                        
                         if (data.nombre_campeon && data.nombre_campeon !== 'Desconocido') {
                             // Crear nueva imagen del campeón
                             const img = document.createElement('img');
@@ -915,17 +921,32 @@
                                 this.style.display = 'none';
                             };
                             estadoLink.appendChild(img);
-                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA con ${data.nombre_campeon} (fila ${row.className})`);
+                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA con ${data.nombre_campeon} (fila ${row.className}, caché: ${data.cache_age_seconds || 'N/A'}s)`);
                         } else {
-                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA (campeón desconocido) (fila ${row.className})`);
+                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA (campeón desconocido) (fila ${row.className}, caché: ${data.cache_age_seconds || 'N/A'}s)`);
                         }
                     } else {
                         // Jugador no está en partida
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'estado-texto';
-                        statusSpan.textContent = 'Inactivo';
+                        
+                        // Si no hay datos de caché, mostrar indicador de incertidumbre
+                        if (data.cache_age_seconds === null) {
+                            statusSpan.textContent = 'Inactivo';
+                            statusSpan.style.opacity = '0.5';
+                            statusSpan.title = 'Sin datos recientes - el worker no ha verificado aún';
+                        } else {
+                            statusSpan.textContent = 'Inactivo';
+                            // Si el caché es viejo, indicar que puede haber cambiado
+                            if (data.cache_age_seconds > 90) {
+                                statusSpan.style.opacity = '0.7';
+                                statusSpan.title = `Datos de hace ${data.cache_age_seconds}s - puede haber cambiado`;
+                            }
+                        }
+                        
                         estadoLink.appendChild(statusSpan);
                     }
+
                 }
 
                 

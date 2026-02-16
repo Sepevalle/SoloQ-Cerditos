@@ -351,12 +351,14 @@ class ApiResponseCache:
 class LiveGameCache:
     """
     Caché específico para el estado "en partida" de jugadores.
-    TTL de 180 segundos (3 minutos) para mantener datos entre verificaciones del worker.
+    TTL de 300 segundos (5 minutos) para mantener datos entre verificaciones del worker.
+    El worker verifica cada 2 minutos, así que 5 minutos de TTL da margen de seguridad.
     """
-    def __init__(self, ttl_seconds=180):
+    def __init__(self, ttl_seconds=300):
         self._cache = {}  # puuid -> {"data": game_data, "timestamp": time, "has_data": bool}
         self._lock = threading.Lock()
         self._ttl = ttl_seconds
+
     
     def get(self, puuid):
         """Obtiene el estado en partida si está en caché y no ha expirado."""
@@ -375,19 +377,30 @@ class LiveGameCache:
     def get_with_status(self, puuid):
         """
         Obtiene el estado en partida con información de si hay entrada en caché.
-        Retorna: (data, has_cache_entry) donde has_cache_entry es True si hay datos válidos en caché
+        Retorna: (data, has_cache_entry, age_seconds) donde has_cache_entry es True si hay datos válidos en caché
         """
         with self._lock:
             entry = self._cache.get(puuid)
             if not entry:
-                return None, False
+                return None, False, None
+            
+            age_seconds = time.time() - entry["timestamp"]
             
             # Verificar si expiró
-            if time.time() - entry["timestamp"] > self._ttl:
+            if age_seconds > self._ttl:
                 del self._cache[puuid]
-                return None, False
+                return None, False, None
             
-            return entry["data"], True
+            return entry["data"], True, age_seconds
+    
+    def get_cache_age(self, puuid):
+        """Retorna la edad en segundos de la entrada en caché, o None si no existe."""
+        with self._lock:
+            entry = self._cache.get(puuid)
+            if not entry:
+                return None
+            return time.time() - entry["timestamp"]
+
     
     def set(self, puuid, game_data):
         """Guarda el estado en partida en el caché."""
@@ -425,7 +438,8 @@ personal_records_cache = PersonalRecordsCache()
 lp_history_cache = LpHistoryCache()
 player_stats_cache = PlayerStatsCache()  # NUEVO: Caché para estadísticas de jugadores
 api_response_cache = ApiResponseCache()
-live_game_cache = LiveGameCache(ttl_seconds=180)  # NUEVO: Caché para estado en partida (3 min TTL)
+live_game_cache = LiveGameCache(ttl_seconds=300)  # NUEVO: Caché para estado en partida (5 min TTL)
+
 
 
 

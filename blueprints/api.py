@@ -301,6 +301,7 @@ def get_all_live_games():
         en_partida_count = 0
         inactivo_count = 0
         no_cache_count = 0
+        stale_cache_count = 0  # Caché existe pero tiene más de 90 segundos
         
         print(f"[get_all_live_games] Procesando {len(cuentas)} cuentas...")
         
@@ -310,10 +311,13 @@ def get_all_live_games():
                 print(f"[get_all_live_games] ⚠ {jugador_nombre}: No tiene PUUID")
                 continue
             
-            # SOLO leer del caché - NO llamar a la API
-            game_data = live_game_cache.get(puuid)
+            # Obtener datos del caché con información de edad
+            game_data, has_cache, cache_age = live_game_cache.get_with_status(puuid)
             
             if game_data:
+                # Verificar si el caché es "viejo" (más de 90 segundos) pero aún válido
+                is_stale = cache_age and cache_age > 90
+                
                 # Buscar el campeón del jugador
                 champion_name = None
                 for participant in game_data.get("participants", []):
@@ -326,26 +330,44 @@ def get_all_live_games():
                     "en_partida": True,
                     "nombre_campeon": champion_name,
                     "game_mode": game_data.get("gameMode", "Unknown"),
-                    "game_type": game_data.get("gameType", "Unknown")
+                    "game_type": game_data.get("gameType", "Unknown"),
+                    "cache_age_seconds": int(cache_age) if cache_age else None
                 }
                 en_partida_count += 1
-                print(f"[get_all_live_games] ✓ {jugador_nombre}: EN PARTIDA con {champion_name}")
-            elif game_data is None:
-                # No hay datos en caché - el worker no ha verificado aún o expiró
+                
+                if is_stale:
+                    stale_cache_count += 1
+                    print(f"[get_all_live_games] ⚠ {jugador_nombre}: EN PARTIDA con {champion_name} (caché viejo: {int(cache_age)}s)")
+                else:
+                    print(f"[get_all_live_games] ✓ {jugador_nombre}: EN PARTIDA con {champion_name} (caché fresco: {int(cache_age)}s)")
+                    
+            elif has_cache and game_data is None:
+                # Hay entrada en caché pero el jugador está inactivo
+                inactivo_count += 1
+                is_stale = cache_age and cache_age > 90
+                
+                result[puuid] = {
+                    "en_partida": False,
+                    "nombre_campeon": None,
+                    "cache_age_seconds": int(cache_age) if cache_age else None
+                }
+                
+                if is_stale:
+                    stale_cache_count += 1
+                    print(f"[get_all_live_games] ⚠ {jugador_nombre}: Inactivo (caché viejo: {int(cache_age)}s)")
+                else:
+                    print(f"[get_all_live_games] ✓ {jugador_nombre}: Inactivo (caché fresco: {int(cache_age)}s)")
+            else:
+                # No hay datos en caché - el worker no ha verificado aún
                 no_cache_count += 1
                 result[puuid] = {
                     "en_partida": False,
-                    "nombre_campeon": None
+                    "nombre_campeon": None,
+                    "cache_age_seconds": None
                 }
-            else:
-                # Hay datos en caché pero es None (jugador inactivo)
-                inactivo_count += 1
-                result[puuid] = {
-                    "en_partida": False,
-                    "nombre_campeon": None
-                }
+                print(f"[get_all_live_games] ? {jugador_nombre}: Sin datos en caché")
         
-        print(f"[get_all_live_games] Resumen: {en_partida_count} en partida, {inactivo_count} inactivos, {no_cache_count} sin caché")
+        print(f"[get_all_live_games] Resumen: {en_partida_count} en partida, {inactivo_count} inactivos, {no_cache_count} sin caché, {stale_cache_count} caché viejo")
         return jsonify(result)
         
     except Exception as e:
@@ -353,6 +375,7 @@ def get_all_live_games():
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Error al obtener estados de partida"}), 500
+
 
 
 
