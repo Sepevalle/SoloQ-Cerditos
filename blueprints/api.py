@@ -298,10 +298,16 @@ def get_all_live_games():
         puuids = get_all_puuids()
         
         result = {}
+        en_partida_count = 0
+        inactivo_count = 0
+        no_cache_count = 0
+        
+        print(f"[get_all_live_games] Procesando {len(cuentas)} cuentas...")
         
         for riot_id, jugador_nombre in cuentas:
             puuid = puuids.get(riot_id)
             if not puuid:
+                print(f"[get_all_live_games] ⚠ {jugador_nombre}: No tiene PUUID")
                 continue
             
             # SOLO leer del caché - NO llamar a la API
@@ -322,15 +328,24 @@ def get_all_live_games():
                     "game_mode": game_data.get("gameMode", "Unknown"),
                     "game_type": game_data.get("gameType", "Unknown")
                 }
+                en_partida_count += 1
+                print(f"[get_all_live_games] ✓ {jugador_nombre}: EN PARTIDA con {champion_name}")
+            elif game_data is None:
+                # No hay datos en caché - el worker no ha verificado aún o expiró
+                no_cache_count += 1
+                result[puuid] = {
+                    "en_partida": False,
+                    "nombre_campeon": None
+                }
             else:
-                # No hay datos en caché - devolver inactivo
-                # El worker se encarga de actualizar el caché cada 2 min
+                # Hay datos en caché pero es None (jugador inactivo)
+                inactivo_count += 1
                 result[puuid] = {
                     "en_partida": False,
                     "nombre_campeon": None
                 }
         
-        print(f"[get_all_live_games] Devolviendo estados para {len(result)} jugadores desde caché")
+        print(f"[get_all_live_games] Resumen: {en_partida_count} en partida, {inactivo_count} inactivos, {no_cache_count} sin caché")
         return jsonify(result)
         
     except Exception as e:
@@ -338,6 +353,7 @@ def get_all_live_games():
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Error al obtener estados de partida"}), 500
+
 
 
 
