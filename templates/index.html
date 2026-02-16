@@ -874,7 +874,9 @@
                 for (const row of rows) {
                     const puuid = row.getAttribute('data-puuid');
                     const jugador = row.getAttribute('data-jugador');
-                    const estadoLink = document.getElementById(`estado-${puuid}`);
+                    
+                    // Buscar el estadoLink dentro de esta fila específica (para manejar múltiples filas por jugador)
+                    const estadoLink = row.querySelector('.link-estado');
                     
                     if (!puuid || !estadoLink) {
                         console.log(`[LiveGame] Saltando ${jugador}: falta puuid o estadoLink`);
@@ -891,7 +893,7 @@
                     estadoLink.innerHTML = '';
                     
                     if (data.en_partida) {
-                        // Jugador está en partida
+                        // Jugador está en partida - mostrar en TODAS las filas independientemente de la cola
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'estado-en-partida';
                         statusSpan.textContent = 'In Game';
@@ -913,9 +915,9 @@
                                 this.style.display = 'none';
                             };
                             estadoLink.appendChild(img);
-                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA con ${data.nombre_campeon}`);
+                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA con ${data.nombre_campeon} (fila ${row.className})`);
                         } else {
-                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA (campeón desconocido)`);
+                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA (campeón desconocido) (fila ${row.className})`);
                         }
                     } else {
                         // Jugador no está en partida
@@ -925,6 +927,7 @@
                         estadoLink.appendChild(statusSpan);
                     }
                 }
+
                 
                 console.log('[LiveGame] Verificación completada');
             } catch (e) {
