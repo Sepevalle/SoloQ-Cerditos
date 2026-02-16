@@ -286,7 +286,8 @@ def check_live_game(puuid):
 @api_bp.route('/live-games/all', methods=['GET'])
 def get_all_live_games():
     """
-    Obtiene el estado de partida de todos los jugadores desde el caché.
+    Obtiene el estado de partida de todos los jugadores SOLO desde el caché.
+    NO hace llamadas a la API de Riot - solo lee lo que el worker ha cacheado.
     Retorna un diccionario con puuid como clave y datos de partida como valor.
     """
     try:
@@ -303,7 +304,7 @@ def get_all_live_games():
             if not puuid:
                 continue
             
-            # Obtener del caché sin hacer llamada a API
+            # SOLO leer del caché - NO llamar a la API
             game_data = live_game_cache.get(puuid)
             
             if game_data:
@@ -322,11 +323,14 @@ def get_all_live_games():
                     "game_type": game_data.get("gameType", "Unknown")
                 }
             else:
+                # No hay datos en caché - devolver inactivo
+                # El worker se encarga de actualizar el caché cada 2 min
                 result[puuid] = {
                     "en_partida": False,
                     "nombre_campeon": None
                 }
         
+        print(f"[get_all_live_games] Devolviendo estados para {len(result)} jugadores desde caché")
         return jsonify(result)
         
     except Exception as e:
@@ -334,6 +338,7 @@ def get_all_live_games():
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Error al obtener estados de partida"}), 500
+
 
 
 
