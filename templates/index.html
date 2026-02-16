@@ -875,19 +875,30 @@
                     
                     const data = await response.json();
                     
+                    // Remove old status span if exists (preserve the image element)
+                    const oldStatus = estadoLink.querySelector('.estado-texto, .estado-en-partida');
+                    if (oldStatus) oldStatus.remove();
+                    
                     if (data.en_partida) {
-                        // Jugador está en partida
-                        estadoLink.innerHTML = `<span class="estado-en-partida">In Game</span>`;
+                        // Jugador está en partida - create new status span
+                        const statusSpan = document.createElement('span');
+                        statusSpan.className = 'estado-en-partida';
+                        statusSpan.textContent = 'In Game';
+                        estadoLink.insertBefore(statusSpan, championImg);
+                        
                         if (data.nombre_campeon) {
                             championImg.src = `http://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${data.nombre_campeon}.png`;
                             championImg.alt = data.nombre_campeon;
                             championImg.classList.remove('hidden');
-                            estadoLink.appendChild(championImg);
                         }
                         console.log(`[LiveGame] ✓ ${jugador} está en partida con ${data.nombre_campeon}`);
                     } else {
-                        // Jugador no está en partida
-                        estadoLink.innerHTML = `<span class="estado-texto">Inactivo</span>`;
+                        // Jugador no está en partida - create new status span
+                        const statusSpan = document.createElement('span');
+                        statusSpan.className = 'estado-texto';
+                        statusSpan.textContent = 'Inactivo';
+                        estadoLink.insertBefore(statusSpan, championImg);
+                        
                         championImg.src = '';
                         championImg.alt = '';
                         championImg.classList.add('hidden');
@@ -900,6 +911,7 @@
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }
         }
+
         
         // Verificar partidas al cargar la página (con delay inicial para no bloquear carga)
         console.log('[LiveGame] Programando verificación de partidas activas...');
