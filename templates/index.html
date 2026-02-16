@@ -901,11 +901,13 @@
                         statusSpan.style.fontWeight = 'bold';
                         estadoLink.appendChild(statusSpan);
                         
-                        // Si el caché es viejo (>90s), añadir indicador visual
-                        if (data.cache_age_seconds && data.cache_age_seconds > 90) {
+                        // Si el caché es viejo (>150s = 2.5 min), añadir indicador visual
+                        // El worker verifica cada 2 min, así que 2.5 min da margen razonable
+                        if (data.cache_age_seconds && data.cache_age_seconds > 150) {
                             statusSpan.style.opacity = '0.7';
                             statusSpan.title = `Datos de hace ${data.cache_age_seconds}s - puede haber cambiado`;
                         }
+
                         
                         if (data.nombre_campeon && data.nombre_campeon !== 'Desconocido') {
                             // Crear nueva imagen del campeón
@@ -937,12 +939,13 @@
                             statusSpan.title = 'Sin datos recientes - el worker no ha verificado aún';
                         } else {
                             statusSpan.textContent = 'Inactivo';
-                            // Si el caché es viejo, indicar que puede haber cambiado
-                            if (data.cache_age_seconds > 90) {
+                            // Si el caché es viejo (>150s = 2.5 min), indicar que puede haber cambiado
+                            if (data.cache_age_seconds > 150) {
                                 statusSpan.style.opacity = '0.7';
                                 statusSpan.title = `Datos de hace ${data.cache_age_seconds}s - puede haber cambiado`;
                             }
                         }
+
                         
                         estadoLink.appendChild(statusSpan);
                     }

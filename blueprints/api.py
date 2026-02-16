@@ -301,7 +301,7 @@ def get_all_live_games():
         en_partida_count = 0
         inactivo_count = 0
         no_cache_count = 0
-        stale_cache_count = 0  # Caché existe pero tiene más de 90 segundos
+        stale_cache_count = 0  # Caché existe pero tiene más de 150 segundos (2.5 min)
         
         print(f"[get_all_live_games] Procesando {len(cuentas)} cuentas...")
         
@@ -315,8 +315,10 @@ def get_all_live_games():
             game_data, has_cache, cache_age = live_game_cache.get_with_status(puuid)
             
             if game_data:
-                # Verificar si el caché es "viejo" (más de 90 segundos) pero aún válido
-                is_stale = cache_age and cache_age > 90
+                # Verificar si el caché es "viejo" (más de 150 segundos = 2.5 min) pero aún válido
+                # El worker verifica cada 2 min, así que 2.5 min da margen de seguridad
+                is_stale = cache_age and cache_age > 150
+
                 
                 # Buscar el campeón del jugador
                 champion_name = None
@@ -344,7 +346,8 @@ def get_all_live_games():
             elif has_cache and game_data is None:
                 # Hay entrada en caché pero el jugador está inactivo
                 inactivo_count += 1
-                is_stale = cache_age and cache_age > 90
+                is_stale = cache_age and cache_age > 150
+
                 
                 result[puuid] = {
                     "en_partida": False,
