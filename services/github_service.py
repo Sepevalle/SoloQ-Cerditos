@@ -7,8 +7,26 @@ import requests
 import base64
 import json
 import time
+import os
+from datetime import datetime
+from collections import defaultdict
 from config.settings import GITHUB_REPO, GITHUB_TOKEN
 from utils.helpers import get_github_file_url, decode_github_content, encode_github_content
+
+# Constantes para manejo de tamaño y chunking
+MAX_B64_BYTES = 950_000  # Umbral conservador para payload Base64 (~1MB con overhead)
+MAX_RETRIES = 3
+RETRY_BACKOFF_BASE = 2  # Segundos base para backoff exponencial
+
+def log_config():
+    """Log de configuración del servicio GitHub."""
+    print(f"[github_service] Configuración:")
+    print(f"  - MAX_B64_BYTES: {MAX_B64_BYTES:,} bytes ({MAX_B64_BYTES/1024/1024:.2f} MB)")
+    print(f"  - MAX_RETRIES: {MAX_RETRIES}")
+    print(f"  - RETRY_BACKOFF_BASE: {RETRY_BACKOFF_BASE}s")
+    print(f"  - GITHUB_TOKEN configurado: {bool(GITHUB_TOKEN)}")
+
+
 
 
 def get_github_headers():
@@ -130,15 +148,37 @@ def delete_file_from_github(file_path, message="Eliminar archivo", sha=None):
         return False
 
 
-def write_file_to_github(file_path, content, message="Actualización automática", sha=None):
+def estimate_payload_size(content):
     """
-    Escribe o actualiza un archivo en GitHub.
+    Estima el tamaño del payload JSON y su versión Base64.
+    
+    Args:
+        content: Contenido (dict o str)
+    
+    Returns:
+        tuple: (bytes_json, bytes_b64)
+    """
+    if isinstance(content, dict):
+        json_str = json.dumps(content, indent=2, ensure_ascii=False)
+    else:
+        json_str = str(content)
+    
+    bytes_json = len(json_str.encode('utf-8'))
+    bytes_b64 = len(base64.b64encode(json_str.encode('utf-8')))
+    
+    return bytes_json, bytes_b64
+
+
+def write_file_to_github(file_path, content, message="Actualización automática", sha=None, max_retries=MAX_RETRIES):
+    """
+    Escribe o actualiza un archivo en GitHub con logging defensivo y reintentos.
     
     Args:
         file_path: Ruta del archivo en el repositorio
         content: Contenido a escribir (dict para JSON, str para texto)
         message: Mensaje del commit
         sha: SHA del archivo existente (requerido para actualizaciones)
+        max_retries: Número máximo de reintentos en caso de conflicto/error temporal
     
     Returns:
         bool: True si se guardó correctamente
@@ -160,35 +200,75 @@ def write_file_to_github(file_path, content, message="Actualización automática
     if not content_b64:
         return False
     
-    # Construir data
-    data = {
-        "message": message,
-        "content": content_b64,
-        "branch": "main"
-    }
-    if sha:
-        data["sha"] = sha
+    # Estimar tamaños para logging defensivo
+    bytes_json, bytes_b64 = estimate_payload_size(content)
+    content_size_mb = bytes_json / (1024 * 1024)
+    b64_size_mb = bytes_b64 / (1024 * 1024)
     
-    # Verificar tamaño
-    content_size_mb = len(content_json) / (1024 * 1024)
-    print(f"[write_file_to_github] Tamaño: {len(content_json)} bytes ({content_size_mb:.2f} MB)")
+    print(f"[write_file_to_github] Tamaño JSON: {bytes_json} bytes ({content_size_mb:.2f} MB)")
+    print(f"[write_file_to_github] Tamaño Base64: {bytes_b64} bytes ({b64_size_mb:.2f} MB)")
     print(f"[write_file_to_github] Incluye SHA: {bool(sha)}")
     
-    try:
-        response = requests.put(url, headers=headers, json=data, timeout=60)
-        print(f"[write_file_to_github] Respuesta: {response.status_code}")
+    # Verificar si excede el límite práctico
+    if bytes_b64 > MAX_B64_BYTES:
+        print(f"[write_file_to_github] ⚠️ ADVERTENCIA: Payload Base64 ({bytes_b64}) excede umbral ({MAX_B64_BYTES})")
+    
+    # Intentar escribir con reintentos
+    for attempt in range(max_retries):
+        # Construir data (refrescar SHA si es reintento)
+        data = {
+            "message": message,
+            "content": content_b64,
+            "branch": "main"
+        }
+        if sha:
+            data["sha"] = sha
         
-        if response.status_code in (200, 201):
-            print(f"[write_file_to_github] ✓ Archivo guardado correctamente")
-            return True
-        else:
-            print(f"[write_file_to_github] Error: {response.status_code} - {response.text[:500]}")
+        try:
+            response = requests.put(url, headers=headers, json=data, timeout=60)
+            print(f"[write_file_to_github] Intento {attempt + 1}/{max_retries} - Respuesta: {response.status_code}")
+            
+            if response.status_code in (200, 201):
+                print(f"[write_file_to_github] ✓ Archivo guardado correctamente")
+                return True
+            
+            # Manejar errores específicos para reintentos
+            if response.status_code == 409:  # Conflicto SHA
+                print(f"[write_file_to_github] ⚠️ Conflicto SHA detectado, releyendo...")
+                _, new_sha = read_file_from_github(file_path, use_raw=False)
+                if new_sha:
+                    sha = new_sha
+                    print(f"[write_file_to_github] Nuevo SHA obtenido: {sha[:8] if sha else 'None'}")
+                else:
+                    print(f"[write_file_to_github] ⚠️ No se pudo obtener nuevo SHA")
+            
+            elif response.status_code == 403:  # Rate limit o forbidden
+                wait_time = RETRY_BACKOFF_BASE ** attempt
+                print(f"[write_file_to_github] ⚠️ Rate limit (403), esperando {wait_time}s...")
+                time.sleep(wait_time)
+            
+            elif response.status_code >= 500:  # Errores de servidor
+                wait_time = RETRY_BACKOFF_BASE ** attempt
+                print(f"[write_file_to_github] ⚠️ Error servidor ({response.status_code}), esperando {wait_time}s...")
+                time.sleep(wait_time)
+            
+            else:  # Otros errores (422, etc.) - no reintentar
+                print(f"[write_file_to_github] Error: {response.status_code} - {response.text[:500]}")
+                return False
+                
+        except requests.exceptions.Timeout:
+            wait_time = RETRY_BACKOFF_BASE ** attempt
+            print(f"[write_file_to_github] ⚠️ Timeout, esperando {wait_time}s...")
+            time.sleep(wait_time)
+        except Exception as e:
+            print(f"[write_file_to_github] Error: {e}")
+            import traceback
+            traceback.print_exc()
             return False
-    except Exception as e:
-        print(f"[write_file_to_github] Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+    
+    print(f"[write_file_to_github] ✗ Falló después de {max_retries} intentos")
+    return False
+
 
 
 def get_file_sha_only(file_path):
@@ -334,20 +414,251 @@ def save_lp_history(lp_history):
     return write_file_to_github("lp_history.json", lp_history, message="Actualizar LP History", sha=sha)
 
 
+def get_iso_week(timestamp_ms):
+    """
+    Obtiene el año y semana ISO para un timestamp en milisegundos.
+    Retorna string en formato 'YYYY-WWW'
+    """
+    dt = datetime.fromtimestamp(timestamp_ms / 1000)
+    year, week, _ = dt.isocalendar()
+    return f"{year}-W{week:02d}"
+
+
 def read_player_match_history(puuid):
-    """Lee el historial de partidas de un jugador."""
-    file_path = f"match_history/{puuid}.json"
-    content, _ = read_file_from_github(file_path)
+    """
+    Lee el historial de partidas de un jugador.
+    Soporta formatos:
+    - v3 (chunked): match_history/{puuid}/index.json + weeks/*.json
+    - v2 (weekly): match_history/{puuid}/index.json + weeks/*.json
+    - legacy: match_history/{puuid}.json
+    
+    Returns:
+        dict: {'matches': [...], 'remakes': [...], 'last_updated': timestamp}
+    """
+    # Intentar formato v2/v3 (con index)
+    index_path = f"match_history/{puuid}/index.json"
+    index_content, _ = read_file_from_github(index_path)
+    
+    if index_content and isinstance(index_content, dict):
+        # Formato v2/v3 detectado
+        files = index_content.get('files', [])
+        all_matches = []
+        all_remakes = []
+        
+        print(f"[read_player_match_history] Formato v2/v3 detectado para {puuid[:16]}...")
+        print(f"[read_player_match_history] Cargando {len(files)} archivos...")
+        
+        for file_path in files:
+            full_path = f"match_history/{puuid}/{file_path}"
+            chunk_content, _ = read_file_from_github(full_path)
+            
+            if chunk_content and isinstance(chunk_content, dict):
+                matches = chunk_content.get('matches', [])
+                remakes = chunk_content.get('remakes', [])
+                all_matches.extend(matches)
+                all_remakes.extend(remakes)
+                print(f"[read_player_match_history]   ✓ {file_path}: {len(matches)} matches, {len(remakes)} remakes")
+            else:
+                print(f"[read_player_match_history]   ⚠️ No se pudo cargar: {file_path}")
+        
+        # Eliminar duplicados por match_id y ordenar
+        seen_ids = set()
+        unique_matches = []
+        for match in sorted(all_matches, key=lambda x: x.get('game_end_timestamp', 0), reverse=True):
+            match_id = match.get('match_id')
+            if match_id and match_id not in seen_ids:
+                seen_ids.add(match_id)
+                unique_matches.append(match)
+        
+        result = {
+            'matches': unique_matches,
+            'remakes': all_remakes,
+            'last_updated': index_content.get('last_updated', time.time())
+        }
+        
+        print(f"[read_player_match_history] Total: {len(unique_matches)} matches únicos, {len(all_remakes)} remakes")
+        return result
+    
+    # Fallback a formato legacy
+    legacy_path = f"match_history/{puuid}.json"
+    content, _ = read_file_from_github(legacy_path)
+    
     if content and isinstance(content, dict):
+        print(f"[read_player_match_history] Formato legacy detectado para {puuid[:16]}...")
         return content
+    
     return {}
 
 
 def save_player_match_history(puuid, historial_data):
-    """Guarda el historial de partidas de un jugador."""
-    file_path = f"match_history/{puuid}.json"
-    _, sha = read_file_from_github(file_path, use_raw=False)
-    return write_file_to_github(file_path, historial_data, message=f"Actualizar historial para {puuid}", sha=sha)
+    """
+    Guarda el historial de partidas de un jugador usando formato v3 (chunked).
+    
+    Estrategia:
+    1. Agrupar matches por semana ISO
+    2. Para cada semana, si excede umbral, partir en chunks numerados
+    3. Guardar todos los chunks primero
+    4. Actualizar index.json al final con lista de archivos reales
+    
+    Args:
+        puuid: ID del jugador
+        historial_data: dict con 'matches', 'remakes', etc.
+    
+    Returns:
+        bool: True si se guardó correctamente
+    """
+    if not GITHUB_TOKEN:
+        print(f"[save_player_match_history] ⚠️ GITHUB_TOKEN no configurado, no se puede guardar")
+        return False
+    
+    matches = historial_data.get('matches', [])
+    remakes = historial_data.get('remakes', [])
+    last_updated = historial_data.get('last_updated', time.time())
+    
+    if not matches and not remakes:
+        print(f"[save_player_match_history] ⚠️ No hay datos para guardar")
+        return False
+    
+    print(f"[save_player_match_history] Guardando historial para {puuid[:16]}...")
+    print(f"[save_player_match_history] Total matches: {len(matches)}, remakes: {len(remakes)}")
+    
+    # Agrupar matches por semana ISO
+    weeks_data = defaultdict(list)
+    for match in matches:
+        ts = match.get('game_end_timestamp', 0)
+        if ts > 0:
+            week_key = get_iso_week(ts)
+            weeks_data[week_key].append(match)
+    
+    # Ordenar matches dentro de cada semana (más reciente primero)
+    for week in weeks_data:
+        weeks_data[week].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+    
+    print(f"[save_player_match_history] Distribuido en {len(weeks_data)} semanas")
+    
+    # Preparar chunks para cada semana
+    base_path = f"match_history/{puuid}"
+    all_files = []  # Lista de archivos que se guardarán exitosamente
+    chunks_to_save = []  # (file_path, content_dict)
+    
+    for week_key in sorted(weeks_data.keys(), reverse=True):  # Semanas más recientes primero
+        week_matches = weeks_data[week_key]
+        
+        # Preparar JSON de la semana
+        week_data = {
+            'matches': week_matches,
+            'remakes': [],  # Los remakes se manejan por separado si es necesario
+            'week': week_key
+        }
+        
+        json_str = json.dumps(week_data, indent=2, ensure_ascii=False)
+        bytes_json, bytes_b64 = estimate_payload_size(week_data)
+        
+        print(f"[save_player_match_history] Semana {week_key}: {len(week_matches)} matches, {bytes_json} bytes JSON, {bytes_b64} bytes Base64")
+        
+        if bytes_b64 <= MAX_B64_BYTES:
+            # Cabe en un solo archivo
+            file_name = f"weeks/{week_key}.json"
+            chunks_to_save.append((file_name, week_data))
+        else:
+            # Necesita partición en chunks
+            print(f"[save_player_match_history]   ⚠️ Semana {week_key} excede umbral, partiendo...")
+            
+            # Calcular tamaño aproximado por match para estimar chunk size
+            avg_bytes_per_match = bytes_json / len(week_matches) if week_matches else 1000
+            # Estimar matches por chunk (con margen de seguridad del 20%)
+            matches_per_chunk = max(1, int((MAX_B64_BYTES * 0.75) / avg_bytes_per_match))
+            
+            chunk_num = 1
+            for i in range(0, len(week_matches), matches_per_chunk):
+                chunk_matches = week_matches[i:i + matches_per_chunk]
+                chunk_data = {
+                    'matches': chunk_matches,
+                    'remakes': [],
+                    'week': week_key,
+                    'chunk': chunk_num
+                }
+                
+                # Verificar que el chunk cabe
+                _, chunk_b64 = estimate_payload_size(chunk_data)
+                if chunk_b64 > MAX_B64_BYTES and len(chunk_matches) > 1:
+                    # Reducir y reintentar
+                    reduced_size = max(1, len(chunk_matches) // 2)
+                    chunk_matches = week_matches[i:i + reduced_size]
+                    chunk_data['matches'] = chunk_matches
+                    _, chunk_b64 = estimate_payload_size(chunk_data)
+                
+                file_name = f"weeks/{week_key}-{chunk_num:02d}.json"
+                chunks_to_save.append((file_name, chunk_data))
+                print(f"[save_player_match_history]   → Chunk {chunk_num}: {len(chunk_matches)} matches, ~{chunk_b64} bytes B64")
+                chunk_num += 1
+    
+    # Guardar remakes en archivo separado si existen
+    if remakes:
+        remakes_data = {'matches': [], 'remakes': remakes, 'type': 'remakes'}
+        chunks_to_save.append(("remakes.json", remakes_data))
+        print(f"[save_player_match_history] Remakes: {len(remakes)} en archivo separado")
+    
+    # FASE 1: Guardar todos los chunks
+    print(f"[save_player_match_history] Fase 1: Guardando {len(chunks_to_save)} archivos...")
+    successfully_saved = []
+    
+    for file_name, content in chunks_to_save:
+        full_path = f"{base_path}/{file_name}"
+        
+        # Intentar obtener SHA existente
+        _, sha = read_file_from_github(full_path, use_raw=False)
+        
+        success = write_file_to_github(
+            full_path,
+            content,
+            message=f"Actualizar {file_name} para {puuid[:16]}...",
+            sha=sha
+        )
+        
+        if success:
+            successfully_saved.append(file_name)
+            print(f"[save_player_match_history]   ✓ Guardado: {file_name}")
+        else:
+            print(f"[save_player_match_history]   ✗ Falló: {file_name}")
+            # Continuar con los demás, el index solo incluirá los exitosos
+    
+    if not successfully_saved:
+        print(f"[save_player_match_history] ✗ ERROR: No se pudo guardar ningún chunk")
+        return False
+    
+    print(f"[save_player_match_history] {len(successfully_saved)}/{len(chunks_to_save)} archivos guardados exitosamente")
+    
+    # FASE 2: Actualizar index.json (solo con archivos que realmente se guardaron)
+    index_content = {
+        'puuid': puuid,
+        'last_updated': last_updated,
+        'format_version': 'v3',
+        'files': successfully_saved,
+        'total_matches': len(matches),
+        'total_remakes': len(remakes)
+    }
+    
+    index_path = f"{base_path}/index.json"
+    _, index_sha = read_file_from_github(index_path, use_raw=False)
+    
+    print(f"[save_player_match_history] Fase 2: Actualizando index.json...")
+    index_success = write_file_to_github(
+        index_path,
+        index_content,
+        message=f"Actualizar index para {puuid[:16]}... ({len(successfully_saved)} archivos)",
+        sha=index_sha
+    )
+    
+    if index_success:
+        print(f"[save_player_match_history] ✓ Historial guardado completamente")
+        return True
+    else:
+        print(f"[save_player_match_history] ⚠️ Index no actualizado, pero chunks guardados")
+        # Los chunks están guardados pero el index no los referencia
+        # En la próxima ejecución se detectarán y reconstruirán
+        return False
+
 
 
 def read_analysis(puuid):
@@ -428,6 +739,9 @@ def save_stats_index(stats_data):
 def start_github_service():
     """Función de inicio para el servicio de GitHub."""
     print("[github_service] Servicio de GitHub iniciado")
+    
+    # Log de configuración
+    log_config()
     
     if not GITHUB_TOKEN:
         print("[github_service] ⚠ GITHUB_TOKEN no configurado")

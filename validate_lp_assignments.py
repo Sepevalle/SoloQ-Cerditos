@@ -23,6 +23,82 @@ def load_json_file(file_path):
         print(f"❌ Error leyendo {file_path}: {e}")
         return {}
 
+
+def load_match_history_from_folder(folder_path):
+    """
+    Carga el historial de partidas desde formato v2/v3 (carpeta con index.json).
+    
+    Args:
+        folder_path: Ruta a la carpeta del jugador (match_history/{puuid}/)
+    
+    Returns:
+        dict: {'matches': [...], 'remakes': [...]} o {} si hay error
+    """
+    index_path = os.path.join(folder_path, 'index.json')
+    
+    # Verificar que existe index.json
+    if not os.path.exists(index_path):
+        return None  # No es formato v2/v3
+    
+    try:
+        with open(index_path, 'r') as f:
+            index_data = json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"❌ Error leyendo index.json en {folder_path}: {e}")
+        return None
+    
+    files = index_data.get('files', [])
+    if not files:
+        print(f"⚠️ No hay archivos listados en index.json: {folder_path}")
+        return {'matches': [], 'remakes': []}
+    
+    all_matches = []
+    all_remakes = []
+    
+    print(f"📁 Cargando formato v2/v3: {os.path.basename(folder_path)} ({len(files)} archivos)")
+    
+    for file_name in files:
+        file_path = os.path.join(folder_path, file_name)
+        
+        # Manejar rutas relativas (ej: weeks/2026-W07.json)
+        if not os.path.exists(file_path):
+            file_path = os.path.join(folder_path, file_name)
+        
+        if not os.path.exists(file_path):
+            print(f"   ⚠️ Archivo no encontrado: {file_name}")
+            continue
+        
+        try:
+            with open(file_path, 'r') as f:
+                chunk_data = json.load(f)
+            
+            matches = chunk_data.get('matches', [])
+            remakes = chunk_data.get('remakes', [])
+            all_matches.extend(matches)
+            all_remakes.extend(remakes)
+            print(f"   ✓ {file_name}: {len(matches)} matches, {len(remakes)} remakes")
+            
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"   ❌ Error leyendo {file_name}: {e}")
+            continue
+    
+    # Eliminar duplicados por match_id
+    seen_ids = set()
+    unique_matches = []
+    for match in sorted(all_matches, key=lambda x: x.get('game_end_timestamp', 0), reverse=True):
+        match_id = match.get('match_id')
+        if match_id and match_id not in seen_ids:
+            seen_ids.add(match_id)
+            unique_matches.append(match)
+    
+    print(f"   📊 Total: {len(unique_matches)} matches únicos, {len(all_remakes)} remakes")
+    
+    return {
+        'matches': unique_matches,
+        'remakes': all_remakes
+    }
+
+
 def validate_lp_history(lp_history_path, match_history_base_path="match_history"):
     """
     Valida que los LPs se asignen correctamente sin duplicados.
@@ -118,6 +194,9 @@ def validate_lp_history(lp_history_path, match_history_base_path="match_history"
 def validate_match_lp_assignments(match_history_base_path="match_history"):
     """
     Valida que cada partida tenga exactamente un valor de LP_change.
+    Soporta formatos:
+    - Legacy: match_history/{puuid}.json
+    - v2/v3: match_history/{puuid}/index.json + archivos
     """
     print("\n" + "=" * 70)
     print("VALIDADOR DE ASIGNACIÓN DE LPs POR PARTIDA")
@@ -131,20 +210,34 @@ def validate_match_lp_assignments(match_history_base_path="match_history"):
     matches_with_lp = 0
     matches_without_lp = 0
     matches_anomalous = 0
+    players_processed = 0
     
     print("\n📊 ANALIZANDO ASIGNACIÓN DE LPs A PARTIDAS...\n")
     
     for filename in os.listdir(match_history_base_path):
-        if not filename.endswith('.json'):
-            continue
-        
         file_path = os.path.join(match_history_base_path, filename)
-        match_data = load_json_file(file_path)
         
-        if not match_data or 'matches' not in match_data:
+        # Determinar si es archivo legacy o carpeta v2/v3
+        if os.path.isdir(file_path):
+            # Formato v2/v3: carpeta con index.json
+            match_data = load_match_history_from_folder(file_path)
+            if match_data is None:
+                continue
+            players_processed += 1
+            
+        elif filename.endswith('.json'):
+            # Formato legacy: archivo .json directo
+            match_data = load_json_file(file_path)
+            if not match_data or 'matches' not in match_data:
+                continue
+            players_processed += 1
+            print(f"📄 Legacy: {filename} ({len(match_data.get('matches', []))} matches)")
+            
+        else:
             continue
         
         for match in match_data.get('matches', []):
+
             lp_change = match.get('lp_change_this_game')
             queue_id = match.get('queue_id')
             win = match.get('win')
@@ -176,8 +269,10 @@ def validate_match_lp_assignments(match_history_base_path="match_history"):
     print("\n" + "=" * 70)
     print("📋 RESUMEN POR PARTIDA")
     print("=" * 70)
+    print(f"Jugadores procesados: {players_processed}")
     
     if total_matches > 0:
+
         coverage = (matches_with_lp / total_matches * 100)
         print(f"Partidas clasificatorias: {total_matches}")
         print(f"Con LP asignado: {matches_with_lp} ({coverage:.1f}%)")
