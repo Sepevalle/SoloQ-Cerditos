@@ -151,10 +151,10 @@ def actualizar_historial_partidas_en_segundo_plano():
                     
                     all_new_match_ids = []
                     start = 0
-                    count = 50  # Reducido de 100 a 50 para optimizar
-                    max_iterations = 2  # Reducido de 20 a 2 (máximo 100 partidas)
+                    count = 100  # Aumentado para traer más partidas por iteración
+                    max_iterations = 20  # Aumentado para permitir hasta 2000 partidas por actualización
                     iteration = 0
-                    old_matches_found = 0  # Contador para detección temprana de partidas antiguas
+                    consecutive_existing = 0  # Contador de partidas existentes consecutivas
                     
                     print(f"[actualizar_historial] Cargando últimas partidas para {jugador_nombre}...")
                     
@@ -171,36 +171,42 @@ def actualizar_historial_partidas_en_segundo_plano():
                             break
                         
                         # Procesar IDs de partidas
+                        new_in_this_batch = 0
                         for match_id in match_ids:
                             # Verificar si ya tenemos esta partida
                             if match_id in existing_ids:
-                                # Si ya existe, verificar si está dentro de la temporada
-                                existing_match = next((m for m in existing_matches if m.get('match_id') == match_id), None)
-                                if existing_match:
-                                    match_ts = existing_match.get('game_end_timestamp', 0)
-                                    if match_ts >= SEASON_START_TIMESTAMP * 1000:
-                                        all_new_match_ids.append(match_id)
-                                    else:
-                                        old_matches_found += 1
-                                continue
-                            
-                            # Es una partida nueva, la añadimos para procesar
-                            all_new_match_ids.append(match_id)
+                                # Ya la tenemos, incrementar contador consecutivo
+                                consecutive_existing += 1
+                            else:
+                                # Es una partida nueva, resetear contador y añadir
+                                consecutive_existing = 0
+                                all_new_match_ids.append(match_id)
+                                new_in_this_batch += 1
                         
                         # Si recibimos menos de 'count' partidas, hemos llegado al final
                         if len(match_ids) < count:
+                            print(f"[actualizar_historial] Última página alcanzada ({len(match_ids)} partidas)")
                             break
                         
-                        # Detección temprana: si encontramos muchas partidas antiguas, paramos
-                        if old_matches_found > 20:
-                            print(f"[actualizar_historial] Detectadas {old_matches_found} partidas antiguas, deteniendo paginación")
+                        # Optimización: si encontramos muchas partidas existentes consecutivas, paramos
+                        # Esto indica que hemos alcanzado el final de las partidas nuevas
+                        if consecutive_existing >= 30:
+                            print(f"[actualizar_historial] Encontradas {consecutive_existing} partidas existentes consecutivas, deteniendo paginación")
                             break
+                        
+                        # Si no hay partidas nuevas en este batch, incrementar contador de seguridad
+                        if new_in_this_batch == 0:
+                            # Si llevamos varias iteraciones sin nada nuevo, podemos parar
+                            if iteration > 3:
+                                print(f"[actualizar_historial] No hay partidas nuevas en iteración {iteration}, deteniendo")
+                                break
                         
                         start += count
                         iteration += 1
                         time.sleep(0.3)  # Pausa reducida
                     
-                    print(f"[actualizar_historial] IDs a procesar para {jugador_nombre}: {len(all_new_match_ids)} (descartadas ~{old_matches_found} antiguas)")
+                    print(f"[actualizar_historial] IDs a procesar para {jugador_nombre}: {len(all_new_match_ids)} nuevas")
+
 
                     
                     matches_to_add = []
