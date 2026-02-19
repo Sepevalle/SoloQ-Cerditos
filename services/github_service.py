@@ -677,22 +677,101 @@ def save_analysis(puuid, analysis_data, sha=None):
 
 
 def read_player_permission(puuid):
-    """Lee el permiso de un jugador para usar análisis de IA."""
+    """
+    Lee el permiso de un jugador para usar análisis de IA.
+    Verifica automáticamente si han pasado 24h desde la última llamada
+    y rehabilita el permiso si es necesario.
+    
+    Returns:
+        tuple: (tiene_permiso, sha, contenido_completo, segundos_restantes)
+    """
     file_path = f"config/permisos/{puuid}.json"
     content, sha = read_file_from_github(file_path)
     
-    if content and isinstance(content, dict):
-        return content.get("permitir_llamada") == "SI", sha, content
+    # Si no existe, crear con valores por defecto
+    if not content or not isinstance(content, dict):
+        default_content = {
+            "permitir_llamada": "SI",
+            "razon": "Inicializado",
+            "ultima_llamada": 0,
+            "proxima_llamada_disponible": 0,
+            "modo_forzado": False,
+            "ultima_modificacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        save_player_permission(puuid, default_content)
+        return True, None, default_content, 0
     
-    default_content = {"permitir_llamada": "SI", "razon": "Inicializado"}
-    save_player_permission(puuid, default_content)
-    return True, None, default_content
+    # Verificar si han pasado 24h desde la última llamada
+    ultima_llamada = content.get("ultima_llamada", 0)
+    proxima_disponible = content.get("proxima_llamada_disponible", 0)
+    modo_forzado = content.get("modo_forzado", False)
+    permitir = content.get("permitir_llamada") == "SI"
+    
+    ahora = time.time()
+    segundos_restantes = max(0, proxima_disponible - ahora)
+    
+    # Auto-rehabilitar si han pasado 24h
+    if not permitir and ultima_llamada > 0 and ahora >= proxima_disponible:
+        content["permitir_llamada"] = "SI"
+        content["razon"] = "Rehabilitado automáticamente después de 24h"
+        content["modo_forzado"] = False
+        content["ultima_modificacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        save_player_permission(puuid, content, sha)
+        permitir = True
+        segundos_restantes = 0
+    
+    # Si está en modo forzado, siempre permitir
+    if modo_forzado:
+        permitir = True
+    
+    return permitir, sha, content, segundos_restantes
+
 
 
 def save_player_permission(puuid, content, sha=None):
-    """Guarda el permiso de un jugador."""
+    """
+    Guarda el permiso de un jugador.
+    Asegura que todos los campos necesarios estén presentes.
+    """
     file_path = f"config/permisos/{puuid}.json"
+    
+    # Asegurar campos por defecto
+    if "ultima_llamada" not in content:
+        content["ultima_llamada"] = 0
+    if "proxima_llamada_disponible" not in content:
+        content["proxima_llamada_disponible"] = 0
+    if "modo_forzado" not in content:
+        content["modo_forzado"] = False
+    if "ultima_modificacion" not in content:
+        content["ultima_modificacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     return write_file_to_github(file_path, content, message=f"Actualizar permiso para {puuid}", sha=sha)
+
+
+def format_time_remaining(seconds):
+    """
+    Formatea los segundos restantes en formato legible.
+    
+    Args:
+        seconds: Segundos restantes
+    
+    Returns:
+        str: Tiempo formateado (ej: "5h 30m" o "45m 20s")
+    """
+    if seconds <= 0:
+        return "Disponible ahora"
+    
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    
+    if hours > 0:
+        return f"{hours}h {minutes}m"
+    elif minutes > 0:
+        return f"{minutes}m {secs}s"
+    else:
+        return f"{secs}s"
+
 
 
 def read_global_stats():

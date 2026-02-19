@@ -6,7 +6,8 @@ from services.player_service import get_all_accounts, get_all_puuids, get_player
 from services.match_service import get_player_match_history
 from services.stats_service import calculate_personal_records
 from services.cache_service import global_stats_cache
-from services.ai_service import check_player_permission, analyze_matches, block_player_permission
+from services.ai_service import check_player_permission, analyze_matches, block_player_permission, get_time_until_next_analysis, force_enable_permission
+
 from services.riot_api import ALL_CHAMPIONS, esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
 
 import time
@@ -143,8 +144,12 @@ def get_global_stats():
 def analizar_partidas(puuid):
     """Endpoint para análisis de partidas con Gemini AI."""
     try:
-        # Verificar permiso
-        tiene_permiso, permiso_sha, _ = check_player_permission(puuid)
+        # Verificar permiso (nuevo sistema con tiempo)
+        tiene_permiso, permiso_sha, permiso_content, segundos_restantes = check_player_permission(puuid)
+        
+        # Obtener info de tiempo para mostrar al usuario
+        tiempo_info = get_time_until_next_analysis(puuid)
+
         
         # Obtener partidas de SoloQ (últimas 5 para análisis)
         historial = get_player_match_history(puuid, limit=20)
@@ -180,7 +185,11 @@ def analizar_partidas(puuid):
                     'is_outdated': horas_antiguo > 24,
                     'hours_old': round(horas_antiguo, 1),
                     'origen': 'cache',
-                    'button_label': f"Análisis en caché ({round(horas_antiguo, 1)}h)"
+                    'button_label': f"Análisis en caché ({round(horas_antiguo, 1)}h)",
+                    'tiempo_restante': tiempo_info.get('tiempo_restante_texto', 'Disponible'),
+                    'proximo_analisis_disponible': tiempo_info.get('disponible', True),
+                    'segundos_restantes': segundos_restantes,
+                    'modo_forzado': tiempo_info.get('modo_forzado', False)
                 }
                 return jsonify({
                     "origen": "cache",
@@ -190,18 +199,25 @@ def analizar_partidas(puuid):
 
             
             # Si no tiene permiso y análisis reciente, aplicar cooldown
-            if not tiene_permiso and horas_antiguo < 24:
-                horas_espera = int(24 - horas_antiguo)
+            if not tiene_permiso and segundos_restantes > 0:
                 result = prev_analysis['data']
                 result['_metadata'] = {
                     'generated_at': time.strftime('%d/%m/%Y %H:%M', time.localtime(timestamp_analisis)),
                     'is_outdated': True,
-                    'hours_old': round(horas_antiguo, 1)
+                    'hours_old': round(horas_antiguo, 1),
+                    'tiempo_restante': tiempo_info.get('tiempo_restante_texto', 'Calculando...'),
+                    'proximo_analisis_disponible': False,
+                    'segundos_restantes': segundos_restantes,
+                    'modo_forzado': False
                 }
                 return jsonify({
                     "error": "Cooldown",
-                    "mensaje": f"Espera {horas_espera}h más o pide rehabilitación manual.",
-                    "analisis_previo": result
+                    "mensaje": f"Próximo análisis disponible en: {tiempo_info.get('tiempo_restante_texto', '24h')}",
+                    "analisis_previo": result,
+                    "tiempo_restante": tiempo_info.get('tiempo_restante_texto', '24h'),
+                    "segundos_restantes": segundos_restantes,
+                    "puede_forzar": tiempo_info.get('puede_forzar', False),
+                    "ultima_llamada": tiempo_info.get('ultima_llamada', 0)
                 }), 429
         
         # Si no tiene permiso y no hay análisis previo
@@ -211,14 +227,21 @@ def analizar_partidas(puuid):
                 result = prev_analysis['data']
                 result['_metadata'] = {
                     'generated_at': time.strftime('%d/%m/%Y %H:%M', time.localtime(prev_analysis.get('timestamp', 0))),
-                    'is_outdated': True
+                    'is_outdated': True,
+                    'tiempo_restante': tiempo_info.get('tiempo_restante_texto', 'Calculando...'),
+                    'segundos_restantes': segundos_restantes
                 }
                 return jsonify({"origen": "github_antiguo", **result}), 200
             else:
                 return jsonify({
                     "error": "Bloqueado",
-                    "mensaje": "No tienes permiso activo y no hay análisis anterior disponible."
+                    "mensaje": "No tienes permiso activo y no hay análisis anterior disponible.",
+                    "tiempo_restante": tiempo_info.get('tiempo_restante_texto', '24h'),
+                    "segundos_restantes": segundos_restantes,
+                    "puede_forzar": tiempo_info.get('puede_forzar', False),
+                    "proxima_disponible": tiempo_info.get('proxima_disponible', 0)
                 }), 403
+
         
         # Tiene permiso, generar nuevo análisis
         riot_id = get_riot_id_for_puuid(puuid) or puuid
@@ -226,14 +249,19 @@ def analizar_partidas(puuid):
         
         result = analyze_matches(puuid, matches_soloq, player_name)
         
-        # Bloquear permiso después de usar
-        block_player_permission(puuid, permiso_sha)
+        # Determinar si es modo forzado (el permiso estaba en modo forzado)
+        es_forzado = permiso_content.get('modo_forzado', False) if permiso_content else False
+        
+        # Bloquear permiso después de usar (con flag de forzado si aplica)
+        block_player_permission(puuid, permiso_sha, force_mode=es_forzado)
         
         if isinstance(result, tuple):
             error_result = result[0]
             error_result['_metadata'] = {
                 'origen': 'error',
-                'button_label': 'Error - Reintentar'
+                'button_label': 'Error - Reintentar',
+                'tiempo_restante': '24h',
+                'proximo_analisis_disponible': False
             }
             return jsonify(error_result), result[1]
         
@@ -244,14 +272,19 @@ def analizar_partidas(puuid):
             'is_outdated': False,
             'hours_old': 0,
             'origen': 'nuevo',
-            'button_label': '✨ Nuevo análisis generado'
+            'button_label': '✨ Nuevo análisis generado' if not es_forzado else '🔥 Análisis forzado generado',
+            'tiempo_restante': '24h',
+            'proximo_analisis_disponible': False,
+            'segundos_restantes': 24 * 3600,  # 24 horas en segundos
+            'modo_forzado': es_forzado
         }
         
         return jsonify({
             "origen": "nuevo",
-            "mensaje": "Análisis generado con Coach IA Gemini",
+            "mensaje": "Análisis generado con Coach IA Gemini" if not es_forzado else "Análisis FORZADO generado (manual)",
             **result
         }), 200
+
 
         
     except Exception as e:
@@ -259,6 +292,92 @@ def analizar_partidas(puuid):
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
+
+
+@api_bp.route('/analisis-ia/<puuid>/status', methods=['GET'])
+def get_analysis_status(puuid):
+    """
+    Endpoint para obtener el estado del análisis de IA.
+    Devuelve información sobre disponibilidad y tiempo restante.
+    """
+    try:
+        tiempo_info = get_time_until_next_analysis(puuid)
+        
+        # Verificar si hay análisis previo
+        from services.github_service import read_analysis
+        prev_analysis, _ = read_analysis(puuid)
+        
+        response = {
+            "disponible": tiempo_info.get('disponible', True),
+            "segundos_restantes": tiempo_info.get('segundos_restantes', 0),
+            "tiempo_restante_texto": tiempo_info.get('tiempo_restante_texto', 'Desponible'),
+            "puede_forzar": tiempo_info.get('puede_forzar', False),
+            "modo_forzado": tiempo_info.get('modo_forzado', False),
+            "ultima_llamada": tiempo_info.get('ultima_llamada', 0),
+            "proxima_disponible": tiempo_info.get('proxima_disponible', 0),
+            "tiene_analisis_previo": prev_analysis is not None
+        }
+        
+        # Si hay análisis previo, añadir info
+        if prev_analysis:
+            timestamp_analisis = prev_analysis.get('timestamp', 0)
+            horas_antiguo = (time.time() - timestamp_analisis) / 3600
+            response['analisis_previo'] = {
+                'timestamp': timestamp_analisis,
+                'hours_old': round(horas_antiguo, 1),
+                'is_outdated': horas_antiguo > 24
+            }
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        print(f"[get_analysis_status] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Error al obtener estado", "detalle": str(e)}), 500
+
+
+@api_bp.route('/analisis-ia/<puuid>/force', methods=['POST'])
+def force_analysis_enable(puuid):
+    """
+    Endpoint para forzar la habilitación del análisis.
+    Permite saltarse el cooldown de 24h.
+    Requiere confirmación (no es automático por seguridad).
+    """
+    try:
+        # Verificar estado actual
+        tiempo_info = get_time_until_next_analysis(puuid)
+        
+        # Solo permitir forzar si hay tiempo restante y no está ya forzado
+        if not tiempo_info.get('puede_forzar', False):
+            return jsonify({
+                "error": "No se puede forzar",
+                "mensaje": "El análisis ya está disponible o ya fue forzado anteriormente.",
+                "disponible": tiempo_info.get('disponible', True),
+                "modo_forzado": tiempo_info.get('modo_forzado', False)
+            }), 400
+        
+        # Forzar habilitación
+        exito = force_enable_permission(puuid)
+        
+        if exito:
+            return jsonify({
+                "exito": True,
+                "mensaje": "Análisis habilitado manualmente. Puedes generar un nuevo análisis ahora.",
+                "nota": "El próximo análisis contará como 'forzado' y tendrá cooldown de 24h."
+            }), 200
+        else:
+            return jsonify({
+                "error": "Error al habilitar",
+                "mensaje": "No se pudo habilitar el análisis. Intenta nuevamente."
+            }), 500
+            
+    except Exception as e:
+        print(f"[force_analysis_enable] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
+
 
 
 @api_bp.route('/player/<puuid>/live-game', methods=['GET'])

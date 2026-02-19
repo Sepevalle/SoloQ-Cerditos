@@ -60,23 +60,94 @@ def check_player_permission(puuid):
     """
     Verifica si un jugador tiene permiso para usar el análisis de IA.
     Si no existe el archivo, lo crea con permiso SI por defecto.
+    Auto-rehabilita después de 24h.
     
     Returns:
-        tuple: (tiene_permiso, sha, contenido_completo)
+        tuple: (tiene_permiso, sha, contenido_completo, segundos_restantes)
     """
     return read_player_permission(puuid)
 
 
-def block_player_permission(puuid, sha=None):
+
+def block_player_permission(puuid, sha=None, force_mode=False):
     """
     Bloquea el permiso de un jugador después de usar el análisis.
+    Registra el timestamp para rehabilitación automática después de 24h.
+    
+    Args:
+        puuid: ID del jugador
+        sha: SHA del archivo existente
+        force_mode: Si True, marca como modo forzado (permite saltarse el cooldown)
     """
+    ahora = time.time()
+    proxima_disponible = ahora + (24 * 3600)  # 24 horas en segundos
+    
     content = {
         "permitir_llamada": "NO",
-        "razon": "Llamada consumida. Requiere rehabilitación manual.",
+        "razon": "Llamada consumida. Disponible nuevamente en 24h." if not force_mode else "Análisis forzado manualmente.",
+        "ultima_llamada": ahora,
+        "proxima_llamada_disponible": proxima_disponible,
+        "modo_forzado": force_mode,
         "ultima_modificacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     return save_player_permission(puuid, content, sha)
+
+
+def get_time_until_next_analysis(puuid):
+    """
+    Obtiene el tiempo restante hasta el próximo análisis disponible.
+    
+    Returns:
+        dict: Información sobre disponibilidad del análisis
+    """
+    tiene_permiso, _, content, segundos_restantes = read_player_permission(puuid)
+    
+    ahora = time.time()
+    ultima_llamada = content.get("ultima_llamada", 0)
+    proxima_disponible = content.get("proxima_llamada_disponible", 0)
+    modo_forzado = content.get("modo_forzado", False)
+    
+    # Calcular tiempo restante
+    if segundos_restantes <= 0:
+        tiempo_restante_texto = "Disponible ahora"
+        disponible = True
+    else:
+        horas = int(segundos_restantes // 3600)
+        minutos = int((segundos_restantes % 3600) // 60)
+        if horas > 0:
+            tiempo_restante_texto = f"{horas}h {minutos}m"
+        else:
+            tiempo_restante_texto = f"{minutos}m"
+        disponible = False
+    
+    return {
+        "disponible": disponible or tiene_permiso,
+        "segundos_restantes": int(segundos_restantes),
+        "tiempo_restante_texto": tiempo_restante_texto,
+        "ultima_llamada": ultima_llamada,
+        "proxima_disponible": proxima_disponible,
+        "modo_forzado": modo_forzado,
+        "puede_forzar": segundos_restantes > 0 and not modo_forzado
+    }
+
+
+def force_enable_permission(puuid):
+    """
+    Fuerza el permiso a SI para saltarse el cooldown de 24h.
+    Esto permite análisis manual sin esperar.
+    
+    Returns:
+        bool: True si se habilitó correctamente
+    """
+    tiene_permiso, sha, content, _ = read_player_permission(puuid)
+    
+    content["permitir_llamada"] = "SI"
+    content["razon"] = "Habilitado manualmente (forzado)"
+    content["modo_forzado"] = True
+    content["ultima_modificacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    return save_player_permission(puuid, content, sha)
+
 
 
 def get_cached_analysis(puuid):
@@ -198,20 +269,36 @@ def analyze_matches(puuid, matches, player_name=None):
         raise
 
 
-def _add_metadata(result, timestamp):
-    """Añade metadata al resultado del análisis."""
+def _add_metadata(result, timestamp, permiso_info=None):
+    """
+    Añade metadata al resultado del análisis.
+    
+    Args:
+        result: Resultado del análisis
+        timestamp: Timestamp de generación
+        permiso_info: Información de permisos (opcional)
+    """
     hours_old = (time.time() - timestamp) / 3600
     days_old = hours_old / 24
     fecha = datetime.fromtimestamp(timestamp).strftime('%d/%m/%Y %H:%M')
     
+    metadata = {
+        "generated_at": fecha,
+        "timestamp": timestamp,
+        "is_outdated": hours_old > 24,
+        "hours_old": round(hours_old, 1),
+        "days_old": round(days_old, 1),
+        "button_label": f"Análisis antiguo ({fecha})" if hours_old > 24 else f"Generado: {fecha}"
+    }
+    
+    # Añadir info de permisos si está disponible
+    if permiso_info:
+        metadata["tiempo_restante"] = permiso_info.get("tiempo_restante_texto", "Desponible")
+        metadata["proximo_analisis_disponible"] = permiso_info.get("disponible", True)
+        metadata["modo_forzado"] = permiso_info.get("modo_forzado", False)
+        metadata["segundos_restantes"] = permiso_info.get("segundos_restantes", 0)
+    
     return {
         **result,
-        "_metadata": {
-            "generated_at": fecha,
-            "timestamp": timestamp,
-            "is_outdated": hours_old > 24,
-            "hours_old": round(hours_old, 1),
-            "days_old": round(days_old, 1),
-            "button_label": f"Análisis antiguo ({fecha})" if hours_old > 24 else f"Generado: {fecha}"
-        }
+        "_metadata": metadata
     }

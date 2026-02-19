@@ -694,18 +694,31 @@
         <div class="card-header border-0 d-flex justify-content-between align-items-center bg-header-ia">
             <h5 class="mb-0 text-info font-monospace">
                 <i class="fas fa-brain me-2"></i>COACH VIRTUAL GEMINI 2.5
+                <span id="ia-timer-badge" class="badge bg-warning text-dark ms-2" style="display:none; font-size: 0.7em;">
+                    <i class="fas fa-clock me-1"></i><span id="ia-timer-text">--</span>
+                </span>
             </h5>
-            <button id="btn-ia" class="btn btn-sm btn-outline-info" onclick="ejecutarAnalisisIA()">
-                <i class="fas fa-magic me-2"></i>Solicitar Análisis
-            </button>
+            <div>
+                <button id="btn-ia-force" class="btn btn-sm btn-warning me-2" onclick="forzarAnalisisIA()" style="display:none;">
+                    <i class="fas fa-bolt me-2"></i>Forzar
+                </button>
+                <button id="btn-ia" class="btn btn-sm btn-outline-info" onclick="ejecutarAnalisisIA()">
+                    <i class="fas fa-magic me-2"></i>Solicitar Análisis
+                </button>
+            </div>
         </div>
         <div class="card-body">
+            <div id="ia-status-info" class="alert alert-info small py-2 mb-3" style="display:none;">
+                <i class="fas fa-info-circle me-2"></i><span id="ia-status-text"></span>
+            </div>
+            
             <div id="ia-loader" class="text-center py-4" style="display:none;">
                 <div class="spinner-border text-info mb-2" role="status"></div>
                 <p class="text-muted small">Consultando tácticas con la IA...</p>
             </div>
             
             <div id="ia-content" style="display:none;">
+
                 <div class="row g-4"> 
                     <div class="col-md-6">
                         <div class="mb-4">
@@ -739,9 +752,16 @@
             </div>
 
             <div id="ia-error" class="alert alert-dark text-warning small" style="display:none;"></div>
+            
+            <div id="ia-cooldown-info" class="alert alert-warning small mt-3" style="display:none;">
+                <i class="fas fa-hourglass-half me-2"></i>
+                <strong>Próximo análisis automático en:</strong> <span id="ia-cooldown-time">--</span>
+                <br><small class="text-muted">O puedes forzar el análisis ahora usando el botón "Forzar".</small>
+            </div>
         </div>
     </div>
 </div>
+
 
     <div class="row">
         <div class="col-md-6">
