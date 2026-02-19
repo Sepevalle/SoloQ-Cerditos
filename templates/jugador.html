@@ -2046,17 +2046,25 @@ async function ejecutarAnalisisIA() {
         document.getElementById('ia-footer-otros').innerHTML = 
             `<i class="fas fa-info-circle me-1"></i> ${d.otros || "Sin notas adicionales"}`;
 
-        // 4. Lógica de botón y visualización
+        // 4. Lógica de botón y visualización basada en origen
         loader.style.display = 'none';
         content.style.display = 'block';
         
+        // Usar el button_label del metadata si está disponible
+        const metadata = result._metadata || {};
+        const buttonLabel = metadata.button_label || (result.origen === "cache" ? "Análisis en caché" : "Nuevo análisis");
+        
         if (result.origen === "cache") {
             btn.className = "btn btn-sm btn-info";
-            btn.innerHTML = '<i class="fas fa-history me-2"></i>Análisis desde Caché';
-        } else {
+            btn.innerHTML = `<i class="fas fa-history me-2"></i>${buttonLabel}`;
+        } else if (result.origen === "nuevo") {
             btn.className = "btn btn-sm btn-success";
-            btn.innerHTML = '<i class="fas fa-sparkles me-2"></i>Nuevo Análisis';
+            btn.innerHTML = `<i class="fas fa-sparkles me-2"></i>${buttonLabel}`;
+        } else {
+            btn.className = "btn btn-sm btn-outline-info";
+            btn.innerHTML = '<i class="fas fa-magic me-2"></i>Solicitar Análisis';
         }
+
 
     } catch (err) {
         loader.style.display = 'none';

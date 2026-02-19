@@ -146,20 +146,21 @@ def analizar_partidas(puuid):
         # Verificar permiso
         tiene_permiso, permiso_sha, _ = check_player_permission(puuid)
         
-        # Obtener partidas de SoloQ
+        # Obtener partidas de SoloQ (últimas 5 para análisis)
         historial = get_player_match_history(puuid, limit=20)
         matches_soloq = [
             m for m in historial.get('matches', []) 
             if m.get('queue_id') == 420
         ]
         matches_soloq.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-        matches_soloq = matches_soloq[:10]  # Últimas 10
+        matches_soloq = matches_soloq[:5]  # Últimas 5 (consistente con el análisis)
         
         if not matches_soloq:
             return jsonify({"error": "No hay partidas de SoloQ para analizar"}), 404
         
-        # Generar firma
+        # Generar firma basada en las 5 partidas que se analizarán
         current_signature = "-".join(sorted([str(m.get('match_id')) for m in matches_soloq]))
+
         
         # Verificar análisis previo
         from services.github_service import read_analysis
@@ -170,15 +171,23 @@ def analizar_partidas(puuid):
             timestamp_analisis = prev_analysis.get('timestamp', 0)
             horas_antiguo = (time.time() - timestamp_analisis) / 3600
             
-            # Si es el mismo análisis, devolverlo
+            # Si es el mismo análisis, devolverlo con indicación clara de caché
             if prev_signature == current_signature:
                 result = prev_analysis['data']
                 result['_metadata'] = {
                     'generated_at': time.strftime('%d/%m/%Y %H:%M', time.localtime(timestamp_analisis)),
+                    'timestamp': timestamp_analisis,
                     'is_outdated': horas_antiguo > 24,
-                    'hours_old': round(horas_antiguo, 1)
+                    'hours_old': round(horas_antiguo, 1),
+                    'origen': 'cache',
+                    'button_label': f"Análisis en caché ({round(horas_antiguo, 1)}h)"
                 }
-                return jsonify({"origen": "github", **result})
+                return jsonify({
+                    "origen": "cache",
+                    "mensaje": "Análisis recuperado de caché (mismas partidas)",
+                    **result
+                })
+
             
             # Si no tiene permiso y análisis reciente, aplicar cooldown
             if not tiene_permiso and horas_antiguo < 24:
@@ -221,9 +230,29 @@ def analizar_partidas(puuid):
         block_player_permission(puuid, permiso_sha)
         
         if isinstance(result, tuple):
-            return jsonify(result[0]), result[1]
+            error_result = result[0]
+            error_result['_metadata'] = {
+                'origen': 'error',
+                'button_label': 'Error - Reintentar'
+            }
+            return jsonify(error_result), result[1]
         
-        return jsonify({"origen": "nuevo", **result}), 200
+        # Añadir metadata de nuevo análisis
+        result['_metadata'] = {
+            'generated_at': time.strftime('%d/%m/%Y %H:%M', time.localtime(time.time())),
+            'timestamp': time.time(),
+            'is_outdated': False,
+            'hours_old': 0,
+            'origen': 'nuevo',
+            'button_label': '✨ Nuevo análisis generado'
+        }
+        
+        return jsonify({
+            "origen": "nuevo",
+            "mensaje": "Análisis generado con Coach IA Gemini",
+            **result
+        }), 200
+
         
     except Exception as e:
         print(f"[analizar_partidas] Error: {e}")
