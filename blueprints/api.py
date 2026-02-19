@@ -220,27 +220,24 @@ def analizar_partidas(puuid):
                     "ultima_llamada": tiempo_info.get('ultima_llamada', 0)
                 }), 429
         
-        # Si no tiene permiso y no hay análisis previo
-        if not tiene_permiso:
-            if prev_analysis:
-                # Devolver análisis anterior
-                result = prev_analysis['data']
-                result['_metadata'] = {
-                    'generated_at': time.strftime('%d/%m/%Y %H:%M', time.localtime(prev_analysis.get('timestamp', 0))),
-                    'is_outdated': True,
-                    'tiempo_restante': tiempo_info.get('tiempo_restante_texto', 'Calculando...'),
-                    'segundos_restantes': segundos_restantes
-                }
-                return jsonify({"origen": "github_antiguo", **result}), 200
-            else:
-                return jsonify({
-                    "error": "Bloqueado",
-                    "mensaje": "No tienes permiso activo y no hay análisis anterior disponible.",
-                    "tiempo_restante": tiempo_info.get('tiempo_restante_texto', '24h'),
-                    "segundos_restantes": segundos_restantes,
-                    "puede_forzar": tiempo_info.get('puede_forzar', False),
-                    "proxima_disponible": tiempo_info.get('proxima_disponible', 0)
-                }), 403
+        # Si no tiene permiso pero hay análisis previo, devolverlo
+        if not tiene_permiso and prev_analysis:
+            result = prev_analysis['data']
+            result['_metadata'] = {
+                'generated_at': time.strftime('%d/%m/%Y %H:%M', time.localtime(prev_analysis.get('timestamp', 0))),
+                'is_outdated': True,
+                'tiempo_restante': tiempo_info.get('tiempo_restante_texto', 'Calculando...'),
+                'segundos_restantes': segundos_restantes
+            }
+            return jsonify({"origen": "github_antiguo", **result}), 200
+        
+        # Si no tiene permiso Y no hay análisis previo, forzar análisis (es el primero)
+        if not tiene_permiso and not prev_analysis:
+            print(f"[analizar_partidas] Primer análisis para {puuid[:8]}..., forzando generación")
+            # Forzar permiso para permitir el análisis
+            force_enable_permission(puuid)
+            # Recargar permisos
+            tiene_permiso, permiso_sha, permiso_content, segundos_restantes = check_player_permission(puuid)
 
         
         # Tiene permiso, generar nuevo análisis

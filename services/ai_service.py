@@ -248,8 +248,11 @@ def analyze_matches(puuid, matches, player_name=None):
             else:
                 result = response.parsed
         else:
-            # Fallback a JSON manual
+        # Fallback a JSON manual - usar ensure_ascii=False para preservar caracteres especiales
             result = json.loads(response.text)
+        
+        # Limpiar caracteres URL-encoded si existen en los valores
+        result = _clean_url_encoded_strings(result)
         
         # Guardar análisis
         timestamp = time.time()
@@ -267,6 +270,34 @@ def analyze_matches(puuid, matches, player_name=None):
         if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
             return {"error": "Cuota de Gemini agotada. Espera unas horas."}, 429
         raise
+
+
+def _clean_url_encoded_strings(obj):
+    """
+    Limpia caracteres URL-encoded de un diccionario o lista.
+    Convierte secuencias como %f3 a sus caracteres UTF-8 correspondientes.
+    
+    Args:
+        obj: Diccionario o lista a limpiar
+        
+    Returns:
+        Diccionario o lista limpia
+    """
+    import urllib.parse
+    
+    if isinstance(obj, dict):
+        return {k: _clean_url_encoded_strings(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_clean_url_encoded_strings(item) for item in obj]
+    elif isinstance(obj, str):
+        # Decodificar URL-encoded strings
+        try:
+            # Intentar decodificar si contiene caracteres URL-encoded
+            return urllib.parse.unquote(obj)
+        except Exception:
+            return obj
+    else:
+        return obj
 
 
 def _add_metadata(result, timestamp, permiso_info=None):
