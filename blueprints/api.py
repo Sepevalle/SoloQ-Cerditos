@@ -461,11 +461,11 @@ def analizar_partida_en_detalle(match_id):
             }), 200
 
         # Control de permiso manual: si no hay caché, solo generar si permitir_llamada=SI
-        tiene_permiso, permiso_sha, permiso_content, _ = check_player_permission(analysis_key)
+        tiene_permiso, permiso_sha, permiso_content, _ = check_player_permission(analysis_key, scope="partida")
         if not tiene_permiso:
             return jsonify({
                 "error": "Permiso denegado",
-                "mensaje": f"Análisis deshabilitado para este jugador. Activa permitir_llamada=SI en config/permisos/{analysis_key}.json para habilitar una consulta."
+                "mensaje": f"Análisis deshabilitado para esta partida. Activa permitir_llamada=SI en config/permisos_partida/{analysis_key}.json para habilitar una consulta."
             }), 403
 
         # Obtener timeline completo desde Riot API
@@ -503,7 +503,7 @@ def analizar_partida_en_detalle(match_id):
 
         # Consumir permiso tras una generación exitosa
         es_forzado = permiso_content.get('modo_forzado', False) if permiso_content else False
-        block_player_permission(analysis_key, permiso_sha, force_mode=es_forzado)
+        block_player_permission(analysis_key, permiso_sha, force_mode=es_forzado, scope="partida")
 
         return jsonify({
             "origen": "nuevo",

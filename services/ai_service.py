@@ -114,7 +114,7 @@ def _generate_with_model_fallback(client, contents, config=None):
     raise last_error if last_error else RuntimeError("Fallaron todos los modelos configurados.")
 
 
-def check_player_permission(puuid):
+def check_player_permission(puuid, scope="jugador"):
     """
     Verifica si un jugador tiene permiso para usar el análisis de IA.
     Si no existe el archivo, lo crea con permiso SI por defecto.
@@ -123,11 +123,11 @@ def check_player_permission(puuid):
     Returns:
         tuple: (tiene_permiso, sha, contenido_completo, segundos_restantes)
     """
-    return read_player_permission(puuid)
+    return read_player_permission(puuid, scope=scope)
 
 
 
-def block_player_permission(puuid, sha=None, force_mode=False):
+def block_player_permission(puuid, sha=None, force_mode=False, scope="jugador"):
     """
     Bloquea el permiso de un jugador después de usar el análisis.
     Registra el timestamp para rehabilitación automática después de 24h.
@@ -148,17 +148,17 @@ def block_player_permission(puuid, sha=None, force_mode=False):
         "modo_forzado": force_mode,
         "ultima_modificacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
-    return save_player_permission(puuid, content, sha)
+    return save_player_permission(puuid, content, sha, scope=scope)
 
 
-def get_time_until_next_analysis(puuid):
+def get_time_until_next_analysis(puuid, scope="jugador"):
     """
     Obtiene el tiempo restante hasta el próximo análisis disponible.
     
     Returns:
         dict: Información sobre disponibilidad del análisis
     """
-    tiene_permiso, _, content, segundos_restantes = read_player_permission(puuid)
+    tiene_permiso, _, content, segundos_restantes = read_player_permission(puuid, scope=scope)
     
     ahora = time.time()
     ultima_llamada = content.get("ultima_llamada", 0)
@@ -189,7 +189,7 @@ def get_time_until_next_analysis(puuid):
     }
 
 
-def force_enable_permission(puuid):
+def force_enable_permission(puuid, scope="jugador"):
     """
     Fuerza el permiso a SI para saltarse el cooldown de 24h.
     Esto permite análisis manual sin esperar.
@@ -197,14 +197,14 @@ def force_enable_permission(puuid):
     Returns:
         bool: True si se habilitó correctamente
     """
-    tiene_permiso, sha, content, _ = read_player_permission(puuid)
+    tiene_permiso, sha, content, _ = read_player_permission(puuid, scope=scope)
     
     content["permitir_llamada"] = "SI"
     content["razon"] = "Habilitado manualmente (forzado)"
     content["modo_forzado"] = True
     content["ultima_modificacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    return save_player_permission(puuid, content, sha)
+    return save_player_permission(puuid, content, sha, scope=scope)
 
 
 

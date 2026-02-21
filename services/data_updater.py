@@ -12,7 +12,14 @@ from config.settings import (
     BASE_URL_DDRAGON, DDRAGON_VERSION
 )
 from services.cache_service import player_cache, global_stats_cache, personal_records_cache
-from services.github_service import read_accounts_file, read_puuids, read_player_match_history, save_player_match_history, read_lp_history
+from services.github_service import (
+    read_accounts_file,
+    read_puuids,
+    read_player_match_history,
+    save_player_match_history,
+    read_lp_history,
+    ensure_permission_files_for_puuids,
+)
 from services.riot_api import (
     obtener_puuid, obtener_id_invocador, obtener_elo, 
     obtener_info_partida, actualizar_ddragon_data,
@@ -50,6 +57,9 @@ def actualizar_cache_periodicamente():
             # Obtener cuentas y PUUIDs
             cuentas = get_all_accounts()
             puuids = get_all_puuids()
+
+            # Asegurar archivos de permisos por jugador y por partida
+            ensure_permission_files_for_puuids(puuids.values())
             
             datos_jugadores = []
             timestamp = time.time()
