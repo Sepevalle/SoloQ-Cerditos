@@ -445,8 +445,22 @@ def analizar_partida_en_detalle(match_id):
 
         analysis_key = owner_permission_key or owner_puuid or requested_puuid or "global"
 
-        # Si ya existe análisis persistido para esta partida/jugador, devolverlo directamente
-        cached_analysis, _ = read_match_detail_analysis(match_id, analysis_key)
+        # Si ya existe análisis persistido en GitHub, devolverlo siempre (sin bloquear por permisos).
+        # Busca con clave actual y claves legacy para compatibilidad.
+        cache_keys = []
+        for k in [analysis_key, owner_permission_key, owner_puuid, requested_puuid, "global"]:
+            if k and k not in cache_keys:
+                cache_keys.append(k)
+
+        cached_analysis = None
+        cache_key_hit = None
+        for key in cache_keys:
+            candidate, _ = read_match_detail_analysis(match_id, key)
+            if candidate:
+                cached_analysis = candidate
+                cache_key_hit = key
+                break
+
         if cached_analysis:
             cached_data = normalize_match_detail_output(cached_analysis.get("data", {}))
             cached_meta = cached_analysis.get("_metadata", {})
@@ -462,6 +476,7 @@ def analizar_partida_en_detalle(match_id):
                     **cached_meta,
                     "source": "github_cache_match_detail",
                     "timestamp": cached_timestamp,
+                    "cache_key": cache_key_hit,
                 }
             }), 200
 
