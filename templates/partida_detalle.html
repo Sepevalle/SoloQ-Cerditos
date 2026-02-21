@@ -16,23 +16,28 @@
         align-items: center;
         gap: 2px;
     }
+
     .spell-rune-container img {
         width: 20px;
         height: 20px;
         border-radius: 3px;
     }
+
     .spell-rune-container .runes {
         display: flex;
         flex-direction: column;
     }
+
     .spell-rune-container .runes img {
         width: 16px;
         height: 16px;
         border-radius: 50%;
     }
+
     .spell-rune-container .runes img.keystone {
         border: 1px solid gold;
     }
+
     .spell-rune-container .runes img.sub-rune {
         border: 1px solid #6c757d;
     }
@@ -42,7 +47,9 @@
 {% block content %}
 <div class="container mt-5 pt-5">
     {% if match and perfil %}
-    <div class="card">
+    <h1 class="mb-4">Detalle de Partida</h1>
+
+    <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0">
                 {% if match.win %}
@@ -54,29 +61,30 @@
                 <small class="text-white-50">({{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s)</small>
             </h4>
             <p class="mb-0">
-                KDA: {{ match.kills }}/{{ match.deaths }}/{{ match.assists }} 
+                KDA: {{ match.kills }}/{{ match.deaths }}/{{ match.assists }}
                 ({{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }})
-                | 
+                |
                 {{ match.queue_id | get_queue_type }}
                 |
                 {{ match.game_end_timestamp | format_timestamp if match.game_end_timestamp else 'Fecha desconocida' }}
             </p>
         </div>
+
         <div class="card-body">
-            <div class="row">
-                <!-- Equipo Azul (ID 100) -->
-                <div class="col-md-6">
+            <div class="row g-3">
+                <div class="col-12 col-lg-6">
                     <div class="p-3 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
                         <h5 class="text-primary fw-bold mb-3">
                             {% set team100_participants = match.all_participants | selectattr('team_id', 'equalto', 100) | list %}
                             {% set team100_won = team100_participants[0].win if team100_participants else false %}
-                            {% if team100_participants %}{% if team100_won %}✅ Victoria{% else %}❌ Derrota{% endif %}{% endif %} - Equipo Azul
+                            {% if team100_participants %}{% if team100_won %}Victoria{% else %}Derrota{% endif %}{% endif %} - Equipo Azul
                         </h5>
+
                         <div class="table-responsive">
-                            <table class="table table-sm table-bordered">
-                                <thead class="table-light">
+                            <table class="table table-sm table-striped table-hover align-middle">
+                                <thead class="table-dark">
                                     <tr>
-                                        <th>Campeón</th>
+                                        <th>Campeon</th>
                                         <th>Jugador</th>
                                         <th>KDA</th>
                                         <th>Hechizos</th>
@@ -89,9 +97,9 @@
                                         {% if participante.team_id == 100 %}
                                         <tr {% if participante.summoner_name == perfil.game_name.split('#')[0] %}class="table-warning"{% endif %}>
                                             <td>
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png" 
-                                                     alt="{{ participante.champion_name }}" 
-                                                     style="width: 30px; height: 30px; border-radius: 50%;">
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png"
+                                                     alt="{{ participante.champion_name }}"
+                                                     style="width: 30px; height: 30px; border-radius: 50%; margin-right: 5px;">
                                                 {{ participante.champion_name }}
                                             </td>
                                             <td class="fw-bold">{{ participante.summoner_name }}</td>
@@ -123,9 +131,9 @@
                                                     {% set items = participante.get('items', []) %}
                                                     {% for item_id in items %}
                                                         {% if item_id > 0 %}
-                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                            <img style="width: 22px; height: 22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
                                                         {% else %}
-                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                            <div style="width: 22px; height: 22px; background-color: rgba(0, 0, 0, 0.2); border-radius: 3px;"></div>
                                                         {% endif %}
                                                     {% endfor %}
                                                 </div>
@@ -139,19 +147,19 @@
                     </div>
                 </div>
 
-                <!-- Equipo Rojo (ID 200) -->
-                <div class="col-md-6">
+                <div class="col-12 col-lg-6">
                     <div class="p-3 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
                         <h5 class="text-danger fw-bold mb-3">
                             {% set team200_participants = match.all_participants | selectattr('team_id', 'equalto', 200) | list %}
                             {% set team200_won = team200_participants[0].win if team200_participants else false %}
-                            {% if team200_participants %}{% if team200_won %}✅ Victoria{% else %}❌ Derrota{% endif %}{% endif %} - Equipo Rojo
+                            {% if team200_participants %}{% if team200_won %}Victoria{% else %}Derrota{% endif %}{% endif %} - Equipo Rojo
                         </h5>
+
                         <div class="table-responsive">
-                            <table class="table table-sm table-bordered">
-                                <thead class="table-light">
+                            <table class="table table-sm table-striped table-hover align-middle">
+                                <thead class="table-dark">
                                     <tr>
-                                        <th>Campeón</th>
+                                        <th>Campeon</th>
                                         <th>Jugador</th>
                                         <th>KDA</th>
                                         <th>Hechizos</th>
@@ -164,9 +172,9 @@
                                         {% if participante.team_id == 200 %}
                                         <tr {% if participante.summoner_name == perfil.game_name.split('#')[0] %}class="table-warning"{% endif %}>
                                             <td>
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png" 
-                                                     alt="{{ participante.champion_name }}" 
-                                                     style="width: 30px; height: 30px; border-radius: 50%;">
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participante.champion_name }}.png"
+                                                     alt="{{ participante.champion_name }}"
+                                                     style="width: 30px; height: 30px; border-radius: 50%; margin-right: 5px;">
                                                 {{ participante.champion_name }}
                                             </td>
                                             <td class="fw-bold">{{ participante.summoner_name }}</td>
@@ -198,9 +206,9 @@
                                                     {% set items = participante.get('items', []) %}
                                                     {% for item_id in items %}
                                                         {% if item_id > 0 %}
-                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                            <img style="width: 22px; height: 22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
                                                         {% else %}
-                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                            <div style="width: 22px; height: 22px; background-color: rgba(0, 0, 0, 0.2); border-radius: 3px;"></div>
                                                         {% endif %}
                                                     {% endfor %}
                                                 </div>
@@ -214,16 +222,16 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="mt-3 text-center">
-                <a href="{{ url_for('player.perfil_jugador', game_name=perfil.game_name) }}" class="btn btn-primary">
+                <a href="{{ url_for('player.perfil_jugador', game_name=perfil.game_name) }}" class="btn btn-outline-primary">
                     <i class="fas fa-arrow-left me-2"></i>Volver al perfil de {{ perfil.nombre }}
                 </a>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="alert alert-warning">
+    <div class="alert alert-info">
         No se encontraron detalles de la partida.
     </div>
     {% endif %}
