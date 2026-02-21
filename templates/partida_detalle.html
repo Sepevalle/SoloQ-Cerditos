@@ -308,19 +308,28 @@
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="gemini-block">
-                            <label class="fw-bold text-success mb-2 d-block">Lectura de linea</label>
+                            <label class="fw-bold text-success mb-2 d-flex justify-content-between align-items-center">
+                                <span>Lectura de linea</span>
+                                <span id="gm-linea-score" class="badge bg-success-subtle text-success-emphasis border">-/10</span>
+                            </label>
                             <p id="gm-linea"></p>
                         </div>
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="gemini-block">
-                            <label class="fw-bold text-info mb-2 d-block">Impacto en mid game</label>
+                            <label class="fw-bold text-info mb-2 d-flex justify-content-between align-items-center">
+                                <span>Impacto en mid game</span>
+                                <span id="gm-mid-score" class="badge bg-info-subtle text-info-emphasis border">-/10</span>
+                            </label>
                             <p id="gm-mid"></p>
                         </div>
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="gemini-block">
-                            <label class="fw-bold text-secondary mb-2 d-block">Impacto en late game</label>
+                            <label class="fw-bold text-secondary mb-2 d-flex justify-content-between align-items-center">
+                                <span>Impacto en late game</span>
+                                <span id="gm-late-score" class="badge bg-secondary-subtle text-secondary-emphasis border">-/10</span>
+                            </label>
                             <p id="gm-late"></p>
                         </div>
                     </div>
@@ -344,7 +353,10 @@
                     </div>
                     <div class="col-12 col-lg-4">
                         <div class="gemini-block">
-                            <label class="fw-bold text-dark mb-2 d-block">Veredicto final</label>
+                            <label class="fw-bold text-dark mb-2 d-flex justify-content-between align-items-center">
+                                <span>Veredicto final</span>
+                                <span id="gm-veredicto-score" class="badge bg-dark-subtle text-dark-emphasis border">-/10</span>
+                            </label>
                             <p id="gm-veredicto"></p>
                         </div>
                     </div>
@@ -410,6 +422,17 @@ async function ejecutarAnalisisPartidaIA() {
             }
         };
 
+        const setScore = (id, value) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (value === null || value === undefined || value === '') {
+                el.innerText = '-/10';
+                return;
+            }
+            const num = Number(value);
+            el.innerText = Number.isFinite(num) ? `${num.toFixed(1)}/10` : '-/10';
+        };
+
         setText('gm-resumen', data.resumen_partida, 'Sin resumen disponible.');
         setText('gm-linea', data.lectura_de_linea, 'Sin lectura de linea.');
         setText('gm-mid', data.impacto_mid_game, 'Sin analisis de mid game.');
@@ -418,6 +441,10 @@ async function ejecutarAnalisisPartidaIA() {
         setText('gm-aciertos', data.aciertos_clave, 'Sin aciertos clave detectados.');
         setText('gm-plan', data.plan_de_mejora, 'Sin plan de mejora disponible.');
         setText('gm-veredicto', data.veredicto_final, 'Sin veredicto final.');
+        setScore('gm-linea-score', data.lectura_de_linea_score);
+        setScore('gm-mid-score', data.impacto_mid_game_score);
+        setScore('gm-late-score', data.impacto_late_game_score);
+        setScore('gm-veredicto-score', data.veredicto_final_score);
 
         const meta = result._metadata || {};
         document.getElementById('gm-meta').innerText = meta.generated_at

@@ -358,7 +358,9 @@ def analyze_match_detail(match, timeline_data=None, player_puuid=None, player_na
         "Analiza esta partida concreta con enfoque técnico y accionable. "
         "Debes devolver JSON válido con estas claves exactas: "
         "resumen_partida, lectura_de_linea, impacto_mid_game, impacto_late_game, "
-        "errores_clave, aciertos_clave, plan_de_mejora, veredicto_final. "
+        "errores_clave, aciertos_clave, plan_de_mejora, veredicto_final, "
+        "lectura_de_linea_score, impacto_mid_game_score, impacto_late_game_score, veredicto_final_score. "
+        "Los campos *_score deben ser numéricos entre 0 y 10 (pueden incluir decimales). "
         "El contenido debe estar en español, directo y útil para mejorar en SoloQ. "
         "Incluye ejemplos concretos basados en estadísticas y eventos de esta partida, sin inventar datos. "
         "Debes priorizar el timeline para reconstruir decisiones, tempo, peleas y objetivos minuto a minuto. "
@@ -485,6 +487,10 @@ def normalize_match_detail_output(data):
         "aciertos_clave": "",
         "plan_de_mejora": "",
         "veredicto_final": "",
+        "lectura_de_linea_score": None,
+        "impacto_mid_game_score": None,
+        "impacto_late_game_score": None,
+        "veredicto_final_score": None,
     }
 
     if not isinstance(data, dict):
@@ -520,6 +526,18 @@ def normalize_match_detail_output(data):
         "veredicto_final": [
             "veredicto_final", "veredicto", "conclusion", "final_verdict"
         ],
+        "lectura_de_linea_score": [
+            "lectura_de_linea_score", "lectura_linea_score", "lane_score", "laning_score"
+        ],
+        "impacto_mid_game_score": [
+            "impacto_mid_game_score", "mid_game_score", "midgame_score"
+        ],
+        "impacto_late_game_score": [
+            "impacto_late_game_score", "late_game_score", "lategame_score"
+        ],
+        "veredicto_final_score": [
+            "veredicto_final_score", "veredicto_score", "final_score"
+        ],
     }
 
     normalized = {}
@@ -537,7 +555,10 @@ def normalize_match_detail_output(data):
                 break
         if isinstance(value, (dict, list)):
             value = json.dumps(value, ensure_ascii=False)
-        normalized[target_key] = (str(value).strip() if value is not None else "")
+        if target_key.endswith("_score"):
+            normalized[target_key] = _normalize_score(value)
+        else:
+            normalized[target_key] = _prettify_numbered_points(str(value).strip() if value is not None else "")
 
     # fallback extra: si no hay contenido util, usar campos largos comunes
     if not normalized["resumen_partida"]:
@@ -545,12 +566,65 @@ def normalize_match_detail_output(data):
         if raw_text:
             normalized["resumen_partida"] = str(raw_text).strip()
 
+    # Fallback: extraer score desde el propio texto si no vino en campo separado
+    score_text_fallbacks = {
+        "lectura_de_linea_score": normalized.get("lectura_de_linea", ""),
+        "impacto_mid_game_score": normalized.get("impacto_mid_game", ""),
+        "impacto_late_game_score": normalized.get("impacto_late_game", ""),
+        "veredicto_final_score": normalized.get("veredicto_final", ""),
+    }
+    for score_key, text in score_text_fallbacks.items():
+        if normalized.get(score_key) is None:
+            normalized[score_key] = _extract_score_from_text(text)
+
     # asegurar todas las claves
     for key, default_val in expected.items():
         if key not in normalized:
             normalized[key] = default_val
 
     return normalized
+
+
+def _prettify_numbered_points(text):
+    """
+    Separa listas numeradas en líneas distintas para que se vean legibles en frontend.
+    """
+    if not text:
+        return ""
+    # Inserta salto de línea antes de patrones tipo "2. " cuando están pegados
+    pretty = re.sub(r"(?<!\n)\s+(\d+\.\s+)", r"\n\1", text)
+    return pretty.strip()
+
+
+def _normalize_score(value):
+    """
+    Normaliza una puntuación a float en rango [0, 10] o None.
+    """
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return max(0.0, min(10.0, float(value)))
+
+    text = str(value).strip()
+    return _extract_score_from_text(text)
+
+
+def _extract_score_from_text(text):
+    """
+    Extrae una puntuación 0-10 desde texto libre (ej. '7.5/10', '8', 'nota 6').
+    """
+    if not text:
+        return None
+
+    candidates = re.findall(r"(\d+(?:[.,]\d+)?)\s*(?:/10)?", text)
+    for cand in candidates:
+        try:
+            num = float(cand.replace(",", "."))
+            if 0.0 <= num <= 10.0:
+                return num
+        except ValueError:
+            continue
+    return None
 
 
 def _clean_url_encoded_strings(obj):
