@@ -138,13 +138,12 @@ def block_player_permission(puuid, sha=None, force_mode=False, scope="jugador"):
         force_mode: Si True, marca como modo forzado (permite saltarse el cooldown)
     """
     ahora = time.time()
-    proxima_disponible = ahora + (24 * 3600)  # 24 horas en segundos
     
     content = {
         "permitir_llamada": "NO",
-        "razon": "Llamada consumida. Disponible nuevamente en 24h." if not force_mode else "Análisis forzado manualmente.",
+        "razon": "Llamada consumida. Rehabilitar manualmente en GitHub (poner permitir_llamada=SI).",
         "ultima_llamada": ahora,
-        "proxima_llamada_disponible": proxima_disponible,
+        "proxima_llamada_disponible": 0,
         "modo_forzado": force_mode,
         "ultima_modificacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
@@ -163,23 +162,14 @@ def get_time_until_next_analysis(puuid, scope="jugador"):
     """
     tiene_permiso, _, content, segundos_restantes = read_player_permission(puuid, scope=scope)
     
-    ahora = time.time()
     ultima_llamada = content.get("ultima_llamada", 0)
     proxima_disponible = content.get("proxima_llamada_disponible", 0)
     modo_forzado = content.get("modo_forzado", False)
-    
-    # Calcular tiempo restante
-    if segundos_restantes <= 0:
-        tiempo_restante_texto = "Disponible ahora"
-        disponible = True
-    else:
-        horas = int(segundos_restantes // 3600)
-        minutos = int((segundos_restantes % 3600) // 60)
-        if horas > 0:
-            tiempo_restante_texto = f"{horas}h {minutos}m"
-        else:
-            tiempo_restante_texto = f"{minutos}m"
-        disponible = False
+
+    # Modo manual: solo SI/NO
+    disponible = bool(tiene_permiso)
+    tiempo_restante_texto = "Disponible ahora" if disponible else "Deshabilitado (activar SI en GitHub)"
+    segundos_restantes = 0
     
     return {
         "disponible": disponible or tiene_permiso,
@@ -188,7 +178,7 @@ def get_time_until_next_analysis(puuid, scope="jugador"):
         "ultima_llamada": ultima_llamada,
         "proxima_disponible": proxima_disponible,
         "modo_forzado": modo_forzado,
-        "puede_forzar": segundos_restantes > 0 and not modo_forzado
+        "puede_forzar": False
     }
 
 

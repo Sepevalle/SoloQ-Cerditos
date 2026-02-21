@@ -835,9 +835,9 @@ def read_player_permission(player_key, scope="jugador"):
     proxima_disponible = content.get("proxima_llamada_disponible", 0)
     modo_forzado = content.get("modo_forzado", False)
     permitir = str(content.get("permitir_llamada", "NO")).strip().upper() == "SI"
-    
-    ahora = time.time()
-    segundos_restantes = max(0, proxima_disponible - ahora)
+
+    # Modo manual: el estado depende de permitir_llamada (SI/NO), no de tiempos.
+    segundos_restantes = 0
     
     # Si está en modo forzado, permitir una llamada manual.
     if modo_forzado and permitir:
