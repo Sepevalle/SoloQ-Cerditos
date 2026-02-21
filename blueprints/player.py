@@ -212,6 +212,7 @@ def detalle_partida(game_name, match_index):
                            ddragon_version=settings.DDRAGON_VERSION,
                            detalle_partida=match,
                            detalle_match_index=match_index,
+                           has_player_data=True,
                            datetime=datetime,
                            now=datetime.now())
 
@@ -248,6 +249,7 @@ def detalle_partida_por_id(match_id):
                                            ddragon_version=settings.DDRAGON_VERSION,
                                            detalle_partida=match,
                                            detalle_match_index=idx + 1,
+                                           has_player_data=True,
                                            datetime=datetime,
                                            now=datetime.now())
         except Exception as e:

@@ -26,7 +26,7 @@
                 KDA: {{ match.kills }}/{{ match.deaths }}/{{ match.assists }} 
                 ({{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }})
                 | 
-                {{ match.queue_id | get_queue_type if queue_id is defined else 'Partida Clasificatoria' }}
+                {{ match.queue_id | get_queue_type }}
                 |
                 {{ match.game_end_timestamp | format_timestamp if match.game_end_timestamp else 'Fecha desconocida' }}
             </p>
