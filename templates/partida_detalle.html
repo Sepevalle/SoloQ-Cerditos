@@ -109,11 +109,11 @@
                                             <td>
                                                 <div class="spell-rune-container">
                                                     <div class="runes">
-                                                        {% if participante.get('perks') and participante.perks.get('mainStyle') %}
-                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perks.mainStyle }}" alt="Main Rune" class="keystone">
+                                                        {% if participante.get('perk_main_id') %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perk_main_id }}" alt="Main Rune" class="keystone">
                                                         {% endif %}
-                                                        {% if participante.get('perks') and participante.perks.get('subStyle') %}
-                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perks.subStyle }}" alt="Sub Rune" class="sub-rune">
+                                                        {% if participante.get('perk_sub_id') %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perk_sub_id }}" alt="Sub Rune" class="sub-rune">
                                                         {% endif %}
                                                     </div>
                                                 </div>
@@ -184,11 +184,11 @@
                                             <td>
                                                 <div class="spell-rune-container">
                                                     <div class="runes">
-                                                        {% if participante.get('perks') and participante.perks.get('mainStyle') %}
-                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perks.mainStyle }}" alt="Main Rune" class="keystone">
+                                                        {% if participante.get('perk_main_id') %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perk_main_id }}" alt="Main Rune" class="keystone">
                                                         {% endif %}
-                                                        {% if participante.get('perks') and participante.perks.get('subStyle') %}
-                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perks.subStyle }}" alt="Sub Rune" class="sub-rune">
+                                                        {% if participante.get('perk_sub_id') %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perk_sub_id }}" alt="Sub Rune" class="sub-rune">
                                                         {% endif %}
                                                     </div>
                                                 </div>
