@@ -26,8 +26,10 @@
                     <th>KDA</th>
                     <th>Cola</th>
                     <th>Fecha</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for match in matches %}
                 <tr>
@@ -72,7 +74,18 @@
                         Desconocida
                         {% endif %}
                     </td>
+                    <td>
+                        {% if match.match_id %}
+                        <a href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" 
+                           target="_blank" 
+                           class="btn btn-sm btn-outline-primary" 
+                           title="Ver detalles de la partida">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        {% endif %}
+                    </td>
                 </tr>
+
                 {% endfor %}
             </tbody>
         </table>

@@ -181,6 +181,7 @@ def perfil_jugador(game_name):
                            now=datetime.now())
 
 
+
 @player_bp.route('/<path:game_name>/partida/<int:match_index>')
 def detalle_partida(game_name, match_index):
     """
@@ -205,10 +206,53 @@ def detalle_partida(game_name, match_index):
     
     print(f"[detalle_partida] Mostrando detalles de partida: {match.get('match_id', 'N/A')}")
     
-    return render_template('jugador.html',
+    return render_template('partida_detalle.html',
                            perfil=perfil,
+                           match=match,
                            ddragon_version=settings.DDRAGON_VERSION,
                            detalle_partida=match,
                            detalle_match_index=match_index,
                            datetime=datetime,
                            now=datetime.now())
+
+
+@player_bp.route('/partida/<path:match_id>')
+def detalle_partida_por_id(match_id):
+    """
+    Muestra los detalles de una partida específica usando el match_id.
+    Busca el jugador asociado al match_id y muestra los detalles.
+    """
+    print(f"[detalle_partida_por_id] Petición recibida para partida: {match_id}")
+    
+    # Buscar en todos los jugadores la partida con este match_id
+    all_players, _ = player_cache.get()
+    
+    for player_entry in all_players:
+        game_name = player_entry.get('game_name')
+        if not game_name:
+            continue
+            
+        try:
+            perfil = _build_player_profile(game_name)
+            if not perfil:
+                continue
+                
+            matches = perfil.get('historial_partidas', [])
+            
+            for idx, match in enumerate(matches):
+                if match.get('match_id') == match_id:
+                    print(f"[detalle_partida_por_id] Partida encontrada para jugador {game_name}")
+                    return render_template('partida_detalle.html',
+                                           perfil=perfil,
+                                           match=match,
+                                           ddragon_version=settings.DDRAGON_VERSION,
+                                           detalle_partida=match,
+                                           detalle_match_index=idx + 1,
+                                           datetime=datetime,
+                                           now=datetime.now())
+        except Exception as e:
+            print(f"[detalle_partida_por_id] Error procesando jugador {game_name}: {e}")
+            continue
+    
+    print(f"[detalle_partida_por_id] Partida {match_id} no encontrada")
+    return render_template('404.html'), 404
