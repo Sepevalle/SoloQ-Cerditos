@@ -25,8 +25,14 @@ except ImportError:
     PYDANTIC_AVAILABLE = False
     print("[ai_service] Advertencia: Librería pydantic no disponible")
 
-from config.settings import GOOGLE_API_KEY, GEMINI_MODEL
+from config.settings import GOOGLE_API_KEY, GEMINI_MODEL, GEMINI_MODELS
 from services.github_service import read_analysis, save_analysis, read_player_permission, save_player_permission
+
+
+# Guardrails de tamaño de prompt para evitar excesos de tokens.
+# Estimación rápida: ~4 caracteres por token.
+MAX_PROMPT_CHARS_MATCH_DETAIL = 200_000
+MAX_TIMELINE_CHARS_MATCH_DETAIL = 120_000
 
 
 # Esquema para respuesta de Gemini (solo si pydantic está disponible)
@@ -55,6 +61,57 @@ def get_gemini_client():
     if _gemini_client is None and GOOGLE_API_KEY:
         _gemini_client = genai.Client(api_key=GOOGLE_API_KEY)
     return _gemini_client
+
+
+def _get_model_fallback_list():
+    """
+    Construye la lista de modelos en orden de prioridad.
+    Si no hay lista explícita, usa GEMINI_MODEL como fallback único.
+    """
+    models = []
+    try:
+        for m in GEMINI_MODELS:
+            if m and str(m).strip():
+                models.append(str(m).strip())
+    except Exception:
+        pass
+
+    if not models and GEMINI_MODEL:
+        models = [GEMINI_MODEL]
+
+    # Deduplicar preservando orden
+    seen = set()
+    unique = []
+    for m in models:
+        if m not in seen:
+            unique.append(m)
+            seen.add(m)
+    return unique
+
+
+def _generate_with_model_fallback(client, contents, config=None):
+    """
+    Ejecuta generate_content intentando modelos en cascada hasta uno exitoso.
+    """
+    models = _get_model_fallback_list()
+    if not models:
+        raise RuntimeError("No hay modelos Gemini configurados.")
+
+    last_error = None
+    for model_name in models:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=config
+            )
+            return response, model_name
+        except Exception as e:
+            last_error = e
+            print(f"[ai_service] Modelo fallido: {model_name} -> {e}")
+            continue
+
+    raise last_error if last_error else RuntimeError("Fallaron todos los modelos configurados.")
 
 
 def check_player_permission(puuid):
@@ -236,8 +293,8 @@ def analyze_matches(puuid, matches, player_name=None):
         if PYDANTIC_AVAILABLE and AnalisisSoloQ:
             config['response_schema'] = AnalisisSoloQ
         
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
+        response, model_used = _generate_with_model_fallback(
+            client=client,
             contents=prompt,
             config=config
         )
@@ -264,7 +321,9 @@ def analyze_matches(puuid, matches, player_name=None):
         }
         save_analysis(puuid, analysis_doc, sha)
         
-        return _add_metadata(result, timestamp)
+        final = _add_metadata(result, timestamp)
+        final["_metadata"]["model_used"] = model_used
+        return final
         
     except Exception as e:
         error_str = str(e)
@@ -353,6 +412,8 @@ def analyze_match_detail(match, timeline_data=None, player_puuid=None, player_na
         "enemies": enemies,
     }
 
+    timeline_compact = _build_compact_timeline_payload(timeline_data, max_chars=MAX_TIMELINE_CHARS_MATCH_DETAIL)
+
     prompt = (
         "Eres un coach experto de League of Legends. "
         "Analiza esta partida concreta con enfoque técnico y accionable. "
@@ -365,12 +426,14 @@ def analyze_match_detail(match, timeline_data=None, player_puuid=None, player_na
         "Incluye ejemplos concretos basados en estadísticas y eventos de esta partida, sin inventar datos. "
         "Debes priorizar el timeline para reconstruir decisiones, tempo, peleas y objetivos minuto a minuto. "
         f"Resumen de partida: {json.dumps(match_summary, ensure_ascii=False)}\n"
-        f"Timeline completo: {json.dumps(timeline_data or {}, ensure_ascii=False)}"
+        f"Timeline compacto: {json.dumps(timeline_compact, ensure_ascii=False)}"
     )
 
+    prompt = _truncate_text_to_chars(prompt, MAX_PROMPT_CHARS_MATCH_DETAIL)
+
     try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
+        response, model_used = _generate_with_model_fallback(
+            client=client,
             contents=prompt,
             config={"response_mime_type": "application/json"},
         )
@@ -384,7 +447,10 @@ def analyze_match_detail(match, timeline_data=None, player_puuid=None, player_na
             "_metadata": {
                 "generated_at": datetime.now().strftime('%d/%m/%Y %H:%M'),
                 "source": "gemini_match_detail",
+                "model_used": model_used,
                 "match_id": match.get("match_id"),
+                "timeline_compact_chars": len(json.dumps(timeline_compact, ensure_ascii=False)),
+                "prompt_estimated_tokens": _estimate_tokens(prompt),
             },
         }
     except Exception as e:
@@ -625,6 +691,122 @@ def _extract_score_from_text(text):
         except ValueError:
             continue
     return None
+
+
+def _estimate_tokens(text):
+    """Estimación simple de tokens: ~4 chars por token."""
+    if not text:
+        return 0
+    return max(1, int(len(text) / 4))
+
+
+def _truncate_text_to_chars(text, max_chars):
+    """Recorta texto a un máximo de caracteres."""
+    if not text:
+        return ""
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + "\n[TRUNCATED_FOR_TOKEN_LIMIT]"
+
+
+def _build_compact_timeline_payload(timeline_data, max_chars=120_000):
+    """
+    Compacta el timeline para reducir consumo:
+    - Solo eventos clave
+    - Resumen de oro por frame
+    - Mantiene metadata útil para análisis
+    """
+    if not isinstance(timeline_data, dict):
+        return {}
+
+    info = timeline_data.get("info", {}) or {}
+    frames = info.get("frames", []) or []
+    participants = info.get("participants", []) or []
+
+    key_event_types = {
+        "CHAMPION_KILL",
+        "ELITE_MONSTER_KILL",
+        "BUILDING_KILL",
+        "WARD_PLACED",
+        "WARD_KILL",
+    }
+
+    compact_frames = []
+    compact_events = []
+
+    for frame in frames:
+        timestamp = frame.get("timestamp", 0)
+        participant_frames = frame.get("participantFrames", {}) or {}
+
+        team_gold = {"100": 0, "200": 0}
+        for pf in participant_frames.values():
+            pid = pf.get("participantId")
+            gold = pf.get("totalGold", 0) or 0
+            if 1 <= int(pid or 0) <= 5:
+                team_gold["100"] += gold
+            elif 6 <= int(pid or 0) <= 10:
+                team_gold["200"] += gold
+
+        compact_frames.append({
+            "timestamp": timestamp,
+            "minute": int(timestamp / 60000) if timestamp else 0,
+            "team_gold": team_gold,
+            "gold_diff": team_gold["100"] - team_gold["200"],
+        })
+
+        events = frame.get("events", []) or []
+        for event in events:
+            etype = event.get("type")
+            if etype not in key_event_types:
+                continue
+
+            compact_event = {
+                "timestamp": event.get("timestamp"),
+                "minute": int((event.get("timestamp", 0) or 0) / 60000),
+                "type": etype,
+                "killerId": event.get("killerId"),
+                "victimId": event.get("victimId"),
+                "assistingParticipantIds": event.get("assistingParticipantIds", []),
+                "teamId": event.get("teamId"),
+                "position": event.get("position"),
+                "monsterType": event.get("monsterType"),
+                "monsterSubType": event.get("monsterSubType"),
+                "buildingType": event.get("buildingType"),
+                "towerType": event.get("towerType"),
+                "wardType": event.get("wardType"),
+                "killType": event.get("killType"),
+            }
+            compact_events.append(compact_event)
+
+    compact = {
+        "metadata": {
+            "match_id": timeline_data.get("metadata", {}).get("matchId"),
+            "data_version": timeline_data.get("metadata", {}).get("dataVersion"),
+            "participants_count": len(participants),
+            "frames_count": len(frames),
+            "events_key_count": len(compact_events),
+        },
+        "participants": [
+            {
+                "participantId": p.get("participantId"),
+                "puuid": p.get("puuid"),
+            } for p in participants
+        ],
+        "frame_gold_summary": compact_frames,
+        "key_events": compact_events,
+    }
+
+    # Ajuste de tamaño progresivo si excede límite
+    while len(json.dumps(compact, ensure_ascii=False)) > max_chars:
+        if len(compact["key_events"]) > 50:
+            compact["key_events"] = compact["key_events"][: int(len(compact["key_events"]) * 0.75)]
+            continue
+        if len(compact["frame_gold_summary"]) > 20:
+            compact["frame_gold_summary"] = compact["frame_gold_summary"][::2]
+            continue
+        break
+
+    return compact
 
 
 def _clean_url_encoded_strings(obj):

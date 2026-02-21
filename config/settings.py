@@ -170,7 +170,12 @@ RANK_ORDER = {
 # CONFIGURACIÓN DE GEMINI AI
 # ============================================================================
 
-GEMINI_MODEL = "gemini-3-flash-preview"
+GEMINI_MODELS = [
+    "gemini-3-flash-preview",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+]
+GEMINI_MODEL = GEMINI_MODELS[0]
 
 # ============================================================================
 # INTERVALOS DE ACTUALIZACIÓN (para hilos de background)
@@ -178,3 +183,5 @@ GEMINI_MODEL = "gemini-3-flash-preview"
 
 CACHE_UPDATE_INTERVAL = 130  # segundos - actualización de caché de jugadores
 LP_TRACKER_INTERVAL = 300    # segundos - snapshots de LP
+
+
