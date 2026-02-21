@@ -8,6 +8,37 @@
 </li>
 {% endblock %}
 
+{% block extra_styles %}
+<style>
+    .spell-rune-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+    .spell-rune-container img {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+    }
+    .spell-rune-container .runes {
+        display: flex;
+        flex-direction: column;
+    }
+    .spell-rune-container .runes img {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+    }
+    .spell-rune-container .runes img.keystone {
+        border: 1px solid gold;
+    }
+    .spell-rune-container .runes img.sub-rune {
+        border: 1px solid #6c757d;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5 pt-5">
     {% if match and perfil %}
@@ -48,9 +79,9 @@
                                         <th>Campeón</th>
                                         <th>Jugador</th>
                                         <th>KDA</th>
-                                        <th>Daño</th>
-                                        <th>CS</th>
-                                        <th>Visión</th>
+                                        <th>Hechizos</th>
+                                        <th>Runas</th>
+                                        <th>Objetos</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -65,9 +96,40 @@
                                             </td>
                                             <td class="fw-bold">{{ participante.summoner_name }}</td>
                                             <td>{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</td>
-                                            <td>{{ participante.get('total_damage_dealt_to_champions', 0) | thousands_separator }}</td>
-                                            <td>{{ participante.get('total_cs', 0) }}</td>
-                                            <td>{{ participante.get('vision_score', 0) }}</td>
+                                            <td>
+                                                <div class="spell-rune-container">
+                                                    {% if participante.get('summoner_spell_1_id') %}
+                                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ participante.get('summoner_spell_1_id') }}.png" alt="Spell 1">
+                                                    {% endif %}
+                                                    {% if participante.get('summoner_spell_2_id') %}
+                                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ participante.get('summoner_spell_2_id') }}.png" alt="Spell 2">
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="spell-rune-container">
+                                                    <div class="runes">
+                                                        {% if participante.get('perks') and participante.perks.get('mainStyle') %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perks.mainStyle }}" alt="Main Rune" class="keystone">
+                                                        {% endif %}
+                                                        {% if participante.get('perks') and participante.perks.get('subStyle') %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perks.subStyle }}" alt="Sub Rune" class="sub-rune">
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                                    {% set items = participante.get('items', []) %}
+                                                    {% for item_id in items %}
+                                                        {% if item_id > 0 %}
+                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                        {% else %}
+                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
                                         </tr>
                                         {% endif %}
                                     {% endfor %}
@@ -92,9 +154,9 @@
                                         <th>Campeón</th>
                                         <th>Jugador</th>
                                         <th>KDA</th>
-                                        <th>Daño</th>
-                                        <th>CS</th>
-                                        <th>Visión</th>
+                                        <th>Hechizos</th>
+                                        <th>Runas</th>
+                                        <th>Objetos</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -109,9 +171,40 @@
                                             </td>
                                             <td class="fw-bold">{{ participante.summoner_name }}</td>
                                             <td>{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</td>
-                                            <td>{{ participante.get('total_damage_dealt_to_champions', 0) | thousands_separator }}</td>
-                                            <td>{{ participante.get('total_cs', 0) }}</td>
-                                            <td>{{ participante.get('vision_score', 0) }}</td>
+                                            <td>
+                                                <div class="spell-rune-container">
+                                                    {% if participante.get('summoner_spell_1_id') %}
+                                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ participante.get('summoner_spell_1_id') }}.png" alt="Spell 1">
+                                                    {% endif %}
+                                                    {% if participante.get('summoner_spell_2_id') %}
+                                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ participante.get('summoner_spell_2_id') }}.png" alt="Spell 2">
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="spell-rune-container">
+                                                    <div class="runes">
+                                                        {% if participante.get('perks') and participante.perks.get('mainStyle') %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perks.mainStyle }}" alt="Main Rune" class="keystone">
+                                                        {% endif %}
+                                                        {% if participante.get('perks') and participante.perks.get('subStyle') %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ participante.perks.subStyle }}" alt="Sub Rune" class="sub-rune">
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                                    {% set items = participante.get('items', []) %}
+                                                    {% for item_id in items %}
+                                                        {% if item_id > 0 %}
+                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
+                                                        {% else %}
+                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
                                         </tr>
                                         {% endif %}
                                     {% endfor %}
