@@ -752,6 +752,11 @@ def _get_permission_file_path(player_key, scope="jugador"):
     return f"config/permisos/{key}.json"
 
 
+def get_permission_file_path(player_key, scope="jugador"):
+    """Ruta pública del archivo de permisos para mostrar en mensajes/UI."""
+    return _get_permission_file_path(player_key, scope=scope)
+
+
 def ensure_player_permission_file(player_key, scope="jugador"):
     """
     Crea el archivo de permisos si no existe (NO por defecto), sin consumir llamada.
@@ -818,7 +823,7 @@ def read_player_permission(player_key, scope="jugador"):
     ultima_llamada = content.get("ultima_llamada", 0)
     proxima_disponible = content.get("proxima_llamada_disponible", 0)
     modo_forzado = content.get("modo_forzado", False)
-    permitir = content.get("permitir_llamada") == "SI"
+    permitir = str(content.get("permitir_llamada", "NO")).strip().upper() == "SI"
     
     ahora = time.time()
     segundos_restantes = max(0, proxima_disponible - ahora)

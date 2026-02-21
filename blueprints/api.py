@@ -12,6 +12,7 @@ from services.github_service import (
     save_match_timeline,
     read_match_detail_analysis,
     save_match_detail_analysis,
+    get_permission_file_path,
 )
 
 from services.riot_api import ALL_CHAMPIONS, esta_en_partida, obtener_nombre_campeon, obtener_timeline_partida, RIOT_API_KEY
@@ -242,7 +243,7 @@ def analizar_partidas(puuid):
         if not tiene_permiso and not prev_analysis:
             return jsonify({
                 "error": "Permiso denegado",
-                "mensaje": f"Análisis deshabilitado para este jugador. Activa permitir_llamada=SI en config/permisos/{permission_key}.json para habilitar una consulta.",
+                "mensaje": f"Análisis deshabilitado para este jugador. Activa permitir_llamada=SI en {get_permission_file_path(permission_key, scope='jugador')} para habilitar una consulta.",
                 "puede_forzar": False
             }), 403
 
@@ -485,7 +486,7 @@ def analizar_partida_en_detalle(match_id):
         if not tiene_permiso:
             return jsonify({
                 "error": "Permiso denegado",
-                "mensaje": f"Análisis deshabilitado para esta partida. Activa permitir_llamada=SI en config/permisos_partida/{analysis_key}.json para habilitar una consulta."
+                "mensaje": f"Análisis deshabilitado para esta partida. Activa permitir_llamada=SI en {get_permission_file_path(analysis_key, scope='partida')} para habilitar una consulta."
             }), 403
 
         # Obtener timeline completo desde Riot API
