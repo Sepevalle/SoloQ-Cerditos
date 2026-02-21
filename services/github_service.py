@@ -726,28 +726,43 @@ def save_match_detail_analysis(match_id, player_key, analysis_data, sha=None):
     )
 
 
-def _get_permission_file_path(puuid, scope="jugador"):
+def _sanitize_permission_key(player_key):
+    """
+    Normaliza la clave de jugador para usarla como nombre de archivo legible y seguro.
+    Ejemplo: 'Autopsy GRU#7549' -> 'Autopsy_GRU-7549'
+    """
+    if not player_key:
+        return "unknown_player"
+    safe = str(player_key).strip()
+    safe = safe.replace(" ", "_").replace("#", "-")
+    safe = safe.replace("/", "_").replace("\\", "_").replace("..", "_")
+    return safe
+
+
+def _get_permission_file_path(player_key, scope="jugador"):
     """
     Retorna la ruta del archivo de permisos según alcance.
     scope:
-    - 'jugador' -> config/permisos/{puuid}.json
-    - 'partida' -> config/permisos_partida/{puuid}.json
+    - 'jugador' -> config/permisos/{player_key}.json
+    - 'partida' -> config/permisos_partida/{player_key}.json
     """
+    key = _sanitize_permission_key(player_key)
     if scope == "partida":
-        return f"config/permisos_partida/{puuid}.json"
-    return f"config/permisos/{puuid}.json"
+        return f"config/permisos_partida/{key}.json"
+    return f"config/permisos/{key}.json"
 
 
-def ensure_player_permission_file(puuid, scope="jugador"):
+def ensure_player_permission_file(player_key, scope="jugador"):
     """
     Crea el archivo de permisos si no existe (NO por defecto), sin consumir llamada.
     """
-    file_path = _get_permission_file_path(puuid, scope=scope)
+    file_path = _get_permission_file_path(player_key, scope=scope)
     content, sha = read_file_from_github(file_path)
     if content and isinstance(content, dict):
         return True
 
     default_content = {
+        "player_key": str(player_key),
         "permitir_llamada": "NO",
         "razon": "Deshabilitado por defecto. Habilitar manualmente en GitHub.",
         "ultima_llamada": 0,
@@ -758,23 +773,23 @@ def ensure_player_permission_file(puuid, scope="jugador"):
     return write_file_to_github(
         file_path,
         default_content,
-        message=f"Inicializar permiso ({scope}) para {puuid}",
+        message=f"Inicializar permiso ({scope}) para {player_key}",
         sha=sha
     )
 
 
-def ensure_permission_files_for_puuids(puuids):
+def ensure_permission_files_for_players(player_keys):
     """
     Asegura permisos para ambos alcances de cada PUUID detectado.
     """
-    for puuid in puuids:
-        if not puuid:
+    for player_key in player_keys:
+        if not player_key:
             continue
-        ensure_player_permission_file(puuid, scope="jugador")
-        ensure_player_permission_file(puuid, scope="partida")
+        ensure_player_permission_file(player_key, scope="jugador")
+        ensure_player_permission_file(player_key, scope="partida")
 
 
-def read_player_permission(puuid, scope="jugador"):
+def read_player_permission(player_key, scope="jugador"):
     """
     Lee el permiso de un jugador para usar análisis de IA.
     Verifica automáticamente si han pasado 24h desde la última llamada
@@ -783,7 +798,7 @@ def read_player_permission(puuid, scope="jugador"):
     Returns:
         tuple: (tiene_permiso, sha, contenido_completo, segundos_restantes)
     """
-    file_path = _get_permission_file_path(puuid, scope=scope)
+    file_path = _get_permission_file_path(player_key, scope=scope)
     content, sha = read_file_from_github(file_path)
     
     # Si no existe, crear con valores por defecto (deshabilitado por defecto)
@@ -796,7 +811,7 @@ def read_player_permission(puuid, scope="jugador"):
             "modo_forzado": False,
             "ultima_modificacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        save_player_permission(puuid, default_content, scope=scope)
+        save_player_permission(player_key, default_content, scope=scope)
         return False, None, default_content, 0
 
     # Modo de permiso manual: no auto-rehabilitar por tiempo.
@@ -816,12 +831,12 @@ def read_player_permission(puuid, scope="jugador"):
 
 
 
-def save_player_permission(puuid, content, sha=None, scope="jugador"):
+def save_player_permission(player_key, content, sha=None, scope="jugador"):
     """
     Guarda el permiso de un jugador.
     Asegura que todos los campos necesarios estén presentes.
     """
-    file_path = _get_permission_file_path(puuid, scope=scope)
+    file_path = _get_permission_file_path(player_key, scope=scope)
     
     # Asegurar campos por defecto
     if "ultima_llamada" not in content:
@@ -833,7 +848,8 @@ def save_player_permission(puuid, content, sha=None, scope="jugador"):
     if "ultima_modificacion" not in content:
         content["ultima_modificacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    return write_file_to_github(file_path, content, message=f"Actualizar permiso ({scope}) para {puuid}", sha=sha)
+    content["player_key"] = str(player_key)
+    return write_file_to_github(file_path, content, message=f"Actualizar permiso ({scope}) para {player_key}", sha=sha)
 
 
 def format_time_remaining(seconds):

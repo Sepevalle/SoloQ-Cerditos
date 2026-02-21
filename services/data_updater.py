@@ -18,7 +18,7 @@ from services.github_service import (
     read_player_match_history,
     save_player_match_history,
     read_lp_history,
-    ensure_permission_files_for_puuids,
+    ensure_permission_files_for_players,
 )
 from services.riot_api import (
     obtener_puuid, obtener_id_invocador, obtener_elo, 
@@ -58,8 +58,8 @@ def actualizar_cache_periodicamente():
             cuentas = get_all_accounts()
             puuids = get_all_puuids()
 
-            # Asegurar archivos de permisos por jugador y por partida
-            ensure_permission_files_for_puuids(puuids.values())
+            # Asegurar archivos de permisos por jugador y por partida (por Riot ID legible)
+            ensure_permission_files_for_players([riot_id for riot_id, _ in cuentas if riot_id])
             
             datos_jugadores = []
             timestamp = time.time()

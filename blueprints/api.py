@@ -150,11 +150,12 @@ def get_global_stats():
 def analizar_partidas(puuid):
     """Endpoint para análisis de partidas con Gemini AI."""
     try:
+        permission_key = get_riot_id_for_puuid(puuid) or puuid
         # Verificar permiso (nuevo sistema con tiempo)
-        tiene_permiso, permiso_sha, permiso_content, segundos_restantes = check_player_permission(puuid)
+        tiene_permiso, permiso_sha, permiso_content, segundos_restantes = check_player_permission(permission_key, scope="jugador")
         
         # Obtener info de tiempo para mostrar al usuario
-        tiempo_info = get_time_until_next_analysis(puuid)
+        tiempo_info = get_time_until_next_analysis(permission_key, scope="jugador")
 
         
         # Obtener partidas de SoloQ (últimas 5 para análisis)
@@ -241,7 +242,7 @@ def analizar_partidas(puuid):
         if not tiene_permiso and not prev_analysis:
             return jsonify({
                 "error": "Permiso denegado",
-                "mensaje": f"Análisis deshabilitado para este jugador. Activa permitir_llamada=SI en config/permisos/{puuid}.json para habilitar una consulta.",
+                "mensaje": f"Análisis deshabilitado para este jugador. Activa permitir_llamada=SI en config/permisos/{permission_key}.json para habilitar una consulta.",
                 "puede_forzar": False
             }), 403
 
@@ -256,7 +257,7 @@ def analizar_partidas(puuid):
         es_forzado = permiso_content.get('modo_forzado', False) if permiso_content else False
         
         # Bloquear permiso después de usar (con flag de forzado si aplica)
-        block_player_permission(puuid, permiso_sha, force_mode=es_forzado)
+        block_player_permission(permission_key, permiso_sha, force_mode=es_forzado, scope="jugador")
         
         if isinstance(result, tuple):
             error_result = result[0]
@@ -304,7 +305,8 @@ def get_analysis_status(puuid):
     Devuelve información sobre disponibilidad y tiempo restante.
     """
     try:
-        tiempo_info = get_time_until_next_analysis(puuid)
+        permission_key = get_riot_id_for_puuid(puuid) or puuid
+        tiempo_info = get_time_until_next_analysis(permission_key, scope="jugador")
         
         # Verificar si hay análisis previo
         from services.github_service import read_analysis
@@ -348,8 +350,9 @@ def force_analysis_enable(puuid):
     Requiere confirmación (no es automático por seguridad).
     """
     try:
+        permission_key = get_riot_id_for_puuid(puuid) or puuid
         # Verificar estado actual
-        tiempo_info = get_time_until_next_analysis(puuid)
+        tiempo_info = get_time_until_next_analysis(permission_key, scope="jugador")
         
         # Solo permitir forzar si hay tiempo restante y no está ya forzado
         if not tiempo_info.get('puede_forzar', False):
@@ -361,7 +364,7 @@ def force_analysis_enable(puuid):
             }), 400
         
         # Forzar habilitación
-        exito = force_enable_permission(puuid)
+        exito = force_enable_permission(permission_key, scope="jugador")
         
         if exito:
             return jsonify({
@@ -396,6 +399,7 @@ def analizar_partida_en_detalle(match_id):
 
         match_found = None
         owner_puuid = requested_puuid
+        owner_permission_key = requested_player_name or (get_riot_id_for_puuid(requested_puuid) if requested_puuid else None)
         owner_name = requested_player_name
 
         # 1) Intentar búsqueda rápida en el PUUID indicado
@@ -429,6 +433,7 @@ def analizar_partida_en_detalle(match_id):
                     if m.get('match_id') == match_id:
                         match_found = m
                         owner_puuid = puuid
+                        owner_permission_key = riot_id
                         owner_name = jugador_nombre
                         break
 
@@ -438,7 +443,7 @@ def analizar_partida_en_detalle(match_id):
         if not match_found:
             return jsonify({"error": "Partida no encontrada"}), 404
 
-        analysis_key = owner_puuid or requested_puuid or "global"
+        analysis_key = owner_permission_key or owner_puuid or requested_puuid or "global"
 
         # Si ya existe análisis persistido para esta partida/jugador, devolverlo directamente
         cached_analysis, _ = read_match_detail_analysis(match_id, analysis_key)
