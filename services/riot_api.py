@@ -350,6 +350,20 @@ def obtener_info_partida(args):
         team_kills = {100: 0, 200: 0}
 
         for p in participants:
+            # Obtener hechizos de invocador
+            spell1_id = p.get('summoner1Id')
+            spell2_id = p.get('summoner2Id')
+            
+            # Obtener runas
+            perks = p.get('perks', {})
+            perk_main_id = None
+            perk_sub_id = None
+            if 'styles' in perks and len(perks['styles']) > 0:
+                if len(perks['styles'][0]['selections']) > 0:
+                    perk_main_id = perks['styles'][0]['selections'][0]['perk']
+                if len(perks['styles']) > 1:
+                    perk_sub_id = perks['styles'][1]['style']
+            
             participant_summary = {
                 "summoner_name": p.get('riotIdGameName', p.get('summonerName')),
                 "champion_name": obtener_nombre_campeon(p.get('championId')),
@@ -361,7 +375,12 @@ def obtener_info_partida(args):
                 "team_id": p.get('teamId'),
                 "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
                 "vision_score": p.get('visionScore', 0),
-                "total_cs": p.get('totalMinionsKilled', 0) + p.get('neutralMinionsKilled', 0)
+                "total_cs": p.get('totalMinionsKilled', 0) + p.get('neutralMinionsKilled', 0),
+                # Añadir hechizos y runas
+                "summoner_spell_1_id": ALL_SUMMONER_SPELLS.get(spell1_id) if spell1_id else None,
+                "summoner_spell_2_id": ALL_SUMMONER_SPELLS.get(spell2_id) if spell2_id else None,
+                "perk_main_id": ALL_RUNES.get(perk_main_id) if perk_main_id else None,
+                "perk_sub_id": ALL_RUNES.get(perk_sub_id) if perk_sub_id else None,
             }
             all_participants_details.append(participant_summary)
 
