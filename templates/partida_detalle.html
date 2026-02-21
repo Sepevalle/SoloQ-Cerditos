@@ -23,6 +23,31 @@
         margin-top: 0.75rem;
     }
 
+    .result-pill {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.95rem;
+        font-weight: 800;
+        line-height: 1.1;
+        vertical-align: middle;
+        margin-right: 0.35rem;
+        color: #fff;
+    }
+
+    .result-pill.win {
+        background: #198754;
+    }
+
+    .result-pill.loss {
+        background: #dc3545;
+    }
+
+    .champion-title {
+        color: #ffffff;
+        font-weight: 700;
+    }
+
     .team-panel {
         border-radius: 0.75rem;
         padding: 1.25rem;
@@ -35,6 +60,14 @@
 
     .team-panel.red {
         background-color: rgba(220, 53, 69, 0.08);
+    }
+
+    .team-title.blue {
+        color: #0b5ed7;
+    }
+
+    .team-title.red {
+        color: #b02a37;
     }
 
     .team-roster {
@@ -219,11 +252,11 @@
         <div class="card-header bg-primary text-white py-3">
             <h4 class="mb-0">
                 {% if match.win %}
-                <span class="text-success">Victoria</span>
+                <span class="result-pill win">Victoria</span>
                 {% else %}
-                <span class="text-danger">Derrota</span>
+                <span class="result-pill loss">Derrota</span>
                 {% endif %}
-                - {{ match.champion_name }}
+                <span class="champion-title">{{ match.champion_name }}</span>
             </h4>
             <div class="match-summary-meta">
                 <span class="badge bg-light text-dark">Duracion: {{ (match.game_duration / 60) | int }}m {{ (match.game_duration % 60) | int }}s</span>
@@ -238,7 +271,7 @@
             <div class="row g-4">
                 <div class="col-12 col-xl-6">
                     <div class="team-panel blue shadow-sm">
-                        <h5 class="text-primary fw-bold mb-3">
+                        <h5 class="team-title blue fw-bold mb-3">
                             {% set team100_participants = match.all_participants | selectattr('team_id', 'equalto', 100) | list %}
                             {% set team100_won = team100_participants[0].win if team100_participants else false %}
                             {% if team100_participants %}{% if team100_won %}Victoria{% else %}Derrota{% endif %}{% endif %} - Equipo Azul
@@ -297,7 +330,7 @@
 
                 <div class="col-12 col-xl-6">
                     <div class="team-panel red shadow-sm">
-                        <h5 class="text-danger fw-bold mb-3">
+                        <h5 class="team-title red fw-bold mb-3">
                             {% set team200_participants = match.all_participants | selectattr('team_id', 'equalto', 200) | list %}
                             {% set team200_won = team200_participants[0].win if team200_participants else false %}
                             {% if team200_participants %}{% if team200_won %}Victoria{% else %}Derrota{% endif %}{% endif %} - Equipo Rojo
