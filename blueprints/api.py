@@ -237,13 +237,13 @@ def analizar_partidas(puuid):
             }
             return jsonify({"origen": "github_antiguo", **result}), 200
         
-        # Si no tiene permiso Y no hay análisis previo, forzar análisis (es el primero)
+        # Si no tiene permiso y no hay análisis previo, no generar.
         if not tiene_permiso and not prev_analysis:
-            print(f"[analizar_partidas] Primer análisis para {puuid[:8]}..., forzando generación")
-            # Forzar permiso para permitir el análisis
-            force_enable_permission(puuid)
-            # Recargar permisos
-            tiene_permiso, permiso_sha, permiso_content, segundos_restantes = check_player_permission(puuid)
+            return jsonify({
+                "error": "Permiso denegado",
+                "mensaje": f"Análisis deshabilitado para este jugador. Activa permitir_llamada=SI en config/permisos/{puuid}.json para habilitar una consulta.",
+                "puede_forzar": False
+            }), 403
 
         
         # Tiene permiso, generar nuevo análisis
@@ -460,6 +460,14 @@ def analizar_partida_en_detalle(match_id):
                 }
             }), 200
 
+        # Control de permiso manual: si no hay caché, solo generar si permitir_llamada=SI
+        tiene_permiso, permiso_sha, permiso_content, _ = check_player_permission(analysis_key)
+        if not tiene_permiso:
+            return jsonify({
+                "error": "Permiso denegado",
+                "mensaje": f"Análisis deshabilitado para este jugador. Activa permitir_llamada=SI en config/permisos/{analysis_key}.json para habilitar una consulta."
+            }), 403
+
         # Obtener timeline completo desde Riot API
         timeline_data = obtener_timeline_partida(match_id, RIOT_API_KEY)
         if not timeline_data:
@@ -492,6 +500,10 @@ def analizar_partida_en_detalle(match_id):
             "_metadata": result.get("_metadata", {}),
         }
         save_match_detail_analysis(match_id, analysis_key, analysis_doc)
+
+        # Consumir permiso tras una generación exitosa
+        es_forzado = permiso_content.get('modo_forzado', False) if permiso_content else False
+        block_player_permission(analysis_key, permiso_sha, force_mode=es_forzado)
 
         return jsonify({
             "origen": "nuevo",
