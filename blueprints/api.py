@@ -7,7 +7,12 @@ from services.match_service import get_player_match_history
 from services.stats_service import calculate_personal_records
 from services.cache_service import global_stats_cache
 from services.ai_service import check_player_permission, analyze_matches, analyze_match_detail, block_player_permission, get_time_until_next_analysis, force_enable_permission
-from services.github_service import read_match_timeline, save_match_timeline
+from services.github_service import (
+    read_match_timeline,
+    save_match_timeline,
+    read_match_detail_analysis,
+    save_match_detail_analysis,
+)
 
 from services.riot_api import ALL_CHAMPIONS, esta_en_partida, obtener_nombre_campeon, obtener_timeline_partida, RIOT_API_KEY
 
@@ -433,6 +438,28 @@ def analizar_partida_en_detalle(match_id):
         if not match_found:
             return jsonify({"error": "Partida no encontrada"}), 404
 
+        analysis_key = owner_puuid or requested_puuid or "global"
+
+        # Si ya existe análisis persistido para esta partida/jugador, devolverlo directamente
+        cached_analysis, _ = read_match_detail_analysis(match_id, analysis_key)
+        if cached_analysis:
+            cached_data = cached_analysis.get("data", {})
+            cached_meta = cached_analysis.get("_metadata", {})
+            cached_timestamp = cached_analysis.get("timestamp", 0)
+
+            return jsonify({
+                "origen": "cache_github",
+                "mensaje": "Análisis detallado recuperado desde GitHub",
+                "match_id": match_id,
+                "timeline_saved_in_github": True,
+                "data": cached_data,
+                "_metadata": {
+                    **cached_meta,
+                    "source": "github_cache_match_detail",
+                    "timestamp": cached_timestamp,
+                }
+            }), 200
+
         # Obtener timeline completo desde Riot API
         timeline_data = obtener_timeline_partida(match_id, RIOT_API_KEY)
         if not timeline_data:
@@ -454,7 +481,18 @@ def analizar_partida_en_detalle(match_id):
         if isinstance(result, tuple):
             return jsonify(result[0]), result[1]
 
+        # Persistir análisis en GitHub para reutilizarlo en reinicios/redeploy
+        analysis_doc = {
+            "match_id": match_id,
+            "player_key": analysis_key,
+            "timestamp": time.time(),
+            "data": result.get("data", {}),
+            "_metadata": result.get("_metadata", {}),
+        }
+        save_match_detail_analysis(match_id, analysis_key, analysis_doc)
+
         return jsonify({
+            "origen": "nuevo",
             "mensaje": "Análisis detallado de partida generado con Gemini",
             "match_id": match_id,
             "timeline_saved_in_github": timeline_saved,

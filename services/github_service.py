@@ -696,6 +696,36 @@ def save_match_timeline(match_id, timeline_data, sha=None):
     )
 
 
+def _sanitize_file_key(value):
+    """Normaliza una clave para usarla de forma segura en nombre de archivo."""
+    if not value:
+        return "unknown"
+    safe = str(value).replace("/", "_").replace("\\", "_").replace("..", "_")
+    return safe
+
+
+def read_match_detail_analysis(match_id, player_key=None):
+    """Lee el análisis detallado de una partida para un jugador específico."""
+    player_key_safe = _sanitize_file_key(player_key)
+    file_path = f"analisisPartida/{match_id}_{player_key_safe}.json"
+    content, sha = read_file_from_github(file_path)
+    if content and isinstance(content, dict):
+        return content, sha
+    return None, None
+
+
+def save_match_detail_analysis(match_id, player_key, analysis_data, sha=None):
+    """Guarda el análisis detallado de una partida para un jugador específico."""
+    player_key_safe = _sanitize_file_key(player_key)
+    file_path = f"analisisPartida/{match_id}_{player_key_safe}.json"
+    return write_file_to_github(
+        file_path,
+        analysis_data,
+        message=f"Guardar análisis de partida {match_id} ({player_key_safe})",
+        sha=sha
+    )
+
+
 def read_player_permission(puuid):
     """
     Lee el permiso de un jugador para usar análisis de IA.
