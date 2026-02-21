@@ -148,7 +148,10 @@ def block_player_permission(puuid, sha=None, force_mode=False, scope="jugador"):
         "modo_forzado": force_mode,
         "ultima_modificacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
-    return save_player_permission(puuid, content, sha, scope=scope)
+    saved = save_player_permission(puuid, content, sha, scope=scope)
+    if not saved:
+        print(f"[block_player_permission] Error guardando permiso en NO para {puuid} (scope={scope})")
+    return saved
 
 
 def get_time_until_next_analysis(puuid, scope="jugador"):

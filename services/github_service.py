@@ -762,7 +762,7 @@ def ensure_player_permission_file(player_key, scope="jugador"):
     Crea el archivo de permisos si no existe (NO por defecto), sin consumir llamada.
     """
     file_path = _get_permission_file_path(player_key, scope=scope)
-    content, sha = read_file_from_github(file_path)
+    content, sha = read_file_from_github(file_path, use_raw=False)
     if content and isinstance(content, dict):
         return True
 
@@ -804,7 +804,8 @@ def read_player_permission(player_key, scope="jugador"):
         tuple: (tiene_permiso, sha, contenido_completo, segundos_restantes)
     """
     file_path = _get_permission_file_path(player_key, scope=scope)
-    content, sha = read_file_from_github(file_path)
+    # Forzar lectura por API para obtener SHA y poder actualizar luego correctamente.
+    content, sha = read_file_from_github(file_path, use_raw=False)
     
     # Si no existe, crear con valores por defecto (deshabilitado por defecto)
     if not content or not isinstance(content, dict):
