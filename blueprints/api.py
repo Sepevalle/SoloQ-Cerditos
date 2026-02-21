@@ -6,7 +6,7 @@ from services.player_service import get_all_accounts, get_all_puuids, get_player
 from services.match_service import get_player_match_history
 from services.stats_service import calculate_personal_records
 from services.cache_service import global_stats_cache
-from services.ai_service import check_player_permission, analyze_matches, analyze_match_detail, block_player_permission, get_time_until_next_analysis, force_enable_permission
+from services.ai_service import check_player_permission, analyze_matches, analyze_match_detail, normalize_match_detail_output, block_player_permission, get_time_until_next_analysis, force_enable_permission
 from services.github_service import (
     read_match_timeline,
     save_match_timeline,
@@ -443,7 +443,7 @@ def analizar_partida_en_detalle(match_id):
         # Si ya existe análisis persistido para esta partida/jugador, devolverlo directamente
         cached_analysis, _ = read_match_detail_analysis(match_id, analysis_key)
         if cached_analysis:
-            cached_data = cached_analysis.get("data", {})
+            cached_data = normalize_match_detail_output(cached_analysis.get("data", {}))
             cached_meta = cached_analysis.get("_metadata", {})
             cached_timestamp = cached_analysis.get("timestamp", 0)
 
@@ -481,12 +481,14 @@ def analizar_partida_en_detalle(match_id):
         if isinstance(result, tuple):
             return jsonify(result[0]), result[1]
 
+        normalized_data = normalize_match_detail_output(result.get("data", {}))
+
         # Persistir análisis en GitHub para reutilizarlo en reinicios/redeploy
         analysis_doc = {
             "match_id": match_id,
             "player_key": analysis_key,
             "timestamp": time.time(),
-            "data": result.get("data", {}),
+            "data": normalized_data,
             "_metadata": result.get("_metadata", {}),
         }
         save_match_detail_analysis(match_id, analysis_key, analysis_doc)
@@ -496,7 +498,8 @@ def analizar_partida_en_detalle(match_id):
             "mensaje": "Análisis detallado de partida generado con Gemini",
             "match_id": match_id,
             "timeline_saved_in_github": timeline_saved,
-            **result
+            "data": normalized_data,
+            "_metadata": result.get("_metadata", {})
         }), 200
 
     except Exception as e:

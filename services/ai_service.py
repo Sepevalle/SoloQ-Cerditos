@@ -375,6 +375,7 @@ def analyze_match_detail(match, timeline_data=None, player_puuid=None, player_na
 
         result = _parse_json_response(response.text)
         result = _clean_url_encoded_strings(result)
+        result = normalize_match_detail_output(result)
 
         return {
             "data": result,
@@ -403,9 +404,34 @@ def _parse_json_response(text):
     if not text:
         raise json.JSONDecodeError("Empty response", "", 0)
 
+    expected_keys = {
+        "resumen_partida",
+        "lectura_de_linea",
+        "impacto_mid_game",
+        "impacto_late_game",
+        "errores_clave",
+        "aciertos_clave",
+        "plan_de_mejora",
+        "veredicto_final",
+    }
+
+    def score_candidate(obj):
+        if not isinstance(obj, dict):
+            return -1
+        return len(expected_keys.intersection(set(obj.keys())))
+
+    best_candidate = None
+    best_score = -1
+
     # 1) Intento directo
     try:
-        return json.loads(text)
+        direct = json.loads(text)
+        direct_score = score_candidate(direct)
+        if direct_score >= best_score:
+            best_candidate = direct
+            best_score = direct_score
+        if best_score >= 3:
+            return best_candidate
     except json.JSONDecodeError:
         pass
 
@@ -414,7 +440,13 @@ def _parse_json_response(text):
     if fenced:
         candidate = fenced.group(1).strip()
         try:
-            return json.loads(candidate)
+            obj = json.loads(candidate)
+            obj_score = score_candidate(obj)
+            if obj_score >= best_score:
+                best_candidate = obj
+                best_score = obj_score
+            if best_score >= 3:
+                return best_candidate
         except json.JSONDecodeError:
             pass
 
@@ -424,13 +456,101 @@ def _parse_json_response(text):
     for pos in start_positions:
         try:
             obj, _ = decoder.raw_decode(text[pos:])
-            return obj
+            obj_score = score_candidate(obj)
+            if obj_score >= best_score:
+                best_candidate = obj
+                best_score = obj_score
         except json.JSONDecodeError:
             continue
+
+    if best_candidate is not None:
+        return best_candidate
 
     # Si no se pudo parsear nada, lanzar error con fragmento para diagnóstico
     snippet = text[:300].replace("\n", "\\n")
     raise json.JSONDecodeError(f"Could not parse model JSON. Snippet: {snippet}", text, 0)
+
+
+def normalize_match_detail_output(data):
+    """
+    Normaliza la salida del análisis detallado para que siempre tenga las claves
+    esperadas por frontend, tolerando variantes de nombre o estructura.
+    """
+    expected = {
+        "resumen_partida": "",
+        "lectura_de_linea": "",
+        "impacto_mid_game": "",
+        "impacto_late_game": "",
+        "errores_clave": "",
+        "aciertos_clave": "",
+        "plan_de_mejora": "",
+        "veredicto_final": "",
+    }
+
+    if not isinstance(data, dict):
+        data = {"resumen_partida": str(data)}
+
+    # Si viene anidado (ej. {"data": {...}}), usar el interno
+    nested = data.get("data")
+    if isinstance(nested, dict):
+        data = nested
+
+    alias_map = {
+        "resumen_partida": [
+            "resumen_partida", "resumen", "summary", "resumenGeneral", "overview"
+        ],
+        "lectura_de_linea": [
+            "lectura_de_linea", "lectura_linea", "fase_de_linea", "laning", "lane_phase"
+        ],
+        "impacto_mid_game": [
+            "impacto_mid_game", "mid_game", "impacto_medio_juego", "midgame_impact"
+        ],
+        "impacto_late_game": [
+            "impacto_late_game", "late_game", "impacto_juego_tardio", "lategame_impact"
+        ],
+        "errores_clave": [
+            "errores_clave", "errores", "mistakes", "puntos_de_mejora"
+        ],
+        "aciertos_clave": [
+            "aciertos_clave", "aciertos", "fortalezas", "highlights", "puntos_fuertes"
+        ],
+        "plan_de_mejora": [
+            "plan_de_mejora", "plan_mejora", "improvement_plan", "recomendaciones"
+        ],
+        "veredicto_final": [
+            "veredicto_final", "veredicto", "conclusion", "final_verdict"
+        ],
+    }
+
+    normalized = {}
+    lowered = {str(k).lower(): v for k, v in data.items()}
+
+    for target_key, aliases in alias_map.items():
+        value = ""
+        for key in aliases:
+            if key in data:
+                value = data.get(key)
+                break
+            key_l = key.lower()
+            if key_l in lowered:
+                value = lowered.get(key_l)
+                break
+        if isinstance(value, (dict, list)):
+            value = json.dumps(value, ensure_ascii=False)
+        normalized[target_key] = (str(value).strip() if value is not None else "")
+
+    # fallback extra: si no hay contenido util, usar campos largos comunes
+    if not normalized["resumen_partida"]:
+        raw_text = data.get("texto") or data.get("analysis") or data.get("analisis")
+        if raw_text:
+            normalized["resumen_partida"] = str(raw_text).strip()
+
+    # asegurar todas las claves
+    for key, default_val in expected.items():
+        if key not in normalized:
+            normalized[key] = default_val
+
+    return normalized
 
 
 def _clean_url_encoded_strings(obj):
