@@ -1192,8 +1192,8 @@
                                 <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
                             </td>
                             <td>
-                                <a href="{{ url_for('player.detalle_partida', game_name=perfil.game_name, match_index=loop.index) }}" 
-                                   target="_blank" 
+                                <a href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}"
+                                   target="_blank"
                                    class="btn btn-sm btn-outline-primary" 
                                    title="Abrir detalles en nueva pestaña">
                                     <i class="fas fa-external-link-alt"></i>
