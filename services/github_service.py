@@ -662,17 +662,27 @@ def save_player_match_history(puuid, historial_data):
 
 
 def read_analysis(puuid):
-    """Lee el análisis de IA de un jugador."""
-    file_path = f"analisisIA/{puuid}.json"
+    """Lee el análisis de IA de un jugador (clave principal o legacy)."""
+    primary_key = _sanitize_permission_key(puuid)
+    file_path = f"analisisIA/{primary_key}.json"
     content, sha = read_file_from_github(file_path)
+    if content and isinstance(content, dict):
+        return content, sha
+
+    # Fallback legacy (PUUID sin sanear) para compatibilidad histórica
+    legacy_file_path = f"analisisIA/{puuid}.json"
+    content, sha = read_file_from_github(legacy_file_path)
     if content and isinstance(content, dict):
         return content, sha
     return None, None
 
 
 def save_analysis(puuid, analysis_data, sha=None):
-    """Guarda el análisis de IA de un jugador."""
-    file_path = f"analisisIA/{puuid}.json"
+    """Guarda el análisis de IA de un jugador usando clave saneada (Riot ID recomendado)."""
+    primary_key = _sanitize_permission_key(puuid)
+    file_path = f"analisisIA/{primary_key}.json"
+    if isinstance(analysis_data, dict):
+        analysis_data["player_key"] = str(puuid)
     return write_file_to_github(file_path, analysis_data, message=f"Actualizar análisis para {puuid}", sha=sha)
 
 

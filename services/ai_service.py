@@ -211,14 +211,14 @@ def force_enable_permission(puuid, scope="jugador"):
 
 
 
-def get_cached_analysis(puuid):
+def get_cached_analysis(player_key):
     """
     Obtiene el análisis cacheado de un jugador si existe.
     
     Returns:
         tuple: (analisis_dict, sha) o (None, None)
     """
-    return read_analysis(puuid)
+    return read_analysis(player_key)
 
 
 def generate_match_signature(matches):
@@ -229,7 +229,7 @@ def generate_match_signature(matches):
     return "-".join(match_ids)
 
 
-def analyze_matches(puuid, matches, player_name=None):
+def analyze_matches(puuid, matches, player_name=None, cache_key=None):
     """
     Analiza las partidas de un jugador usando Gemini AI.
     
@@ -252,7 +252,8 @@ def analyze_matches(puuid, matches, player_name=None):
     current_signature = generate_match_signature(matches)
     
     # Verificar análisis previo
-    prev_analysis, sha = get_cached_analysis(puuid)
+    analysis_cache_key = cache_key or player_name or puuid
+    prev_analysis, sha = get_cached_analysis(analysis_cache_key)
     if prev_analysis:
         prev_signature = prev_analysis.get("signature", "")
         if prev_signature == current_signature:
@@ -322,7 +323,7 @@ def analyze_matches(puuid, matches, player_name=None):
             "signature": current_signature,
             "data": result
         }
-        save_analysis(puuid, analysis_doc, sha)
+        save_analysis(analysis_cache_key, analysis_doc, sha)
         
         final = _add_metadata(result, timestamp)
         final["_metadata"]["model_used"] = model_used

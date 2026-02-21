@@ -177,7 +177,7 @@ def analizar_partidas(puuid):
         
         # Verificar análisis previo
         from services.github_service import read_analysis
-        prev_analysis, analysis_sha = read_analysis(puuid)
+        prev_analysis, analysis_sha = read_analysis(permission_key)
         
         if prev_analysis:
             prev_signature = prev_analysis.get('signature', '')
@@ -252,7 +252,7 @@ def analizar_partidas(puuid):
         riot_id = get_riot_id_for_puuid(puuid) or puuid
         player_name = get_player_display_name(riot_id) if riot_id != puuid else None
         
-        result = analyze_matches(puuid, matches_soloq, player_name)
+        result = analyze_matches(puuid, matches_soloq, player_name, cache_key=permission_key)
         
         # Determinar si es modo forzado (el permiso estaba en modo forzado)
         es_forzado = permiso_content.get('modo_forzado', False) if permiso_content else False
@@ -311,7 +311,7 @@ def get_analysis_status(puuid):
         
         # Verificar si hay análisis previo
         from services.github_service import read_analysis
-        prev_analysis, _ = read_analysis(puuid)
+        prev_analysis, _ = read_analysis(permission_key)
         
         response = {
             "disponible": tiempo_info.get('disponible', True),
