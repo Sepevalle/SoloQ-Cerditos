@@ -4,6 +4,7 @@ Servicio de integración con Gemini AI para análisis de partidas.
 
 import json
 import time
+import re
 from datetime import datetime
 
 # Import opcional de Gemini
@@ -248,8 +249,8 @@ def analyze_matches(puuid, matches, player_name=None):
             else:
                 result = response.parsed
         else:
-        # Fallback a JSON manual - usar ensure_ascii=False para preservar caracteres especiales
-            result = json.loads(response.text)
+            # Fallback robusto para respuestas con texto extra o múltiples bloques JSON
+            result = _parse_json_response(response.text)
         
         # Limpiar caracteres URL-encoded si existen en los valores
         result = _clean_url_encoded_strings(result)
@@ -372,7 +373,7 @@ def analyze_match_detail(match, timeline_data=None, player_puuid=None, player_na
             config={"response_mime_type": "application/json"},
         )
 
-        result = json.loads(response.text)
+        result = _parse_json_response(response.text)
         result = _clean_url_encoded_strings(result)
 
         return {
@@ -388,6 +389,48 @@ def analyze_match_detail(match, timeline_data=None, player_puuid=None, player_na
         if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
             return {"error": "Cuota de Gemini agotada. Espera unas horas."}, 429
         raise
+
+
+def _parse_json_response(text):
+    """
+    Parsea respuestas de modelo que deberían ser JSON, tolerando ruido alrededor.
+    Soporta:
+    - JSON puro
+    - Bloques ```json ... ```
+    - Texto con JSON + texto adicional
+    - Múltiples objetos JSON seguidos (usa el primero válido)
+    """
+    if not text:
+        raise json.JSONDecodeError("Empty response", "", 0)
+
+    # 1) Intento directo
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # 2) Intentar bloque markdown ```json ... ```
+    fenced = re.search(r"```(?:json)?\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```", text, re.IGNORECASE)
+    if fenced:
+        candidate = fenced.group(1).strip()
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            pass
+
+    # 3) Intentar encontrar primer objeto/array JSON válido en medio del texto
+    decoder = json.JSONDecoder()
+    start_positions = [i for i, ch in enumerate(text) if ch in "{["]
+    for pos in start_positions:
+        try:
+            obj, _ = decoder.raw_decode(text[pos:])
+            return obj
+        except json.JSONDecodeError:
+            continue
+
+    # Si no se pudo parsear nada, lanzar error con fragmento para diagnóstico
+    snippet = text[:300].replace("\n", "\\n")
+    raise json.JSONDecodeError(f"Could not parse model JSON. Snippet: {snippet}", text, 0)
 
 
 def _clean_url_encoded_strings(obj):
