@@ -25,7 +25,7 @@
 
     .team-panel {
         border-radius: 0.75rem;
-        padding: 1rem;
+        padding: 1.25rem;
         height: 100%;
     }
 
@@ -39,11 +39,41 @@
 
     .participant-table {
         margin-bottom: 0;
+        font-size: 0.95rem;
     }
 
     .participant-table th,
     .participant-table td {
-        white-space: nowrap;
+        padding: 0.65rem 0.55rem;
+        white-space: normal;
+        vertical-align: middle;
+    }
+
+    .participant-table th {
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
+    }
+
+    .participant-table td:nth-child(1),
+    .participant-table td:nth-child(2) {
+        min-width: 150px;
+    }
+
+    .participant-table td:nth-child(3) {
+        min-width: 95px;
+    }
+
+    .participant-table td:nth-child(6) {
+        min-width: 185px;
+    }
+
+    .participant-table img[alt="Item"] {
+        width: 25px !important;
+        height: 25px !important;
+    }
+
+    .participant-table .table-warning {
+        box-shadow: inset 0 0 0 9999px rgba(255, 193, 7, 0.2);
     }
 
     .spell-rune-container {
@@ -54,8 +84,8 @@
     }
 
     .spell-rune-container img {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         border-radius: 3px;
     }
 
@@ -65,8 +95,8 @@
     }
 
     .spell-rune-container .runes img {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
     }
 
@@ -94,6 +124,23 @@
         padding: 0.9rem;
         background: rgba(248, 249, 250, 0.65);
         height: 100%;
+    }
+
+    @media (max-width: 1200px) {
+        .participant-table {
+            font-size: 0.9rem;
+        }
+
+        .participant-table th,
+        .participant-table td {
+            padding: 0.55rem 0.45rem;
+        }
+
+        .participant-table td:nth-child(1),
+        .participant-table td:nth-child(2),
+        .participant-table td:nth-child(6) {
+            min-width: 130px;
+        }
     }
 </style>
 {% endblock %}
@@ -453,8 +500,15 @@ async function ejecutarAnalisisPartidaIA() {
 
         loader.style.display = 'none';
         content.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Reanalizar partida';
-        btn.className = 'btn btn-sm btn-primary';
+
+        if (result.origen === 'cache_github') {
+            btn.innerHTML = '<i class="fas fa-save me-2"></i>Analisis guardado';
+            btn.className = 'btn btn-sm btn-success';
+        } else {
+            btn.innerHTML = '<i class="fas fa-rotate-right me-2"></i>Reanalizar partida';
+            btn.className = 'btn btn-sm btn-primary';
+        }
+
         btn.disabled = false;
     } catch (err) {
         loader.style.display = 'none';
