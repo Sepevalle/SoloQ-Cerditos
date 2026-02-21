@@ -676,6 +676,26 @@ def save_analysis(puuid, analysis_data, sha=None):
     return write_file_to_github(file_path, analysis_data, message=f"Actualizar análisis para {puuid}", sha=sha)
 
 
+def read_match_timeline(match_id):
+    """Lee el timeline de una partida guardado en GitHub."""
+    file_path = f"timelines/{match_id}.json"
+    content, sha = read_file_from_github(file_path)
+    if content and isinstance(content, dict):
+        return content, sha
+    return None, None
+
+
+def save_match_timeline(match_id, timeline_data, sha=None):
+    """Guarda el timeline completo de una partida en GitHub."""
+    file_path = f"timelines/{match_id}.json"
+    return write_file_to_github(
+        file_path,
+        timeline_data,
+        message=f"Guardar timeline de {match_id}",
+        sha=sha
+    )
+
+
 def read_player_permission(puuid):
     """
     Lee el permiso de un jugador para usar análisis de IA.

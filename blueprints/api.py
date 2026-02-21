@@ -6,9 +6,10 @@ from services.player_service import get_all_accounts, get_all_puuids, get_player
 from services.match_service import get_player_match_history
 from services.stats_service import calculate_personal_records
 from services.cache_service import global_stats_cache
-from services.ai_service import check_player_permission, analyze_matches, block_player_permission, get_time_until_next_analysis, force_enable_permission
+from services.ai_service import check_player_permission, analyze_matches, analyze_match_detail, block_player_permission, get_time_until_next_analysis, force_enable_permission
+from services.github_service import read_match_timeline, save_match_timeline
 
-from services.riot_api import ALL_CHAMPIONS, esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
+from services.riot_api import ALL_CHAMPIONS, esta_en_partida, obtener_nombre_campeon, obtener_timeline_partida, RIOT_API_KEY
 
 import time
 
@@ -371,6 +372,97 @@ def force_analysis_enable(puuid):
             
     except Exception as e:
         print(f"[force_analysis_enable] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
+
+
+@api_bp.route('/analisis-ia/partida/<path:match_id>', methods=['GET'])
+def analizar_partida_en_detalle(match_id):
+    """
+    Analiza una partida específica con Gemini AI usando match_id.
+    """
+    try:
+        if not match_id:
+            return jsonify({"error": "match_id no proporcionado"}), 400
+
+        requested_puuid = request.args.get('puuid')
+        requested_player_name = request.args.get('player_name')
+
+        match_found = None
+        owner_puuid = requested_puuid
+        owner_name = requested_player_name
+
+        # 1) Intentar búsqueda rápida en el PUUID indicado
+        if requested_puuid:
+            historial = get_player_match_history(requested_puuid, limit=60)
+            for m in historial.get('matches', []):
+                if m.get('match_id') == match_id:
+                    match_found = m
+                    break
+
+            # fallback más amplio si no aparece en ventana corta
+            if not match_found:
+                historial = get_player_match_history(requested_puuid, limit=-1)
+                for m in historial.get('matches', []):
+                    if m.get('match_id') == match_id:
+                        match_found = m
+                        break
+
+        # 2) Si no se encontró, buscar en todos los jugadores
+        if not match_found:
+            cuentas = get_all_accounts()
+            puuids = get_all_puuids()
+
+            for riot_id, jugador_nombre in cuentas:
+                puuid = puuids.get(riot_id)
+                if not puuid:
+                    continue
+
+                historial = get_player_match_history(puuid, riot_id=riot_id, limit=60)
+                for m in historial.get('matches', []):
+                    if m.get('match_id') == match_id:
+                        match_found = m
+                        owner_puuid = puuid
+                        owner_name = jugador_nombre
+                        break
+
+                if match_found:
+                    break
+
+        if not match_found:
+            return jsonify({"error": "Partida no encontrada"}), 404
+
+        # Obtener timeline completo desde Riot API
+        timeline_data = obtener_timeline_partida(match_id, RIOT_API_KEY)
+        if not timeline_data:
+            return jsonify({
+                "error": "No se pudo obtener el timeline de Riot para esta partida"
+            }), 502
+
+        # Guardar el JSON de timeline en GitHub
+        _, timeline_sha = read_match_timeline(match_id)
+        timeline_saved = save_match_timeline(match_id, timeline_data, sha=timeline_sha)
+
+        result = analyze_match_detail(
+            match_found,
+            timeline_data=timeline_data,
+            player_puuid=owner_puuid,
+            player_name=owner_name
+        )
+
+        if isinstance(result, tuple):
+            return jsonify(result[0]), result[1]
+
+        return jsonify({
+            "mensaje": "Análisis detallado de partida generado con Gemini",
+            "match_id": match_id,
+            "timeline_saved_in_github": timeline_saved,
+            **result
+        }), 200
+
+    except Exception as e:
+        print(f"[analizar_partida_en_detalle] Error: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500

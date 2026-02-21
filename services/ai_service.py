@@ -272,6 +272,124 @@ def analyze_matches(puuid, matches, player_name=None):
         raise
 
 
+def analyze_match_detail(match, timeline_data=None, player_puuid=None, player_name=None):
+    """
+    Analiza una partida concreta en detalle usando Gemini.
+
+    Args:
+        match: Dict con los datos de la partida
+        player_puuid: PUUID del jugador principal (opcional)
+        player_name: Riot ID o nombre visible del jugador (opcional)
+
+    Returns:
+        dict | tuple: dict con análisis o (dict_error, status_code)
+    """
+    client = get_gemini_client()
+    if not client:
+        return {"error": "Gemini no configurado o librería no disponible"}, 500
+
+    if not match:
+        return {"error": "No hay datos de partida para analizar"}, 404
+
+    participants = match.get("all_participants", []) or []
+
+    def _normalize_name(name):
+        if not name:
+            return ""
+        return str(name).split("#")[0].strip().lower()
+
+    player_data = None
+    target_name = _normalize_name(player_name)
+
+    for p in participants:
+        if player_puuid and p.get("puuid") == player_puuid:
+            player_data = p
+            break
+
+    if not player_data and target_name:
+        for p in participants:
+            if _normalize_name(p.get("summoner_name")) == target_name:
+                player_data = p
+                break
+
+    if not player_data and participants:
+        player_data = participants[0]
+
+    if not player_data:
+        return {"error": "No se pudo identificar al jugador en la partida"}, 400
+
+    team_id = player_data.get("team_id")
+
+    def _compact_participant(p):
+        return {
+            "summoner_name": p.get("summoner_name"),
+            "champion": p.get("champion_name"),
+            "role": p.get("team_position") or p.get("individual_position"),
+            "win": p.get("win"),
+            "kills": p.get("kills", 0),
+            "deaths": p.get("deaths", 0),
+            "assists": p.get("assists", 0),
+            "kda": round((p.get("kills", 0) + p.get("assists", 0)) / max(1, p.get("deaths", 0)), 2),
+            "damage_to_champions": p.get("total_damage_dealt_to_champions", 0),
+            "gold_earned": p.get("gold_earned", 0),
+            "vision_score": p.get("vision_score", 0),
+            "cs": (p.get("total_minions_killed", 0) or 0) + (p.get("neutral_minions_killed", 0) or 0),
+        }
+
+    allies = [_compact_participant(p) for p in participants if p.get("team_id") == team_id and p is not player_data]
+    enemies = [_compact_participant(p) for p in participants if p.get("team_id") != team_id]
+
+    player_summary = _compact_participant(player_data)
+    player_summary["participant_id"] = player_data.get("participant_id")
+
+    match_summary = {
+        "match_id": match.get("match_id"),
+        "queue_id": match.get("queue_id"),
+        "game_duration_seconds": match.get("game_duration"),
+        "game_end_timestamp": match.get("game_end_timestamp"),
+        "player": player_summary,
+        "allies": allies,
+        "enemies": enemies,
+    }
+
+    prompt = (
+        "Eres un coach experto de League of Legends. "
+        "Analiza esta partida concreta con enfoque técnico y accionable. "
+        "Debes devolver JSON válido con estas claves exactas: "
+        "resumen_partida, lectura_de_linea, impacto_mid_game, impacto_late_game, "
+        "errores_clave, aciertos_clave, plan_de_mejora, veredicto_final. "
+        "El contenido debe estar en español, directo y útil para mejorar en SoloQ. "
+        "Incluye ejemplos concretos basados en estadísticas y eventos de esta partida, sin inventar datos. "
+        "Debes priorizar el timeline para reconstruir decisiones, tempo, peleas y objetivos minuto a minuto. "
+        f"Resumen de partida: {json.dumps(match_summary, ensure_ascii=False)}\n"
+        f"Timeline completo: {json.dumps(timeline_data or {}, ensure_ascii=False)}"
+    )
+
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config={"response_mime_type": "application/json"},
+        )
+
+        result = json.loads(response.text)
+        result = _clean_url_encoded_strings(result)
+
+        return {
+            "data": result,
+            "_metadata": {
+                "generated_at": datetime.now().strftime('%d/%m/%Y %H:%M'),
+                "source": "gemini_match_detail",
+                "match_id": match.get("match_id"),
+            },
+        }
+    except Exception as e:
+        error_str = str(e)
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+            return {"error": "Cuota de Gemini agotada. Espera unas horas."}, 429
+        raise
+
+
 def _clean_url_encoded_strings(obj):
     """
     Limpia caracteres URL-encoded de un diccionario o lista.

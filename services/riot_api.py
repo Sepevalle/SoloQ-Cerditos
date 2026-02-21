@@ -512,6 +512,45 @@ def obtener_info_partida(args):
     return None
 
 
+def obtener_timeline_partida(match_id, api_key=None):
+    """
+    Obtiene el timeline completo de una partida por match_id.
+
+    Args:
+        match_id: ID completo de la partida (ej. EUW1_1234567890)
+        api_key: API key opcional. Si no se indica, usa RIOT_API_KEY global.
+
+    Returns:
+        dict | None: JSON completo del timeline o None si falla.
+    """
+    token = api_key or RIOT_API_KEY
+    if not token:
+        print("[obtener_timeline_partida] Error: API key de Riot no configurada.")
+        return None
+
+    if not match_id:
+        print("[obtener_timeline_partida] Error: match_id vacío.")
+        return None
+
+    url = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}/timeline?api_key={token}"
+    response = make_api_request(url)
+    if not response:
+        print(f"[obtener_timeline_partida] No hubo respuesta para {match_id}.")
+        return None
+
+    if response.status_code != 200:
+        print(f"[obtener_timeline_partida] Error {response.status_code} para {match_id}.")
+        return None
+
+    try:
+        timeline = response.json()
+        print(f"[obtener_timeline_partida] Timeline obtenido para {match_id}.")
+        return timeline
+    except Exception as e:
+        print(f"[obtener_timeline_partida] Error parseando timeline de {match_id}: {e}")
+        return None
+
+
 def start_rate_limiter():
     """
     Función de inicio para el servicio de rate limiting.
