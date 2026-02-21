@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, abort
 from datetime import datetime, timezone, timedelta
 import config.settings as settings
 from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY
@@ -177,5 +177,38 @@ def perfil_jugador(game_name):
                            perfil=perfil,
                            ddragon_version=settings.DDRAGON_VERSION,
 
+                           datetime=datetime,
+                           now=datetime.now())
+
+
+@player_bp.route('/<path:game_name>/partida/<int:match_index>')
+def detalle_partida(game_name, match_index):
+    """
+    Muestra los detalles de una partida específica en una nueva página.
+    """
+    print(f"[detalle_partida] Petición recibida para partida {match_index} de {game_name}")
+    
+    perfil = _build_player_profile(game_name)
+    if not perfil:
+        print(f"[detalle_partida] Perfil de jugador {game_name} no encontrado.")
+        return render_template('404.html'), 404
+    
+    # Obtener la partida específica
+    matches = perfil.get('historial_partidas', [])
+    
+    # match_index es 1-based, convertir a 0-based
+    if match_index < 1 or match_index > len(matches):
+        print(f"[detalle_partida] Índice de partida inválido: {match_index}")
+        return render_template('404.html'), 404
+    
+    match = matches[match_index - 1]
+    
+    print(f"[detalle_partida] Mostrando detalles de partida: {match.get('match_id', 'N/A')}")
+    
+    return render_template('jugador.html',
+                           perfil=perfil,
+                           ddragon_version=settings.DDRAGON_VERSION,
+                           detalle_partida=match,
+                           detalle_match_index=match_index,
                            datetime=datetime,
                            now=datetime.now())

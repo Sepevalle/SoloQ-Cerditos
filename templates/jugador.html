@@ -1007,6 +1007,7 @@
                             <th>LP</th> {# Nueva columna para LP #}
                             <th>Duración</th>
                             <th>Resultado / Fecha</th>
+                            <th>Abrir</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1189,6 +1190,14 @@
                                 {{ 'Victoria' if match.win else 'Derrota' }}
                                 <br>
                                 <span class="small-text-stats">{{ match.game_end_timestamp | format_timestamp }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('player.detalle_partida', game_name=perfil.game_name, match_index=loop.index) }}" 
+                                   target="_blank" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="Abrir detalles en nueva pestaña">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
                             </td>
                         </tr>
                         {% if match.all_participants %}
