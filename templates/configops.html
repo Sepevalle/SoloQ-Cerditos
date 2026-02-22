@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Config Operativa{% endblock %}
+
+{% block nav_items %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .ops-card { border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 0.75rem; background: #fff; }
+    .tiny-note { font-size: 0.85rem; color: #6c757d; }
+    .code-path { font-size: 0.78rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="mb-0">Config Operativa</h1>
+            <div class="tiny-note">Ruta privada: <code>/configops</code> (sin enlace en menus).</div>
+        </div>
+    </div>
+
+    {% if status_message %}
+    <div class="alert alert-{{ status_kind }} mb-3">{{ status_message }}</div>
+    {% endif %}
+
+    <div class="card ops-card mb-4">
+        <div class="card-body">
+            <h5 class="mb-3">Stats Globales</h5>
+            <form method="post" class="row g-3 align-items-end mb-3">
+                <input type="hidden" name="action" value="save_stats_reload">
+                <div class="col-12 col-md-3">
+                    <label class="form-label">forzar_recarga</label>
+                    <select name="forzar_recarga" class="form-select">
+                        <option value="SI" {% if forzar_recarga == "SI" %}selected{% endif %}>SI</option>
+                        <option value="NO" {% if forzar_recarga != "SI" %}selected{% endif %}>NO</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-7">
+                    <label class="form-label">Razon</label>
+                    <input type="text" name="razon_reload" class="form-control" value="{{ razon_reload or '' }}" placeholder="Motivo del cambio">
+                </div>
+                <div class="col-12 col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+            <div class="d-flex gap-2 align-items-center">
+                <button id="btnRefreshStatsNow" type="button" class="btn btn-outline-success btn-sm">Refrescar stats ahora</button>
+                <span id="refreshStatsResult" class="tiny-note"></span>
+            </div>
+            <div class="tiny-note mt-2">
+                Boton "Refrescar stats ahora" llama a <code>/api/update-global-stats</code>.
+            </div>
+        </div>
+    </div>
+
+    <div class="card ops-card">
+        <div class="card-body">
+            <h5 class="mb-3">Permisos de Analisis IA</h5>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Jugador</th>
+                            <th>Riot ID</th>
+                            <th>Permiso Analisis Jugador</th>
+                            <th>Permiso Analisis Partida</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in players %}
+                        <tr>
+                            <td>{{ p.display_name or "-" }}</td>
+                            <td><code>{{ p.riot_id }}</code></td>
+                            <td>
+                                <form method="post" class="row g-2">
+                                    <input type="hidden" name="action" value="save_permission">
+                                    <input type="hidden" name="scope" value="jugador">
+                                    <input type="hidden" name="player_key" value="{{ p.player_key }}">
+                                    <div class="col-12 col-lg-3">
+                                        <select name="permitir_llamada" class="form-select form-select-sm">
+                                            <option value="SI" {% if p.perm_jugador == "SI" %}selected{% endif %}>SI</option>
+                                            <option value="NO" {% if p.perm_jugador != "SI" %}selected{% endif %}>NO</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-lg-7">
+                                        <input type="text" name="razon" class="form-control form-control-sm" value="{{ p.reason_jugador or '' }}" placeholder="Razon (opcional)">
+                                        <div class="code-path text-muted code-path"><code>{{ p.path_jugador }}</code></div>
+                                    </div>
+                                    <div class="col-12 col-lg-2 d-grid">
+                                        <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="post" class="row g-2">
+                                    <input type="hidden" name="action" value="save_permission">
+                                    <input type="hidden" name="scope" value="partida">
+                                    <input type="hidden" name="player_key" value="{{ p.player_key }}">
+                                    <div class="col-12 col-lg-3">
+                                        <select name="permitir_llamada" class="form-select form-select-sm">
+                                            <option value="SI" {% if p.perm_partida == "SI" %}selected{% endif %}>SI</option>
+                                            <option value="NO" {% if p.perm_partida != "SI" %}selected{% endif %}>NO</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-lg-7">
+                                        <input type="text" name="razon" class="form-control form-control-sm" value="{{ p.reason_partida or '' }}" placeholder="Razon (opcional)">
+                                        <div class="code-path text-muted code-path"><code>{{ p.path_partida }}</code></div>
+                                    </div>
+                                    <div class="col-12 col-lg-2 d-grid">
+                                        <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+    const btn = document.getElementById("btnRefreshStatsNow");
+    const out = document.getElementById("refreshStatsResult");
+    if (!btn || !out) return;
+    btn.addEventListener("click", async () => {
+        out.textContent = "Ejecutando...";
+        btn.disabled = true;
+        try {
+            const r = await fetch("/api/update-global-stats", { method: "POST" });
+            const data = await r.json();
+            if (r.ok && data.status === "success") {
+                out.textContent = `OK: ${data.total_matches || 0} partidas procesadas.`;
+            } else {
+                out.textContent = `Error: ${data.message || data.error || "No disponible"}`;
+            }
+        } catch (err) {
+            out.textContent = `Error de red: ${err}`;
+        } finally {
+            btn.disabled = false;
+        }
+    });
+})();
+</script>
+{% endblock %}

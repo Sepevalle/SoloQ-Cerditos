@@ -10,9 +10,18 @@ from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS
 from services.cache_service import player_cache, player_stats_cache
 
 from services.github_service import read_peak_elo, save_peak_elo, read_lp_history
+from services.github_service import (
+    read_player_permission,
+    save_player_permission,
+    get_permission_file_path,
+    ensure_permission_files_for_players,
+    read_stats_reload_config,
+    save_stats_reload_config,
+)
 from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
 from services.riot_api import esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
+from services.player_service import get_all_players_with_puuids
 from services.achievements_service import (
     calculate_global_achievements,
     get_achievements_config_document,
@@ -361,6 +370,106 @@ def configsv():
         )
     except Exception as e:
         print(f"[configsv] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return render_template('404.html'), 500
+
+
+@main_bp.route('/configops', methods=['GET', 'POST'])
+def configops():
+    """
+    Panel privado de operaciones:
+    - Permisos de analisis IA por jugador (scope jugador / partida)
+    - Config de recarga forzada de estadisticas
+    """
+    status_message = None
+    status_kind = "info"
+
+    try:
+        players = get_all_players_with_puuids()
+        player_keys = [riot_id for riot_id, _display, _puuid in players if riot_id]
+        ensure_permission_files_for_players(player_keys)
+
+        if request.method == 'POST':
+            action = (request.form.get('action') or '').strip()
+
+            if action == 'save_permission':
+                player_key = (request.form.get('player_key') or '').strip()
+                scope = (request.form.get('scope') or 'jugador').strip().lower()
+                if scope not in ('jugador', 'partida'):
+                    scope = 'jugador'
+                permitir = (request.form.get('permitir_llamada') or 'NO').strip().upper()
+                permitir = "SI" if permitir == "SI" else "NO"
+                razon = (request.form.get('razon') or '').strip()
+
+                if not player_key:
+                    status_message = "player_key vacio."
+                    status_kind = "danger"
+                else:
+                    _, permiso_sha, content, _ = read_player_permission(player_key, scope=scope)
+                    if not isinstance(content, dict):
+                        content = {}
+                    content["permitir_llamada"] = permitir
+                    content["razon"] = razon or ("Habilitado manualmente desde /configops." if permitir == "SI" else "Deshabilitado manualmente desde /configops.")
+                    content["modo_forzado"] = False
+                    content["ultima_modificacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    ok = save_player_permission(player_key, content, sha=permiso_sha, scope=scope)
+                    if ok:
+                        status_message = f"Permiso actualizado: {player_key} ({scope}) -> {permitir}."
+                        status_kind = "success"
+                    else:
+                        status_message = f"No se pudo guardar permiso para {player_key} ({scope})."
+                        status_kind = "danger"
+
+            elif action == 'save_stats_reload':
+                forzar = (request.form.get('forzar_recarga') or 'NO').strip().upper()
+                forzar = "SI" if forzar == "SI" else "NO"
+                razon = (request.form.get('razon_reload') or '').strip()
+                _, reload_sha, reload_content = read_stats_reload_config()
+                if not isinstance(reload_content, dict):
+                    reload_content = {}
+                reload_content["forzar_recarga"] = forzar
+                reload_content["razon"] = razon or ("Habilitado manualmente desde /configops." if forzar == "SI" else "Deshabilitado manualmente desde /configops.")
+                ok = save_stats_reload_config(reload_content, sha=reload_sha)
+                if ok:
+                    status_message = f"Config stats_reload guardada: {forzar}."
+                    status_kind = "success"
+                else:
+                    status_message = "No se pudo guardar config stats_reload."
+                    status_kind = "danger"
+
+        rows = []
+        for riot_id, display_name, puuid in players:
+            player_key = riot_id
+            p_ok, _p_sha, p_content, _ = read_player_permission(player_key, scope='jugador')
+            m_ok, _m_sha, m_content, _ = read_player_permission(player_key, scope='partida')
+            rows.append({
+                "riot_id": riot_id,
+                "display_name": display_name,
+                "puuid": puuid,
+                "player_key": player_key,
+                "perm_jugador": "SI" if p_ok else "NO",
+                "perm_partida": "SI" if m_ok else "NO",
+                "reason_jugador": (p_content or {}).get("razon", ""),
+                "reason_partida": (m_content or {}).get("razon", ""),
+                "path_jugador": get_permission_file_path(player_key, scope='jugador'),
+                "path_partida": get_permission_file_path(player_key, scope='partida'),
+            })
+
+        forzar_recarga, _reload_sha, reload_content = read_stats_reload_config()
+
+        return render_template(
+            'configops.html',
+            players=rows,
+            forzar_recarga="SI" if forzar_recarga else "NO",
+            razon_reload=(reload_content or {}).get("razon", ""),
+            status_message=status_message,
+            status_kind=status_kind,
+            ddragon_version=settings.DDRAGON_VERSION,
+            has_player_data=True,
+        )
+    except Exception as e:
+        print(f"[configops] Error: {e}")
         import traceback
         traceback.print_exc()
         return render_template('404.html'), 500
