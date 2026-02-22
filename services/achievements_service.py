@@ -1109,6 +1109,31 @@ def _calculate_max_possible_points(active_achievements):
         total += max(t["points"] for t in tiers)
     return total
 
+
+def _competitive_points_for_achievement(definition, signed_points):
+    if definition.get("secret"):
+        return int(round(signed_points * SECRET_POINTS_WEIGHT))
+    return signed_points
+
+
+def _decorate_tiers_for_display(definition):
+    tiers = _get_achievement_tiers(definition)
+    decorated = []
+    for tier in tiers:
+        raw_points = int(tier["points"])
+        signed_points = -raw_points if definition.get("kind") == "bad" else raw_points
+        competitive_points = _competitive_points_for_achievement(definition, signed_points)
+        decorated.append(
+            {
+                **tier,
+                "raw_points": raw_points,
+                "competitive_points": competitive_points,
+                "display_points_abs": abs(competitive_points),
+            }
+        )
+    return decorated
+
+
 def _get_achievement_tiers(definition):
     custom_tiers = definition.get("rank_tiers") or []
     if custom_tiers:
@@ -1285,9 +1310,7 @@ def calculate_global_achievements():
             if stat["kind"] == "bad":
                 signed_points = -signed_points
             # Secret achievements only provide a small bonus to competitive points.
-            competitive_points = signed_points
-            if stat.get("secret"):
-                competitive_points = int(round(signed_points * SECRET_POINTS_WEIGHT))
+            competitive_points = _competitive_points_for_achievement(definition, signed_points)
             stat["rank_points"] = competitive_points
             stat["raw_rank_points"] = signed_points
 
@@ -1389,7 +1412,7 @@ def calculate_global_achievements():
                 "achievers_count": len(achievers),
                 "total_hits": total_hits,
                 "global_rank": _build_achievement_rank(definition, total_hits),
-                "rank_tiers": _get_achievement_tiers(definition),
+                "rank_tiers": _decorate_tiers_for_display(definition),
             }
         )
 
@@ -1425,7 +1448,7 @@ def calculate_global_achievements():
                 "achievers_count": len(achievers),
                 "total_hits": total_hits,
                 "global_rank": _build_achievement_rank(definition, total_hits),
-                "rank_tiers": _get_achievement_tiers(definition),
+                "rank_tiers": _decorate_tiers_for_display(definition),
             }
         )
 
@@ -1440,6 +1463,7 @@ def calculate_global_achievements():
         "max_possible_secret": len(secret_catalog),
         "max_possible_points": max_possible_points,
         "challenger_min_points": int(round(max_possible_points * CHALLENGER_PCT)),
+        "secret_points_weight_pct": int(round(SECRET_POINTS_WEIGHT * 100)),
         "config_source": config_source,
         "config_errors_count": len(config_errors),
         "match_filters": match_filters,

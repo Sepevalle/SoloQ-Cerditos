@@ -183,7 +183,7 @@
                             <div class="mb-2">
                                 {% for tier in a.rank_tiers %}
                                 <span class="achievement-chip {% if a.kind == 'good' %}chip-good{% else %}chip-bad{% endif %}">
-                                    {{ tier.name }}: {{ tier.min_count }}+ | {% if a.kind == 'bad' %}-{% else %}+{% endif %}{{ tier.points }}
+                                    {{ tier.name }}: {{ tier.min_count }}+ | {% if tier.competitive_points > 0 %}+{% elif tier.competitive_points < 0 %}-{% else %}±{% endif %}{{ tier.display_points_abs }}
                                 </span>
                                 {% endfor %}
                             </div>
@@ -227,10 +227,15 @@
                             <div class="mb-2">
                                 {% for tier in s.rank_tiers %}
                                 <span class="achievement-chip {% if s.locked %}chip-locked{% else %}chip-secret{% endif %}">
-                                    {{ tier.name }}: {{ tier.min_count }}+ | {% if s.kind == 'bad' %}-{% else %}+{% endif %}{{ tier.points }}
+                                    {{ tier.name }}: {{ tier.min_count }}+ | {% if tier.competitive_points > 0 %}+{% elif tier.competitive_points < 0 %}-{% else %}±{% endif %}{{ tier.display_points_abs }}
                                 </span>
                                 {% endfor %}
                             </div>
+                            {% if s.rank_tiers and s.rank_tiers[0].raw_points is defined %}
+                            <div class="small text-muted mb-2">
+                                Puntos secretos ajustados al {{ global_stats.secret_points_weight_pct | default(10) }}% para ranking.
+                            </div>
+                            {% endif %}
                             <div class="achievers-list">
                                 {% if s.achievers %}
                                 {% for who in s.achievers %}
