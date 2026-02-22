@@ -13,8 +13,8 @@
       "name": "Instinto Asesino",
       "op": "ge",
       "points": 15,
-      "threshold": 10,
-      "secret": false
+      "secret": false,
+      "threshold": 10
     },
     {
       "description": "Consigue 15 o mas kills en una partida.",
@@ -26,7 +26,8 @@
       "name": "Rampage Legendario",
       "op": "ge",
       "points": 30,
-      "threshold": 15
+      "threshold": 15,
+      "secret": false
     },
     {
       "description": "Consigue 20 o mas asistencias en una partida.",
@@ -109,6 +110,7 @@
       "name": "Farmeador Pro",
       "op": "ge",
       "points": 16,
+      "secret": false,
       "threshold": 8
     },
     {
@@ -151,7 +153,7 @@
       "threshold": 5
     },
     {
-      "description": "Baja de 4 CS/min en partidas largas.",
+      "description": "Baja de 4 CS/min en partidas largas. (No support)",
       "difficulty": "medium",
       "extra": {
         "min_duration": 1200,
@@ -166,8 +168,8 @@
       "name": "Farm Fantasma",
       "op": "lt",
       "points": -8,
-      "threshold": 4,
-      "secret": false
+      "secret": false,
+      "threshold": 4
     },
     {
       "description": "K+A <= 2 y 6 o mas muertes.",
@@ -179,8 +181,7 @@
       "name": "Impacto Invisible",
       "op": "eq",
       "points": -10,
-      "threshold": 1,
-      "secret": false
+      "threshold": 1
     },
     {
       "description": "Logro secreto: gana con KDA dominante y pocas muertes.",
@@ -246,22 +247,6 @@
       "points": 16,
       "secret": true,
       "threshold": 8
-    },
-    {
-      "key": "nuevo_secreto",
-      "name": "Asesino Inseaciable",
-      "description": "Gana con una racha de 30 asesinatos",
-      "points": 99,
-      "kind": "good",
-      "metric": "largest_killing_spree",
-      "op": "ge",
-      "threshold": 30,
-      "extra": {
-        "win": true
-      },
-      "secret": true,
-      "difficulty": "extreme",
-      "max_ranks": 1
     }
   ]
 }
