@@ -31,6 +31,17 @@
     .chip-good { background: rgba(25, 135, 84, 0.14); color: #146c43; border: 1px solid rgba(25, 135, 84, 0.25); }
     .chip-bad { background: rgba(220, 53, 69, 0.14); color: #b02a37; border: 1px solid rgba(220, 53, 69, 0.25); }
     .chip-secret { background: rgba(111, 66, 193, 0.14); color: #59359c; border: 1px solid rgba(111, 66, 193, 0.25); }
+    .chip-locked { background: rgba(108, 117, 125, 0.15); color: #495057; border: 1px dashed rgba(108, 117, 125, 0.6); }
+    .secret-card-locked {
+        background: repeating-linear-gradient(
+            -45deg,
+            rgba(108, 117, 125, 0.08),
+            rgba(108, 117, 125, 0.08) 10px,
+            rgba(108, 117, 125, 0.12) 10px,
+            rgba(108, 117, 125, 0.12) 20px
+        );
+        border: 1px dashed rgba(108, 117, 125, 0.6);
+    }
     .level-badge {
         border-radius: 999px;
         padding: 0.25rem 0.55rem;
@@ -84,7 +95,7 @@
         </div>
     </div>
 
-    <ul class="nav nav-tabs mb-3" id="logrosTabs" role="tablist">
+    <ul class="nav nav-tabs mb-3" role="tablist">
         <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ranking-tab-pane" type="button" role="tab">Clasificacion</button></li>
         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#players-tab-pane" type="button" role="tab">Jugadores</button></li>
         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#catalog-tab-pane" type="button" role="tab">Catalogo</button></li>
@@ -128,16 +139,7 @@
                     </tbody>
                 </table>
             </div>
-
-            <div class="card section-card shadow-sm mt-3">
-                <div class="card-body">
-                    <h5 class="mb-2">Sistema de rangos de desafio</h5>
-                    <div class="small text-muted mb-2">Cada logro sube por rangos segun cuantas veces lo completas. Los puntos no crecen linealmente por partida.</div>
-                    {% for t in challenge_tiers %}
-                    <span class="achievement-chip chip-good">{{ t.name }} ({{ t.min_count }}+)</span>
-                    {% endfor %}
-                </div>
-            </div>
+            <div class="small text-muted mt-2">Cada desafio tiene rangos propios (maximo 5). Algunos, por dificultad, solo tienen 1 rango.</div>
         </div>
 
         <div class="tab-pane fade" id="players-tab-pane" role="tabpanel" tabindex="0">
@@ -206,21 +208,23 @@
         </div>
 
         <div class="tab-pane fade" id="secret-tab-pane" role="tabpanel" tabindex="0">
-            {% if secret_achievements_unlocked %}
             <div class="row g-3">
-                {% for s in secret_achievements_unlocked %}
+                {% for s in secret_achievements_view %}
                 <div class="col-12 col-lg-6">
-                    <div class="card section-card shadow-sm h-100">
+                    <div class="card section-card shadow-sm h-100 {% if s.locked %}secret-card-locked{% endif %}">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div>
                                     <h5 class="mb-0">{{ s.name }}</h5>
                                     <small class="text-muted">{{ s.description }}</small>
                                 </div>
-                                <span class="achievement-chip chip-secret">{{ s.global_rank.tier_name }} | {{ s.total_hits }} hits</span>
+                                <span class="achievement-chip {% if s.locked %}chip-locked{% else %}chip-secret{% endif %}">
+                                    {{ s.global_rank.tier_name }} | {{ s.total_hits }} hits
+                                </span>
                             </div>
                             <div class="small text-muted mb-2">Jugadores que lo consiguieron: <strong>{{ s.achievers_count }}</strong></div>
                             <div class="achievers-list">
+                                {% if s.achievers %}
                                 {% for who in s.achievers %}
                                 <div class="achiever-item">
                                     <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
@@ -228,15 +232,15 @@
                                     <small class="text-muted">Veces: {{ who.count }} | Rango: {{ who.challenge_rank.tier_name }} | Nivel: {{ who.level_name }}</small>
                                 </div>
                                 {% endfor %}
+                                {% else %}
+                                <div class="text-muted">Secreto sin descubrir.</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            {% else %}
-            <div class="alert alert-secondary mb-0">Todavia no se ha descubierto ningun logro secreto.</div>
-            {% endif %}
         </div>
     </div>
 </div>

@@ -19,6 +19,8 @@ ACHIEVEMENTS = [
         "metric": "kills",
         "op": "ge",
         "threshold": 10,
+        "difficulty": "easy",
+        "max_ranks": 5,
     },
     {
         "key": "legendary_rampage",
@@ -29,6 +31,8 @@ ACHIEVEMENTS = [
         "metric": "kills",
         "op": "ge",
         "threshold": 15,
+        "difficulty": "hard",
+        "max_ranks": 2,
     },
     {
         "key": "assist_king",
@@ -39,6 +43,8 @@ ACHIEVEMENTS = [
         "metric": "assists",
         "op": "ge",
         "threshold": 20,
+        "difficulty": "medium",
+        "max_ranks": 4,
     },
     {
         "key": "no_death_hero",
@@ -50,6 +56,12 @@ ACHIEVEMENTS = [
         "op": "eq",
         "threshold": 0,
         "extra": {"win": True},
+        "rank_tiers": [
+            {"name": "Rango I", "min_count": 1, "points": 8},
+            {"name": "Rango II", "min_count": 3, "points": 16},
+            {"name": "Rango III", "min_count": 5, "points": 24},
+            {"name": "Rango IV", "min_count": 10, "points": 35},
+        ],
     },
     {
         "key": "vision_lord",
@@ -60,6 +72,8 @@ ACHIEVEMENTS = [
         "metric": "vision_score",
         "op": "ge",
         "threshold": 40,
+        "difficulty": "medium",
+        "max_ranks": 5,
     },
     {
         "key": "damage_monster",
@@ -70,6 +84,8 @@ ACHIEVEMENTS = [
         "metric": "total_damage_dealt_to_champions",
         "op": "ge",
         "threshold": 35000,
+        "difficulty": "medium",
+        "max_ranks": 4,
     },
     {
         "key": "farmer_pro",
@@ -80,6 +96,8 @@ ACHIEVEMENTS = [
         "metric": "cs_per_min",
         "op": "ge",
         "threshold": 8.0,
+        "difficulty": "hard",
+        "max_ranks": 3,
     },
     {
         "key": "objective_hunter",
@@ -90,6 +108,8 @@ ACHIEVEMENTS = [
         "metric": "objectives_total",
         "op": "ge",
         "threshold": 5,
+        "difficulty": "hard",
+        "max_ranks": 3,
     },
     {
         "key": "feed_alarm",
@@ -100,6 +120,8 @@ ACHIEVEMENTS = [
         "metric": "deaths",
         "op": "ge",
         "threshold": 10,
+        "difficulty": "easy",
+        "max_ranks": 5,
     },
     {
         "key": "dark_game",
@@ -111,6 +133,8 @@ ACHIEVEMENTS = [
         "op": "le",
         "threshold": 5,
         "extra": {"min_duration": 1200},
+        "difficulty": "medium",
+        "max_ranks": 4,
     },
     {
         "key": "afk_farm",
@@ -122,6 +146,8 @@ ACHIEVEMENTS = [
         "op": "lt",
         "threshold": 4.0,
         "extra": {"min_duration": 1200},
+        "difficulty": "medium",
+        "max_ranks": 4,
     },
     {
         "key": "invisible_impact",
@@ -132,6 +158,8 @@ ACHIEVEMENTS = [
         "metric": "low_impact_flag",
         "op": "eq",
         "threshold": 1,
+        "difficulty": "hard",
+        "max_ranks": 3,
     },
     {
         "key": "flawless_commander",
@@ -144,6 +172,8 @@ ACHIEVEMENTS = [
         "threshold": 12,
         "extra": {"win": True, "max_deaths": 2, "min_assists": 10},
         "secret": True,
+        "difficulty": "extreme",
+        "max_ranks": 1,
     },
     {
         "key": "vision_ghost",
@@ -156,6 +186,8 @@ ACHIEVEMENTS = [
         "threshold": 55,
         "extra": {"max_deaths": 3},
         "secret": True,
+        "difficulty": "extreme",
+        "max_ranks": 1,
     },
     {
         "key": "tower_reaper",
@@ -167,6 +199,8 @@ ACHIEVEMENTS = [
         "op": "ge",
         "threshold": 5,
         "secret": True,
+        "difficulty": "extreme",
+        "max_ranks": 1,
     },
     {
         "key": "phoenix_game",
@@ -179,6 +213,8 @@ ACHIEVEMENTS = [
         "threshold": 8,
         "extra": {"win": True, "min_kills": 8, "min_assists": 8},
         "secret": True,
+        "difficulty": "extreme",
+        "max_ranks": 1,
     },
 ]
 
@@ -197,21 +233,14 @@ LEVELS = [
     {"key": "challenger", "name": "Challenger", "min_points": 2200},
 ]
 
-CHALLENGE_TIERS = [
-    {"key": "unranked", "name": "Sin rango", "min_count": 0, "points": 0},
-    {"key": "bronze", "name": "Bronce", "min_count": 1, "points": 4},
-    {"key": "silver", "name": "Plata", "min_count": 3, "points": 8},
-    {"key": "gold", "name": "Oro", "min_count": 6, "points": 13},
-    {"key": "platinum", "name": "Platino", "min_count": 10, "points": 19},
-    {"key": "emerald", "name": "Esmeralda", "min_count": 15, "points": 26},
-    {"key": "diamond", "name": "Diamante", "min_count": 22, "points": 34},
-    {"key": "master", "name": "Master", "min_count": 32, "points": 44},
-    {"key": "grandmaster", "name": "Grandmaster", "min_count": 45, "points": 56},
-    {"key": "challenger", "name": "Challenger", "min_count": 60, "points": 70},
-]
-CHALLENGER_MIN_COUNT = 60
-PRESTIGE_STEP = 20
-PRESTIGE_BONUS = 5
+RANK_LABELS = ["I", "II", "III", "IV", "V"]
+RANK_FACTOR_BY_INDEX = [0.45, 0.65, 0.85, 1.1, 1.35]
+DIFFICULTY_STEPS = {
+    "easy": [1, 3, 5, 10, 15],
+    "medium": [1, 2, 4, 7, 12],
+    "hard": [1, 2, 3, 5, 8],
+    "extreme": [1],
+}
 
 
 def _metric_value(match, metric):
@@ -353,38 +382,82 @@ def _build_level_info(total_points):
         "level_progress_pct": progress,
     }
 
-def _build_challenge_rank(count):
-    base = CHALLENGE_TIERS[0]
+def _get_achievement_tiers(definition):
+    custom_tiers = definition.get("rank_tiers") or []
+    if custom_tiers:
+        tiers = []
+        for idx, item in enumerate(custom_tiers[:5]):
+            tiers.append(
+                {
+                    "tier_key": f"tier_{idx + 1}",
+                    "name": item.get("name") or f'Rango {RANK_LABELS[idx]}',
+                    "min_count": int(item.get("min_count", 1)),
+                    "points": int(item.get("points", 1)),
+                }
+            )
+        return tiers
+
+    difficulty = definition.get("difficulty", "medium")
+    steps = DIFFICULTY_STEPS.get(difficulty, DIFFICULTY_STEPS["medium"])
+    max_ranks = max(1, min(5, int(definition.get("max_ranks", 5))))
+    steps = steps[:max_ranks]
+
+    base_points = max(1, abs(int(definition.get("points", 1))))
+    tiers = []
+    for idx, step in enumerate(steps):
+        factor = RANK_FACTOR_BY_INDEX[idx]
+        if max_ranks == 1:
+            factor = 1.0
+        points = max(1, int(round(base_points * factor)))
+        tiers.append(
+            {
+                "tier_key": f"tier_{idx + 1}",
+                "name": f'Rango {RANK_LABELS[idx]}',
+                "min_count": int(step),
+                "points": points,
+            }
+        )
+    return tiers
+
+
+def _build_achievement_rank(definition, count):
+    tiers = _get_achievement_tiers(definition)
+    if not tiers:
+        return {
+            "tier_key": "unranked",
+            "tier_name": "Sin rango",
+            "tier_points": 0,
+            "points_to_next_tier": 0,
+            "next_tier_name": None,
+            "max_tier_reached": False,
+        }
+
+    current = None
     next_tier = None
-    for tier in CHALLENGE_TIERS:
+    for tier in tiers:
         if count >= tier["min_count"]:
-            base = tier
+            current = tier
         elif next_tier is None:
             next_tier = tier
             break
 
-    prestige_level = 0
-    if count > CHALLENGER_MIN_COUNT:
-        prestige_level = (count - CHALLENGER_MIN_COUNT) // PRESTIGE_STEP
-
-    tier_points = base["points"] + (prestige_level * PRESTIGE_BONUS)
-    tier_name = base["name"] if prestige_level <= 0 else f'{base["name"]} +{prestige_level}'
-
-    if next_tier is None:
-        points_to_next = PRESTIGE_STEP - ((count - CHALLENGER_MIN_COUNT) % PRESTIGE_STEP) if count >= CHALLENGER_MIN_COUNT else 0
-        next_name = "Prestigio"
-    else:
-        points_to_next = max(0, next_tier["min_count"] - count)
-        next_name = next_tier["name"]
+    if current is None:
+        return {
+            "tier_key": "unranked",
+            "tier_name": "Sin rango",
+            "tier_points": 0,
+            "points_to_next_tier": max(0, tiers[0]["min_count"] - count),
+            "next_tier_name": tiers[0]["name"],
+            "max_tier_reached": False,
+        }
 
     return {
-        "tier_key": base["key"],
-        "tier_name": tier_name,
-        "tier_points": tier_points,
-        "tier_base_points": base["points"],
-        "tier_prestige": prestige_level,
-        "points_to_next_tier": points_to_next,
-        "next_tier_name": next_name,
+        "tier_key": current["tier_key"],
+        "tier_name": current["name"],
+        "tier_points": current["points"],
+        "points_to_next_tier": 0 if next_tier is None else max(0, next_tier["min_count"] - count),
+        "next_tier_name": None if next_tier is None else next_tier["name"],
+        "max_tier_reached": next_tier is None,
     }
 
 
@@ -469,9 +542,12 @@ def calculate_global_achievements():
         )
         unlocked_keys = set(by_key.keys())
 
-        # Puntos por rangos de desafio (estilo ligas), no lineal por cada repeticion.
+        definition_by_key = {a["key"]: a for a in ACHIEVEMENTS}
+
+        # Puntos por rangos por desafio individual.
         for stat in achievement_stats:
-            rank_info = _build_challenge_rank(stat["count"])
+            definition = definition_by_key.get(stat["key"], {})
+            rank_info = _build_achievement_rank(definition, stat["count"])
             stat.update(rank_info)
             signed_points = rank_info["tier_points"]
             if stat["kind"] == "bad":
@@ -489,14 +565,27 @@ def calculate_global_achievements():
         for secret_def in secret_catalog:
             if secret_def["key"] in unlocked_keys:
                 secret_stats.append(dict(by_key[secret_def["key"]], locked=False))
+            else:
+                secret_stats.append(
+                    {
+                        "key": secret_def["key"],
+                        "name": "???",
+                        "description": "Logro secreto aun no descubierto.",
+                        "points": secret_def["points"],
+                        "kind": secret_def["kind"],
+                        "secret": True,
+                        "count": 0,
+                        "locked": True,
+                    }
+                )
 
         player_row["achievement_stats"] = achievement_stats
         player_row["achievement_counts"] = {
             item["key"]: item["count"] for item in achievement_stats
         }
         player_row["secret_achievements"] = secret_stats
-        player_row["secret_unlocked"] = len(secret_stats)
-        player_row["secret_locked"] = max(0, len(secret_catalog) - len(secret_stats))
+        player_row["secret_unlocked"] = sum(1 for x in secret_stats if not x.get("locked"))
+        player_row["secret_locked"] = sum(1 for x in secret_stats if x.get("locked"))
         player_row["unique_achievements"] = len(achievement_stats)
         player_row.update(_build_level_info(player_row["total_points"]))
 
@@ -534,7 +623,7 @@ def calculate_global_achievements():
                     "count": count,
                     "level_name": player["level_name"],
                     "total_points": player["total_points"],
-                    "challenge_rank": _build_challenge_rank(count),
+                    "challenge_rank": _build_achievement_rank(definition, count),
                 }
             )
         achievements_view.append(
@@ -548,11 +637,11 @@ def calculate_global_achievements():
                 "achievers": achievers,
                 "achievers_count": len(achievers),
                 "total_hits": total_hits,
-                "global_rank": _build_challenge_rank(total_hits),
+                "global_rank": _build_achievement_rank(definition, total_hits),
             }
         )
 
-    secret_achievements_unlocked = []
+    secret_achievements_view = []
     for definition in secret_catalog:
         achievers = []
         total_hits = 0
@@ -568,24 +657,24 @@ def calculate_global_achievements():
                     "count": count,
                     "level_name": player["level_name"],
                     "total_points": player["total_points"],
-                    "challenge_rank": _build_challenge_rank(count),
+                    "challenge_rank": _build_achievement_rank(definition, count),
                 }
             )
-        if achievers:
-            secret_achievements_unlocked.append(
-                {
-                    "key": definition["key"],
-                    "name": definition["name"],
-                    "description": definition["description"],
-                    "points": definition["points"],
-                    "kind": definition["kind"],
-                    "is_secret": True,
-                    "achievers": achievers,
-                    "achievers_count": len(achievers),
-                    "total_hits": total_hits,
-                    "global_rank": _build_challenge_rank(total_hits),
-                }
-            )
+        secret_achievements_view.append(
+            {
+                "key": definition["key"],
+                "name": definition["name"] if achievers else "???",
+                "description": definition["description"] if achievers else "Logro secreto aun no descubierto.",
+                "points": definition["points"],
+                "kind": definition["kind"],
+                "is_secret": True,
+                "locked": len(achievers) == 0,
+                "achievers": achievers,
+                "achievers_count": len(achievers),
+                "total_hits": total_hits,
+                "global_rank": _build_achievement_rank(definition, total_hits),
+            }
+        )
 
     global_stats = {
         "players_count": len(players),
@@ -602,8 +691,7 @@ def calculate_global_achievements():
         "players": players,
         "achievements_catalog": ACHIEVEMENTS,
         "achievements_view": achievements_view,
-        "secret_achievements_unlocked": secret_achievements_unlocked,
-        "challenge_tiers": CHALLENGE_TIERS,
+        "secret_achievements_view": secret_achievements_view,
         "levels_catalog": LEVELS,
         "global_stats": global_stats,
     }
