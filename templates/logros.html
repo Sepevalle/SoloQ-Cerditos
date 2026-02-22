@@ -3,15 +3,7 @@
 {% block title %}Logros - Cerditos y Valientes{% endblock %}
 
 {% block nav_items %}
-<li class="nav-item">
-    <a class="nav-link {% if request.endpoint == 'main.historial_global' %}active{% endif %}" href="{{ url_for('main.historial_global') }}">Historial Global</a>
-</li>
-<li class="nav-item">
-    <a class="nav-link {% if request.endpoint == 'main.records_personales' %}active{% endif %}" href="{{ url_for('main.records_personales') }}">Records Personales</a>
-</li>
-<li class="nav-item">
-    <a class="nav-link active" href="{{ url_for('main.logros') }}">Logros</a>
-</li>
+{# Navbar adicional desactivada para evitar duplicados en base.html #}
 {% endblock %}
 
 {% block extra_styles %}
