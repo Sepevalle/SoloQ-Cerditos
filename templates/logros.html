@@ -59,6 +59,12 @@
 {% block content %}
 <div class="container mt-5 pt-5">
     <h1 class="mb-4">Logros de Jugadores</h1>
+    <div class="small text-muted mb-3">
+        Configuracion: <code>{{ achievements_config_source }}</code>
+        {% if achievements_config_errors %}
+        <span class="text-warning ms-2">fallback con {{ achievements_config_errors | length }} aviso(s)</span>
+        {% endif %}
+    </div>
 
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-3">

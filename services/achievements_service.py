@@ -1,10 +1,15 @@
 """
 Achievement service based on stored match history.
-Adds points, secret achievements, and player levels.
+Supports GitHub-driven challenge configuration with safe fallback.
 """
 
+import json
+import os
+import time
 from collections import defaultdict
 
+from config.settings import ACHIEVEMENTS_CONFIG_PATH
+from services.github_service import read_file_from_github
 from services.player_service import get_all_accounts, get_all_puuids
 from services.match_service import get_player_match_history
 
@@ -358,6 +363,31 @@ DIFFICULTY_STEPS = {
     "extreme": [1],
 }
 
+CONFIG_CACHE_TTL_SECONDS = 300
+_achievements_config_cache = {
+    "timestamp": 0,
+    "achievements": None,
+    "source": "fallback",
+    "errors": [],
+}
+
+VALID_KINDS = {"good", "bad"}
+VALID_METRICS = {
+    "kills",
+    "deaths",
+    "assists",
+    "vision_score",
+    "total_damage_dealt_to_champions",
+    "turret_kills",
+    "dragon_kills",
+    "baron_kills",
+    "cs_per_min",
+    "objectives_total",
+    "low_impact_flag",
+}
+VALID_OPS = {"ge", "gt", "le", "lt", "eq"}
+VALID_DIFFICULTIES = {"easy", "medium", "hard", "extreme"}
+
 
 def _metric_value(match, metric):
     kills = match.get("kills", 0) or 0
@@ -403,6 +433,172 @@ def _compare(value, op, threshold):
     if op == "eq":
         return value == threshold
     return False
+
+
+def _extract_achievements_payload(content):
+    if content is None:
+        return None
+    if isinstance(content, list):
+        return content
+    if isinstance(content, dict):
+        if isinstance(content.get("achievements"), list):
+            return content["achievements"]
+    return None
+
+
+def _validate_rank_tiers(rank_tiers, idx):
+    errors = []
+    if not isinstance(rank_tiers, list) or not rank_tiers:
+        return [f"Entry {idx}: rank_tiers must be a non-empty list"]
+    if len(rank_tiers) > 5:
+        errors.append(f"Entry {idx}: rank_tiers supports at most 5 tiers")
+
+    prev_min = -1
+    for i, tier in enumerate(rank_tiers):
+        if not isinstance(tier, dict):
+            errors.append(f"Entry {idx}: rank_tiers[{i}] must be an object")
+            continue
+        name = tier.get("name")
+        min_count = tier.get("min_count")
+        points = tier.get("points")
+        if not isinstance(name, str) or not name.strip():
+            errors.append(f"Entry {idx}: rank_tiers[{i}].name must be a non-empty string")
+        if not isinstance(min_count, int) or min_count < 1:
+            errors.append(f"Entry {idx}: rank_tiers[{i}].min_count must be int >= 1")
+        if isinstance(min_count, int) and min_count <= prev_min:
+            errors.append(f"Entry {idx}: rank_tiers min_count must be strictly increasing")
+        if isinstance(min_count, int):
+            prev_min = min_count
+        if not isinstance(points, int) or points < 1:
+            errors.append(f"Entry {idx}: rank_tiers[{i}].points must be int >= 1")
+    return errors
+
+
+def _validate_achievements_config(entries):
+    errors = []
+    if not isinstance(entries, list):
+        return False, ["Config must be a list of achievements"]
+    if not entries:
+        return False, ["Config achievements list is empty"]
+
+    keys_seen = set()
+    for idx, ach in enumerate(entries):
+        if not isinstance(ach, dict):
+            errors.append(f"Entry {idx}: must be an object")
+            continue
+
+        key = ach.get("key")
+        if not isinstance(key, str) or not key.strip():
+            errors.append(f"Entry {idx}: key must be a non-empty string")
+        elif key in keys_seen:
+            errors.append(f"Entry {idx}: duplicate key '{key}'")
+        else:
+            keys_seen.add(key)
+
+        if ach.get("kind") not in VALID_KINDS:
+            errors.append(f"Entry {idx}: kind must be one of {sorted(VALID_KINDS)}")
+        if ach.get("metric") not in VALID_METRICS:
+            errors.append(f"Entry {idx}: metric '{ach.get('metric')}' is not supported")
+        if ach.get("op") not in VALID_OPS:
+            errors.append(f"Entry {idx}: op must be one of {sorted(VALID_OPS)}")
+
+        for text_field in ("name", "description"):
+            val = ach.get(text_field)
+            if not isinstance(val, str) or not val.strip():
+                errors.append(f"Entry {idx}: {text_field} must be a non-empty string")
+
+        threshold = ach.get("threshold")
+        if not isinstance(threshold, (int, float)):
+            errors.append(f"Entry {idx}: threshold must be numeric")
+
+        points = ach.get("points")
+        if not isinstance(points, int):
+            errors.append(f"Entry {idx}: points must be integer")
+
+        if "secret" in ach and not isinstance(ach.get("secret"), bool):
+            errors.append(f"Entry {idx}: secret must be boolean")
+
+        if "rank_tiers" in ach:
+            errors.extend(_validate_rank_tiers(ach.get("rank_tiers"), idx))
+        else:
+            difficulty = ach.get("difficulty", "medium")
+            if difficulty not in VALID_DIFFICULTIES:
+                errors.append(f"Entry {idx}: difficulty must be one of {sorted(VALID_DIFFICULTIES)}")
+            max_ranks = ach.get("max_ranks", 5)
+            if not isinstance(max_ranks, int) or max_ranks < 1 or max_ranks > 5:
+                errors.append(f"Entry {idx}: max_ranks must be int in [1,5]")
+
+    return len(errors) == 0, errors
+
+
+def _load_local_achievements_file():
+    local_path = os.path.join("config", "logros", "achievements_config.json")
+    if not os.path.exists(local_path):
+        return None
+    try:
+        with open(local_path, "r", encoding="utf-8") as f:
+            content = json.load(f)
+        return _extract_achievements_payload(content)
+    except Exception as e:
+        print(f"[achievements] Failed loading local config file: {e}")
+        return None
+
+
+def get_active_achievements(force_refresh=False):
+    now = time.time()
+    cache_age = now - _achievements_config_cache["timestamp"]
+    if (
+        not force_refresh
+        and _achievements_config_cache["achievements"] is not None
+        and cache_age <= CONFIG_CACHE_TTL_SECONDS
+    ):
+        return _achievements_config_cache["achievements"], _achievements_config_cache["source"], _achievements_config_cache["errors"]
+
+    errors = []
+    github_content, _ = read_file_from_github(ACHIEVEMENTS_CONFIG_PATH)
+    github_entries = _extract_achievements_payload(github_content)
+    if github_entries is not None:
+        is_valid, validation_errors = _validate_achievements_config(github_entries)
+        if is_valid:
+            _achievements_config_cache.update(
+                {
+                    "timestamp": now,
+                    "achievements": github_entries,
+                    "source": f"github:{ACHIEVEMENTS_CONFIG_PATH}",
+                    "errors": [],
+                }
+            )
+            return github_entries, _achievements_config_cache["source"], []
+        errors.extend([f"github: {e}" for e in validation_errors])
+    else:
+        errors.append("github: config not found or invalid payload")
+
+    local_entries = _load_local_achievements_file()
+    if local_entries is not None:
+        is_valid, validation_errors = _validate_achievements_config(local_entries)
+        if is_valid:
+            _achievements_config_cache.update(
+                {
+                    "timestamp": now,
+                    "achievements": local_entries,
+                    "source": "local:config/logros/achievements_config.json",
+                    "errors": errors,
+                }
+            )
+            return local_entries, _achievements_config_cache["source"], errors
+        errors.extend([f"local: {e}" for e in validation_errors])
+    else:
+        errors.append("local: config not found")
+
+    _achievements_config_cache.update(
+        {
+            "timestamp": now,
+            "achievements": ACHIEVEMENTS,
+            "source": "fallback:embedded",
+            "errors": errors,
+        }
+    )
+    return ACHIEVEMENTS, _achievements_config_cache["source"], errors
 
 
 def _extra_conditions_pass(match, extra):
@@ -544,9 +740,9 @@ def _build_level_info(total_points, max_possible_points, top_points, top_count):
     }
 
 
-def _calculate_max_possible_points():
+def _calculate_max_possible_points(active_achievements):
     total = 0
-    for definition in ACHIEVEMENTS:
+    for definition in active_achievements:
         if definition.get("kind") != "good":
             continue
         tiers = _get_achievement_tiers(definition)
@@ -660,9 +856,10 @@ def calculate_global_achievements():
     """
     accounts = get_all_accounts()
     puuids = get_all_puuids()
+    active_achievements, config_source, config_errors = get_active_achievements()
 
-    secret_catalog = [a for a in ACHIEVEMENTS if a.get("secret")]
-    public_catalog = [a for a in ACHIEVEMENTS if not a.get("secret")]
+    secret_catalog = [a for a in active_achievements if a.get("secret")]
+    public_catalog = [a for a in active_achievements if not a.get("secret")]
     players = []
 
     for riot_id, display_name in accounts:
@@ -689,7 +886,7 @@ def calculate_global_achievements():
         })
 
         for match in matches:
-            for definition in ACHIEVEMENTS:
+            for definition in active_achievements:
                 hit, value = _achievement_hit(match, definition)
                 if not hit:
                     continue
@@ -715,7 +912,7 @@ def calculate_global_achievements():
         )
         unlocked_keys = set(by_key.keys())
 
-        definition_by_key = {a["key"]: a for a in ACHIEVEMENTS}
+        definition_by_key = {a["key"]: a for a in active_achievements}
 
         # Puntos por rangos por desafio individual.
         for stat in achievement_stats:
@@ -763,7 +960,7 @@ def calculate_global_achievements():
 
         players.append(player_row)
 
-    max_possible_points = _calculate_max_possible_points()
+    max_possible_points = _calculate_max_possible_points(active_achievements)
     top_points = max((p["total_points"] for p in players), default=0)
     top_count = sum(1 for p in players if p["total_points"] == top_points)
     for player_row in players:
@@ -869,18 +1066,22 @@ def calculate_global_achievements():
         "total_unique_unlocks": total_unique_unlocks,
         "total_rank_points": total_rank_points,
         "total_secret_unlocked": total_secret_unlocked,
-        "max_possible_unique": len(ACHIEVEMENTS),
+        "max_possible_unique": len(active_achievements),
         "max_possible_public": len(public_catalog),
         "max_possible_secret": len(secret_catalog),
         "max_possible_points": max_possible_points,
         "challenger_min_points": int(round(max_possible_points * CHALLENGER_PCT)),
+        "config_source": config_source,
+        "config_errors_count": len(config_errors),
     }
 
     return {
         "players": players,
-        "achievements_catalog": ACHIEVEMENTS,
+        "achievements_catalog": active_achievements,
         "achievements_view": achievements_view,
         "secret_achievements_view": secret_achievements_view,
         "levels_catalog": LEVELS,
         "global_stats": global_stats,
+        "config_source": config_source,
+        "config_errors": config_errors,
     }

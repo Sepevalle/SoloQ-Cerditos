@@ -306,6 +306,8 @@ def logros():
             achievements_catalog=data.get('achievements_catalog', []),
             achievements_view=data.get('achievements_view', []),
             secret_achievements_view=data.get('secret_achievements_view', []),
+            achievements_config_source=data.get('config_source', 'unknown'),
+            achievements_config_errors=data.get('config_errors', []),
             global_stats=data.get('global_stats', {}),
             ddragon_version=settings.DDRAGON_VERSION,
             has_player_data=True

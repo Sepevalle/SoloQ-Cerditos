@@ -33,6 +33,7 @@ BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 
 GITHUB_REPO = "Sepevalle/SoloQ-Cerditos"
 LP_HISTORY_FILE_PATH = "lp_history.json"
+ACHIEVEMENTS_CONFIG_PATH = "config/logros/achievements_config.json"
 
 # ============================================================================
 # CONFIGURACIÓN DE ZONA HORARIA
