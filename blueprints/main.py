@@ -222,6 +222,11 @@ def historial_global():
     from services.match_service import get_player_match_history
     
     try:
+        page = request.args.get('page', 1, type=int)
+        if page is None or page < 1:
+            page = 1
+        per_page = 15
+
         cuentas = get_all_accounts()
         puuids = get_all_puuids()
         players_total = len(cuentas)
@@ -244,9 +249,21 @@ def historial_global():
         
         # Ordenar por fecha descendente
         all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+
+        total_matches = len(all_matches)
+        total_pages = max(1, (total_matches + per_page - 1) // per_page)
+        if page > total_pages:
+            page = total_pages
+        start = (page - 1) * per_page
+        end = start + per_page
+        page_matches = all_matches[start:end]
         
         return render_template('historial_global.html',
-                             matches=all_matches,
+                             matches=page_matches,
+                             page=page,
+                             per_page=per_page,
+                             total_matches=total_matches,
+                             total_pages=total_pages,
                              players_total=players_total,
                              players_with_puuid=players_with_puuid,
                              ddragon_version=settings.DDRAGON_VERSION,
