@@ -2,14 +2,7 @@
 
 {% block title %}Historial Global - Cerditos y Valientes{% endblock %}
 
-{% block nav_items %}
-<li class="nav-item">
-    <a class="nav-link active" href="{{ url_for('main.historial_global') }}">Historial Global</a>
-</li>
-<li class="nav-item">
-    <a class="nav-link {% if request.endpoint == 'main.logros' %}active{% endif %}" href="{{ url_for('main.logros') }}">Logros</a>
-</li>
-{% endblock %}
+{% block nav_items %}{% endblock %}
 
 {% block content %}
 <div class="container mt-5 pt-5">
@@ -69,7 +62,7 @@
                     </td>
                     <td>
                         {% if match.game_end_timestamp %}
-                        {{ (match.game_end_timestamp / 1000) | timestamp_to_date }}
+                        {{ match.game_end_timestamp | format_timestamp }}
                         {% else %}
                         Desconocida
                         {% endif %}

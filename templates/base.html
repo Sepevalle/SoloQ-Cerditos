@@ -313,6 +313,9 @@
                     <a class="nav-link {% if request.endpoint == 'stats.estadisticas_globales' %}active{% endif %}" href="{{ url_for('stats.estadisticas_globales') }}">Estadísticas Globales</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.historial_global' %}active{% endif %}" href="{{ url_for('main.historial_global') }}">Historial Global</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'main.logros' %}active{% endif %}" href="{{ url_for('main.logros') }}">Logros</a>
                 </li>
                 {% block nav_items %}{% endblock %}
@@ -440,4 +443,7 @@
 
 </body>
 </html>
+
+
+
 
