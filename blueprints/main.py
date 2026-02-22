@@ -228,7 +228,8 @@ def historial_global():
         
         return render_template('historial_global.html',
                              matches=all_matches,
-                             ddragon_version=settings.DDRAGON_VERSION)
+                             ddragon_version=settings.DDRAGON_VERSION,
+                             has_player_data=True)
     except Exception as e:
         print(f"[historial_global] Error: {e}")
         import traceback
@@ -284,7 +285,8 @@ def records_personales():
         
         return render_template('records_personales.html',
                              records=all_records,
-                             ddragon_version=settings.DDRAGON_VERSION)
+                             ddragon_version=settings.DDRAGON_VERSION,
+                             has_player_data=True)
     except Exception as e:
         print(f"[records_personales] Error: {e}")
         import traceback
@@ -303,7 +305,8 @@ def logros():
             players=data.get('players', []),
             achievements_catalog=data.get('achievements_catalog', []),
             global_stats=data.get('global_stats', {}),
-            ddragon_version=settings.DDRAGON_VERSION
+            ddragon_version=settings.DDRAGON_VERSION,
+            has_player_data=True
         )
     except Exception as e:
         print(f"[logros] Error: {e}")

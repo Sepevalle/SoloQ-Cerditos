@@ -343,10 +343,8 @@
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
         var hasPlayerData = JSON.parse(document.getElementById('template-data').dataset.hasPlayer || 'false');
-        if (hasPlayerData) {
-            document.getElementById('loading-screen').style.display = 'none';
-            document.getElementById('main-content').classList.remove('hidden');
-        }
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('main-content').classList.remove('hidden');
 
         const backgroundAudio = document.getElementById('backgroundAudio');
         const toggleAudioButton = document.getElementById('toggleAudio');
