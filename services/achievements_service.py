@@ -6,6 +6,7 @@ Supports GitHub-driven challenge configuration with safe fallback.
 import json
 import os
 import time
+from datetime import datetime, timezone
 from collections import defaultdict
 
 from config.settings import ACHIEVEMENTS_CONFIG_PATH
@@ -339,9 +340,9 @@ LEVELS = [
 LOW_FIXED_LEVELS = [
     {"key": "unranked", "name": "Sin Rango", "min_points": -999999},
     {"key": "iron", "name": "Hierro", "min_points": 0},
-    {"key": "bronze", "name": "Bronce", "min_points": 35},
-    {"key": "silver", "name": "Plata", "min_points": 70},
-    {"key": "gold", "name": "Oro", "min_points": 105},
+    {"key": "bronze", "name": "Bronce", "min_points": 45},
+    {"key": "silver", "name": "Plata", "min_points": 85},
+    {"key": "gold", "name": "Oro", "min_points": 125},
 ]
 
 # Percentage-based levels from Platinum onward.
@@ -699,6 +700,7 @@ def _default_config_document(achievements=None):
         "version": 1,
         "enabled": True,
         "notes": "Configuracion editable de desafios.",
+        "match_filters": {},
         "achievements": achievements if achievements is not None else ACHIEVEMENTS,
     }
 
@@ -717,6 +719,7 @@ def _load_local_config_document():
                 "version": int(content.get("version", 1)),
                 "enabled": bool(content.get("enabled", True)),
                 "notes": str(content.get("notes", "")),
+                "match_filters": content.get("match_filters", {}) if isinstance(content.get("match_filters", {}), dict) else {},
                 "achievements": _extract_achievements_payload(content) or [],
             }
     except Exception as e:
@@ -742,6 +745,7 @@ def get_achievements_config_document(force_refresh=False):
                     "version": int(github_content.get("version", 1)),
                     "enabled": bool(github_content.get("enabled", True)),
                     "notes": str(github_content.get("notes", "")),
+                    "match_filters": github_content.get("match_filters", {}) if isinstance(github_content.get("match_filters", {}), dict) else {},
                     "achievements": achievements,
                 }
                 _achievements_config_cache.update(
@@ -813,10 +817,23 @@ def save_achievements_config_document(document):
     if not is_valid:
         return False, "Config invalida:\n- " + "\n- ".join(validation_errors[:20])
 
+    match_filters = document.get("match_filters", {})
+    if match_filters is None:
+        match_filters = {}
+    if not isinstance(match_filters, dict):
+        return False, "Payload invalido: match_filters debe ser un objeto."
+    for date_key in ("from_date", "to_date"):
+        val = match_filters.get(date_key)
+        if val in (None, ""):
+            continue
+        if _date_to_epoch_ms(val, end_of_day=(date_key == "to_date")) is None:
+            return False, f"Payload invalido: {date_key} debe usar formato YYYY-MM-DD."
+
     normalized_doc = {
         "version": int(document.get("version", 1)),
         "enabled": bool(document.get("enabled", True)),
         "notes": str(document.get("notes", "")),
+        "match_filters": match_filters,
         "achievements": achievements,
     }
 
@@ -845,6 +862,41 @@ def save_achievements_config_document(document):
     if github_ok:
         return True, "Configuracion guardada en GitHub y local."
     return True, "Configuracion guardada localmente. No se pudo escribir en GitHub (revisa token/permisos)."
+
+
+def _date_to_epoch_ms(date_str, end_of_day=False):
+    if not date_str:
+        return None
+    try:
+        dt = datetime.strptime(str(date_str), "%Y-%m-%d")
+        if end_of_day:
+            dt = dt.replace(hour=23, minute=59, second=59, microsecond=999000)
+        dt = dt.replace(tzinfo=timezone.utc)
+        return int(dt.timestamp() * 1000)
+    except Exception:
+        return None
+
+
+def _filter_matches_by_config(matches, match_filters):
+    if not isinstance(match_filters, dict) or not match_filters:
+        return matches
+
+    from_ms = _date_to_epoch_ms(match_filters.get("from_date"), end_of_day=False)
+    to_ms = _date_to_epoch_ms(match_filters.get("to_date"), end_of_day=True)
+    if from_ms is None and to_ms is None:
+        return matches
+
+    filtered = []
+    for m in matches:
+        ts = m.get("game_end_timestamp")
+        if not isinstance(ts, (int, float)):
+            continue
+        if from_ms is not None and ts < from_ms:
+            continue
+        if to_ms is not None and ts > to_ms:
+            continue
+        filtered.append(m)
+    return filtered
 
 
 def _extra_conditions_pass(match, extra):
@@ -1160,7 +1212,9 @@ def calculate_global_achievements():
     """
     accounts = get_all_accounts()
     puuids = get_all_puuids()
-    active_achievements, config_source, config_errors = get_active_achievements()
+    config_doc, config_source, config_errors = get_achievements_config_document(force_refresh=False)
+    active_achievements = config_doc.get("achievements", []) or []
+    match_filters = config_doc.get("match_filters", {}) if isinstance(config_doc, dict) else {}
 
     secret_catalog = [a for a in active_achievements if a.get("secret")]
     public_catalog = [a for a in active_achievements if not a.get("secret")]
@@ -1173,6 +1227,7 @@ def calculate_global_achievements():
 
         history = get_player_match_history(puuid, limit=-1)
         matches = history.get("matches", []) or []
+        matches = _filter_matches_by_config(matches, match_filters)
         player_row = _empty_player_row(riot_id, display_name, puuid)
         player_row["total_matches"] = len(matches)
 
@@ -1377,6 +1432,7 @@ def calculate_global_achievements():
         "challenger_min_points": int(round(max_possible_points * CHALLENGER_PCT)),
         "config_source": config_source,
         "config_errors_count": len(config_errors),
+        "match_filters": match_filters,
     }
 
     return {
@@ -1388,4 +1444,5 @@ def calculate_global_achievements():
         "global_stats": global_stats,
         "config_source": config_source,
         "config_errors": config_errors,
+        "config_doc": config_doc,
     }

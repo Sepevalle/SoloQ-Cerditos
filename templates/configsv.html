@@ -56,6 +56,17 @@
                         <label class="form-label">Notas de configuracion</label>
                         <input id="cfgNotes" type="text" class="form-control" placeholder="Notas internas de balance o cambios">
                     </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Filtro desde fecha</label>
+                        <input id="cfgFromDate" type="date" class="form-control">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Filtro hasta fecha</label>
+                        <input id="cfgToDate" type="date" class="form-control">
+                    </div>
+                    <div class="col-12 col-md-6 tiny-note">
+                        Si defines fechas, solo esas partidas entran en los desafios (por `game_end_timestamp`).
+                    </div>
                 </div>
             </div>
         </div>
@@ -187,6 +198,7 @@
         version: Number(configDoc.version || 1),
         enabled: Boolean(configDoc.enabled),
         notes: configDoc.notes || "",
+        match_filters: (configDoc.match_filters && typeof configDoc.match_filters === "object") ? configDoc.match_filters : {},
         achievements: Array.isArray(configDoc.achievements) ? configDoc.achievements : [],
     };
 
@@ -325,6 +337,8 @@
         $("cfgVersion").value = state.version;
         $("cfgEnabled").checked = state.enabled;
         $("cfgNotes").value = state.notes;
+        $("cfgFromDate").value = state.match_filters.from_date || "";
+        $("cfgToDate").value = state.match_filters.to_date || "";
 
         $("fKey").value = c.key ?? "";
         $("fName").value = c.name ?? "";
@@ -348,6 +362,11 @@
         state.version = Number($("cfgVersion").value || 1);
         state.enabled = Boolean($("cfgEnabled").checked);
         state.notes = $("cfgNotes").value || "";
+        const fromDate = $("cfgFromDate").value || "";
+        const toDate = $("cfgToDate").value || "";
+        state.match_filters = {};
+        if (fromDate) state.match_filters.from_date = fromDate;
+        if (toDate) state.match_filters.to_date = toDate;
 
         c.key = $("fKey").value.trim();
         c.name = $("fName").value.trim();
@@ -415,6 +434,7 @@
             version: state.version,
             enabled: state.enabled,
             notes: state.notes,
+            match_filters: state.match_filters,
             achievements: state.achievements,
         };
         $("jsonPreview").textContent = JSON.stringify(payload, null, 2);
@@ -495,6 +515,7 @@
             version: state.version,
             enabled: state.enabled,
             notes: state.notes,
+            match_filters: state.match_filters,
             achievements: state.achievements,
         }, null, 2);
         try {
@@ -510,6 +531,7 @@
             version: state.version,
             enabled: state.enabled,
             notes: state.notes,
+            match_filters: state.match_filters,
             achievements: state.achievements,
         };
         $("configJsonInput").value = JSON.stringify(payload);
