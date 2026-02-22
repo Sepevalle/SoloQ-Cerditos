@@ -124,11 +124,15 @@ def _calculate_and_save_global_stats():
         for queue_id in compiled['available_queue_ids']:
             queue_matches = [m for m in all_matches if m[1].get('queue_id') == queue_id]
             if queue_matches:  # Solo procesar si hay partidas
+                queue_champion_counts = Counter(
+                    m[1].get('champion_name') for m in queue_matches if m[1].get('champion_name')
+                )
                 stats_by_queue[str(queue_id)] = {
                     'total_matches': len(queue_matches),
                     'wins': sum(1 for _, m in queue_matches if m.get('win')),
                     'losses': sum(1 for _, m in queue_matches if not m.get('win')),
-                    'records': extract_global_records(queue_matches)
+                    'records': extract_global_records(queue_matches),
+                    'most_played_champions': queue_champion_counts.most_common(10),
                 }
                 # Liberar memoria
                 del queue_matches
@@ -334,9 +338,20 @@ def estadisticas_globales():
                     wins = queue_stats.get('wins', 0)
                     losses = queue_stats.get('losses', 0)
                     overall_win_rate = (wins / all_matches_count * 100) if all_matches_count > 0 else 0
-                    
-                    # Para campeones más jugados y stats por jugador, necesitamos recalcular o usar caché
-                    # Por ahora, usamos los datos globales como aproximación
+
+                    # Campeones más jugados para la cola (si existe en el snapshot).
+                    most_played_champions = queue_stats.get('most_played_champions', [])
+
+                    # Compatibilidad con snapshots antiguos sin most_played_champions.
+                    if not most_played_champions:
+                        cache_data = global_stats_cache.get()
+                        all_matches_cached = cache_data.get('all_matches') or []
+                        if all_matches_cached:
+                            queue_matches_cached = [m for m in all_matches_cached if m[1].get('queue_id') == int(queue_id_str)]
+                            champion_counts = Counter(m[1].get('champion_name') for m in queue_matches_cached if m[1].get('champion_name'))
+                            most_played_champions = champion_counts.most_common(10)
+                            print(f"[estadisticas_globales] most_played_champions recalculado desde cache para cola {queue_id_str}")
+
                     print(f"[estadisticas_globales] Réccords cargados: {len(global_records)} récords")
                 else:
                     print(f"[estadisticas_globales] No hay datos pre-calculados para cola {queue_id_str}")
@@ -347,6 +362,7 @@ def estadisticas_globales():
                         global_records[key]['value'] = None
                     overall_win_rate = 0
                     all_matches_count = 0
+                    most_played_champions = []
                     
             except (ValueError, TypeError) as e:
                 print(f"[estadisticas_globales] Error convirtiendo queue_id: {e}")
