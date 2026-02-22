@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Logros - Cerditos y Valientes{% endblock %}
 
@@ -18,6 +18,7 @@
 <style>
     .summary-card { border: 0; border-radius: 0.8rem; }
     .player-card { border-radius: 0.8rem; border: 1px solid rgba(0, 0, 0, 0.08); }
+    .achievement-card { border-radius: 0.8rem; border: 1px solid rgba(0, 0, 0, 0.08); }
     .achievement-chip {
         display: inline-flex;
         align-items: center;
@@ -43,11 +44,6 @@
         color: #59359c;
         border: 1px solid rgba(111, 66, 193, 0.25);
     }
-    .achievement-locked {
-        background: rgba(108, 117, 125, 0.12);
-        color: #5c636a;
-        border: 1px dashed rgba(108, 117, 125, 0.4);
-    }
     .points-pill {
         font-weight: 700;
         border-radius: 999px;
@@ -61,6 +57,16 @@
         background: #0d6efd14;
         border: 1px solid #0d6efd3a;
         color: #0a58ca;
+    }
+    .achievers-list {
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .achiever-item {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 0.35rem 0.5rem;
+        margin-bottom: 0.35rem;
     }
     .progress { height: 0.55rem; }
 </style>
@@ -82,7 +88,15 @@
         <div class="col-12 col-md-3">
             <div class="card summary-card shadow-sm">
                 <div class="card-body">
-                    <small class="text-muted">Logros activados</small>
+                    <small class="text-muted">Desbloqueos unicos</small>
+                    <h3 class="mb-0">{{ global_stats.total_unique_unlocks | default(0) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card summary-card shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted">Activaciones totales</small>
                     <h3 class="mb-0">{{ global_stats.total_unlocked | default(0) }}</h3>
                 </div>
             </div>
@@ -92,14 +106,6 @@
                 <div class="card-body">
                     <small class="text-muted">Secretos descubiertos</small>
                     <h3 class="mb-0">{{ global_stats.total_secret_unlocked | default(0) }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-3">
-            <div class="card summary-card shadow-sm">
-                <div class="card-body">
-                    <small class="text-muted">Logros disponibles</small>
-                    <h3 class="mb-0">{{ global_stats.max_possible_unique | default(0) }}</h3>
                 </div>
             </div>
         </div>
@@ -113,9 +119,9 @@
                     <th>#</th>
                     <th>Jugador</th>
                     <th>Nivel</th>
-                    <th>Puntos</th>
+                    <th>Puntos unicos</th>
                     <th>Secretos</th>
-                    <th>Unicos</th>
+                    <th>Logros unicos</th>
                     <th>Activaciones</th>
                 </tr>
             </thead>
@@ -140,7 +146,7 @@
         </table>
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3 mb-4">
         {% for p in players %}
         <div class="col-12 col-xl-6">
             <div class="card player-card shadow-sm h-100">
@@ -168,7 +174,7 @@
                     </div>
 
                     <div class="mb-2">
-                        <div class="fw-semibold small text-muted mb-1">Top logros</div>
+                        <div class="fw-semibold small text-muted mb-1">Logros desbloqueados</div>
                         {% if p.achievement_stats %}
                             {% for a in p.achievement_stats[:8] %}
                             <span class="achievement-chip {% if a.secret %}achievement-secret{% elif a.kind == 'good' %}achievement-good{% else %}achievement-bad{% endif %}" title="{{ a.description }}">
@@ -182,18 +188,100 @@
                     </div>
 
                     <div>
-                        <div class="fw-semibold small text-muted mb-1">Secretos</div>
-                        {% for s in p.secret_achievements %}
-                            <span class="achievement-chip {% if s.locked %}achievement-locked{% else %}achievement-secret{% endif %}" title="{{ s.description }}">
-                                {{ s.name }}{% if not s.locked %} x{{ s.count }}{% endif %}
+                        <div class="fw-semibold small text-muted mb-1">Secretos conseguidos</div>
+                        {% if p.secret_achievements %}
+                            {% for s in p.secret_achievements %}
+                            <span class="achievement-chip achievement-secret" title="{{ s.description }}">
+                                {{ s.name }} x{{ s.count }}
                                 <span class="fw-bold">{% if s.points > 0 %}+{% endif %}{{ s.points }}</span>
                             </span>
-                        {% endfor %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-muted">Ningun secreto desbloqueado todavia.</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
         {% endfor %}
+    </div>
+
+    <h3 class="mb-3">Todos los logros conseguibles</h3>
+    <div class="row g-3 mb-4">
+        {% for a in achievements_view %}
+        <div class="col-12 col-lg-6">
+            <div class="card achievement-card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-0">{{ a.name }}</h5>
+                            <small class="text-muted">{{ a.description }}</small>
+                        </div>
+                        <span class="achievement-chip {% if a.kind == 'good' %}achievement-good{% else %}achievement-bad{% endif %}">
+                            {% if a.points > 0 %}+{% endif %}{{ a.points }} pts
+                        </span>
+                    </div>
+                    <div class="small text-muted mb-2">
+                        Jugadores que lo consiguieron: <strong>{{ a.achievers_count }}</strong> |
+                        Activaciones totales: <strong>{{ a.total_hits }}</strong>
+                    </div>
+                    <div class="achievers-list">
+                        {% if a.achievers %}
+                            {% for who in a.achievers %}
+                            <div class="achiever-item">
+                                <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
+                                <small class="text-muted d-block">{{ who.riot_id }}</small>
+                                <small class="text-muted">Veces: {{ who.count }} | Nivel: {{ who.level_name }} | Puntos: {{ who.total_points }}</small>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-muted">Aun nadie lo ha desbloqueado.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h3 class="mb-3">Secretos descubiertos</h3>
+    <div class="row g-3">
+        {% if secret_achievements_unlocked %}
+            {% for s in secret_achievements_unlocked %}
+            <div class="col-12 col-lg-6">
+                <div class="card achievement-card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h5 class="mb-0">{{ s.name }}</h5>
+                                <small class="text-muted">{{ s.description }}</small>
+                            </div>
+                            <span class="achievement-chip achievement-secret">
+                                {% if s.points > 0 %}+{% endif %}{{ s.points }} pts
+                            </span>
+                        </div>
+                        <div class="small text-muted mb-2">
+                            Jugadores que lo consiguieron: <strong>{{ s.achievers_count }}</strong> |
+                            Activaciones totales: <strong>{{ s.total_hits }}</strong>
+                        </div>
+                        <div class="achievers-list">
+                            {% for who in s.achievers %}
+                            <div class="achiever-item">
+                                <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
+                                <small class="text-muted d-block">{{ who.riot_id }}</small>
+                                <small class="text-muted">Veces: {{ who.count }} | Nivel: {{ who.level_name }} | Puntos: {{ who.total_points }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-secondary mb-0">Todavia no se ha descubierto ningun logro secreto.</div>
+        </div>
+        {% endif %}
     </div>
     {% else %}
     <div class="alert alert-info">

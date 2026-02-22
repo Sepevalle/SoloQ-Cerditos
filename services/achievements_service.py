@@ -350,6 +350,7 @@ def _empty_player_row(riot_id, player_name, puuid):
         "unique_achievements": 0,
         "total_matches": 0,
         "achievement_stats": [],
+        "achievement_counts": {},
         "secret_achievements": [],
         "secret_unlocked": 0,
         "secret_locked": 0,
@@ -364,6 +365,7 @@ def calculate_global_achievements():
     puuids = get_all_puuids()
 
     secret_catalog = [a for a in ACHIEVEMENTS if a.get("secret")]
+    public_catalog = [a for a in ACHIEVEMENTS if not a.get("secret")]
     players = []
 
     for riot_id, display_name in accounts:
@@ -408,11 +410,6 @@ def calculate_global_achievements():
                 stat["last_champion"] = match.get("champion_name", "")
 
                 player_row["hits_total"] += 1
-                player_row["total_points"] += definition["points"]
-                if definition["points"] >= 0:
-                    player_row["positive_points"] += definition["points"]
-                else:
-                    player_row["negative_points"] += definition["points"]
 
         achievement_stats = sorted(
             by_key.values(),
@@ -421,26 +418,26 @@ def calculate_global_achievements():
         )
         unlocked_keys = set(by_key.keys())
 
+        # Puntos por desbloqueo unico (no por repeticion)
+        for stat in achievement_stats:
+            player_row["total_points"] += stat["points"]
+            if stat["points"] >= 0:
+                player_row["positive_points"] += stat["points"]
+            else:
+                player_row["negative_points"] += stat["points"]
+
         secret_stats = []
         for secret_def in secret_catalog:
             if secret_def["key"] in unlocked_keys:
                 secret_stats.append(dict(by_key[secret_def["key"]], locked=False))
-            else:
-                secret_stats.append({
-                    "key": secret_def["key"],
-                    "name": "???",
-                    "description": "Logro secreto. Descubre como desbloquearlo.",
-                    "points": secret_def["points"],
-                    "kind": secret_def["kind"],
-                    "secret": True,
-                    "count": 0,
-                    "locked": True,
-                })
 
         player_row["achievement_stats"] = achievement_stats
+        player_row["achievement_counts"] = {
+            item["key"]: item["count"] for item in achievement_stats
+        }
         player_row["secret_achievements"] = secret_stats
-        player_row["secret_unlocked"] = sum(1 for s in secret_stats if not s.get("locked"))
-        player_row["secret_locked"] = sum(1 for s in secret_stats if s.get("locked"))
+        player_row["secret_unlocked"] = len(secret_stats)
+        player_row["secret_locked"] = max(0, len(secret_catalog) - len(secret_stats))
         player_row["unique_achievements"] = len(achievement_stats)
         player_row.update(_build_level_info(player_row["total_points"]))
 
@@ -459,18 +456,88 @@ def calculate_global_achievements():
 
     total_unlocked = sum(p["hits_total"] for p in players)
     total_secret_unlocked = sum(p["secret_unlocked"] for p in players)
+    total_unique_unlocks = sum(p["unique_achievements"] for p in players)
+
+    achievements_view = []
+    for definition in public_catalog:
+        achievers = []
+        total_hits = 0
+        for player in players:
+            count = player["achievement_counts"].get(definition["key"], 0)
+            if count <= 0:
+                continue
+            total_hits += count
+            achievers.append(
+                {
+                    "player_name": player["player_name"],
+                    "riot_id": player["riot_id"],
+                    "count": count,
+                    "level_name": player["level_name"],
+                    "total_points": player["total_points"],
+                }
+            )
+        achievements_view.append(
+            {
+                "key": definition["key"],
+                "name": definition["name"],
+                "description": definition["description"],
+                "points": definition["points"],
+                "kind": definition["kind"],
+                "is_secret": False,
+                "achievers": achievers,
+                "achievers_count": len(achievers),
+                "total_hits": total_hits,
+            }
+        )
+
+    secret_achievements_unlocked = []
+    for definition in secret_catalog:
+        achievers = []
+        total_hits = 0
+        for player in players:
+            count = player["achievement_counts"].get(definition["key"], 0)
+            if count <= 0:
+                continue
+            total_hits += count
+            achievers.append(
+                {
+                    "player_name": player["player_name"],
+                    "riot_id": player["riot_id"],
+                    "count": count,
+                    "level_name": player["level_name"],
+                    "total_points": player["total_points"],
+                }
+            )
+        if achievers:
+            secret_achievements_unlocked.append(
+                {
+                    "key": definition["key"],
+                    "name": definition["name"],
+                    "description": definition["description"],
+                    "points": definition["points"],
+                    "kind": definition["kind"],
+                    "is_secret": True,
+                    "achievers": achievers,
+                    "achievers_count": len(achievers),
+                    "total_hits": total_hits,
+                }
+            )
 
     global_stats = {
         "players_count": len(players),
         "total_unlocked": total_unlocked,
+        "total_unique_unlocks": total_unique_unlocks,
         "total_secret_unlocked": total_secret_unlocked,
         "max_possible_unique": len(ACHIEVEMENTS),
+        "max_possible_public": len(public_catalog),
         "max_possible_secret": len(secret_catalog),
     }
 
     return {
         "players": players,
         "achievements_catalog": ACHIEVEMENTS,
+        "achievements_view": achievements_view,
+        "secret_achievements_unlocked": secret_achievements_unlocked,
         "levels_catalog": LEVELS,
         "global_stats": global_stats,
     }
