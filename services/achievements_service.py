@@ -1044,6 +1044,9 @@ def _build_level_info(total_points, max_possible_points, top_points, top_count):
 def _calculate_max_possible_points(active_achievements):
     total = 0
     for definition in active_achievements:
+        # Secret challenges do not count toward level progression max points.
+        if definition.get("secret"):
+            continue
         if definition.get("kind") != "good":
             continue
         tiers = _get_achievement_tiers(definition)
