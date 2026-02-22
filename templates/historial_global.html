@@ -7,9 +7,6 @@
     <a class="nav-link active" href="{{ url_for('main.historial_global') }}">Historial Global</a>
 </li>
 <li class="nav-item">
-    <a class="nav-link {% if request.endpoint == 'main.records_personales' %}active{% endif %}" href="{{ url_for('main.records_personales') }}">Récords Personales</a>
-</li>
-<li class="nav-item">
     <a class="nav-link {% if request.endpoint == 'main.logros' %}active{% endif %}" href="{{ url_for('main.logros') }}">Logros</a>
 </li>
 {% endblock %}
@@ -37,7 +34,7 @@
                 {% for match in matches %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('player.detalle_jugador', puuid=match.puuid) }}" class="link-perfil">
+                        <a href="{{ url_for('player.perfil_jugador', game_name=match.riot_id) }}" class="link-perfil">
                             {{ match.jugador_nombre }}
                         </a>
                     </td>
@@ -96,6 +93,11 @@
     {% else %}
     <div class="alert alert-info">
         No hay partidas registradas en el historial global.
+        {% if players_total is defined %}
+        <div class="small mt-2">
+            Jugadores detectados: {{ players_total }} | Con PUUID: {{ players_with_puuid | default(0) }}.
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 </div>

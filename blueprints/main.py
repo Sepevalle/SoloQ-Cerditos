@@ -224,12 +224,15 @@ def historial_global():
     try:
         cuentas = get_all_accounts()
         puuids = get_all_puuids()
+        players_total = len(cuentas)
+        players_with_puuid = 0
         
         all_matches = []
         for riot_id, jugador_nombre in cuentas:
             puuid = puuids.get(riot_id)
             if not puuid:
                 continue
+            players_with_puuid += 1
             
             historial = get_player_match_history(puuid, limit=-1)
             matches = historial.get('matches', [])
@@ -244,67 +247,12 @@ def historial_global():
         
         return render_template('historial_global.html',
                              matches=all_matches,
+                             players_total=players_total,
+                             players_with_puuid=players_with_puuid,
                              ddragon_version=settings.DDRAGON_VERSION,
                              has_player_data=True)
     except Exception as e:
         print(f"[historial_global] Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return render_template('404.html'), 500
-
-
-@main_bp.route('/records_personales')
-def records_personales():
-    """Renderiza la página de récords personales."""
-    print("[records_personales] Petición recibida.")
-    
-    from services.player_service import get_all_accounts, get_all_puuids, get_player_display_name
-    from services.match_service import get_player_match_history
-    from services.stats_service import calculate_personal_records
-    
-    try:
-        cuentas = get_all_accounts()
-        puuids = get_all_puuids()
-        
-        all_records = []
-        
-        for riot_id, jugador_nombre in cuentas:
-            puuid = puuids.get(riot_id)
-            if not puuid:
-                continue
-            
-            try:
-                historial = get_player_match_history(puuid, limit=-1)
-                matches = historial.get('matches', [])
-                
-                records = calculate_personal_records(
-                    puuid, matches, jugador_nombre, riot_id
-                )
-                
-                # Convertir a lista
-                for key, record in records.items():
-                    if record and isinstance(record, dict):
-                        if record.get('player') == 'N/A':
-                            record['player'] = jugador_nombre
-                        if record.get('riot_id') == 'N/A':
-                            record['riot_id'] = riot_id
-                        record['record_type_key'] = key
-                        
-                        if record.get('value') is not None and record.get('value') != 0:
-                            all_records.append(record)
-            except Exception as e:
-                print(f"[records_personales] Error procesando {jugador_nombre}: {e}")
-                continue
-        
-        # Ordenar por valor descendente
-        all_records.sort(key=lambda x: (x.get('value', 0) or 0), reverse=True)
-        
-        return render_template('records_personales.html',
-                             records=all_records,
-                             ddragon_version=settings.DDRAGON_VERSION,
-                             has_player_data=True)
-    except Exception as e:
-        print(f"[records_personales] Error: {e}")
         import traceback
         traceback.print_exc()
         return render_template('404.html'), 500
