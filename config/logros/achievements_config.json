@@ -109,8 +109,7 @@
       "name": "Farmeador Pro",
       "op": "ge",
       "points": 16,
-      "threshold": 8,
-      "secret": false
+      "threshold": 8
     },
     {
       "description": "Consigue 5 o mas objetivos (torres + dragones + barones).",
@@ -180,7 +179,8 @@
       "name": "Impacto Invisible",
       "op": "eq",
       "points": -10,
-      "threshold": 1
+      "threshold": 1,
+      "secret": false
     },
     {
       "description": "Logro secreto: gana con KDA dominante y pocas muertes.",
@@ -246,6 +246,22 @@
       "points": 16,
       "secret": true,
       "threshold": 8
+    },
+    {
+      "key": "nuevo_secreto",
+      "name": "Asesino Inseaciable",
+      "description": "Gana con una racha de 30 asesinatos",
+      "points": 99,
+      "kind": "good",
+      "metric": "largest_killing_spree",
+      "op": "ge",
+      "threshold": 30,
+      "extra": {
+        "win": true
+      },
+      "secret": true,
+      "difficulty": "extreme",
+      "max_ranks": 1
     }
   ]
 }
