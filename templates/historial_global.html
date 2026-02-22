@@ -18,6 +18,7 @@
                     <th>Resultado</th>
                     <th>KDA</th>
                     <th>Cola</th>
+                    <th>LP</th>
                     <th>Fecha</th>
                     <th>Acciones</th>
                 </tr>
@@ -58,6 +59,20 @@
                         <span class="badge bg-info">Flexible</span>
                         {% else %}
                         <span class="badge bg-secondary">Otra</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if match.lp_change_this_game is not none %}
+                            {% set lp = match.lp_change_this_game | int %}
+                            {% if lp > 0 %}
+                                <span class="lp-change-positive">+{{ lp }}</span>
+                            {% elif lp < 0 %}
+                                <span class="lp-change-negative">{{ lp }}</span>
+                            {% else %}
+                                <span class="lp-change-neutral">0</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
                         {% endif %}
                     </td>
                     <td>
