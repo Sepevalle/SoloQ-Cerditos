@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template
+import json
+
+from flask import Blueprint, render_template, request
 from datetime import datetime, timezone, timedelta
 import time
 import threading
@@ -11,7 +13,12 @@ from services.github_service import read_peak_elo, save_peak_elo, read_lp_histor
 from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
 from services.riot_api import esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
-from services.achievements_service import calculate_global_achievements
+from services.achievements_service import (
+    calculate_global_achievements,
+    get_achievements_config_document,
+    get_achievement_editor_options,
+    save_achievements_config_document,
+)
 from utils.helpers import calcular_valor_clasificacion
 
 # Importar el generador de JSON para el index
@@ -314,6 +321,46 @@ def logros():
         )
     except Exception as e:
         print(f"[logros] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return render_template('404.html'), 500
+
+
+@main_bp.route('/configsv', methods=['GET', 'POST'])
+def configsv():
+    """
+    Editor visual de desafios (/configsv).
+    No se enlaza desde la navegacion normal.
+    """
+    status_message = None
+    status_kind = "info"
+
+    if request.method == 'POST':
+        raw_json = request.form.get('config_json', '')
+        try:
+            payload = json.loads(raw_json)
+            ok, msg = save_achievements_config_document(payload)
+            status_message = msg
+            status_kind = "success" if ok else "danger"
+        except Exception as e:
+            status_message = f"Error guardando configuracion: {e}"
+            status_kind = "danger"
+
+    try:
+        config_doc, source, errors = get_achievements_config_document(force_refresh=True)
+        return render_template(
+            'configsv.html',
+            config_doc=config_doc,
+            config_source=source,
+            config_errors=errors,
+            editor_options=get_achievement_editor_options(),
+            status_message=status_message,
+            status_kind=status_kind,
+            ddragon_version=settings.DDRAGON_VERSION,
+            has_player_data=True,
+        )
+    except Exception as e:
+        print(f"[configsv] Error: {e}")
         import traceback
         traceback.print_exc()
         return render_template('404.html'), 500

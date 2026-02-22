@@ -9,7 +9,7 @@ import time
 from collections import defaultdict
 
 from config.settings import ACHIEVEMENTS_CONFIG_PATH
-from services.github_service import read_file_from_github
+from services.github_service import read_file_from_github, write_file_to_github
 from services.player_service import get_all_accounts, get_all_puuids
 from services.match_service import get_player_match_history
 
@@ -373,20 +373,55 @@ _achievements_config_cache = {
 
 VALID_KINDS = {"good", "bad"}
 VALID_METRICS = {
-    "kills",
-    "deaths",
-    "assists",
-    "vision_score",
-    "total_damage_dealt_to_champions",
-    "turret_kills",
-    "dragon_kills",
-    "baron_kills",
-    "cs_per_min",
-    "objectives_total",
-    "low_impact_flag",
+    # Existing / derived
+    "kills", "deaths", "assists", "kda", "cs_per_min", "total_cs", "vision_score_per_min",
+    "objectives_total", "low_impact_flag",
+    # Match base fields from stored history
+    "match_id", "puuid", "champion_name", "champion_id", "win", "game_end_timestamp", "queue_id",
+    "champion_level", "summoner_spell_1_id", "summoner_spell_2_id", "perk_main_id", "perk_sub_id",
+    "total_minions_killed", "neutral_minions_killed", "gold_earned", "gold_spent", "game_duration",
+    "total_damage_dealt", "total_damage_dealt_to_champions", "physical_damage_dealt_to_champions",
+    "magic_damage_dealt_to_champions", "true_damage_dealt_to_champions", "damage_self_mitigated",
+    "damage_dealt_to_buildings", "damage_dealt_to_objectives", "total_heal", "total_heals_on_teammates",
+    "total_damage_shielded_on_teammates", "vision_score", "wards_placed", "wards_killed",
+    "detector_wards_placed", "time_ccing_others", "turret_kills", "inhibitor_kills", "baron_kills",
+    "dragon_kills", "total_time_spent_dead", "killing_sprees", "largest_killing_spree", "largestMultiKill",
+    "pentaKills", "quadraKills", "tripleKills", "doubleKills", "individual_position", "total_damage_taken",
+    "total_time_cc_dealt", "first_blood_kill", "first_blood_assist", "objectives_stolen",
+    "kill_participation", "lp_change_this_game", "post_game_valor_clasificacion", "pre_game_valor_clasificacion",
+    # Aliases requested / convenience
+    "largest_multi_kill", "double_kills", "triple_kills", "quadra_kills", "penta_kills",
+    "time_spent_dead", "summoner_spell_1", "summoner_spell_2", "rune_primary", "rune_secondary",
+    "control_wards_placed",
+    # Item slots from player_items
+    "item_0", "item_1", "item_2", "item_3", "item_4", "item_5", "item_6",
 }
 VALID_OPS = {"ge", "gt", "le", "lt", "eq"}
 VALID_DIFFICULTIES = {"easy", "medium", "hard", "extreme"}
+EXTRA_NUMERIC_KEYS = [
+    "min_duration",
+    "max_duration",
+    "min_kills",
+    "max_kills",
+    "min_deaths",
+    "max_deaths",
+    "min_assists",
+    "max_assists",
+    "min_vision_score",
+    "max_vision_score",
+    "min_damage",
+    "min_cs_per_min",
+    "max_cs_per_min",
+    "min_queue_id",
+    "max_queue_id",
+]
+EXTRA_BOOLEAN_KEYS = ["win"]
+EXTRA_EQUALITY_KEYS = [
+    "match_id", "puuid", "champion_name", "champion_id", "individual_position",
+    "summoner_spell_1_id", "summoner_spell_2_id", "perk_main_id", "perk_sub_id",
+    "summoner_spell_1", "summoner_spell_2", "rune_primary", "rune_secondary",
+]
+KNOWN_POSITIONS = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY", "UNKNOWN"]
 
 
 def _metric_value(match, metric):
@@ -418,20 +453,70 @@ def _metric_value(match, metric):
         return (match.get("turret_kills", 0) or 0) + (match.get("dragon_kills", 0) or 0) + (match.get("baron_kills", 0) or 0)
     if metric == "low_impact_flag":
         return 1 if (kills + assists <= 2 and deaths >= 6) else 0
+    if metric == "total_cs":
+        return (match.get("total_minions_killed", 0) or 0) + (match.get("neutral_minions_killed", 0) or 0)
+    if metric == "vision_score_per_min":
+        return ((match.get("vision_score", 0) or 0) / max(1, duration / 60)) if duration > 0 else 0
+
+    # Aliases for existing fields
+    if metric == "largest_multi_kill":
+        return match.get("largestMultiKill", 0) or 0
+    if metric == "double_kills":
+        return match.get("doubleKills", 0) or 0
+    if metric == "triple_kills":
+        return match.get("tripleKills", 0) or 0
+    if metric == "quadra_kills":
+        return match.get("quadraKills", 0) or 0
+    if metric == "penta_kills":
+        return match.get("pentaKills", 0) or 0
+    if metric == "time_spent_dead":
+        return match.get("total_time_spent_dead", 0) or 0
+    if metric == "summoner_spell_1":
+        return match.get("summoner_spell_1_id", "") or ""
+    if metric == "summoner_spell_2":
+        return match.get("summoner_spell_2_id", "") or ""
+    if metric == "rune_primary":
+        return match.get("perk_main_id", "") or ""
+    if metric == "rune_secondary":
+        return match.get("perk_sub_id", "") or ""
+    if metric == "control_wards_placed":
+        return match.get("detector_wards_placed", 0) or 0
+
+    # Items from player_items list
+    if metric.startswith("item_"):
+        try:
+            slot = int(metric.split("_", 1)[1])
+            if 0 <= slot <= 6:
+                items = match.get("player_items") or []
+                if isinstance(items, list) and len(items) > slot:
+                    return items[slot] or 0
+        except Exception:
+            return 0
+        return 0
+
+    # Generic direct pass-through for available match keys
+    if metric in match:
+        value = match.get(metric)
+        if isinstance(value, bool):
+            return 1 if value else 0
+        return value if value is not None else 0
     return 0
 
 
 def _compare(value, op, threshold):
-    if op == "ge":
-        return value >= threshold
-    if op == "gt":
-        return value > threshold
-    if op == "le":
-        return value <= threshold
-    if op == "lt":
-        return value < threshold
     if op == "eq":
         return value == threshold
+    try:
+        if op == "ge":
+            return value >= threshold
+        if op == "gt":
+            return value > threshold
+        if op == "le":
+            return value <= threshold
+        if op == "lt":
+            return value < threshold
+    except Exception:
+        return False
     return False
 
 
@@ -508,8 +593,13 @@ def _validate_achievements_config(entries):
                 errors.append(f"Entry {idx}: {text_field} must be a non-empty string")
 
         threshold = ach.get("threshold")
-        if not isinstance(threshold, (int, float)):
-            errors.append(f"Entry {idx}: threshold must be numeric")
+        op = ach.get("op")
+        if op == "eq":
+            if not isinstance(threshold, (int, float, str, bool)):
+                errors.append(f"Entry {idx}: threshold must be number/string/bool for eq")
+        else:
+            if not isinstance(threshold, (int, float)):
+                errors.append(f"Entry {idx}: threshold must be numeric for non-eq operators")
 
         points = ach.get("points")
         if not isinstance(points, int):
@@ -517,6 +607,9 @@ def _validate_achievements_config(entries):
 
         if "secret" in ach and not isinstance(ach.get("secret"), bool):
             errors.append(f"Entry {idx}: secret must be boolean")
+
+        if "extra" in ach and not isinstance(ach.get("extra"), dict):
+            errors.append(f"Entry {idx}: extra must be an object")
 
         if "rank_tiers" in ach:
             errors.extend(_validate_rank_tiers(ach.get("rank_tiers"), idx))
@@ -601,6 +694,159 @@ def get_active_achievements(force_refresh=False):
     return ACHIEVEMENTS, _achievements_config_cache["source"], errors
 
 
+def _default_config_document(achievements=None):
+    return {
+        "version": 1,
+        "enabled": True,
+        "notes": "Configuracion editable de desafios.",
+        "achievements": achievements if achievements is not None else ACHIEVEMENTS,
+    }
+
+
+def _load_local_config_document():
+    local_path = os.path.join("config", "logros", "achievements_config.json")
+    if not os.path.exists(local_path):
+        return None
+    try:
+        with open(local_path, "r", encoding="utf-8") as f:
+            content = json.load(f)
+        if isinstance(content, list):
+            return _default_config_document(content)
+        if isinstance(content, dict):
+            return {
+                "version": int(content.get("version", 1)),
+                "enabled": bool(content.get("enabled", True)),
+                "notes": str(content.get("notes", "")),
+                "achievements": _extract_achievements_payload(content) or [],
+            }
+    except Exception as e:
+        print(f"[achievements] Failed loading local config document: {e}")
+    return None
+
+
+def get_achievements_config_document(force_refresh=False):
+    if not force_refresh and _achievements_config_cache["achievements"] is not None:
+        doc = _default_config_document(_achievements_config_cache["achievements"])
+        return doc, _achievements_config_cache["source"], _achievements_config_cache["errors"]
+
+    errors = []
+    github_content, _ = read_file_from_github(ACHIEVEMENTS_CONFIG_PATH)
+    if isinstance(github_content, list):
+        github_content = _default_config_document(github_content)
+    if isinstance(github_content, dict):
+        achievements = _extract_achievements_payload(github_content)
+        if achievements is not None:
+            is_valid, validation_errors = _validate_achievements_config(achievements)
+            if is_valid:
+                doc = {
+                    "version": int(github_content.get("version", 1)),
+                    "enabled": bool(github_content.get("enabled", True)),
+                    "notes": str(github_content.get("notes", "")),
+                    "achievements": achievements,
+                }
+                _achievements_config_cache.update(
+                    {
+                        "timestamp": time.time(),
+                        "achievements": achievements,
+                        "source": f"github:{ACHIEVEMENTS_CONFIG_PATH}",
+                        "errors": [],
+                    }
+                )
+                return doc, _achievements_config_cache["source"], []
+            errors.extend([f"github: {e}" for e in validation_errors])
+        else:
+            errors.append("github: payload missing achievements[]")
+    else:
+        errors.append("github: config not found")
+
+    local_doc = _load_local_config_document()
+    if local_doc:
+        is_valid, validation_errors = _validate_achievements_config(local_doc["achievements"])
+        if is_valid:
+            _achievements_config_cache.update(
+                {
+                    "timestamp": time.time(),
+                    "achievements": local_doc["achievements"],
+                    "source": "local:config/logros/achievements_config.json",
+                    "errors": errors,
+                }
+            )
+            return local_doc, _achievements_config_cache["source"], errors
+        errors.extend([f"local: {e}" for e in validation_errors])
+    else:
+        errors.append("local: config not found")
+
+    fallback_doc = _default_config_document(ACHIEVEMENTS)
+    _achievements_config_cache.update(
+        {
+            "timestamp": time.time(),
+            "achievements": ACHIEVEMENTS,
+            "source": "fallback:embedded",
+            "errors": errors,
+        }
+    )
+    return fallback_doc, _achievements_config_cache["source"], errors
+
+
+def get_achievement_editor_options():
+    return {
+        "kinds": sorted(VALID_KINDS),
+        "metrics": sorted(VALID_METRICS),
+        "ops": sorted(VALID_OPS),
+        "difficulties": sorted(VALID_DIFFICULTIES),
+        "extra_boolean_keys": list(EXTRA_BOOLEAN_KEYS),
+        "extra_numeric_keys": list(EXTRA_NUMERIC_KEYS),
+        "extra_equality_keys": list(EXTRA_EQUALITY_KEYS),
+        "known_positions": list(KNOWN_POSITIONS),
+    }
+
+
+def save_achievements_config_document(document):
+    if not isinstance(document, dict):
+        return False, "Payload invalido: se esperaba objeto JSON."
+
+    achievements = _extract_achievements_payload(document)
+    if achievements is None:
+        return False, "Payload invalido: falta achievements[]."
+
+    is_valid, validation_errors = _validate_achievements_config(achievements)
+    if not is_valid:
+        return False, "Config invalida:\n- " + "\n- ".join(validation_errors[:20])
+
+    normalized_doc = {
+        "version": int(document.get("version", 1)),
+        "enabled": bool(document.get("enabled", True)),
+        "notes": str(document.get("notes", "")),
+        "achievements": achievements,
+    }
+
+    local_path = os.path.join("config", "logros", "achievements_config.json")
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    with open(local_path, "w", encoding="utf-8") as f:
+        json.dump(normalized_doc, f, ensure_ascii=False, indent=2)
+
+    _, sha = read_file_from_github(ACHIEVEMENTS_CONFIG_PATH, use_raw=False)
+    github_ok = write_file_to_github(
+        ACHIEVEMENTS_CONFIG_PATH,
+        normalized_doc,
+        message="Actualizar config de desafios",
+        sha=sha,
+    )
+
+    _achievements_config_cache.update(
+        {
+            "timestamp": time.time(),
+            "achievements": achievements,
+            "source": f"github:{ACHIEVEMENTS_CONFIG_PATH}" if github_ok else "local:config/logros/achievements_config.json",
+            "errors": [],
+        }
+    )
+
+    if github_ok:
+        return True, "Configuracion guardada en GitHub y local."
+    return True, "Configuracion guardada localmente. No se pudo escribir en GitHub (revisa token/permisos)."
+
+
 def _extra_conditions_pass(match, extra):
     if not extra:
         return True
@@ -643,6 +889,61 @@ def _extra_conditions_pass(match, extra):
         return False
     if "max_cs_per_min" in extra and cs_per_min > extra["max_cs_per_min"]:
         return False
+
+    # Generic equals / in filters to support categorical fields without new API calls.
+    equal_filters = extra.get("match_equals", {})
+    if isinstance(equal_filters, dict):
+        for key, expected in equal_filters.items():
+            if _metric_value(match, key) != expected:
+                return False
+
+    in_filters = extra.get("match_in", {})
+    if isinstance(in_filters, dict):
+        for key, allowed in in_filters.items():
+            if not isinstance(allowed, list):
+                return False
+            if _metric_value(match, key) not in allowed:
+                return False
+
+    not_in_filters = extra.get("match_not_in", {})
+    if isinstance(not_in_filters, dict):
+        for key, blocked in not_in_filters.items():
+            if not isinstance(blocked, list):
+                return False
+            if _metric_value(match, key) in blocked:
+                return False
+
+    # Role filters (shortcut for individual_position)
+    current_pos = str(match.get("individual_position", "") or "").upper()
+    allowed_positions = extra.get("allowed_positions", [])
+    if isinstance(allowed_positions, list) and allowed_positions:
+        normalized_allowed = {str(p).upper() for p in allowed_positions}
+        if current_pos not in normalized_allowed:
+            return False
+
+    excluded_positions = extra.get("excluded_positions", [])
+    if isinstance(excluded_positions, list) and excluded_positions:
+        normalized_excluded = {str(p).upper() for p in excluded_positions}
+        if current_pos in normalized_excluded:
+            return False
+
+    # Optional item filters
+    any_items = extra.get("has_any_item", [])
+    if any_items:
+        current_items = match.get("player_items") or []
+        if not any(int(item) in current_items for item in any_items if isinstance(item, (int, float, str))):
+            return False
+
+    all_items = extra.get("has_all_items", [])
+    if all_items:
+        current_items = set(match.get("player_items") or [])
+        for item in all_items:
+            try:
+                iid = int(item)
+            except Exception:
+                return False
+            if iid not in current_items:
+                return False
 
     return True
 

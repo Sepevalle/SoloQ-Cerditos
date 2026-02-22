@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+
+{% block title %}Editor de Desafios{% endblock %}
+
+{% block nav_items %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .editor-shell { border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 0.75rem; background: #fff; }
+    .challenge-list { max-height: 62vh; overflow-y: auto; border-right: 1px solid rgba(0, 0, 0, 0.08); }
+    .challenge-item { cursor: pointer; border: 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05); border-radius: 0; }
+    .challenge-item.active { background: #eef6ff; }
+    .tiers-table td, .tiers-table th { font-size: 0.88rem; }
+    .tiny-note { font-size: 0.82rem; color: #6c757d; }
+    .sticky-top-editor { position: sticky; top: 72px; z-index: 3; background: #fff; }
+    .json-preview { max-height: 200px; overflow: auto; background: #f8f9fa; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="mb-0">Editor de Desafios</h1>
+            <div class="tiny-note">Ruta privada: <code>/configsv</code> (sin enlace en menus).</div>
+        </div>
+        <div class="text-end tiny-note">
+            <div>Fuente activa: <code>{{ config_source }}</code></div>
+            {% if config_errors %}
+            <div class="text-warning">Avisos: {{ config_errors | length }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if status_message %}
+    <div class="alert alert-{{ status_kind }} mb-3">{{ status_message }}</div>
+    {% endif %}
+
+    <form id="configForm" method="post">
+        <input type="hidden" name="config_json" id="configJsonInput">
+
+        <div class="card editor-shell mb-3">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-2">
+                        <label class="form-label">Version</label>
+                        <input id="cfgVersion" type="number" class="form-control" min="1" value="1">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <div class="form-check mt-4">
+                            <input id="cfgEnabled" class="form-check-input" type="checkbox">
+                            <label class="form-check-label" for="cfgEnabled">Config activa</label>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-8">
+                        <label class="form-label">Notas de configuracion</label>
+                        <input id="cfgNotes" type="text" class="form-control" placeholder="Notas internas de balance o cambios">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card editor-shell">
+            <div class="row g-0">
+                <div class="col-12 col-lg-4">
+                    <div class="sticky-top-editor p-2 border-bottom">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-primary" id="btnNewChallenge">Nuevo</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDuplicateChallenge">Duplicar</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteChallenge">Eliminar</button>
+                        </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-dark" id="btnTplNormal">Plantilla Normal</button>
+                            <button type="button" class="btn btn-sm btn-outline-dark" id="btnTplSecret">Plantilla Secreto</button>
+                        </div>
+                    </div>
+                    <div id="challengeList" class="challenge-list"></div>
+                </div>
+
+                <div class="col-12 col-lg-8">
+                    <div class="p-3">
+                        <h5 class="mb-3">Desafio seleccionado</h5>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Key unica</label>
+                                <input id="fKey" class="form-control" placeholder="mi_desafio_unico">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Nombre</label>
+                                <input id="fName" class="form-control" placeholder="Nombre visible">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Descripcion</label>
+                                <input id="fDescription" class="form-control" placeholder="Descripcion del hito">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label">Tipo</label>
+                                <select id="fKind" class="form-select"></select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label">Metrica</label>
+                                <select id="fMetric" class="form-select"></select>
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label">Operador</label>
+                                <select id="fOp" class="form-select"></select>
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label">Threshold</label>
+                                <input id="fThreshold" type="text" class="form-control" value="1">
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label">Points base</label>
+                                <input id="fPoints" type="number" class="form-control" value="10">
+                            </div>
+
+                            <div class="col-6 col-md-3">
+                                <label class="form-label">Dificultad</label>
+                                <select id="fDifficulty" class="form-select"></select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label">Max ranks (auto)</label>
+                                <input id="fMaxRanks" type="number" min="1" max="5" class="form-control" value="5">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check mt-4">
+                                    <input id="fSecret" type="checkbox" class="form-check-input">
+                                    <label class="form-check-label" for="fSecret">Es secreto</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check mt-4">
+                                    <input id="fUseCustomTiers" type="checkbox" class="form-check-input">
+                                    <label class="form-check-label" for="fUseCustomTiers">Usar rank_tiers custom</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6>Extras</h6>
+                        <div class="row g-2" id="extraFields"></div>
+
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Rank tiers personalizados</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddTier">Agregar tier</button>
+                        </div>
+                        <div class="tiny-note mb-2">Si no activas custom tiers, se usan los rangos automaticos por dificultad.</div>
+                        <div class="table-responsive">
+                            <table class="table table-sm tiers-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Min count</th>
+                                        <th>Puntos</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tiersTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <hr>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-success" id="btnSaveConfig">Guardar configuracion</button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnExportJson">Copiar JSON</button>
+                        </div>
+                        <div class="tiny-note mt-2">Guardar escribe en local y en GitHub (si el token/permisos lo permiten).</div>
+                        <pre class="json-preview mt-3" id="jsonPreview"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+    const configDoc = {{ config_doc | tojson }};
+    const options = {{ editor_options | tojson }};
+    let selectedIdx = 0;
+
+    const $ = (id) => document.getElementById(id);
+    const state = {
+        version: Number(configDoc.version || 1),
+        enabled: Boolean(configDoc.enabled),
+        notes: configDoc.notes || "",
+        achievements: Array.isArray(configDoc.achievements) ? configDoc.achievements : [],
+    };
+
+    const defaultChallenge = () => ({
+        key: "nuevo_desafio",
+        name: "Nuevo Desafio",
+        description: "Describe el desafio",
+        points: 10,
+        kind: "good",
+        metric: "kills",
+        op: "ge",
+        threshold: 1,
+        difficulty: "medium",
+        max_ranks: 5,
+    });
+
+    const templateSecret = () => ({
+        key: "nuevo_secreto",
+        name: "Nuevo Secreto",
+        description: "Desafio secreto",
+        points: 18,
+        kind: "good",
+        metric: "vision_score",
+        op: "ge",
+        threshold: 50,
+        extra: { max_deaths: 3 },
+        secret: true,
+        difficulty: "extreme",
+        max_ranks: 1,
+    });
+
+    function ensureSelection() {
+        if (!state.achievements.length) {
+            state.achievements.push(defaultChallenge());
+        }
+        if (selectedIdx < 0) selectedIdx = 0;
+        if (selectedIdx >= state.achievements.length) selectedIdx = state.achievements.length - 1;
+    }
+
+    function buildSelect(selectEl, values) {
+        selectEl.innerHTML = values.map(v => `<option value="${v}">${v}</option>`).join("");
+    }
+
+    function renderList() {
+        ensureSelection();
+        const list = $("challengeList");
+        list.innerHTML = state.achievements.map((a, idx) => {
+            const active = idx === selectedIdx ? "active" : "";
+            return `<button type="button" class="list-group-item challenge-item ${active}" data-idx="${idx}">
+                <div class="fw-semibold">${a.name || "(sin nombre)"}</div>
+                <small class="text-muted">${a.key || "(sin key)"}</small>
+            </button>`;
+        }).join("");
+        list.querySelectorAll("[data-idx]").forEach(el => {
+            el.addEventListener("click", () => {
+                syncFormToState();
+                selectedIdx = Number(el.dataset.idx);
+                renderAll();
+            });
+        });
+    }
+
+    function current() {
+        ensureSelection();
+        return state.achievements[selectedIdx];
+    }
+
+    function renderExtraFields() {
+        const c = current();
+        const extra = c.extra || {};
+        const matchEquals = extra.match_equals || {};
+        const allowedPositions = Array.isArray(extra.allowed_positions) ? extra.allowed_positions.join(", ") : "";
+        const excludedPositions = Array.isArray(extra.excluded_positions) ? extra.excluded_positions.join(", ") : "";
+        const host = $("extraFields");
+        const boolHtml = (options.extra_boolean_keys || []).map(key => `
+            <div class="col-6 col-md-3">
+                <div class="form-check mt-2">
+                    <input class="form-check-input extra-bool" type="checkbox" id="extra_bool_${key}" data-key="${key}" ${extra[key] ? "checked" : ""}>
+                    <label class="form-check-label" for="extra_bool_${key}">${key}</label>
+                </div>
+            </div>
+        `).join("");
+        const numHtml = (options.extra_numeric_keys || []).map(key => `
+            <div class="col-6 col-md-3">
+                <label class="form-label small">${key}</label>
+                <input class="form-control form-control-sm extra-num" type="number" step="any" data-key="${key}" value="${extra[key] ?? ""}">
+            </div>
+        `).join("");
+        const eqHtml = (options.extra_equality_keys || []).map(key => `
+            <div class="col-6 col-md-3">
+                <label class="form-label small">match_equals.${key}</label>
+                <input class="form-control form-control-sm extra-eq" type="text" data-key="${key}" value="${matchEquals[key] ?? ""}">
+            </div>
+        `).join("");
+        const posHtml = `
+            <div class="col-12">
+                <div class="tiny-note">Posiciones disponibles: ${(options.known_positions || []).join(", ")}</div>
+            </div>
+            <div class="col-6">
+                <label class="form-label small">allowed_positions (coma separada)</label>
+                <input class="form-control form-control-sm" type="text" id="extra_allowed_positions" value="${allowedPositions}">
+            </div>
+            <div class="col-6">
+                <label class="form-label small">excluded_positions (coma separada)</label>
+                <input class="form-control form-control-sm" type="text" id="extra_excluded_positions" value="${excludedPositions}">
+            </div>
+        `;
+        host.innerHTML = boolHtml + numHtml + eqHtml + posHtml;
+    }
+
+    function renderTiersTable() {
+        const c = current();
+        const tiers = Array.isArray(c.rank_tiers) ? c.rank_tiers : [];
+        $("tiersTableBody").innerHTML = tiers.map((t, i) => `
+            <tr data-row="${i}">
+                <td><input class="form-control form-control-sm tier-name" value="${t.name ?? ""}"></td>
+                <td><input class="form-control form-control-sm tier-min" type="number" min="1" value="${t.min_count ?? 1}"></td>
+                <td><input class="form-control form-control-sm tier-points" type="number" min="1" value="${t.points ?? 1}"></td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger btn-del-tier">Quitar</button></td>
+            </tr>
+        `).join("");
+        $("tiersTableBody").querySelectorAll(".btn-del-tier").forEach((btn, i) => {
+            btn.addEventListener("click", () => {
+                syncFormToState();
+                c.rank_tiers.splice(i, 1);
+                renderAll();
+            });
+        });
+    }
+
+    function renderForm() {
+        const c = current();
+        $("cfgVersion").value = state.version;
+        $("cfgEnabled").checked = state.enabled;
+        $("cfgNotes").value = state.notes;
+
+        $("fKey").value = c.key ?? "";
+        $("fName").value = c.name ?? "";
+        $("fDescription").value = c.description ?? "";
+        $("fKind").value = c.kind ?? "good";
+        $("fMetric").value = c.metric ?? "kills";
+        $("fOp").value = c.op ?? "ge";
+        $("fThreshold").value = c.threshold ?? 1;
+        $("fPoints").value = c.points ?? 10;
+        $("fDifficulty").value = c.difficulty ?? "medium";
+        $("fMaxRanks").value = c.max_ranks ?? 5;
+        $("fSecret").checked = Boolean(c.secret);
+        $("fUseCustomTiers").checked = Array.isArray(c.rank_tiers) && c.rank_tiers.length > 0;
+        renderExtraFields();
+        renderTiersTable();
+    }
+
+    function syncFormToState() {
+        ensureSelection();
+        const c = current();
+        state.version = Number($("cfgVersion").value || 1);
+        state.enabled = Boolean($("cfgEnabled").checked);
+        state.notes = $("cfgNotes").value || "";
+
+        c.key = $("fKey").value.trim();
+        c.name = $("fName").value.trim();
+        c.description = $("fDescription").value.trim();
+        c.kind = $("fKind").value;
+        c.metric = $("fMetric").value;
+        c.op = $("fOp").value;
+        const rawThreshold = $("fThreshold").value.trim();
+        if (rawThreshold.toLowerCase() === "true") c.threshold = true;
+        else if (rawThreshold.toLowerCase() === "false") c.threshold = false;
+        else if (rawThreshold !== "" && !Number.isNaN(Number(rawThreshold))) c.threshold = Number(rawThreshold);
+        else c.threshold = rawThreshold;
+        c.points = Number($("fPoints").value || 0);
+        c.difficulty = $("fDifficulty").value;
+        c.max_ranks = Number($("fMaxRanks").value || 1);
+        c.secret = Boolean($("fSecret").checked);
+
+        const extra = {};
+        document.querySelectorAll(".extra-bool").forEach(el => {
+            if (el.checked) extra[el.dataset.key] = true;
+        });
+        document.querySelectorAll(".extra-num").forEach(el => {
+            const v = el.value;
+            if (v !== "" && v !== null) extra[el.dataset.key] = Number(v);
+        });
+        const matchEquals = {};
+        document.querySelectorAll(".extra-eq").forEach(el => {
+            const v = el.value.trim();
+            if (!v) return;
+            if (v.toLowerCase() === "true") matchEquals[el.dataset.key] = true;
+            else if (v.toLowerCase() === "false") matchEquals[el.dataset.key] = false;
+            else if (!Number.isNaN(Number(v))) matchEquals[el.dataset.key] = Number(v);
+            else matchEquals[el.dataset.key] = v;
+        });
+        if (Object.keys(matchEquals).length) extra.match_equals = matchEquals;
+
+        const allowedRaw = $("extra_allowed_positions") ? $("extra_allowed_positions").value.trim() : "";
+        const excludedRaw = $("extra_excluded_positions") ? $("extra_excluded_positions").value.trim() : "";
+        if (allowedRaw) {
+            extra.allowed_positions = allowedRaw.split(",").map(x => x.trim()).filter(Boolean);
+        }
+        if (excludedRaw) {
+            extra.excluded_positions = excludedRaw.split(",").map(x => x.trim()).filter(Boolean);
+        }
+        if (Object.keys(extra).length) c.extra = extra;
+        else delete c.extra;
+
+        if ($("fUseCustomTiers").checked) {
+            const tiers = [];
+            $("tiersTableBody").querySelectorAll("tr").forEach(row => {
+                const name = row.querySelector(".tier-name").value.trim();
+                const minCount = Number(row.querySelector(".tier-min").value || 1);
+                const points = Number(row.querySelector(".tier-points").value || 1);
+                if (name) tiers.push({ name, min_count: minCount, points });
+            });
+            if (tiers.length) c.rank_tiers = tiers;
+            else delete c.rank_tiers;
+        } else {
+            delete c.rank_tiers;
+        }
+    }
+
+    function renderJsonPreview() {
+        const payload = {
+            version: state.version,
+            enabled: state.enabled,
+            notes: state.notes,
+            achievements: state.achievements,
+        };
+        $("jsonPreview").textContent = JSON.stringify(payload, null, 2);
+    }
+
+    function renderAll() {
+        renderList();
+        renderForm();
+        renderJsonPreview();
+    }
+
+    buildSelect($("fKind"), options.kinds || []);
+    buildSelect($("fMetric"), options.metrics || []);
+    buildSelect($("fOp"), options.ops || []);
+    buildSelect($("fDifficulty"), options.difficulties || []);
+
+    $("btnNewChallenge").addEventListener("click", () => {
+        syncFormToState();
+        state.achievements.push(defaultChallenge());
+        selectedIdx = state.achievements.length - 1;
+        renderAll();
+    });
+    $("btnDuplicateChallenge").addEventListener("click", () => {
+        syncFormToState();
+        const c = JSON.parse(JSON.stringify(current()));
+        c.key = `${c.key || "desafio"}_copy`;
+        state.achievements.splice(selectedIdx + 1, 0, c);
+        selectedIdx += 1;
+        renderAll();
+    });
+    $("btnDeleteChallenge").addEventListener("click", () => {
+        if (!confirm("Eliminar desafio seleccionado?")) return;
+        if (!state.achievements.length) return;
+        state.achievements.splice(selectedIdx, 1);
+        if (!state.achievements.length) state.achievements.push(defaultChallenge());
+        if (selectedIdx >= state.achievements.length) selectedIdx = state.achievements.length - 1;
+        renderAll();
+    });
+    $("btnTplNormal").addEventListener("click", () => {
+        syncFormToState();
+        state.achievements.push(defaultChallenge());
+        selectedIdx = state.achievements.length - 1;
+        renderAll();
+    });
+    $("btnTplSecret").addEventListener("click", () => {
+        syncFormToState();
+        state.achievements.push(templateSecret());
+        selectedIdx = state.achievements.length - 1;
+        renderAll();
+    });
+    $("btnAddTier").addEventListener("click", () => {
+        syncFormToState();
+        const c = current();
+        if (!Array.isArray(c.rank_tiers)) c.rank_tiers = [];
+        if (c.rank_tiers.length >= 5) {
+            alert("Maximo 5 tiers.");
+            return;
+        }
+        c.rank_tiers.push({
+            name: `Rango ${["I","II","III","IV","V"][c.rank_tiers.length]}`,
+            min_count: c.rank_tiers.length + 1,
+            points: (c.rank_tiers.length + 1) * 5,
+        });
+        $("fUseCustomTiers").checked = true;
+        renderAll();
+    });
+    $("btnExportJson").addEventListener("click", async () => {
+        syncFormToState();
+        const payload = JSON.stringify({
+            version: state.version,
+            enabled: state.enabled,
+            notes: state.notes,
+            achievements: state.achievements,
+        }, null, 2);
+        try {
+            await navigator.clipboard.writeText(payload);
+            alert("JSON copiado al portapapeles.");
+        } catch {
+            alert("No se pudo copiar automáticamente.");
+        }
+    });
+    $("btnSaveConfig").addEventListener("click", () => {
+        syncFormToState();
+        const payload = {
+            version: state.version,
+            enabled: state.enabled,
+            notes: state.notes,
+            achievements: state.achievements,
+        };
+        $("configJsonInput").value = JSON.stringify(payload);
+        $("configForm").submit();
+    });
+
+    ["input", "change"].forEach(ev => {
+        document.addEventListener(ev, (e) => {
+            if (!e.target.closest("#configForm")) return;
+            if (e.target.id === "configJsonInput") return;
+            syncFormToState();
+            renderList();
+            renderJsonPreview();
+        });
+    });
+
+    ensureSelection();
+    renderAll();
+})();
+</script>
+{% endblock %}
