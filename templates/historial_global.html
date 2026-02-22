@@ -9,6 +9,9 @@
 <li class="nav-item">
     <a class="nav-link {% if request.endpoint == 'main.records_personales' %}active{% endif %}" href="{{ url_for('main.records_personales') }}">Récords Personales</a>
 </li>
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'main.logros' %}active{% endif %}" href="{{ url_for('main.logros') }}">Logros</a>
+</li>
 {% endblock %}
 
 {% block content %}

@@ -11,6 +11,7 @@ from services.github_service import read_peak_elo, save_peak_elo, read_lp_histor
 from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
 from services.riot_api import esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
+from services.achievements_service import calculate_global_achievements
 from utils.helpers import calcular_valor_clasificacion
 
 # Importar el generador de JSON para el index
@@ -286,6 +287,26 @@ def records_personales():
                              ddragon_version=settings.DDRAGON_VERSION)
     except Exception as e:
         print(f"[records_personales] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return render_template('404.html'), 500
+
+
+@main_bp.route('/logros')
+def logros():
+    """Renderiza la página de logros globales por jugador."""
+    print("[logros] Petición recibida.")
+    try:
+        data = calculate_global_achievements()
+        return render_template(
+            'logros.html',
+            players=data.get('players', []),
+            achievements_catalog=data.get('achievements_catalog', []),
+            global_stats=data.get('global_stats', {}),
+            ddragon_version=settings.DDRAGON_VERSION
+        )
+    except Exception as e:
+        print(f"[logros] Error: {e}")
         import traceback
         traceback.print_exc()
         return render_template('404.html'), 500

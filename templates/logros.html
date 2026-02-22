@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Logros - Cerditos y Valientes{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'main.historial_global' %}active{% endif %}" href="{{ url_for('main.historial_global') }}">Historial Global</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'main.records_personales' %}active{% endif %}" href="{{ url_for('main.records_personales') }}">Récords Personales</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('main.logros') }}">Logros</a>
+</li>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .summary-card {
+        border: 0;
+        border-radius: 0.8rem;
+    }
+    .player-card {
+        border-radius: 0.8rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .achievement-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.22rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin: 0.18rem;
+    }
+    .achievement-good {
+        background: rgba(25, 135, 84, 0.14);
+        color: #146c43;
+        border: 1px solid rgba(25, 135, 84, 0.25);
+    }
+    .achievement-bad {
+        background: rgba(220, 53, 69, 0.14);
+        color: #b02a37;
+        border: 1px solid rgba(220, 53, 69, 0.25);
+    }
+    .points-pill {
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 0.18rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <h1 class="mb-4">Logros de Jugadores</h1>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card summary-card shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted">Jugadores evaluados</small>
+                    <h3 class="mb-0">{{ global_stats.players_count | default(0) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card summary-card shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted">Logros activados</small>
+                    <h3 class="mb-0">{{ global_stats.total_unlocked | default(0) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card summary-card shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted">Logros disponibles</small>
+                    <h3 class="mb-0">{{ global_stats.max_possible_unique | default(0) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if players %}
+    <div class="table-responsive mb-4">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Jugador</th>
+                    <th>Puntos</th>
+                    <th>Positivos</th>
+                    <th>Negativos</th>
+                    <th>Únicos</th>
+                    <th>Activaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in players %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="text-start">
+                        <a href="{{ url_for('player.perfil_jugador', game_name=p.riot_id) }}" class="link-perfil">
+                            <strong>{{ p.player_name }}</strong>
+                            <small class="text-muted d-block">{{ p.riot_id }}</small>
+                        </a>
+                    </td>
+                    <td><span class="badge bg-primary">{{ p.total_points }}</span></td>
+                    <td><span class="badge bg-success">{{ p.positive_points }}</span></td>
+                    <td><span class="badge bg-danger">{{ p.negative_points }}</span></td>
+                    <td>{{ p.unique_achievements }}</td>
+                    <td>{{ p.hits_total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row g-3">
+        {% for p in players %}
+        <div class="col-12 col-lg-6">
+            <div class="card player-card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-0">{{ p.player_name }}</h5>
+                            <small class="text-muted">{{ p.riot_id }}</small>
+                        </div>
+                        <span class="points-pill {% if p.total_points >= 0 %}bg-success-subtle text-success-emphasis border{% else %}bg-danger-subtle text-danger-emphasis border{% endif %}">
+                            {{ p.total_points }} pts
+                        </span>
+                    </div>
+
+                    {% if p.achievement_stats %}
+                    <div>
+                        {% for a in p.achievement_stats[:10] %}
+                        <span class="achievement-chip {% if a.kind == 'good' %}achievement-good{% else %}achievement-bad{% endif %}" title="{{ a.description }}">
+                            {{ a.name }} x{{ a.count }}
+                            <span class="fw-bold">{% if a.points > 0 %}+{% endif %}{{ a.points }}</span>
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-muted">Sin logros todavía.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No hay jugadores o partidas para calcular logros.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
