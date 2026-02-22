@@ -226,8 +226,11 @@
         if (selectedIdx >= state.achievements.length) selectedIdx = state.achievements.length - 1;
     }
 
-    function buildSelect(selectEl, values) {
-        selectEl.innerHTML = values.map(v => `<option value="${v}">${v}</option>`).join("");
+    function buildSelect(selectEl, values, labels = null) {
+        selectEl.innerHTML = values.map(v => {
+            const label = labels && labels[v] ? labels[v] : v;
+            return `<option value="${v}">${label}</option>`;
+        }).join("");
     }
 
     function renderList() {
@@ -423,9 +426,17 @@
         renderJsonPreview();
     }
 
+    const opLabels = {
+        ge: ">= (mayor o igual)",
+        gt: "> (mayor que)",
+        le: "<= (menor o igual)",
+        lt: "< (menor que)",
+        eq: "= (igual a)",
+    };
+
     buildSelect($("fKind"), options.kinds || []);
     buildSelect($("fMetric"), options.metrics || []);
-    buildSelect($("fOp"), options.ops || []);
+    buildSelect($("fOp"), options.ops || [], opLabels);
     buildSelect($("fDifficulty"), options.difficulties || []);
 
     $("btnNewChallenge").addEventListener("click", () => {
