@@ -1,245 +1,463 @@
 {
   "version": 1,
   "enabled": true,
-  "notes": "Configuracion de desafios editable desde GitHub.",
+  "notes": "Configuracion de desafios editable desde GitHub. | Expansion de desafios multi-campo (objetivos, vision, macro, rol).",
   "achievements": [
     {
-      "key": "killer_instinct",
-      "name": "Instinto Asesino",
       "description": "Consigue 10 o mas kills en una partida.",
-      "points": 15,
-      "kind": "good",
-      "metric": "kills",
-      "op": "ge",
-      "threshold": 10,
       "difficulty": "easy",
-      "max_ranks": 5
-    },
-    {
-      "key": "legendary_rampage",
-      "name": "Rampage Legendario",
-      "description": "Consigue 15 o mas kills en una partida.",
-      "points": 30,
+      "key": "killer_instinct",
       "kind": "good",
+      "max_ranks": 5,
       "metric": "kills",
+      "name": "Instinto Asesino",
       "op": "ge",
-      "threshold": 15,
+      "points": 15,
+      "secret": false,
+      "threshold": 10
+    },
+    {
+      "description": "Consigue 15 o mas kills en una partida.",
       "difficulty": "hard",
-      "max_ranks": 2
-    },
-    {
-      "key": "assist_king",
-      "name": "Rey de Asistencias",
-      "description": "Consigue 20 o mas asistencias en una partida.",
-      "points": 18,
+      "key": "legendary_rampage",
       "kind": "good",
-      "metric": "assists",
+      "max_ranks": 2,
+      "metric": "kills",
+      "name": "Rampage Legendario",
       "op": "ge",
-      "threshold": 20,
-      "difficulty": "medium",
-      "max_ranks": 4
+      "points": 30,
+      "secret": false,
+      "threshold": 15
     },
     {
-      "key": "no_death_hero",
-      "name": "Sin Miedo a Nada",
-      "description": "Gana una partida con 0 muertes.",
-      "points": 25,
+      "description": "Consigue 20 o mas asistencias en una partida.",
+      "difficulty": "medium",
+      "key": "assist_king",
       "kind": "good",
-      "metric": "deaths",
-      "op": "eq",
-      "threshold": 0,
+      "max_ranks": 4,
+      "metric": "assists",
+      "name": "Rey de Asistencias",
+      "op": "ge",
+      "points": 18,
+      "threshold": 20
+    },
+    {
+      "description": "Gana una partida con 0 muertes.",
       "extra": {
         "win": true
       },
+      "key": "no_death_hero",
+      "kind": "good",
+      "metric": "deaths",
+      "name": "Sin Miedo a Nada",
+      "op": "eq",
+      "points": 25,
       "rank_tiers": [
         {
-          "name": "Rango I",
           "min_count": 1,
+          "name": "Rango I",
           "points": 6
         },
         {
-          "name": "Rango II",
           "min_count": 3,
+          "name": "Rango II",
           "points": 12
         },
         {
-          "name": "Rango III",
           "min_count": 5,
+          "name": "Rango III",
           "points": 18
         },
         {
-          "name": "Rango IV",
           "min_count": 10,
+          "name": "Rango IV",
           "points": 26
         }
-      ]
+      ],
+      "threshold": 0
     },
     {
-      "key": "vision_lord",
-      "name": "Senor de la Vision",
       "description": "Alcanza 40 o mas de vision score.",
+      "difficulty": "medium",
+      "key": "vision_lord",
+      "kind": "good",
+      "max_ranks": 5,
+      "metric": "vision_score",
+      "name": "Senor de la Vision",
+      "op": "ge",
       "points": 14,
-      "kind": "good",
-      "metric": "vision_score",
-      "op": "ge",
-      "threshold": 40,
-      "difficulty": "medium",
-      "max_ranks": 5
+      "threshold": 40
     },
     {
-      "key": "damage_monster",
-      "name": "Monstruo de Dano",
       "description": "Haz 35000 o mas de dano a campeones.",
-      "points": 20,
+      "difficulty": "medium",
+      "key": "damage_monster",
       "kind": "good",
+      "max_ranks": 4,
       "metric": "total_damage_dealt_to_champions",
+      "name": "Monstruo de Dano",
       "op": "ge",
-      "threshold": 35000,
-      "difficulty": "medium",
-      "max_ranks": 4
+      "points": 20,
+      "threshold": 35000
     },
     {
-      "key": "farmer_pro",
-      "name": "Farmeador Pro",
       "description": "Manten 8 o mas CS/min durante la partida.",
+      "difficulty": "hard",
+      "key": "farmer_pro",
+      "kind": "good",
+      "max_ranks": 3,
+      "metric": "cs_per_min",
+      "name": "Farmeador Pro",
+      "op": "ge",
       "points": 16,
-      "kind": "good",
-      "metric": "cs_per_min",
-      "op": "ge",
-      "threshold": 8.0,
-      "difficulty": "hard",
-      "max_ranks": 3
+      "secret": false,
+      "threshold": 8
     },
     {
-      "key": "objective_hunter",
-      "name": "Cazador de Objetivos",
       "description": "Consigue 5 o mas objetivos (torres + dragones + barones).",
-      "points": 17,
+      "difficulty": "hard",
+      "key": "objective_hunter",
       "kind": "good",
+      "max_ranks": 3,
       "metric": "objectives_total",
+      "name": "Cazador de Objetivos",
       "op": "ge",
-      "threshold": 5,
-      "difficulty": "hard",
-      "max_ranks": 3
+      "points": 17,
+      "threshold": 5
     },
     {
-      "key": "feed_alarm",
-      "name": "Alarma de Feed",
       "description": "Muere 10 o mas veces en una partida.",
-      "points": -12,
-      "kind": "bad",
-      "metric": "deaths",
-      "op": "ge",
-      "threshold": 10,
       "difficulty": "easy",
-      "max_ranks": 5
+      "key": "feed_alarm",
+      "kind": "bad",
+      "max_ranks": 5,
+      "metric": "deaths",
+      "name": "Alarma de Feed",
+      "op": "ge",
+      "points": -12,
+      "threshold": 10
     },
     {
-      "key": "dark_game",
-      "name": "Partida Oscura",
       "description": "Termina con 5 o menos de vision score en partidas largas.",
-      "points": -9,
+      "difficulty": "medium",
+      "extra": {
+        "min_duration": 1200
+      },
+      "key": "dark_game",
       "kind": "bad",
+      "max_ranks": 4,
       "metric": "vision_score",
+      "name": "Partida Oscura",
       "op": "le",
-      "threshold": 5,
-      "extra": {
-        "min_duration": 1200
-      },
-      "difficulty": "medium",
-      "max_ranks": 4
+      "points": -9,
+      "threshold": 5
     },
     {
+      "description": "Baja de 4 CS/min en partidas largas. (No support)",
+      "difficulty": "medium",
+      "extra": {
+        "excluded_positions": [
+          "UTILITY"
+        ],
+        "min_duration": 1200
+      },
       "key": "afk_farm",
-      "name": "Farm Fantasma",
-      "description": "Baja de 4 CS/min en partidas largas.",
-      "points": -8,
       "kind": "bad",
+      "max_ranks": 4,
       "metric": "cs_per_min",
+      "name": "Farm Fantasma",
       "op": "lt",
-      "threshold": 4.0,
-      "extra": {
-        "min_duration": 1200
-      },
-      "difficulty": "medium",
-      "max_ranks": 4
+      "points": -8,
+      "secret": false,
+      "threshold": 4
     },
     {
-      "key": "invisible_impact",
-      "name": "Impacto Invisible",
       "description": "K+A <= 2 y 6 o mas muertes.",
-      "points": -10,
-      "kind": "bad",
-      "metric": "low_impact_flag",
-      "op": "eq",
-      "threshold": 1,
       "difficulty": "hard",
-      "max_ranks": 3
+      "key": "invisible_impact",
+      "kind": "bad",
+      "max_ranks": 3,
+      "metric": "low_impact_flag",
+      "name": "Impacto Invisible",
+      "op": "eq",
+      "points": -10,
+      "threshold": 1
     },
     {
-      "key": "flawless_commander",
-      "name": "Comandante Impecable",
       "description": "Logro secreto: gana con KDA dominante y pocas muertes.",
-      "points": 24,
-      "kind": "good",
-      "metric": "kills",
-      "op": "ge",
-      "threshold": 12,
-      "extra": {
-        "win": true,
-        "max_deaths": 2,
-        "min_assists": 10
-      },
-      "secret": true,
       "difficulty": "extreme",
-      "max_ranks": 1
+      "extra": {
+        "max_deaths": 2,
+        "min_assists": 10,
+        "win": true
+      },
+      "key": "flawless_commander",
+      "kind": "good",
+      "max_ranks": 1,
+      "metric": "kills",
+      "name": "Comandante Impecable",
+      "op": "ge",
+      "points": 24,
+      "secret": true,
+      "threshold": 12
     },
     {
-      "key": "vision_ghost",
-      "name": "Fantasma del Mapa",
       "description": "Logro secreto: controla la vision con muy bajo riesgo.",
-      "points": 18,
-      "kind": "good",
-      "metric": "vision_score",
-      "op": "ge",
-      "threshold": 55,
+      "difficulty": "extreme",
       "extra": {
         "max_deaths": 3
       },
+      "key": "vision_ghost",
+      "kind": "good",
+      "max_ranks": 1,
+      "metric": "vision_score",
+      "name": "Fantasma del Mapa",
+      "op": "ge",
+      "points": 18,
       "secret": true,
-      "difficulty": "extreme",
-      "max_ranks": 1
+      "threshold": 55
     },
     {
-      "key": "tower_reaper",
-      "name": "Segador de Torres",
       "description": "Logro secreto: participa fuerte en objetivos estructurales.",
+      "difficulty": "extreme",
+      "key": "tower_reaper",
+      "kind": "good",
+      "max_ranks": 1,
+      "metric": "turret_kills",
+      "name": "Segador de Torres",
+      "op": "ge",
+      "points": 18,
+      "secret": true,
+      "threshold": 5
+    },
+    {
+      "description": "Logro secreto: gana una partida de alto riesgo (8/8/8 minimo).",
+      "difficulty": "extreme",
+      "extra": {
+        "min_assists": 8,
+        "min_kills": 8,
+        "win": true
+      },
+      "key": "phoenix_game",
+      "kind": "good",
+      "max_ranks": 1,
+      "metric": "deaths",
+      "name": "Partida Fenix",
+      "op": "ge",
+      "points": 16,
+      "secret": true,
+      "threshold": 8
+    },
+    {
+      "key": "super_racha",
+      "name": "Asesino Insaciable",
+      "description": "Gana con una racha de asesinatos de 30 o más",
       "points": 18,
       "kind": "good",
-      "metric": "turret_kills",
+      "metric": "largest_killing_spree",
       "op": "ge",
-      "threshold": 5,
-      "secret": true,
-      "difficulty": "extreme",
-      "max_ranks": 1
-    },
-    {
-      "key": "phoenix_game",
-      "name": "Partida Fenix",
-      "description": "Logro secreto: gana una partida de alto riesgo (8/8/8 minimo).",
-      "points": 16,
-      "kind": "good",
-      "metric": "deaths",
-      "op": "ge",
-      "threshold": 8,
+      "threshold": 30,
       "extra": {
-        "win": true,
-        "min_kills": 8,
-        "min_assists": 8
+        "win": true
       },
       "secret": true,
       "difficulty": "extreme",
       "max_ranks": 1
+    },
+    {
+      "key": "macro_engine",
+      "name": "Motor Macro",
+      "description": "Influye en objetivos: 30000 o m?s de da?o a objetivos.",
+      "points": 14,
+      "kind": "good",
+      "metric": "damage_dealt_to_objectives",
+      "op": "ge",
+      "threshold": 30000,
+      "difficulty": "medium",
+      "max_ranks": 4
+    },
+    {
+      "key": "siege_specialist",
+      "name": "Especialista en Asedios",
+      "description": "Da?a estructuras: 4000 o m?s de da?o a edificios.",
+      "points": 12,
+      "kind": "good",
+      "metric": "damage_dealt_to_buildings",
+      "op": "ge",
+      "threshold": 4000,
+      "difficulty": "medium",
+      "max_ranks": 4
+    },
+    {
+      "key": "map_controller",
+      "name": "Control de Mapa",
+      "description": "Coloca 2 o m?s wards de control en una partida.",
+      "points": 10,
+      "kind": "good",
+      "metric": "control_wards_placed",
+      "op": "ge",
+      "threshold": 2,
+      "difficulty": "medium",
+      "max_ranks": 5
+    },
+    {
+      "key": "vision_per_minute",
+      "name": "Radar Humano",
+      "description": "Mant?n 1.2 o m?s de visi?n por minuto.",
+      "points": 13,
+      "kind": "good",
+      "metric": "vision_score_per_min",
+      "op": "ge",
+      "threshold": 1.2,
+      "difficulty": "hard",
+      "max_ranks": 3
+    },
+    {
+      "key": "teamfight_anchor",
+      "name": "Ancla de Teamfight",
+      "description": "Alcanza 60% o m?s de participaci?n en kills.",
+      "points": 15,
+      "kind": "good",
+      "metric": "kill_participation",
+      "op": "ge",
+      "threshold": 60,
+      "difficulty": "hard",
+      "max_ranks": 3
+    },
+    {
+      "key": "money_printer",
+      "name": "Impresora de Oro",
+      "description": "Gana 16000 o m?s de oro en partida.",
+      "points": 14,
+      "kind": "good",
+      "metric": "gold_earned",
+      "op": "ge",
+      "threshold": 16000,
+      "difficulty": "hard",
+      "max_ranks": 3
+    },
+    {
+      "key": "frontline_wall",
+      "name": "Muro de Primera L?nea",
+      "description": "Recibe 42000 o m?s de da?o con m?ximo 7 muertes.",
+      "points": 12,
+      "kind": "good",
+      "metric": "total_damage_taken",
+      "op": "ge",
+      "threshold": 42000,
+      "extra": {
+        "max_deaths": 7
+      },
+      "difficulty": "hard",
+      "max_ranks": 3
+    },
+    {
+      "key": "tower_demolisher",
+      "name": "Demolici?n de Torres",
+      "description": "Destruye 2 o m?s torres en una partida.",
+      "points": 12,
+      "kind": "good",
+      "metric": "turret_kills",
+      "op": "ge",
+      "threshold": 2,
+      "difficulty": "medium",
+      "max_ranks": 4
+    },
+    {
+      "key": "first_blood_hunter",
+      "name": "Cazador de Primera Sangre",
+      "description": "Consigue primera sangre en la partida.",
+      "points": 9,
+      "kind": "good",
+      "metric": "first_blood_kill",
+      "op": "eq",
+      "threshold": true,
+      "difficulty": "medium",
+      "max_ranks": 4
+    },
+    {
+      "key": "objective_thief",
+      "name": "Ladr?n de Objetivos",
+      "description": "Roba al menos 1 objetivo neutral en partida.",
+      "points": 18,
+      "kind": "good",
+      "metric": "objectives_stolen",
+      "op": "ge",
+      "threshold": 1,
+      "difficulty": "extreme",
+      "max_ranks": 1,
+      "secret": true,
+      "extra": {
+        "allowed_positions": [
+          "JUNGLE"
+        ]
+      }
+    },
+    {
+      "key": "dark_support",
+      "name": "Support a Ciegas",
+      "description": "Si juegas support, acabar con 15 o menos de visi?n.",
+      "points": -10,
+      "kind": "bad",
+      "metric": "vision_score",
+      "op": "le",
+      "threshold": 15,
+      "difficulty": "medium",
+      "max_ranks": 4,
+      "extra": {
+        "allowed_positions": [
+          "UTILITY"
+        ],
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "no_objective_pressure",
+      "name": "Sin Presi?n de Objetivos",
+      "description": "Menos de 12000 de da?o a objetivos en partida larga.",
+      "points": -9,
+      "kind": "bad",
+      "metric": "damage_dealt_to_objectives",
+      "op": "lt",
+      "threshold": 12000,
+      "difficulty": "medium",
+      "max_ranks": 4,
+      "extra": {
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "solo_queue_isolation",
+      "name": "Aislado del Equipo",
+      "description": "Participaci?n en kills por debajo de 35%.",
+      "points": -8,
+      "kind": "bad",
+      "metric": "kill_participation",
+      "op": "lt",
+      "threshold": 35,
+      "difficulty": "hard",
+      "max_ranks": 3,
+      "extra": {
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "zero_control_wards",
+      "name": "Sin Wards de Control",
+      "description": "Partida larga sin colocar wards de control (excepto support).",
+      "points": -7,
+      "kind": "bad",
+      "metric": "control_wards_placed",
+      "op": "eq",
+      "threshold": 0,
+      "difficulty": "easy",
+      "max_ranks": 5,
+      "extra": {
+        "min_duration": 1200,
+        "excluded_positions": [
+          "UTILITY"
+        ]
+      }
     }
   ]
 }
