@@ -1,7 +1,7 @@
 {
   "version": 1,
   "enabled": true,
-  "notes": "Configuracion de desafios editable desde GitHub.",
+  "notes": "Configuracion de desafios editable desde GitHub. | Expansion de desafios multi-campo (objetivos, vision, macro, rol).",
   "achievements": [
     {
       "description": "Consigue 10 o mas kills en una partida.",
@@ -263,6 +263,201 @@
       "secret": true,
       "difficulty": "extreme",
       "max_ranks": 1
+    },
+    {
+      "key": "macro_engine",
+      "name": "Motor Macro",
+      "description": "Influye en objetivos: 30000 o m?s de da?o a objetivos.",
+      "points": 14,
+      "kind": "good",
+      "metric": "damage_dealt_to_objectives",
+      "op": "ge",
+      "threshold": 30000,
+      "difficulty": "medium",
+      "max_ranks": 4
+    },
+    {
+      "key": "siege_specialist",
+      "name": "Especialista en Asedios",
+      "description": "Da?a estructuras: 4000 o m?s de da?o a edificios.",
+      "points": 12,
+      "kind": "good",
+      "metric": "damage_dealt_to_buildings",
+      "op": "ge",
+      "threshold": 4000,
+      "difficulty": "medium",
+      "max_ranks": 4
+    },
+    {
+      "key": "map_controller",
+      "name": "Control de Mapa",
+      "description": "Coloca 2 o m?s wards de control en una partida.",
+      "points": 10,
+      "kind": "good",
+      "metric": "control_wards_placed",
+      "op": "ge",
+      "threshold": 2,
+      "difficulty": "medium",
+      "max_ranks": 5
+    },
+    {
+      "key": "vision_per_minute",
+      "name": "Radar Humano",
+      "description": "Mant?n 1.2 o m?s de visi?n por minuto.",
+      "points": 13,
+      "kind": "good",
+      "metric": "vision_score_per_min",
+      "op": "ge",
+      "threshold": 1.2,
+      "difficulty": "hard",
+      "max_ranks": 3
+    },
+    {
+      "key": "teamfight_anchor",
+      "name": "Ancla de Teamfight",
+      "description": "Alcanza 60% o m?s de participaci?n en kills.",
+      "points": 15,
+      "kind": "good",
+      "metric": "kill_participation",
+      "op": "ge",
+      "threshold": 60,
+      "difficulty": "hard",
+      "max_ranks": 3
+    },
+    {
+      "key": "money_printer",
+      "name": "Impresora de Oro",
+      "description": "Gana 16000 o m?s de oro en partida.",
+      "points": 14,
+      "kind": "good",
+      "metric": "gold_earned",
+      "op": "ge",
+      "threshold": 16000,
+      "difficulty": "hard",
+      "max_ranks": 3
+    },
+    {
+      "key": "frontline_wall",
+      "name": "Muro de Primera L?nea",
+      "description": "Recibe 42000 o m?s de da?o con m?ximo 7 muertes.",
+      "points": 12,
+      "kind": "good",
+      "metric": "total_damage_taken",
+      "op": "ge",
+      "threshold": 42000,
+      "extra": {
+        "max_deaths": 7
+      },
+      "difficulty": "hard",
+      "max_ranks": 3
+    },
+    {
+      "key": "tower_demolisher",
+      "name": "Demolici?n de Torres",
+      "description": "Destruye 2 o m?s torres en una partida.",
+      "points": 12,
+      "kind": "good",
+      "metric": "turret_kills",
+      "op": "ge",
+      "threshold": 2,
+      "difficulty": "medium",
+      "max_ranks": 4
+    },
+    {
+      "key": "first_blood_hunter",
+      "name": "Cazador de Primera Sangre",
+      "description": "Consigue primera sangre en la partida.",
+      "points": 9,
+      "kind": "good",
+      "metric": "first_blood_kill",
+      "op": "eq",
+      "threshold": true,
+      "difficulty": "medium",
+      "max_ranks": 4
+    },
+    {
+      "key": "objective_thief",
+      "name": "Ladr?n de Objetivos",
+      "description": "Roba al menos 1 objetivo neutral en partida.",
+      "points": 18,
+      "kind": "good",
+      "metric": "objectives_stolen",
+      "op": "ge",
+      "threshold": 1,
+      "difficulty": "extreme",
+      "max_ranks": 1,
+      "secret": true,
+      "extra": {
+        "allowed_positions": [
+          "JUNGLE"
+        ]
+      }
+    },
+    {
+      "key": "dark_support",
+      "name": "Support a Ciegas",
+      "description": "Si juegas support, acabar con 15 o menos de visi?n.",
+      "points": -10,
+      "kind": "bad",
+      "metric": "vision_score",
+      "op": "le",
+      "threshold": 15,
+      "difficulty": "medium",
+      "max_ranks": 4,
+      "extra": {
+        "allowed_positions": [
+          "UTILITY"
+        ],
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "no_objective_pressure",
+      "name": "Sin Presi?n de Objetivos",
+      "description": "Menos de 12000 de da?o a objetivos en partida larga.",
+      "points": -9,
+      "kind": "bad",
+      "metric": "damage_dealt_to_objectives",
+      "op": "lt",
+      "threshold": 12000,
+      "difficulty": "medium",
+      "max_ranks": 4,
+      "extra": {
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "solo_queue_isolation",
+      "name": "Aislado del Equipo",
+      "description": "Participaci?n en kills por debajo de 35%.",
+      "points": -8,
+      "kind": "bad",
+      "metric": "kill_participation",
+      "op": "lt",
+      "threshold": 35,
+      "difficulty": "hard",
+      "max_ranks": 3,
+      "extra": {
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "zero_control_wards",
+      "name": "Sin Wards de Control",
+      "description": "Partida larga sin colocar wards de control (excepto support).",
+      "points": -7,
+      "kind": "bad",
+      "metric": "control_wards_placed",
+      "op": "eq",
+      "threshold": 0,
+      "difficulty": "easy",
+      "max_ranks": 5,
+      "extra": {
+        "min_duration": 1200,
+        "excluded_positions": [
+          "UTILITY"
+        ]
+      }
     }
   ]
 }
