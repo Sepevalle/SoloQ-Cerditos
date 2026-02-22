@@ -8,6 +8,103 @@ from collections import defaultdict
 from services.player_service import get_all_accounts, get_all_puuids
 from services.match_service import get_player_match_history
 
+# ============================================================
+# PLANTILLA DE DESAFIO (COPIAR / DESCOMENTAR / EDITAR)
+# ============================================================
+# Instrucciones:
+# 1) Copia uno de los bloques y pegalo dentro de ACHIEVEMENTS.
+# 2) Cambia "key" por un identificador unico (sin espacios).
+# 3) Ajusta metric, op, threshold y opcionales.
+# 4) Si defines "rank_tiers", NO necesitas difficulty/max_ranks.
+#
+# Metricas soportadas actualmente:
+# - kills
+# - deaths
+# - assists
+# - vision_score
+# - total_damage_dealt_to_champions
+# - turret_kills
+# - dragon_kills
+# - baron_kills
+# - cs_per_min
+# - objectives_total
+# - low_impact_flag
+#
+# Operadores soportados:
+# - ge (>=)
+# - gt (>)
+# - le (<=)
+# - lt (<)
+# - eq (==)
+#
+# Extras soportados:
+# - win: True/False
+# - min_duration, max_duration
+# - min_kills, max_kills
+# - min_deaths, max_deaths
+# - min_assists, max_assists
+# - min_vision_score, max_vision_score
+# - min_damage
+# - min_cs_per_min, max_cs_per_min
+#
+# ------------------------------------------------------------
+# PLANTILLA A: desafio normal con rangos automaticos
+# ------------------------------------------------------------
+# {
+#     "key": "mi_desafio_normal",
+#     "name": "Mi Desafio Normal",
+#     "description": "Haz 12 o mas kills en una partida.",
+#     "points": 20,                 # base para calcular puntos por rango
+#     "kind": "good",               # "good" o "bad"
+#     "metric": "kills",
+#     "op": "ge",
+#     "threshold": 12,
+#     "difficulty": "medium",       # easy | medium | hard | extreme
+#     "max_ranks": 5,               # maximo 5
+#     # "extra": {"win": True}      # opcional
+# },
+#
+# ------------------------------------------------------------
+# PLANTILLA B: desafio con rangos personalizados
+# ------------------------------------------------------------
+# {
+#     "key": "mi_desafio_custom",
+#     "name": "Mi Desafio Custom",
+#     "description": "Gana con 0 muertes.",
+#     "points": 25,                 # se mantiene como referencia
+#     "kind": "good",
+#     "metric": "deaths",
+#     "op": "eq",
+#     "threshold": 0,
+#     "extra": {"win": True},
+#     "rank_tiers": [
+#         {"name": "Rango I", "min_count": 1, "points": 8},
+#         {"name": "Rango II", "min_count": 3, "points": 16},
+#         {"name": "Rango III", "min_count": 5, "points": 24},
+#         {"name": "Rango IV", "min_count": 10, "points": 35},
+#         {"name": "Rango V", "min_count": 15, "points": 48},
+#     ],
+# },
+#
+# ------------------------------------------------------------
+# PLANTILLA C: desafio secreto (normalmente 1 rango)
+# ------------------------------------------------------------
+# {
+#     "key": "mi_secreto",
+#     "name": "Mi Secreto",
+#     "description": "Haz algo dificil en partida.",
+#     "points": 40,
+#     "kind": "good",
+#     "metric": "vision_score",
+#     "op": "ge",
+#     "threshold": 60,
+#     "extra": {"max_deaths": 2},
+#     "secret": True,               # se mostrara sombreado hasta descubrirse
+#     "difficulty": "extreme",
+#     "max_ranks": 1
+# },
+# ============================================================
+
 
 ACHIEVEMENTS = [
     {
@@ -57,10 +154,10 @@ ACHIEVEMENTS = [
         "threshold": 0,
         "extra": {"win": True},
         "rank_tiers": [
-            {"name": "Rango I", "min_count": 1, "points": 8},
-            {"name": "Rango II", "min_count": 3, "points": 16},
-            {"name": "Rango III", "min_count": 5, "points": 24},
-            {"name": "Rango IV", "min_count": 10, "points": 35},
+            {"name": "Rango I", "min_count": 1, "points": 6},
+            {"name": "Rango II", "min_count": 3, "points": 12},
+            {"name": "Rango III", "min_count": 5, "points": 18},
+            {"name": "Rango IV", "min_count": 10, "points": 26},
         ],
     },
     {
@@ -165,7 +262,7 @@ ACHIEVEMENTS = [
         "key": "flawless_commander",
         "name": "Comandante Impecable",
         "description": "Logro secreto: gana con KDA dominante y pocas muertes.",
-        "points": 40,
+        "points": 24,
         "kind": "good",
         "metric": "kills",
         "op": "ge",
@@ -179,7 +276,7 @@ ACHIEVEMENTS = [
         "key": "vision_ghost",
         "name": "Fantasma del Mapa",
         "description": "Logro secreto: controla la vision con muy bajo riesgo.",
-        "points": 28,
+        "points": 18,
         "kind": "good",
         "metric": "vision_score",
         "op": "ge",
@@ -193,7 +290,7 @@ ACHIEVEMENTS = [
         "key": "tower_reaper",
         "name": "Segador de Torres",
         "description": "Logro secreto: participa fuerte en objetivos estructurales.",
-        "points": 26,
+        "points": 18,
         "kind": "good",
         "metric": "turret_kills",
         "op": "ge",
@@ -206,7 +303,7 @@ ACHIEVEMENTS = [
         "key": "phoenix_game",
         "name": "Partida Fenix",
         "description": "Logro secreto: gana una partida de alto riesgo (8/8/8 minimo).",
-        "points": 22,
+        "points": 16,
         "kind": "good",
         "metric": "deaths",
         "op": "ge",
@@ -233,12 +330,31 @@ LEVELS = [
     {"key": "challenger", "name": "Challenger", "min_points": 2200},
 ]
 
+# Fixed point levels up to Gold (editable).
+LOW_FIXED_LEVELS = [
+    {"key": "unranked", "name": "Sin Rango", "min_points": -999999},
+    {"key": "iron", "name": "Hierro", "min_points": 0},
+    {"key": "bronze", "name": "Bronce", "min_points": 35},
+    {"key": "silver", "name": "Plata", "min_points": 70},
+    {"key": "gold", "name": "Oro", "min_points": 105},
+]
+
+# Percentage-based levels from Platinum onward.
+HIGH_PERCENT_LEVELS = [
+    {"key": "platinum", "name": "Platino", "pct": 0.60},
+    {"key": "emerald", "name": "Esmeralda", "pct": 0.72},
+    {"key": "diamond", "name": "Diamante", "pct": 0.82},
+    {"key": "master", "name": "Master", "pct": 0.90},
+    {"key": "grandmaster", "name": "Grandmaster", "pct": 0.94},
+]
+CHALLENGER_PCT = 0.95
+
 RANK_LABELS = ["I", "II", "III", "IV", "V"]
-RANK_FACTOR_BY_INDEX = [0.45, 0.65, 0.85, 1.1, 1.35]
+RANK_FACTOR_BY_INDEX = [0.35, 0.5, 0.65, 0.85, 1.0]
 DIFFICULTY_STEPS = {
-    "easy": [1, 3, 5, 10, 15],
-    "medium": [1, 2, 4, 7, 12],
-    "hard": [1, 2, 3, 5, 8],
+    "easy": [1, 4, 8, 14, 22],
+    "medium": [1, 3, 6, 10, 16],
+    "hard": [1, 3, 5, 8, 12],
     "extreme": [1],
 }
 
@@ -346,16 +462,58 @@ def _achievement_hit(match, definition):
     return hit, value
 
 
-def _build_level_info(total_points):
-    current = LEVELS[0]
-    next_level = None
+def _build_dynamic_level_track(max_possible_points):
+    track = [dict(x) for x in LOW_FIXED_LEVELS]
+    last_min = LOW_FIXED_LEVELS[-1]["min_points"]
+    for lvl in HIGH_PERCENT_LEVELS:
+        min_points = int(round(max_possible_points * lvl["pct"]))
+        if min_points <= last_min:
+            min_points = last_min + 1
+        track.append(
+            {
+                "key": lvl["key"],
+                "name": lvl["name"],
+                "min_points": min_points,
+                "pct": lvl["pct"],
+            }
+        )
+        last_min = min_points
+    challenger_min = int(round(max_possible_points * CHALLENGER_PCT))
+    if challenger_min <= last_min:
+        challenger_min = last_min + 1
+    return track, challenger_min
 
-    for lvl in LEVELS:
+
+def _build_level_info(total_points, max_possible_points, top_points, top_count):
+    level_track, challenger_min = _build_dynamic_level_track(max_possible_points)
+
+    current = level_track[0]
+    next_level = None
+    for lvl in level_track:
         if total_points >= lvl["min_points"]:
             current = lvl
         elif next_level is None:
             next_level = lvl
             break
+
+    is_challenger = (
+        total_points >= challenger_min
+        and total_points == top_points
+        and top_count == 1
+    )
+
+    if is_challenger:
+        return {
+            "level_key": "challenger",
+            "level_name": "Challenger",
+            "level_min_points": challenger_min,
+            "next_level_name": None,
+            "next_level_min_points": None,
+            "points_to_next": 0,
+            "level_progress_pct": 100,
+            "score_pct": round((max(0, total_points) / max(1, max_possible_points)) * 100, 2),
+            "challenger_min_points": challenger_min,
+        }
 
     if next_level is None:
         return {
@@ -366,12 +524,13 @@ def _build_level_info(total_points):
             "next_level_min_points": None,
             "points_to_next": 0,
             "level_progress_pct": 100,
+            "score_pct": round((max(0, total_points) / max(1, max_possible_points)) * 100, 2),
+            "challenger_min_points": challenger_min,
         }
 
     span = max(1, next_level["min_points"] - current["min_points"])
     progress = int(((total_points - current["min_points"]) / span) * 100)
     progress = max(0, min(100, progress))
-
     return {
         "level_key": current["key"],
         "level_name": current["name"],
@@ -380,7 +539,21 @@ def _build_level_info(total_points):
         "next_level_min_points": next_level["min_points"],
         "points_to_next": max(0, next_level["min_points"] - total_points),
         "level_progress_pct": progress,
+        "score_pct": round((max(0, total_points) / max(1, max_possible_points)) * 100, 2),
+        "challenger_min_points": challenger_min,
     }
+
+
+def _calculate_max_possible_points():
+    total = 0
+    for definition in ACHIEVEMENTS:
+        if definition.get("kind") != "good":
+            continue
+        tiers = _get_achievement_tiers(definition)
+        if not tiers:
+            continue
+        total += max(t["points"] for t in tiers)
+    return total
 
 def _get_achievement_tiers(definition):
     custom_tiers = definition.get("rank_tiers") or []
@@ -587,9 +760,21 @@ def calculate_global_achievements():
         player_row["secret_unlocked"] = sum(1 for x in secret_stats if not x.get("locked"))
         player_row["secret_locked"] = sum(1 for x in secret_stats if x.get("locked"))
         player_row["unique_achievements"] = len(achievement_stats)
-        player_row.update(_build_level_info(player_row["total_points"]))
 
         players.append(player_row)
+
+    max_possible_points = _calculate_max_possible_points()
+    top_points = max((p["total_points"] for p in players), default=0)
+    top_count = sum(1 for p in players if p["total_points"] == top_points)
+    for player_row in players:
+        player_row.update(
+            _build_level_info(
+                player_row["total_points"],
+                max_possible_points,
+                top_points,
+                top_count,
+            )
+        )
 
     players.sort(
         key=lambda p: (
@@ -687,6 +872,8 @@ def calculate_global_achievements():
         "max_possible_unique": len(ACHIEVEMENTS),
         "max_possible_public": len(public_catalog),
         "max_possible_secret": len(secret_catalog),
+        "max_possible_points": max_possible_points,
+        "challenger_min_points": int(round(max_possible_points * CHALLENGER_PCT)),
     }
 
     return {

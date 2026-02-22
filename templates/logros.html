@@ -183,7 +183,7 @@
                                     <small class="text-muted">{{ a.description }}</small>
                                 </div>
                                 <span class="achievement-chip {% if a.kind == 'good' %}chip-good{% else %}chip-bad{% endif %}">
-                                    {{ a.global_rank.tier_name }} | {{ a.total_hits }} hits
+                                    {{ a.total_hits }} hits
                                 </span>
                             </div>
                             <div class="small text-muted mb-2">Jugadores que lo consiguieron: <strong>{{ a.achievers_count }}</strong></div>
@@ -227,7 +227,7 @@
                                     <small class="text-muted">{{ s.description }}</small>
                                 </div>
                                 <span class="achievement-chip {% if s.locked %}chip-locked{% else %}chip-secret{% endif %}">
-                                    {{ s.global_rank.tier_name }} | {{ s.total_hits }} hits
+                                    {{ s.total_hits }} hits
                                 </span>
                             </div>
                             <div class="small text-muted mb-2">Jugadores que lo consiguieron: <strong>{{ s.achievers_count }}</strong></div>
