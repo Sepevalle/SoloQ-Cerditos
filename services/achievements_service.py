@@ -197,6 +197,22 @@ LEVELS = [
     {"key": "challenger", "name": "Challenger", "min_points": 2200},
 ]
 
+CHALLENGE_TIERS = [
+    {"key": "unranked", "name": "Sin rango", "min_count": 0, "points": 0},
+    {"key": "bronze", "name": "Bronce", "min_count": 1, "points": 4},
+    {"key": "silver", "name": "Plata", "min_count": 3, "points": 8},
+    {"key": "gold", "name": "Oro", "min_count": 6, "points": 13},
+    {"key": "platinum", "name": "Platino", "min_count": 10, "points": 19},
+    {"key": "emerald", "name": "Esmeralda", "min_count": 15, "points": 26},
+    {"key": "diamond", "name": "Diamante", "min_count": 22, "points": 34},
+    {"key": "master", "name": "Master", "min_count": 32, "points": 44},
+    {"key": "grandmaster", "name": "Grandmaster", "min_count": 45, "points": 56},
+    {"key": "challenger", "name": "Challenger", "min_count": 60, "points": 70},
+]
+CHALLENGER_MIN_COUNT = 60
+PRESTIGE_STEP = 20
+PRESTIGE_BONUS = 5
+
 
 def _metric_value(match, metric):
     kills = match.get("kills", 0) or 0
@@ -337,6 +353,40 @@ def _build_level_info(total_points):
         "level_progress_pct": progress,
     }
 
+def _build_challenge_rank(count):
+    base = CHALLENGE_TIERS[0]
+    next_tier = None
+    for tier in CHALLENGE_TIERS:
+        if count >= tier["min_count"]:
+            base = tier
+        elif next_tier is None:
+            next_tier = tier
+            break
+
+    prestige_level = 0
+    if count > CHALLENGER_MIN_COUNT:
+        prestige_level = (count - CHALLENGER_MIN_COUNT) // PRESTIGE_STEP
+
+    tier_points = base["points"] + (prestige_level * PRESTIGE_BONUS)
+    tier_name = base["name"] if prestige_level <= 0 else f'{base["name"]} +{prestige_level}'
+
+    if next_tier is None:
+        points_to_next = PRESTIGE_STEP - ((count - CHALLENGER_MIN_COUNT) % PRESTIGE_STEP) if count >= CHALLENGER_MIN_COUNT else 0
+        next_name = "Prestigio"
+    else:
+        points_to_next = max(0, next_tier["min_count"] - count)
+        next_name = next_tier["name"]
+
+    return {
+        "tier_key": base["key"],
+        "tier_name": tier_name,
+        "tier_points": tier_points,
+        "tier_base_points": base["points"],
+        "tier_prestige": prestige_level,
+        "points_to_next_tier": points_to_next,
+        "next_tier_name": next_name,
+    }
+
 
 def _empty_player_row(riot_id, player_name, puuid):
     return {
@@ -354,6 +404,7 @@ def _empty_player_row(riot_id, player_name, puuid):
         "secret_achievements": [],
         "secret_unlocked": 0,
         "secret_locked": 0,
+        "tier_points_total": 0,
     }
 
 
@@ -418,13 +469,21 @@ def calculate_global_achievements():
         )
         unlocked_keys = set(by_key.keys())
 
-        # Puntos por desbloqueo unico (no por repeticion)
+        # Puntos por rangos de desafio (estilo ligas), no lineal por cada repeticion.
         for stat in achievement_stats:
-            player_row["total_points"] += stat["points"]
-            if stat["points"] >= 0:
-                player_row["positive_points"] += stat["points"]
+            rank_info = _build_challenge_rank(stat["count"])
+            stat.update(rank_info)
+            signed_points = rank_info["tier_points"]
+            if stat["kind"] == "bad":
+                signed_points = -signed_points
+            stat["rank_points"] = signed_points
+
+            player_row["total_points"] += signed_points
+            if signed_points >= 0:
+                player_row["positive_points"] += signed_points
             else:
-                player_row["negative_points"] += stat["points"]
+                player_row["negative_points"] += signed_points
+            player_row["tier_points_total"] += abs(signed_points)
 
         secret_stats = []
         for secret_def in secret_catalog:
@@ -457,6 +516,7 @@ def calculate_global_achievements():
     total_unlocked = sum(p["hits_total"] for p in players)
     total_secret_unlocked = sum(p["secret_unlocked"] for p in players)
     total_unique_unlocks = sum(p["unique_achievements"] for p in players)
+    total_rank_points = sum(p["total_points"] for p in players)
 
     achievements_view = []
     for definition in public_catalog:
@@ -474,6 +534,7 @@ def calculate_global_achievements():
                     "count": count,
                     "level_name": player["level_name"],
                     "total_points": player["total_points"],
+                    "challenge_rank": _build_challenge_rank(count),
                 }
             )
         achievements_view.append(
@@ -487,6 +548,7 @@ def calculate_global_achievements():
                 "achievers": achievers,
                 "achievers_count": len(achievers),
                 "total_hits": total_hits,
+                "global_rank": _build_challenge_rank(total_hits),
             }
         )
 
@@ -506,6 +568,7 @@ def calculate_global_achievements():
                     "count": count,
                     "level_name": player["level_name"],
                     "total_points": player["total_points"],
+                    "challenge_rank": _build_challenge_rank(count),
                 }
             )
         if achievers:
@@ -520,6 +583,7 @@ def calculate_global_achievements():
                     "achievers": achievers,
                     "achievers_count": len(achievers),
                     "total_hits": total_hits,
+                    "global_rank": _build_challenge_rank(total_hits),
                 }
             )
 
@@ -527,6 +591,7 @@ def calculate_global_achievements():
         "players_count": len(players),
         "total_unlocked": total_unlocked,
         "total_unique_unlocks": total_unique_unlocks,
+        "total_rank_points": total_rank_points,
         "total_secret_unlocked": total_secret_unlocked,
         "max_possible_unique": len(ACHIEVEMENTS),
         "max_possible_public": len(public_catalog),
@@ -538,6 +603,7 @@ def calculate_global_achievements():
         "achievements_catalog": ACHIEVEMENTS,
         "achievements_view": achievements_view,
         "secret_achievements_unlocked": secret_achievements_unlocked,
+        "challenge_tiers": CHALLENGE_TIERS,
         "levels_catalog": LEVELS,
         "global_stats": global_stats,
     }

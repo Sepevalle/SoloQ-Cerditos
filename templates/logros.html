@@ -17,8 +17,7 @@
 {% block extra_styles %}
 <style>
     .summary-card { border: 0; border-radius: 0.8rem; }
-    .player-card { border-radius: 0.8rem; border: 1px solid rgba(0, 0, 0, 0.08); }
-    .achievement-card { border-radius: 0.8rem; border: 1px solid rgba(0, 0, 0, 0.08); }
+    .section-card { border-radius: 0.8rem; border: 1px solid rgba(0, 0, 0, 0.08); }
     .achievement-chip {
         display: inline-flex;
         align-items: center;
@@ -29,26 +28,9 @@
         font-weight: 600;
         margin: 0.18rem;
     }
-    .achievement-good {
-        background: rgba(25, 135, 84, 0.14);
-        color: #146c43;
-        border: 1px solid rgba(25, 135, 84, 0.25);
-    }
-    .achievement-bad {
-        background: rgba(220, 53, 69, 0.14);
-        color: #b02a37;
-        border: 1px solid rgba(220, 53, 69, 0.25);
-    }
-    .achievement-secret {
-        background: rgba(111, 66, 193, 0.14);
-        color: #59359c;
-        border: 1px solid rgba(111, 66, 193, 0.25);
-    }
-    .points-pill {
-        font-weight: 700;
-        border-radius: 999px;
-        padding: 0.18rem 0.5rem;
-    }
+    .chip-good { background: rgba(25, 135, 84, 0.14); color: #146c43; border: 1px solid rgba(25, 135, 84, 0.25); }
+    .chip-bad { background: rgba(220, 53, 69, 0.14); color: #b02a37; border: 1px solid rgba(220, 53, 69, 0.25); }
+    .chip-secret { background: rgba(111, 66, 193, 0.14); color: #59359c; border: 1px solid rgba(111, 66, 193, 0.25); }
     .level-badge {
         border-radius: 999px;
         padding: 0.25rem 0.55rem;
@@ -58,17 +40,8 @@
         border: 1px solid #0d6efd3a;
         color: #0a58ca;
     }
-    .achievers-list {
-        max-height: 150px;
-        overflow-y: auto;
-    }
-    .achiever-item {
-        border-radius: 0.5rem;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        padding: 0.35rem 0.5rem;
-        margin-bottom: 0.35rem;
-    }
-    .progress { height: 0.55rem; }
+    .achievers-list { max-height: 180px; overflow-y: auto; }
+    .achiever-item { border-radius: 0.5rem; border: 1px solid rgba(0, 0, 0, 0.08); padding: 0.4rem 0.55rem; margin-bottom: 0.4rem; }
 </style>
 {% endblock %}
 
@@ -88,8 +61,8 @@
         <div class="col-12 col-md-3">
             <div class="card summary-card shadow-sm">
                 <div class="card-body">
-                    <small class="text-muted">Desbloqueos unicos</small>
-                    <h3 class="mb-0">{{ global_stats.total_unique_unlocks | default(0) }}</h3>
+                    <small class="text-muted">Puntos de rango (global)</small>
+                    <h3 class="mb-0">{{ global_stats.total_rank_points | default(0) }}</h3>
                 </div>
             </div>
         </div>
@@ -111,182 +84,160 @@
         </div>
     </div>
 
-    {% if players %}
-    <div class="table-responsive mb-4">
-        <table class="table table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Jugador</th>
-                    <th>Nivel</th>
-                    <th>Puntos unicos</th>
-                    <th>Secretos</th>
-                    <th>Logros unicos</th>
-                    <th>Activaciones</th>
-                </tr>
-            </thead>
-            <tbody>
+    <ul class="nav nav-tabs mb-3" id="logrosTabs" role="tablist">
+        <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ranking-tab-pane" type="button" role="tab">Clasificacion</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#players-tab-pane" type="button" role="tab">Jugadores</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#catalog-tab-pane" type="button" role="tab">Catalogo</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#secret-tab-pane" type="button" role="tab">Secretos</button></li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="ranking-tab-pane" role="tabpanel" tabindex="0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Jugador</th>
+                            <th>Nivel</th>
+                            <th>Puntos</th>
+                            <th>Positivos</th>
+                            <th>Negativos</th>
+                            <th>Secretos</th>
+                            <th>Activaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in players %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td class="text-start">
+                                <a href="{{ url_for('player.perfil_jugador', game_name=p.riot_id) }}" class="link-perfil">
+                                    <strong>{{ p.player_name }}</strong>
+                                    <small class="text-muted d-block">{{ p.riot_id }}</small>
+                                </a>
+                            </td>
+                            <td><span class="level-badge">{{ p.level_name }}</span></td>
+                            <td><span class="badge bg-primary">{{ p.total_points }}</span></td>
+                            <td><span class="badge bg-success">{{ p.positive_points }}</span></td>
+                            <td><span class="badge bg-danger">{{ p.negative_points }}</span></td>
+                            <td><span class="badge bg-secondary">{{ p.secret_unlocked }}/{{ p.secret_unlocked + p.secret_locked }}</span></td>
+                            <td>{{ p.hits_total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card section-card shadow-sm mt-3">
+                <div class="card-body">
+                    <h5 class="mb-2">Sistema de rangos de desafio</h5>
+                    <div class="small text-muted mb-2">Cada logro sube por rangos segun cuantas veces lo completas. Los puntos no crecen linealmente por partida.</div>
+                    {% for t in challenge_tiers %}
+                    <span class="achievement-chip chip-good">{{ t.name }} ({{ t.min_count }}+)</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="players-tab-pane" role="tabpanel" tabindex="0">
+            <div class="row g-3">
                 {% for p in players %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td class="text-start">
-                        <a href="{{ url_for('player.perfil_jugador', game_name=p.riot_id) }}" class="link-perfil">
-                            <strong>{{ p.player_name }}</strong>
-                            <small class="text-muted d-block">{{ p.riot_id }}</small>
-                        </a>
-                    </td>
-                    <td><span class="level-badge">{{ p.level_name }}</span></td>
-                    <td><span class="badge bg-primary">{{ p.total_points }}</span></td>
-                    <td><span class="badge bg-secondary">{{ p.secret_unlocked }}/{{ p.secret_unlocked + p.secret_locked }}</span></td>
-                    <td>{{ p.unique_achievements }}</td>
-                    <td>{{ p.hits_total }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="row g-3 mb-4">
-        {% for p in players %}
-        <div class="col-12 col-xl-6">
-            <div class="card player-card shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <h5 class="mb-0">{{ p.player_name }}</h5>
-                            <small class="text-muted">{{ p.riot_id }}</small>
-                        </div>
-                        <span class="points-pill {% if p.total_points >= 0 %}bg-success-subtle text-success-emphasis border{% else %}bg-danger-subtle text-danger-emphasis border{% endif %}">
-                            {{ p.total_points }} pts
-                        </span>
-                    </div>
-
-                    <div class="mb-2 d-flex justify-content-between align-items-center">
-                        <span class="level-badge">Nivel {{ p.level_name }}</span>
-                        {% if p.next_level_name %}
-                        <small class="text-muted">{{ p.points_to_next }} pts para {{ p.next_level_name }}</small>
-                        {% else %}
-                        <small class="text-success fw-semibold">Nivel maximo alcanzado</small>
-                        {% endif %}
-                    </div>
-                    <div class="progress mb-3" role="progressbar" aria-valuenow="{{ p.level_progress_pct }}" aria-valuemin="0" aria-valuemax="100">
-                        <div class="progress-bar" style="width: {{ p.level_progress_pct }}%;"></div>
-                    </div>
-
-                    <div class="mb-2">
-                        <div class="fw-semibold small text-muted mb-1">Logros desbloqueados</div>
-                        {% if p.achievement_stats %}
-                            {% for a in p.achievement_stats[:8] %}
-                            <span class="achievement-chip {% if a.secret %}achievement-secret{% elif a.kind == 'good' %}achievement-good{% else %}achievement-bad{% endif %}" title="{{ a.description }}">
-                                {{ a.name }} x{{ a.count }}
-                                <span class="fw-bold">{% if a.points > 0 %}+{% endif %}{{ a.points }}</span>
+                <div class="col-12 col-xl-6">
+                    <div class="card section-card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="mb-0">{{ p.player_name }}</h5>
+                                    <small class="text-muted">{{ p.riot_id }}</small>
+                                </div>
+                                <span class="level-badge">{{ p.total_points }} pts</span>
+                            </div>
+                            {% if p.achievement_stats %}
+                            {% for a in p.achievement_stats[:10] %}
+                            <span class="achievement-chip {% if a.secret %}chip-secret{% elif a.kind == 'good' %}chip-good{% else %}chip-bad{% endif %}" title="{{ a.description }}">
+                                {{ a.name }} x{{ a.count }} | {{ a.tier_name }} | {% if a.rank_points > 0 %}+{% endif %}{{ a.rank_points }}
                             </span>
                             {% endfor %}
-                        {% else %}
+                            {% else %}
                             <div class="text-muted">Sin logros todavia.</div>
-                        {% endif %}
-                    </div>
-
-                    <div>
-                        <div class="fw-semibold small text-muted mb-1">Secretos conseguidos</div>
-                        {% if p.secret_achievements %}
-                            {% for s in p.secret_achievements %}
-                            <span class="achievement-chip achievement-secret" title="{{ s.description }}">
-                                {{ s.name }} x{{ s.count }}
-                                <span class="fw-bold">{% if s.points > 0 %}+{% endif %}{{ s.points }}</span>
-                            </span>
-                            {% endfor %}
-                        {% else %}
-                            <div class="text-muted">Ningun secreto desbloqueado todavia.</div>
-                        {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
-    </div>
 
-    <h3 class="mb-3">Todos los logros conseguibles</h3>
-    <div class="row g-3 mb-4">
-        {% for a in achievements_view %}
-        <div class="col-12 col-lg-6">
-            <div class="card achievement-card shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <h5 class="mb-0">{{ a.name }}</h5>
-                            <small class="text-muted">{{ a.description }}</small>
-                        </div>
-                        <span class="achievement-chip {% if a.kind == 'good' %}achievement-good{% else %}achievement-bad{% endif %}">
-                            {% if a.points > 0 %}+{% endif %}{{ a.points }} pts
-                        </span>
-                    </div>
-                    <div class="small text-muted mb-2">
-                        Jugadores que lo consiguieron: <strong>{{ a.achievers_count }}</strong> |
-                        Activaciones totales: <strong>{{ a.total_hits }}</strong>
-                    </div>
-                    <div class="achievers-list">
-                        {% if a.achievers %}
-                            {% for who in a.achievers %}
-                            <div class="achiever-item">
-                                <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
-                                <small class="text-muted d-block">{{ who.riot_id }}</small>
-                                <small class="text-muted">Veces: {{ who.count }} | Nivel: {{ who.level_name }} | Puntos: {{ who.total_points }}</small>
+        <div class="tab-pane fade" id="catalog-tab-pane" role="tabpanel" tabindex="0">
+            <div class="row g-3">
+                {% for a in achievements_view %}
+                <div class="col-12 col-lg-6">
+                    <div class="card section-card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="mb-0">{{ a.name }}</h5>
+                                    <small class="text-muted">{{ a.description }}</small>
+                                </div>
+                                <span class="achievement-chip {% if a.kind == 'good' %}chip-good{% else %}chip-bad{% endif %}">
+                                    {{ a.global_rank.tier_name }} | {{ a.total_hits }} hits
+                                </span>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="text-muted">Aun nadie lo ha desbloqueado.</div>
-                        {% endif %}
+                            <div class="small text-muted mb-2">Jugadores que lo consiguieron: <strong>{{ a.achievers_count }}</strong></div>
+                            <div class="achievers-list">
+                                {% if a.achievers %}
+                                {% for who in a.achievers %}
+                                <div class="achiever-item">
+                                    <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
+                                    <small class="text-muted d-block">{{ who.riot_id }}</small>
+                                    <small class="text-muted">Veces: {{ who.count }} | Rango: {{ who.challenge_rank.tier_name }} | Nivel: {{ who.level_name }}</small>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <div class="text-muted">Aun nadie lo ha desbloqueado.</div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
-    </div>
 
-    <h3 class="mb-3">Secretos descubiertos</h3>
-    <div class="row g-3">
-        {% if secret_achievements_unlocked %}
-            {% for s in secret_achievements_unlocked %}
-            <div class="col-12 col-lg-6">
-                <div class="card achievement-card shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <h5 class="mb-0">{{ s.name }}</h5>
-                                <small class="text-muted">{{ s.description }}</small>
+        <div class="tab-pane fade" id="secret-tab-pane" role="tabpanel" tabindex="0">
+            {% if secret_achievements_unlocked %}
+            <div class="row g-3">
+                {% for s in secret_achievements_unlocked %}
+                <div class="col-12 col-lg-6">
+                    <div class="card section-card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="mb-0">{{ s.name }}</h5>
+                                    <small class="text-muted">{{ s.description }}</small>
+                                </div>
+                                <span class="achievement-chip chip-secret">{{ s.global_rank.tier_name }} | {{ s.total_hits }} hits</span>
                             </div>
-                            <span class="achievement-chip achievement-secret">
-                                {% if s.points > 0 %}+{% endif %}{{ s.points }} pts
-                            </span>
-                        </div>
-                        <div class="small text-muted mb-2">
-                            Jugadores que lo consiguieron: <strong>{{ s.achievers_count }}</strong> |
-                            Activaciones totales: <strong>{{ s.total_hits }}</strong>
-                        </div>
-                        <div class="achievers-list">
-                            {% for who in s.achievers %}
-                            <div class="achiever-item">
-                                <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
-                                <small class="text-muted d-block">{{ who.riot_id }}</small>
-                                <small class="text-muted">Veces: {{ who.count }} | Nivel: {{ who.level_name }} | Puntos: {{ who.total_points }}</small>
+                            <div class="small text-muted mb-2">Jugadores que lo consiguieron: <strong>{{ s.achievers_count }}</strong></div>
+                            <div class="achievers-list">
+                                {% for who in s.achievers %}
+                                <div class="achiever-item">
+                                    <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
+                                    <small class="text-muted d-block">{{ who.riot_id }}</small>
+                                    <small class="text-muted">Veces: {{ who.count }} | Rango: {{ who.challenge_rank.tier_name }} | Nivel: {{ who.level_name }}</small>
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        {% else %}
-        <div class="col-12">
+            {% else %}
             <div class="alert alert-secondary mb-0">Todavia no se ha descubierto ningun logro secreto.</div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
-    {% else %}
-    <div class="alert alert-info">
-        No hay jugadores o partidas para calcular logros.
-    </div>
-    {% endif %}
 </div>
 {% endblock %}
