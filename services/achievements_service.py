@@ -354,6 +354,8 @@ HIGH_PERCENT_LEVELS = [
     {"key": "grandmaster", "name": "Grandmaster", "pct": 0.94},
 ]
 CHALLENGER_PCT = 0.95
+# Secrets give a small bonus only (competitive score impact).
+SECRET_POINTS_WEIGHT = 0.10
 
 RANK_LABELS = ["I", "II", "III", "IV", "V"]
 RANK_FACTOR_BY_INDEX = [0.35, 0.5, 0.65, 0.85, 1.0]
@@ -1194,6 +1196,7 @@ def _empty_player_row(riot_id, player_name, puuid):
         "total_points": 0,
         "positive_points": 0,
         "negative_points": 0,
+        "secret_bonus_points": 0,
         "hits_total": 0,
         "unique_achievements": 0,
         "total_matches": 0,
@@ -1281,14 +1284,21 @@ def calculate_global_achievements():
             signed_points = rank_info["tier_points"]
             if stat["kind"] == "bad":
                 signed_points = -signed_points
-            stat["rank_points"] = signed_points
+            # Secret achievements only provide a small bonus to competitive points.
+            competitive_points = signed_points
+            if stat.get("secret"):
+                competitive_points = int(round(signed_points * SECRET_POINTS_WEIGHT))
+            stat["rank_points"] = competitive_points
+            stat["raw_rank_points"] = signed_points
 
-            player_row["total_points"] += signed_points
-            if signed_points >= 0:
-                player_row["positive_points"] += signed_points
+            player_row["total_points"] += competitive_points
+            if competitive_points >= 0:
+                player_row["positive_points"] += competitive_points
             else:
-                player_row["negative_points"] += signed_points
-            player_row["tier_points_total"] += abs(signed_points)
+                player_row["negative_points"] += competitive_points
+            player_row["tier_points_total"] += abs(competitive_points)
+            if stat.get("secret"):
+                player_row["secret_bonus_points"] += competitive_points
 
         secret_stats = []
         for secret_def in secret_catalog:
