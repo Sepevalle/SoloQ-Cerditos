@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadísticas Globales - Cerditos y Valientes</title>
+    <title>EstadÃ­sticas Globales - Cerditos y Valientes</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -129,16 +129,17 @@
                     <a class="nav-link" href="{{ url_for('h2h') }}">Comparador</a>
                 </li> #}
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="{{ url_for('stats.estadisticas_globales') }}">Estadísticas Globales</a>
+                    <a class="nav-link active" aria-current="page" href="{{ url_for('stats.estadisticas_globales') }}">Estadisticas Globales</a>
 
                 </li>
-                
-                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.logros' %}active{% endif %}" href="{{ url_for('main.logros') }}">Logros</a>
+                </li>
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
                 <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
                 <div class="d-flex align-items-center ms-lg-2">
-                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear MÃºsica">
                         <i id="muteIcon" class="fas fa-microphone-slash"></i>
                     </button>
                     <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1" style="width: 100px; margin-left: 10px;">
@@ -149,15 +150,15 @@
 </nav>
 
 <div class="container mt-5 pt-5">
-    <h1 class="text-center mb-4">Estadísticas Globales de la Temporada</h1>
+    <h1 class="text-center mb-4">EstadÃ­sticas Globales de la Temporada</h1>
     
-    <!-- Botón de actualización y estado -->
+    <!-- BotÃ³n de actualizaciÃ³n y estado -->
     <div class="text-center mb-4">
         <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
             <form action="{{ url_for('stats.actualizar_estadisticas') }}" method="post" class="m-0">
                 {% if can_calculate %}
                 <button type="submit" class="btn btn-warning btn-lg">
-                    <i class="fas fa-sync-alt me-2"></i>Actualizar Estadísticas
+                    <i class="fas fa-sync-alt me-2"></i>Actualizar EstadÃ­sticas
                 </button>
                 {% else %}
                 <button type="button" class="btn btn-secondary btn-lg" disabled>
@@ -167,20 +168,20 @@
             </form>
             {% if last_updated %}
             <span class="text-muted">
-                <i class="fas fa-clock me-1"></i>Última actualización: {{ last_updated }}
+                <i class="fas fa-clock me-1"></i>Ãšltima actualizaciÃ³n: {{ last_updated }}
             </span>
             {% endif %}
         </div>
         {% if needs_update %}
         <div class="alert alert-info mt-3" role="alert">
-            <i class="fas fa-info-circle me-2"></i>No hay estadísticas globales calculadas. 
-            Haz clic en "Actualizar Estadísticas" para generarlas.
+            <i class="fas fa-info-circle me-2"></i>No hay estadÃ­sticas globales calculadas. 
+            Haz clic en "Actualizar EstadÃ­sticas" para generarlas.
         </div>
         {% elif not can_calculate %}
         <div class="alert alert-warning mt-3" role="alert">
-            <i class="fas fa-hourglass-half me-2"></i>Las estadísticas se calcularon recientemente. 
-            Debes esperar <strong>{{ time_remaining }}</strong> antes de solicitar un nuevo cálculo.
-            <br><small class="text-muted">Las estadísticas solo pueden calcularse una vez cada 24 horas.</small>
+            <i class="fas fa-hourglass-half me-2"></i>Las estadÃ­sticas se calcularon recientemente. 
+            Debes esperar <strong>{{ time_remaining }}</strong> antes de solicitar un nuevo cÃ¡lculo.
+            <br><small class="text-muted">Las estadÃ­sticas solo pueden calcularse una vez cada 24 horas.</small>
         </div>
         {% endif %}
     </div>
@@ -200,7 +201,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="champion" class="visually-hidden">Campeón</label>
+                <label for="champion" class="visually-hidden">CampeÃ³n</label>
                 <select name="champion" id="champion" class="form-select">
                     <option value="all">Todos los campeones</option>
                     {% for champion in champion_list %}
@@ -217,10 +218,10 @@
 
     <ul class="nav nav-tabs" id="statsTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="global-stats-tab" data-bs-toggle="tab" data-bs-target="#global-stats" type="button" role="tab" aria-controls="global-stats" aria-selected="true">Récords Globales</button>
+            <button class="nav-link active" id="global-stats-tab" data-bs-toggle="tab" data-bs-target="#global-stats" type="button" role="tab" aria-controls="global-stats" aria-selected="true">RÃ©cords Globales</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="personal-records-tab" data-bs-toggle="tab" data-bs-target="#personal-records" type="button" role="tab" aria-controls="personal-records" aria-selected="false">Récords Personales</button>
+            <button class="nav-link" id="personal-records-tab" data-bs-toggle="tab" data-bs-target="#personal-records" type="button" role="tab" aria-controls="personal-records" aria-selected="false">RÃ©cords Personales</button>
         </li>
     </ul>
 
@@ -242,7 +243,7 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="championSelect" class="form-label">Filtrar por Campeón:</label>
+                    <label for="championSelect" class="form-label">Filtrar por CampeÃ³n:</label>
                     <select class="form-select" id="championSelect" disabled>
                         <option value="all">-- Todos los campeones --</option>
                         {# Options will be populated by JavaScript #}
@@ -259,7 +260,7 @@
                 </div>
             </div>
             <div class="d-grid gap-2 mt-3">
-                <button class="btn btn-primary" id="showPersonalRecordsBtn" disabled>Mostrar Récords Personales</button>
+                <button class="btn btn-primary" id="showPersonalRecordsBtn" disabled>Mostrar RÃ©cords Personales</button>
             </div>
             <div id="personalRecordsDisplay" class="row mt-4">
                 {# Personal records will be displayed here #}
@@ -283,7 +284,7 @@
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title text-center"><i class="fas fa-chess-queen"></i>Campeones Más Jugados</h5>
+                            <h5 class="card-title text-center"><i class="fas fa-chess-queen"></i>Campeones MÃ¡s Jugados</h5>
                             <ul class="list-group list-group-flush">
                                 {% for champion, count in global_stats.most_played_champions %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -314,12 +315,12 @@
                                     <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ global_stats.global_records.largest_multikill.champion_name }}.png" alt="{{ global_stats.global_records.largest_multikill.champion_name }}" class="imagen-jugador">
                                     {{ global_stats.global_records.largest_multikill.champion_name }}<br>
                                 {% else %}
-                                    Campeón: N/A<br>
+                                    CampeÃ³n: N/A<br>
                                 {% endif %}
 
                                 KDA: {{ global_stats.global_records.largest_multikill.kills | thousands_separator }}/{{ global_stats.global_records.largest_multikill.deaths | thousands_separator }}/{{ global_stats.global_records.largest_multikill.assists | thousands_separator }} ({{ '%.2f' % global_stats.global_records.largest_multikill.kda }})<br>
                                 Fecha: {{ global_stats.global_records.largest_multikill.game_date | format_timestamp }}
-                                {% if global_stats.global_records.largest_multikill.value and global_stats.global_records.largest_multikill.value > 0 and global_stats.global_records.largest_multikill.game_date and global_stats.global_records.largest_multikill.game_date > 0 and global_stats.global_records.largest_multikill.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
+                                {% if global_stats.global_records.largest_multikill.value and global_stats.global_records.largest_multikill.value > 0 and global_stats.global_records.largest_multikill.game_date and global_stats.global_records.largest_multikill.game_date > 0 and global_stats.global_records.largest_multikill.is_tied_record %} <br> <span class="badge bg-info">Â¡Primero en lograrlo!</span> {% endif %}
 
                             </small>
                         </div>
@@ -336,34 +337,34 @@
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <h5 class="card-title">
-                                {% if key == 'longest_game' %}<i class="fas fa-clock"></i>Partida Más Larga
-                                {% elif key == 'most_kills' %}<i class="fas fa-crosshairs"></i>Más Kills
-                                {% elif key == 'most_deaths' %}<i class="fas fa-skull"></i>Más Muertes
-                                {% elif key == 'most_assists' %}<i class="fas fa-hands-helping"></i>Más Asistencias
-                                {% elif key == 'highest_kda' %}<i class="fas fa-star"></i>KDA Más Alto
-                                {% elif key == 'most_cs' %}<i class="fas fa-coins"></i>Más CS
-                                {% elif key == 'most_damage_dealt' %}<i class="fas fa-bomb"></i>Más Daño a Campeones
-                                {% elif key == 'most_gold_earned' %}<i class="fas fa-sack-dollar"></i>Más Oro Ganado
-                                {% elif key == 'most_vision_score' %}<i class="fas fa-eye"></i>Más Puntuación de Visión
+                                {% if key == 'longest_game' %}<i class="fas fa-clock"></i>Partida MÃ¡s Larga
+                                {% elif key == 'most_kills' %}<i class="fas fa-crosshairs"></i>MÃ¡s Kills
+                                {% elif key == 'most_deaths' %}<i class="fas fa-skull"></i>MÃ¡s Muertes
+                                {% elif key == 'most_assists' %}<i class="fas fa-hands-helping"></i>MÃ¡s Asistencias
+                                {% elif key == 'highest_kda' %}<i class="fas fa-star"></i>KDA MÃ¡s Alto
+                                {% elif key == 'most_cs' %}<i class="fas fa-coins"></i>MÃ¡s CS
+                                {% elif key == 'most_damage_dealt' %}<i class="fas fa-bomb"></i>MÃ¡s DaÃ±o a Campeones
+                                {% elif key == 'most_gold_earned' %}<i class="fas fa-sack-dollar"></i>MÃ¡s Oro Ganado
+                                {% elif key == 'most_vision_score' %}<i class="fas fa-eye"></i>MÃ¡s PuntuaciÃ³n de VisiÃ³n
                                 {% elif key == 'largest_killing_spree' %}<i class="fas fa-fire"></i>Mayor Racha de Asesinatos
                                 {% elif key == 'largest_multikill' %}<i class="fas fa-bolt"></i>Mayor Multikill
-                                {% elif key == 'most_time_spent_dead' %}<i class="fas fa-bed"></i>Más Tiempo Muerto
-                                {% elif key == 'most_wards_placed' %}<i class="fas fa-map-pin"></i>Más Wards Colocados
-                                {% elif key == 'most_wards_killed' %}<i class="fas fa-broom"></i>Más Wards Destruidos
-                                {% elif key == 'most_turret_kills' %}<i class="fas fa-chess-rook"></i>Más Torretas Destruidas
-                                {% elif key == 'most_inhibitor_kills' %}<i class="fas fa-building-shield"></i>Más Inhibidores Destruidos
-                                {% elif key == 'most_baron_kills' %}<i class="fas fa-dragon" style="color: #a970ff;"></i>Más Barons Asesinados
-                                {% elif key == 'most_dragon_kills' %}<i class="fas fa-dragon" style="color: #ff4747;"></i>Más Dragones Asesinados
-                                {% elif key == 'most_damage_taken' %}<i class="fas fa-shield-halved"></i>Más Daño Recibido
-                                {% elif key == 'most_total_heal' %}<i class="fas fa-heart-pulse"></i>Más Curación Total
-                                {% elif key == 'most_damage_shielded_on_teammates' %}<i class="fas fa-user-shield"></i>Más Escudo a Aliados
-                                {% elif key == 'most_time_ccing_others' %}<i class="fas fa-hourglass-half"></i>Más Tiempo de CC
-                                {% elif key == 'most_objectives_stolen' %}<i class="fas fa-hand-lizard"></i>Más Objetivos Robados
-                                {% elif key == 'highest_kill_participation' %}<i class="fas fa-people-group"></i>Mayor Participación en Kills
-                                {% elif key == 'most_double_kills' %}<i class="fas fa-2"></i>Más Asesinatos Dobles
-                                {% elif key == 'most_triple_kills' %}<i class="fas fa-3"></i>Más Asesinatos Triples
-                                {% elif key == 'most_quadra_kills' %}<i class="fas fa-4"></i>Más Asesinatos Cuádruples
-                                {% elif key == 'most_penta_kills' %}<i class="fas fa-5"></i>Más Asesinatos Quíntuples
+                                {% elif key == 'most_time_spent_dead' %}<i class="fas fa-bed"></i>MÃ¡s Tiempo Muerto
+                                {% elif key == 'most_wards_placed' %}<i class="fas fa-map-pin"></i>MÃ¡s Wards Colocados
+                                {% elif key == 'most_wards_killed' %}<i class="fas fa-broom"></i>MÃ¡s Wards Destruidos
+                                {% elif key == 'most_turret_kills' %}<i class="fas fa-chess-rook"></i>MÃ¡s Torretas Destruidas
+                                {% elif key == 'most_inhibitor_kills' %}<i class="fas fa-building-shield"></i>MÃ¡s Inhibidores Destruidos
+                                {% elif key == 'most_baron_kills' %}<i class="fas fa-dragon" style="color: #a970ff;"></i>MÃ¡s Barons Asesinados
+                                {% elif key == 'most_dragon_kills' %}<i class="fas fa-dragon" style="color: #ff4747;"></i>MÃ¡s Dragones Asesinados
+                                {% elif key == 'most_damage_taken' %}<i class="fas fa-shield-halved"></i>MÃ¡s DaÃ±o Recibido
+                                {% elif key == 'most_total_heal' %}<i class="fas fa-heart-pulse"></i>MÃ¡s CuraciÃ³n Total
+                                {% elif key == 'most_damage_shielded_on_teammates' %}<i class="fas fa-user-shield"></i>MÃ¡s Escudo a Aliados
+                                {% elif key == 'most_time_ccing_others' %}<i class="fas fa-hourglass-half"></i>MÃ¡s Tiempo de CC
+                                {% elif key == 'most_objectives_stolen' %}<i class="fas fa-hand-lizard"></i>MÃ¡s Objetivos Robados
+                                {% elif key == 'highest_kill_participation' %}<i class="fas fa-people-group"></i>Mayor ParticipaciÃ³n en Kills
+                                {% elif key == 'most_double_kills' %}<i class="fas fa-2"></i>MÃ¡s Asesinatos Dobles
+                                {% elif key == 'most_triple_kills' %}<i class="fas fa-3"></i>MÃ¡s Asesinatos Triples
+                                {% elif key == 'most_quadra_kills' %}<i class="fas fa-4"></i>MÃ¡s Asesinatos CuÃ¡druples
+                                {% elif key == 'most_penta_kills' %}<i class="fas fa-5"></i>MÃ¡s Asesinatos QuÃ­ntuples
                                 {% elif key == 'longest_win_streak' %}<i class="fas fa-arrow-trend-up"></i>Mayor Racha de Victorias
                                 {% elif key == 'longest_loss_streak' %}<i class="fas fa-arrow-trend-down"></i>Mayor Racha de Derrotas
                                 {% endif %}
@@ -397,13 +398,13 @@
                                     <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ record.champion_name }}.png" alt="{{ record.champion_name }}" class="imagen-jugador">
                                     {{ record.champion_name }}<br>
                                 {% else %}
-                                    Campeón: N/A<br>
+                                    CampeÃ³n: N/A<br>
                                 {% endif %}
 
                                 KDA: {{ record.kills | thousands_separator }}/{{ record.deaths | thousands_separator }}/{{ record.assists | thousands_separator }} ({{ '%.2f' % record.kda }})<br>
                                 Fecha: {{ record.game_date | format_timestamp }}<br>
-                                Duración: {{ (record.game_duration / 60) | int }}m {{ (record.game_duration % 60) | int }}s
-                                {% if record.is_tied_record %} <br> <span class="badge bg-info">¡Primero en lograrlo!</span> {% endif %}
+                                DuraciÃ³n: {{ (record.game_duration / 60) | int }}m {{ (record.game_duration % 60) | int }}s
+                                {% if record.is_tied_record %} <br> <span class="badge bg-info">Â¡Primero en lograrlo!</span> {% endif %}
                             </small>
                             {% endif %}
 
@@ -416,8 +417,8 @@
             </div>
             {% else %}
             <div class="alert alert-info text-center mt-4" role="alert">
-                <h4 class="alert-heading"><i class="fas fa-info-circle me-2"></i>No hay estadísticas disponibles</h4>
-                <p>Haz clic en el botón "Actualizar Estadísticas" para calcular y mostrar las estadísticas globales.</p>
+                <h4 class="alert-heading"><i class="fas fa-info-circle me-2"></i>No hay estadÃ­sticas disponibles</h4>
+                <p>Haz clic en el botÃ³n "Actualizar EstadÃ­sticas" para calcular y mostrar las estadÃ­sticas globales.</p>
             </div>
             {% endif %}
         </div>
@@ -448,7 +449,7 @@
         toggleModeBtn.addEventListener('click', function() {
             body.classList.toggle('dark-mode');
             const isDark = body.classList.contains('dark-mode');
-            // Actualizar texto y mantener ambas claves en sincronía para todas las páginas
+            // Actualizar texto y mantener ambas claves en sincronÃ­a para todas las pÃ¡ginas
             toggleModeBtn.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
             localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -463,7 +464,7 @@
         const isMuted = localStorage.getItem('audioMuted') === 'true';
         audio.muted = isMuted;
         muteIcon.className = isMuted ? 'fas fa-microphone-slash' : 'fas fa-microphone';
-        toggleAudioBtn.title = isMuted ? 'Desmutear Música' : 'Mutear Música';
+        toggleAudioBtn.title = isMuted ? 'Desmutear MÃºsica' : 'Mutear MÃºsica';
 
         const savedVolume = localStorage.getItem('audioVolume');
         if (savedVolume !== null) {
@@ -480,11 +481,11 @@
             localStorage.setItem('audioMuted', audio.muted);
             if (audio.muted) {
                 muteIcon.className = 'fas fa-microphone-slash';
-                toggleAudioBtn.title = 'Mutear Música';
+                toggleAudioBtn.title = 'Mutear MÃºsica';
             } else {
                 muteIcon.className = 'fas fa-microphone';
-                toggleAudioBtn.title = 'Desmutear Música';
-                audio.play().catch(e => console.log("La reproducción automática fue bloqueada por el navegador."));
+                toggleAudioBtn.title = 'Desmutear MÃºsica';
+                audio.play().catch(e => console.log("La reproducciÃ³n automÃ¡tica fue bloqueada por el navegador."));
             }
         });
 
@@ -600,7 +601,7 @@
                 return;
             }
 
-            personalRecordsDisplay.innerHTML = '<p class="text-info">Cargando récords personales...</p>';
+            personalRecordsDisplay.innerHTML = '<p class="text-info">Cargando rÃ©cords personales...</p>';
             
             let url = `/api/personal_records/${selectedPuuid}`;
             const params = new URLSearchParams();
@@ -628,7 +629,7 @@
                 displayPersonalRecords(records);
             } catch (error) {
                 console.error('Error fetching personal records:', error);
-                personalRecordsDisplay.innerHTML = '<p class="text-danger">Error al cargar los récords personales.</p>';
+                personalRecordsDisplay.innerHTML = '<p class="text-danger">Error al cargar los rÃ©cords personales.</p>';
             }
         });
 
@@ -638,7 +639,7 @@
             personalRecordsDisplay.innerHTML = ''; // Clear previous records
 
             if (records.length === 0) {
-                personalRecordsDisplay.innerHTML = '<p class="text-muted">No se encontraron récords personales para esta cuenta en la temporada actual.</p>';
+                personalRecordsDisplay.innerHTML = '<p class="text-muted">No se encontraron rÃ©cords personales para esta cuenta en la temporada actual.</p>';
                 return;
             }
 
@@ -660,31 +661,31 @@
                         const seconds = record.value % 60;
                         valueDisplay = `${minutes}m ${seconds}s`;
                         iconClass = 'fas fa-clock';
-                        titleText = 'Partida Más Larga';
+                        titleText = 'Partida MÃ¡s Larga';
                         break;
                     case 'most_time_spent_dead':
                         const minutesDead = Math.floor(record.value / 60);
                         const secondsDead = record.value % 60;
                         valueDisplay = `${minutesDead}m ${secondsDead}s`;
                         iconClass = 'fas fa-bed';
-                        titleText = 'Más Tiempo Muerto';
+                        titleText = 'MÃ¡s Tiempo Muerto';
                         break;
                     case 'most_time_ccing_others':
                         const minutesCC = Math.floor(record.value / 60);
                         const secondsCC = record.value % 60;
                         valueDisplay = `${minutesCC}m ${secondsCC}s`;
                         iconClass = 'fas fa-hourglass-half';
-                        titleText = 'Más Tiempo de CC';
+                        titleText = 'MÃ¡s Tiempo de CC';
                         break;
                     case 'highest_kda':
                         valueDisplay = record.value.toFixed(2);
                         iconClass = 'fas fa-star';
-                        titleText = 'KDA Más Alto';
+                        titleText = 'KDA MÃ¡s Alto';
                         break;
                     case 'highest_kill_participation':
                         valueDisplay = record.value.toFixed(2) + '%';
                         iconClass = 'fas fa-people-group';
-                        titleText = 'Mayor Participación en Kills';
+                        titleText = 'Mayor ParticipaciÃ³n en Kills';
                         break;
                     case 'largest_multikill':
                         if (record.value === 5) {
@@ -701,29 +702,29 @@
                         iconClass = 'fas fa-bolt';
                         titleText = 'Mayor Multikill';
                         break;
-                    case 'most_kills': iconClass = 'fas fa-crosshairs'; titleText = 'Más Kills'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_deaths': iconClass = 'fas fa-skull'; titleText = 'Más Muertes'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_assists': iconClass = 'fas fa-hands-helping'; titleText = 'Más Asistencias'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_cs': iconClass = 'fas fa-coins'; titleText = 'Más CS'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_damage_dealt': iconClass = 'fas fa-bomb'; titleText = 'Más Daño a Campeones'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_gold_earned': iconClass = 'fas fa-sack-dollar'; titleText = 'Más Oro Ganado'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_vision_score': iconClass = 'fas fa-eye'; titleText = 'Más Puntuación de Visión'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_kills': iconClass = 'fas fa-crosshairs'; titleText = 'MÃ¡s Kills'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_deaths': iconClass = 'fas fa-skull'; titleText = 'MÃ¡s Muertes'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_assists': iconClass = 'fas fa-hands-helping'; titleText = 'MÃ¡s Asistencias'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_cs': iconClass = 'fas fa-coins'; titleText = 'MÃ¡s CS'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_damage_dealt': iconClass = 'fas fa-bomb'; titleText = 'MÃ¡s DaÃ±o a Campeones'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_gold_earned': iconClass = 'fas fa-sack-dollar'; titleText = 'MÃ¡s Oro Ganado'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_vision_score': iconClass = 'fas fa-eye'; titleText = 'MÃ¡s PuntuaciÃ³n de VisiÃ³n'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
                     case 'largest_killing_spree': iconClass = 'fas fa-fire'; titleText = 'Mayor Racha de Asesinatos'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_wards_placed': iconClass = 'fas fa-map-pin'; titleText = 'Más Wards Colocados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_wards_killed': iconClass = 'fas fa-broom'; titleText = 'Más Wards Destruidos'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_turret_kills': iconClass = 'fas fa-chess-rook'; titleText = 'Más Torretas Destruidas'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_inhibitor_kills': iconClass = 'fas fa-building-shield'; titleText = 'Más Inhibidores Destruidos'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_baron_kills': iconClass = 'fas fa-dragon'; titleText = 'Más Barons Asesinados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_dragon_kills': iconClass = 'fas fa-dragon'; titleText = 'Más Dragones Asesinados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_damage_taken': iconClass = 'fas fa-shield-halved'; titleText = 'Más Daño Recibido'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_total_heal': iconClass = 'fas fa-heart-pulse'; titleText = 'Más Curación Total'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_damage_shielded_on_teammates': iconClass = 'fas fa-user-shield'; titleText = 'Más Escudo a Aliados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_time_ccing_others': iconClass = 'fas fa-hourglass-half'; titleText = 'Más Tiempo de CC'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_objectives_stolen': iconClass = 'fas fa-hand-lizard'; titleText = 'Más Objetivos Robados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_double_kills': iconClass = 'fas fa-2'; titleText = 'Más Asesinatos Dobles'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_triple_kills': iconClass = 'fas fa-3'; titleText = 'Más Asesinatos Triples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_quadra_kills': iconClass = 'fas fa-4'; titleText = 'Más Asesinatos Cuádruples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
-                    case 'most_penta_kills': iconClass = 'fas fa-5'; titleText = 'Más Asesinatos Quíntuples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_wards_placed': iconClass = 'fas fa-map-pin'; titleText = 'MÃ¡s Wards Colocados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_wards_killed': iconClass = 'fas fa-broom'; titleText = 'MÃ¡s Wards Destruidos'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_turret_kills': iconClass = 'fas fa-chess-rook'; titleText = 'MÃ¡s Torretas Destruidas'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_inhibitor_kills': iconClass = 'fas fa-building-shield'; titleText = 'MÃ¡s Inhibidores Destruidos'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_baron_kills': iconClass = 'fas fa-dragon'; titleText = 'MÃ¡s Barons Asesinados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_dragon_kills': iconClass = 'fas fa-dragon'; titleText = 'MÃ¡s Dragones Asesinados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_damage_taken': iconClass = 'fas fa-shield-halved'; titleText = 'MÃ¡s DaÃ±o Recibido'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_total_heal': iconClass = 'fas fa-heart-pulse'; titleText = 'MÃ¡s CuraciÃ³n Total'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_damage_shielded_on_teammates': iconClass = 'fas fa-user-shield'; titleText = 'MÃ¡s Escudo a Aliados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_time_ccing_others': iconClass = 'fas fa-hourglass-half'; titleText = 'MÃ¡s Tiempo de CC'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_objectives_stolen': iconClass = 'fas fa-hand-lizard'; titleText = 'MÃ¡s Objetivos Robados'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_double_kills': iconClass = 'fas fa-2'; titleText = 'MÃ¡s Asesinatos Dobles'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_triple_kills': iconClass = 'fas fa-3'; titleText = 'MÃ¡s Asesinatos Triples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_quadra_kills': iconClass = 'fas fa-4'; titleText = 'MÃ¡s Asesinatos CuÃ¡druples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
+                    case 'most_penta_kills': iconClass = 'fas fa-5'; titleText = 'MÃ¡s Asesinatos QuÃ­ntuples'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
                     case 'longest_win_streak': iconClass = 'fas fa-arrow-trend-up'; titleText = 'Mayor Racha de Victorias'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
                     case 'longest_loss_streak': iconClass = 'fas fa-arrow-trend-down'; titleText = 'Mayor Racha de Derrotas'; valueDisplay = formatNumberWithThousandsSeparator(record.value); break;
                     default:
@@ -746,11 +747,11 @@
                                         ${record.champion_name || record.champion_id}<br>` : 
                                     record.champion_name && record.champion_name !== 'N/A' ?
                                         `<img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/${record.champion_name}.png" alt="${record.champion_name}" class="imagen-jugador">
-                                        ${record.champion_name}<br>` : 'Campeón: N/A<br>'}
+                                        ${record.champion_name}<br>` : 'CampeÃ³n: N/A<br>'}
 
                                     KDA: ${record.kills}/${record.deaths}/${record.assists} (${record.kda.toFixed(2)})<br>
                                     Fecha: ${new Date(record.game_date).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}<br>
-                                    Duración: ${Math.floor(record.game_duration / 60)}m ${record.game_duration % 60}s
+                                    DuraciÃ³n: ${Math.floor(record.game_duration / 60)}m ${record.game_duration % 60}s
                                 </small>
                             </div>
                         </div>
@@ -766,3 +767,4 @@
 </script>
 </body>
 </html>
+

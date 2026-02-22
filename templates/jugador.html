@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+﻿  <!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -65,13 +65,13 @@
             font-size: 0.9em;
             font-weight: bold;
             color: white !important;
-            background-color: #0056b3; /* Un azul estándar */
+            background-color: #0056b3; /* Un azul estÃ¡ndar */
             border-radius: 50px; /* Changed to 50px for pill shape */
             text-decoration: none;
             transition: background-color 0.2s ease-in-out;
         }
         .opgg-link:hover {
-            background-color: #004494; /* Un azul más oscuro al pasar el ratón */
+            background-color: #004494; /* Un azul mÃ¡s oscuro al pasar el ratÃ³n */
         }
         .dark-mode {
             background-color: #121212;
@@ -198,7 +198,7 @@
             font-weight: bold;
         }
 
-        /* Estilos específicos para la página de jugador */
+        /* Estilos especÃ­ficos para la pÃ¡gina de jugador */
         .profile-header {
             text-align: center;
             margin-bottom: 30px;
@@ -367,7 +367,7 @@
         .match-history-table .match-result {
             font-size: 1.1em; /* Larger result text */
         }
-        /* --- INICIO: Mejoras de visualización del historial --- */
+        /* --- INICIO: Mejoras de visualizaciÃ³n del historial --- */
         .match-history-table .match-row-win > td {
             background-color: rgba(40, 167, 69, 0.08);
         }
@@ -395,14 +395,14 @@
         }
         .penta-kill { background-color: #ff4500; } /* NaranjaRojo */
         .quadra-kill { background-color: #9400d3; } /* Violeta Oscuro */
-        .triple-kill { background-color: #dc143c; } /* Carmesí */
+        .triple-kill { background-color: #dc143c; } /* CarmesÃ­ */
         .double-kill { background-color: #0056b3; } /* Azul */
 
         .damage-bar {
             display: flex;
             width: 100%;
-            min-width: 80px; /* Ancho mínimo ajustado */
-            height: 12px; /* Altura reducida para una barra más fina */
+            min-width: 80px; /* Ancho mÃ­nimo ajustado */
+            height: 12px; /* Altura reducida para una barra mÃ¡s fina */
             border-radius: 4px;
             overflow: hidden;
             background-color: #e9ecef;
@@ -488,12 +488,12 @@
 
         /* Evitar que el texto se rompa */
         p[id^="ia-"] {
-            white-space: pre-wrap; /* Mantiene saltos de línea si los hay */
+            white-space: pre-wrap; /* Mantiene saltos de lÃ­nea si los hay */
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
 
-        /* --- FIN: Mejoras de visualización del historial --- */
+        /* --- FIN: Mejoras de visualizaciÃ³n del historial --- */
 
         /* Styles for filter controls */
         .filter-controls {
@@ -585,7 +585,7 @@
         .bg-header-ia { background: rgba(0,0,0,0.3); }
 
 
-        /* Adaptación a MODO CLARO (Si el body no tiene .dark-mode) */
+        /* AdaptaciÃ³n a MODO CLARO (Si el body no tiene .dark-mode) */
         body:not(.dark-mode) .coach-card {
             background: linear-gradient(145deg, #ffffff, #f0f2f5);
             border: 1px solid #dee2e6 !important;
@@ -595,7 +595,7 @@
         body:not(.dark-mode) .ia-paragraph { color: #333; }
         body:not(.dark-mode) .bg-header-ia { background: rgba(0,0,0,0.05); }
 
-        /* Resaltado especial para la recomendación */
+        /* Resaltado especial para la recomendaciÃ³n */
         .text-highlight { color: #0dcaf0 !important; }
         body:not(.dark-mode) .text-highlight { color: #007bff !important; }
 
@@ -608,7 +608,7 @@
             color: #adb5bd; /* Lighter gray for better contrast in dark mode */
         }
 
-        /* --- INICIO: Animación para desplegar detalles de partida --- */
+        /* --- INICIO: AnimaciÃ³n para desplegar detalles de partida --- */
         .details-content-wrapper {
             display: grid;
             grid-template-rows: 0fr; /* Colapsado por defecto */
@@ -621,9 +621,9 @@
         }
 
         .details-content-wrapper > div {
-            overflow: hidden; /* Esencial para que la animación de grid funcione */
+            overflow: hidden; /* Esencial para que la animaciÃ³n de grid funcione */
         }
-        /* --- FIN: Animación para desplegar detalles de partida --- */
+        /* --- FIN: AnimaciÃ³n para desplegar detalles de partida --- */
     </style>
 </head>
 
@@ -658,14 +658,17 @@
                     <a class="nav-link" href="{{ url_for('h2h') }}">Comparador</a>
                 </li> #}
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('stats.estadisticas_globales') }}">Estadísticas Globales</a>
+                    <a class="nav-link" href="{{ url_for('stats.estadisticas_globales') }}">Estadisticas Globales</a>
 
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.logros') }}">Logros</a>
                 </li>
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
                 <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
                 <div class="d-flex align-items-center ms-lg-2">
-                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear MÃºsica">
                         <i id="muteIcon" class="fas fa-microphone-slash"></i>
                     </button>
                     <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
@@ -703,7 +706,7 @@
                     <i class="fas fa-bolt me-2"></i>Forzar
                 </button>
                 <button id="btn-ia" class="btn btn-sm btn-outline-info" onclick="ejecutarAnalisisIA()">
-                    <i class="fas fa-magic me-2"></i>Solicitar Análisis
+                    <i class="fas fa-magic me-2"></i>Solicitar AnÃ¡lisis
                 </button>
             </div>
         </div>
@@ -714,7 +717,7 @@
             
             <div id="ia-loader" class="text-center py-4" style="display:none;">
                 <div class="spinner-border text-info mb-2" role="status"></div>
-                <p class="text-muted small">Consultando tácticas con la IA...</p>
+                <p class="text-muted small">Consultando tÃ¡cticas con la IA...</p>
             </div>
             
             <div id="ia-content" style="display:none;">
@@ -722,7 +725,7 @@
                 <div class="row g-4"> 
                     <div class="col-md-6">
                         <div class="mb-4">
-                            <label class="text-primary small fw-bold mb-2 d-block"><i class="fas fa-user me-1"></i> Desempeño Individual</label>
+                            <label class="text-primary small fw-bold mb-2 d-block"><i class="fas fa-user me-1"></i> DesempeÃ±o Individual</label>
                             <p id="ia-ind" class="ia-paragraph"></p>
                         </div>
                         <div class="mb-4">
@@ -730,7 +733,7 @@
                             <p id="ia-fuertes" class="ia-paragraph"></p>
                         </div>
                         <div class="mb-4">
-                            <label class="text-info small fw-bold mb-2 d-block"><i class="fas fa-users-cog me-1"></i> Análisis de Entorno (Aliados y Rivales)</label>
+                            <label class="text-info small fw-bold mb-2 d-block"><i class="fas fa-users-cog me-1"></i> AnÃ¡lisis de Entorno (Aliados y Rivales)</label>
                             <div id="ia-extra" class="ia-paragraph small"></div>
                         </div>
                     </div>
@@ -740,7 +743,7 @@
                             <p id="ia-mejora" class="ia-paragraph"></p>
                         </div>
                         <div class="mb-4">
-                            <label class="text-light small fw-bold mb-2 d-block"><i class="fas fa-lightbulb me-1"></i> Recomendación Maestra</label>
+                            <label class="text-light small fw-bold mb-2 d-block"><i class="fas fa-lightbulb me-1"></i> RecomendaciÃ³n Maestra</label>
                             <p id="ia-recom" class="ia-paragraph fw-medium text-highlight p-3 rounded" style="background: rgba(13, 202, 240, 0.05); border: 1px solid rgba(13, 202, 240, 0.2);"></p>
                         </div>
                     </div>
@@ -755,8 +758,8 @@
             
             <div id="ia-cooldown-info" class="alert alert-warning small mt-3" style="display:none;">
                 <i class="fas fa-hourglass-half me-2"></i>
-                <strong>Próximo análisis automático en:</strong> <span id="ia-cooldown-time">--</span>
-                <br><small class="text-muted">O puedes forzar el análisis ahora usando el botón "Forzar".</small>
+                <strong>PrÃ³ximo anÃ¡lisis automÃ¡tico en:</strong> <span id="ia-cooldown-time">--</span>
+                <br><small class="text-muted">O puedes forzar el anÃ¡lisis ahora usando el botÃ³n "Forzar".</small>
             </div>
         </div>
     </div>
@@ -802,7 +805,7 @@
                             {% elif perfil.soloq.get('current_loss_streak', 0) > 0 %}
                                 <span class="text-danger fw-bold">{{ perfil.soloq.get('current_loss_streak', 0) }}D</span>
                             {% else %}
-                                <span>—</span>
+                                <span>â€”</span>
                             {% endif %}
                         </p>
                         {# Nuevo campo para LP en 24h con detalle #}
@@ -824,7 +827,7 @@
                         {% endif %}
 
 
-                        {# Contenedor para el gráfico de Elo #}
+                        {# Contenedor para el grÃ¡fico de Elo #}
                         <div class="mt-3 w-100" style="height: 200px;">
                             <canvas id="soloqEloChart"></canvas>
                         </div>
@@ -857,7 +860,7 @@
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <p>No hay estadísticas de campeones disponibles para SoloQ.</p>
+                                <p>No hay estadÃ­sticas de campeones disponibles para SoloQ.</p>
                             {% endif %}
                         </div>
 
@@ -907,7 +910,7 @@
                             {% elif perfil.flexq.get('current_loss_streak', 0) > 0 %}
                                 <span class="text-danger fw-bold">{{ perfil.flexq.get('current_loss_streak', 0) }}D</span>
                             {% else %}
-                                <span>—</span>
+                                <span>â€”</span>
                             {% endif %}
                         </p>
                         {# Nuevo campo para LP en 24h con detalle #}
@@ -929,7 +932,7 @@
                         {% endif %}
 
 
-                        {# Contenedor para el gráfico de Elo FLEXQ #}
+                        {# Contenedor para el grÃ¡fico de Elo FLEXQ #}
                         <div class="mt-3 w-100" style="height: 200px;">
                             <canvas id="flexqEloChart"></canvas>
                         </div>
@@ -962,7 +965,7 @@
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <p>No hay estadísticas de campeones disponibles para FlexQ.</p>
+                                <p>No hay estadÃ­sticas de campeones disponibles para FlexQ.</p>
                             {% endif %}
                         </div>
 
@@ -983,7 +986,7 @@
             <div class="filter-controls">
                 <label for="queueFilter">Tipo de Cola:</label>
                 <select id="queueFilter" class="form-select"></select>
-                <label for="championFilter">Campeón:</label>
+                <label for="championFilter">CampeÃ³n:</label>
                 <select id="championFilter" class="form-select">
                     <option value="all">Todos</option>
                     </select>
@@ -994,18 +997,18 @@
                     <thead>
                         <tr>
                             <th>Tipo de Partida</th>
-                            <th>Campeón</th>
+                            <th>CampeÃ³n</th>
                             <th>KDA</th>
-                            <th>Daño a Campeones</th>
-                            <th>Daño a Objetivos</th>
+                            <th>DaÃ±o a Campeones</th>
+                            <th>DaÃ±o a Objetivos</th>
                             <th>Oro Ganado</th>
-                            <th>Súbditos</th>
-                            <th>Visión</th>
+                            <th>SÃºbditos</th>
+                            <th>VisiÃ³n</th>
                             <th>Hechizos</th>
                             <th>Runas</th>
                             <th>Objetos</th>
                             <th>LP</th> {# Nueva columna para LP #}
-                            <th>Duración</th>
+                            <th>DuraciÃ³n</th>
                             <th>Resultado / Fecha</th>
                             <th>Abrir</th>
                         </tr>
@@ -1047,7 +1050,7 @@
                                 <br>
                                 <span class="small-text-stats">KDA: {{ '%.2f'|format((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 'Perfecto' }}</span>
                                 <br>
-                                <span class="small-text-stats fw-bold" title="Participación en Asesinatos">{{ '%.0f'|format(match.get('kill_participation', 0)) }}% KP</span>
+                                <span class="small-text-stats fw-bold" title="ParticipaciÃ³n en Asesinatos">{{ '%.0f'|format(match.get('kill_participation', 0)) }}% KP</span>
                             </td>
                             <td>
                                 <div>{{ match.total_damage_dealt_to_champions | thousands_separator }}</div>
@@ -1066,7 +1069,7 @@
                                     {% set physical_pct = (match.physical_damage_dealt_to_champions / total_damage * 100) %}
                                     {% set magic_pct = (match.magic_damage_dealt_to_champions / total_damage * 100) %}
                                     {% set true_pct = (match.true_damage_dealt_to_champions / total_damage * 100) %}
-                                    <div class="damage-bar mt-1" title="Físico: {{ match.physical_damage_dealt_to_champions | thousands_separator }} | Mágico: {{ match.magic_damage_dealt_to_champions | thousands_separator }} | Verdadero: {{ match.true_damage_dealt_to_champions | thousands_separator }}">
+                                    <div class="damage-bar mt-1" title="FÃ­sico: {{ match.physical_damage_dealt_to_champions | thousands_separator }} | MÃ¡gico: {{ match.magic_damage_dealt_to_champions | thousands_separator }} | Verdadero: {{ match.true_damage_dealt_to_champions | thousands_separator }}">
                                         <div class="damage-physical" style="width: {{ physical_pct }}%;"></div>
                                         <div class="damage-magic" style="width: {{ magic_pct }}%;"></div>
                                         <div class="damage-true" style="width: {{ true_pct }}%;"></div>
@@ -1075,7 +1078,7 @@
                                     <div class="mt-1"><span>N/A</span></div>
                                 {% endif %}
                             </td>
-                            <td title="Daño a Objetivos / Torretas / Inhibidores / Objetivos Robados">
+                            <td title="DaÃ±o a Objetivos / Torretas / Inhibidores / Objetivos Robados">
                                 <div>{{ match.get('damage_dealt_to_objectives', 0) | thousands_separator }}</div>
                                 <span class="small-text-stats">
                                     <i class="fas fa-chess-rook"></i> {{ match.get('turret_kills', 0) }}
@@ -1113,7 +1116,7 @@
                                     {% endif %}
                                 </span>
                             </td>
-                            <td title="Puntuación de Visión (por minuto) | Wards de Control | Wards Colocados / Destruidos">
+                            <td title="PuntuaciÃ³n de VisiÃ³n (por minuto) | Wards de Control | Wards Colocados / Destruidos">
                                 <span class="fw-bold">{{ match.vision_score }}</span>
                                 <br>
                                 <span class="small-text-stats">
@@ -1195,7 +1198,7 @@
                                 <a href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}"
                                    target="_blank"
                                    class="btn btn-sm btn-outline-primary" 
-                                   title="Abrir detalles en nueva pestaña">
+                                   title="Abrir detalles en nueva pestaÃ±a">
                                     <i class="fas fa-external-link-alt"></i>
                                 </a>
                             </td>
@@ -1217,9 +1220,9 @@
                                                     <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
                                                         <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
                                                         <div class="text-start" style="width: 110px;">KDA</div>
-                                                        <div class="text-start" style="width: 80px;">Daño</div>
+                                                        <div class="text-start" style="width: 80px;">DaÃ±o</div>
                                                         <div class="text-start" style="width: 80px;">CS</div>
-                                                        <div class="text-start" style="width: 50px;">Visión</div>
+                                                        <div class="text-start" style="width: 50px;">VisiÃ³n</div>
                                                         <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
                                                     </div>
                                                     <ul class="list-unstyled mb-0">
@@ -1275,9 +1278,9 @@
                                                     <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
                                                         <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
                                                         <div class="text-start" style="width: 110px;">KDA</div>
-                                                        <div class="text-start" style="width: 80px;">Daño</div>
+                                                        <div class="text-start" style="width: 80px;">DaÃ±o</div>
                                                         <div class="text-start" style="width: 80px;">CS</div>
-                                                        <div class="text-start" style="width: 50px;">Visión</div>
+                                                        <div class="text-start" style="width: 50px;">VisiÃ³n</div>
                                                         <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
                                                     </div>
                                                     <ul class="list-unstyled mb-0">
@@ -1333,8 +1336,8 @@
                 </table>
             </div>
 
-            <!-- Controles de Paginación -->
-            <nav aria-label="Historial de partidas paginación" class="mt-4">
+            <!-- Controles de PaginaciÃ³n -->
+            <nav aria-label="Historial de partidas paginaciÃ³n" class="mt-4">
                 <ul class="pagination justify-content-center" id="pagination-controls">
                 </ul>
             </nav>
@@ -1350,7 +1353,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // --- INICIO: Gráfico de Elo ---
+    // --- INICIO: GrÃ¡fico de Elo ---
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
@@ -1369,7 +1372,7 @@
                 const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
                 const textColor = isDarkMode ? '#adb5bd' : '#666';
 
-                // Función para obtener el color según el Tier
+                // FunciÃ³n para obtener el color segÃºn el Tier
                 const getTierColor = (value) => {
                     if (value >= 2800) {
                         if (value >= 3200) return '#f1c40f'; // CHALLENGER - Dorado brillante
@@ -1397,7 +1400,7 @@
                     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
                 };
 
-                // Función para formatear el valor numérico a Rango (Ej: Oro I 50 LP)
+                // FunciÃ³n para formatear el valor numÃ©rico a Rango (Ej: Oro I 50 LP)
                 const formatElo = (value) => {
                     if (value >= 2800) {
                         const lps = value - 2800;
@@ -1422,7 +1425,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Elo (Valor Clasificación)',
+                            label: 'Elo (Valor ClasificaciÃ³n)',
                             data: dataPoints,
                             backgroundColor: function(context) {
                                 const chart = context.chart;
@@ -1460,7 +1463,7 @@
                             pointRadius: 3,
                             pointHoverRadius: 5,
                             fill: true,
-                            tension: 0.3, // Suavizado de línea
+                            tension: 0.3, // Suavizado de lÃ­nea
                             segment: {
                                 borderColor: ctx => getTierColor(ctx.p0.parsed.y)
                             },
@@ -1492,9 +1495,9 @@
                                 grid: { color: gridColor },
                                 ticks: { 
                                     color: textColor,
-                                    stepSize: 100, // Forzar líneas cada división (100 LP)
+                                    stepSize: 100, // Forzar lÃ­neas cada divisiÃ³n (100 LP)
                                     callback: function(value) {
-                                        // Solo mostrar etiqueta si es una división exacta (0 LP)
+                                        // Solo mostrar etiqueta si es una divisiÃ³n exacta (0 LP)
                                         if (value % 100 !== 0) return null;
 
                                         if (value >= 2800) {
@@ -1530,15 +1533,15 @@
                 ctx.style.display = 'none';
                 const container = ctx.parentElement;
                 const msg = document.createElement('p');
-                msg.textContent = "Insuficientes datos para el gráfico de Elo.";
+                msg.textContent = "Insuficientes datos para el grÃ¡fico de Elo.";
                 msg.className = "text-muted small text-center mt-4";
                 container.appendChild(msg);
             }
         }
     });
-    // --- FIN: Gráfico de Elo ---
+    // --- FIN: GrÃ¡fico de Elo ---
 
-    // --- INICIO: Gráfico de Elo (FlexQ) ---
+    // --- INICIO: GrÃ¡fico de Elo (FlexQ) ---
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
@@ -1605,7 +1608,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Elo (Valor Clasificación)',
+                            label: 'Elo (Valor ClasificaciÃ³n)',
                             data: dataPoints,
                             backgroundColor: function(context) {
                                 const chart = context.chart;
@@ -1710,15 +1713,15 @@
                 ctx.style.display = 'none';
                 const container = ctx.parentElement;
                 const msg = document.createElement('p');
-                msg.textContent = "Insuficientes datos para el gráfico de Elo.";
+                msg.textContent = "Insuficientes datos para el grÃ¡fico de Elo.";
                 msg.className = "text-muted small text-center mt-4";
                 container.appendChild(msg);
             }
         }
     });
-    // --- FIN: Gráfico de Elo (FlexQ) ---
+    // --- FIN: GrÃ¡fico de Elo (FlexQ) ---
 
-    // Esta función debe estar en el ámbito global para que la llame el `onclick`
+    // Esta funciÃ³n debe estar en el Ã¡mbito global para que la llame el `onclick`
     function toggleMatchDetails(matchId) {
         const detailsRow = document.getElementById(matchId);
         // Comprobamos si la fila de detalles existe antes de intentar manipularla
@@ -1851,7 +1854,7 @@
                     console.log("Autoplay prevented:", error);
                     muteIcon.classList.remove('fa-volume-up');
                     muteIcon.classList.add('fa-microphone-slash'); // Show muted icon as initial state
-                    toggleAudioBtn.title = "Reproducir Música";
+                    toggleAudioBtn.title = "Reproducir MÃºsica";
                 });
             }
         }
@@ -1861,12 +1864,12 @@
             if (backgroundAudio.muted) {
                 muteIcon.classList.remove('fa-volume-up');
                 muteIcon.classList.add('fa-microphone-slash');
-                toggleAudioBtn.title = "Desmutear Música";
+                toggleAudioBtn.title = "Desmutear MÃºsica";
                 localStorage.setItem('backgroundAudioMuted', 'true');
             } else {
                 muteIcon.classList.remove('fa-microphone-slash');
                 muteIcon.classList.add('fa-volume-up');
-                toggleAudioBtn.title = "Mutear Música";
+                toggleAudioBtn.title = "Mutear MÃºsica";
                 const playPromise = backgroundAudio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(error => {
@@ -1884,23 +1887,23 @@
                 backgroundAudio.muted = false;
                 muteIcon.classList.remove('fa-microphone-slash');
                 muteIcon.classList.add('fa-volume-up');
-                toggleAudioBtn.title = "Mutear Música";
+                toggleAudioBtn.title = "Mutear MÃºsica";
                 localStorage.setItem('backgroundAudioMuted', 'false');
             } else if (this.value == 0 && !backgroundAudio.muted) {
                 backgroundAudio.muted = true;
                 muteIcon.classList.remove('fa-volume-up');
                 muteIcon.classList.add('fa-microphone-slash');
-                toggleAudioBtn.title = "Desmutear Música";
+                toggleAudioBtn.title = "Desmutear MÃºsica";
                 localStorage.setItem('backgroundAudioMuted', 'true');
             }
         });
 
-        // --- INICIO: LÓGICA DE FILTRADO Y PAGINACIÓN (REESTRUCTURADA) ---
+        // --- INICIO: LÃ“GICA DE FILTRADO Y PAGINACIÃ“N (REESTRUCTURADA) ---
         const queueFilter = document.getElementById('queueFilter');
         const championFilter = document.getElementById('championFilter');
         const allMatchRows = document.querySelectorAll('.match-history-table tbody tr');
         const paginationControls = document.getElementById('pagination-controls');
-        const rowsPerPage = 10; // Partidas por página
+        const rowsPerPage = 10; // Partidas por pÃ¡gina
 
         // --- ESTADO ---
         let currentPage = 1;
@@ -1917,7 +1920,7 @@
             });
 
             championFilter.innerHTML = '<option value="all">Todos</option>';
-            // Convertimos el Set a un Array y lo ordenamos alfabéticamente
+            // Convertimos el Set a un Array y lo ordenamos alfabÃ©ticamente
             const sortedChampionNames = Array.from(championNames).sort();
             sortedChampionNames.forEach(championName => {
                 championFilter.add(new Option(championName, championName));
@@ -1931,7 +1934,7 @@
                 // Solo consideramos las filas de partidas principales
                 if (row.dataset.queueId) {
                     const queueId = row.dataset.queueId;
-                    // CORRECCIÓN: El nombre de la cola está en la primera celda (índice 0)
+                    // CORRECCIÃ“N: El nombre de la cola estÃ¡ en la primera celda (Ã­ndice 0)
                     const queueName = row.cells[0].textContent.trim(); 
                     if (!queueTypes.has(queueId)) {
                         queueTypes.set(queueId, queueName);
@@ -1950,26 +1953,26 @@
             const pageCount = Math.ceil(totalRows / rowsPerPage) || 1; // Aseguramos que al menos sea 1
             if (pageCount <= 1) return;
 
-            // Botón "Anterior"
+            // BotÃ³n "Anterior"
             const prevLi = document.createElement('li');
             prevLi.className = `page-item ${page === 1 ? 'disabled' : ''}`;
             prevLi.innerHTML = `<a class="page-link" href="#" data-page="${page - 1}" aria-label="Previous">&laquo; Anterior</a>`;
             paginationControls.appendChild(prevLi);
 
-            // Indicador de página "Página X de Y"
+            // Indicador de pÃ¡gina "PÃ¡gina X de Y"
             const pageInfoLi = document.createElement('li');
             pageInfoLi.className = 'page-item disabled';
-            pageInfoLi.innerHTML = `<span class="page-link">Página ${page} de ${pageCount}</span>`; // Más claro para el usuario
+            pageInfoLi.innerHTML = `<span class="page-link">PÃ¡gina ${page} de ${pageCount}</span>`; // MÃ¡s claro para el usuario
             paginationControls.appendChild(pageInfoLi);
 
-            // Botón "Siguiente"
+            // BotÃ³n "Siguiente"
             const nextLi = document.createElement('li');
             nextLi.className = `page-item ${page === pageCount ? 'disabled' : ''}`;
             nextLi.innerHTML = `<a class="page-link" href="#" data-page="${page + 1}" aria-label="Next">Siguiente &raquo;</a>`;
             paginationControls.appendChild(nextLi);
         }
 
-        // --- FUNCIÓN DE RENDERIZADO PRINCIPAL ---
+        // --- FUNCIÃ“N DE RENDERIZADO PRINCIPAL ---
         function renderMatchHistory() {
             const selectedQueue = queueFilter.value;
             const selectedChampion = championFilter.value;
@@ -1982,10 +1985,10 @@
                 return queueMatch && championMatch;
             });
 
-            // 2. Configurar la paginación basado en los resultados filtrados
+            // 2. Configurar la paginaciÃ³n basado en los resultados filtrados
             setupPagination(filteredMainRows.length, currentPage);
 
-            // 3. Determinar qué filas mostrar en la página actual
+            // 3. Determinar quÃ© filas mostrar en la pÃ¡gina actual
             const startIndex = (currentPage - 1) * rowsPerPage;
             const endIndex = startIndex + rowsPerPage;
             const rowsForCurrentPage = filteredMainRows.slice(startIndex, endIndex);
@@ -1995,11 +1998,11 @@
                 const detailRow = row.nextElementSibling;
 
                 if (rowsForCurrentPage.includes(row)) {
-                    // Esta fila está en la página actual, así que la mostramos.
-                    // No tocamos el 'display' de la fila de detalles para no interferir con la animación.
+                    // Esta fila estÃ¡ en la pÃ¡gina actual, asÃ­ que la mostramos.
+                    // No tocamos el 'display' de la fila de detalles para no interferir con la animaciÃ³n.
                     row.style.display = '';
                 } else {
-                    // Esta fila NO está en la página actual, la ocultamos junto con su detalle.
+                    // Esta fila NO estÃ¡ en la pÃ¡gina actual, la ocultamos junto con su detalle.
                     row.style.display = 'none';
                     if (detailRow && detailRow.id.startsWith('match-')) {
                         detailRow.style.display = 'none';
@@ -2010,11 +2013,11 @@
 
         // --- EVENT LISTENERS ---
         queueFilter.addEventListener('change', () => {
-            currentPage = 1; // Resetear a la primera página al cambiar el filtro
+            currentPage = 1; // Resetear a la primera pÃ¡gina al cambiar el filtro
             renderMatchHistory();
         });
         championFilter.addEventListener('change', () => {
-            currentPage = 1; // Resetear a la primera página al cambiar el filtro
+            currentPage = 1; // Resetear a la primera pÃ¡gina al cambiar el filtro
             renderMatchHistory();
         });
 
@@ -2032,11 +2035,11 @@
 
         
 
-        // --- INICIALIZACIÓN ---
+        // --- INICIALIZACIÃ“N ---
         populateQueueFilter();
         populateChampionFilter();
         renderMatchHistory();
-        // --- FIN: LÓGICA DE FILTRADO Y PAGINACIÓN ---
+        // --- FIN: LÃ“GICA DE FILTRADO Y PAGINACIÃ“N ---
     });
 
 async function ejecutarAnalisisIA() {
@@ -2067,7 +2070,7 @@ async function ejecutarAnalisisIA() {
         document.getElementById('ia-recom').innerText = d.recomendaciones;
         document.getElementById('ia-fuertes').innerText = d.puntos_fuertes;
 
-        // 2. Integrar Compañeros y Rivales
+        // 2. Integrar CompaÃ±eros y Rivales
         document.getElementById('ia-extra').innerHTML = 
             `<strong>Aliados:</strong> ${d.valoracion_companeros}<br><br><strong>Rivales:</strong> ${d.valoracion_rivales}`;
 
@@ -2075,13 +2078,13 @@ async function ejecutarAnalisisIA() {
         document.getElementById('ia-footer-otros').innerHTML = 
             `<i class="fas fa-info-circle me-1"></i> ${d.otros || "Sin notas adicionales"}`;
 
-        // 4. Lógica de botón y visualización basada en origen
+        // 4. LÃ³gica de botÃ³n y visualizaciÃ³n basada en origen
         loader.style.display = 'none';
         content.style.display = 'block';
         
-        // Usar el button_label del metadata si está disponible
+        // Usar el button_label del metadata si estÃ¡ disponible
         const metadata = result._metadata || {};
-        const buttonLabel = metadata.button_label || (result.origen === "cache" ? "Análisis en caché" : "Nuevo análisis");
+        const buttonLabel = metadata.button_label || (result.origen === "cache" ? "AnÃ¡lisis en cachÃ©" : "Nuevo anÃ¡lisis");
         
         if (result.origen === "cache") {
             btn.className = "btn btn-sm btn-info";
@@ -2091,14 +2094,14 @@ async function ejecutarAnalisisIA() {
             btn.innerHTML = `<i class="fas fa-sparkles me-2"></i>${buttonLabel}`;
         } else {
             btn.className = "btn btn-sm btn-outline-info";
-            btn.innerHTML = '<i class="fas fa-magic me-2"></i>Solicitar Análisis';
+            btn.innerHTML = '<i class="fas fa-magic me-2"></i>Solicitar AnÃ¡lisis';
         }
 
 
     } catch (err) {
         loader.style.display = 'none';
         errorDiv.style.display = 'block';
-        errorDiv.innerText = "⚠️ " + err.message;
+        errorDiv.innerText = "âš ï¸ " + err.message;
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-sync me-2"></i>Reintentar';
     }
@@ -2107,3 +2110,5 @@ async function ejecutarAnalisisIA() {
 
 </body>
 </html>
+
+

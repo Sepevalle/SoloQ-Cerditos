@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Logros - Cerditos y Valientes{% endblock %}
 
@@ -7,7 +7,7 @@
     <a class="nav-link {% if request.endpoint == 'main.historial_global' %}active{% endif %}" href="{{ url_for('main.historial_global') }}">Historial Global</a>
 </li>
 <li class="nav-item">
-    <a class="nav-link {% if request.endpoint == 'main.records_personales' %}active{% endif %}" href="{{ url_for('main.records_personales') }}">Récords Personales</a>
+    <a class="nav-link {% if request.endpoint == 'main.records_personales' %}active{% endif %}" href="{{ url_for('main.records_personales') }}">Records Personales</a>
 </li>
 <li class="nav-item">
     <a class="nav-link active" href="{{ url_for('main.logros') }}">Logros</a>
@@ -16,14 +16,8 @@
 
 {% block extra_styles %}
 <style>
-    .summary-card {
-        border: 0;
-        border-radius: 0.8rem;
-    }
-    .player-card {
-        border-radius: 0.8rem;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-    }
+    .summary-card { border: 0; border-radius: 0.8rem; }
+    .player-card { border-radius: 0.8rem; border: 1px solid rgba(0, 0, 0, 0.08); }
     .achievement-chip {
         display: inline-flex;
         align-items: center;
@@ -44,11 +38,31 @@
         color: #b02a37;
         border: 1px solid rgba(220, 53, 69, 0.25);
     }
+    .achievement-secret {
+        background: rgba(111, 66, 193, 0.14);
+        color: #59359c;
+        border: 1px solid rgba(111, 66, 193, 0.25);
+    }
+    .achievement-locked {
+        background: rgba(108, 117, 125, 0.12);
+        color: #5c636a;
+        border: 1px dashed rgba(108, 117, 125, 0.4);
+    }
     .points-pill {
         font-weight: 700;
         border-radius: 999px;
         padding: 0.18rem 0.5rem;
     }
+    .level-badge {
+        border-radius: 999px;
+        padding: 0.25rem 0.55rem;
+        font-weight: 700;
+        font-size: 0.8rem;
+        background: #0d6efd14;
+        border: 1px solid #0d6efd3a;
+        color: #0a58ca;
+    }
+    .progress { height: 0.55rem; }
 </style>
 {% endblock %}
 
@@ -57,7 +71,7 @@
     <h1 class="mb-4">Logros de Jugadores</h1>
 
     <div class="row g-3 mb-4">
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
             <div class="card summary-card shadow-sm">
                 <div class="card-body">
                     <small class="text-muted">Jugadores evaluados</small>
@@ -65,7 +79,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
             <div class="card summary-card shadow-sm">
                 <div class="card-body">
                     <small class="text-muted">Logros activados</small>
@@ -73,7 +87,15 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
+            <div class="card summary-card shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted">Secretos descubiertos</small>
+                    <h3 class="mb-0">{{ global_stats.total_secret_unlocked | default(0) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
             <div class="card summary-card shadow-sm">
                 <div class="card-body">
                     <small class="text-muted">Logros disponibles</small>
@@ -90,10 +112,10 @@
                 <tr>
                     <th>#</th>
                     <th>Jugador</th>
+                    <th>Nivel</th>
                     <th>Puntos</th>
-                    <th>Positivos</th>
-                    <th>Negativos</th>
-                    <th>Únicos</th>
+                    <th>Secretos</th>
+                    <th>Unicos</th>
                     <th>Activaciones</th>
                 </tr>
             </thead>
@@ -107,9 +129,9 @@
                             <small class="text-muted d-block">{{ p.riot_id }}</small>
                         </a>
                     </td>
+                    <td><span class="level-badge">{{ p.level_name }}</span></td>
                     <td><span class="badge bg-primary">{{ p.total_points }}</span></td>
-                    <td><span class="badge bg-success">{{ p.positive_points }}</span></td>
-                    <td><span class="badge bg-danger">{{ p.negative_points }}</span></td>
+                    <td><span class="badge bg-secondary">{{ p.secret_unlocked }}/{{ p.secret_unlocked + p.secret_locked }}</span></td>
                     <td>{{ p.unique_achievements }}</td>
                     <td>{{ p.hits_total }}</td>
                 </tr>
@@ -120,7 +142,7 @@
 
     <div class="row g-3">
         {% for p in players %}
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-xl-6">
             <div class="card player-card shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -133,18 +155,41 @@
                         </span>
                     </div>
 
-                    {% if p.achievement_stats %}
+                    <div class="mb-2 d-flex justify-content-between align-items-center">
+                        <span class="level-badge">Nivel {{ p.level_name }}</span>
+                        {% if p.next_level_name %}
+                        <small class="text-muted">{{ p.points_to_next }} pts para {{ p.next_level_name }}</small>
+                        {% else %}
+                        <small class="text-success fw-semibold">Nivel maximo alcanzado</small>
+                        {% endif %}
+                    </div>
+                    <div class="progress mb-3" role="progressbar" aria-valuenow="{{ p.level_progress_pct }}" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width: {{ p.level_progress_pct }}%;"></div>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="fw-semibold small text-muted mb-1">Top logros</div>
+                        {% if p.achievement_stats %}
+                            {% for a in p.achievement_stats[:8] %}
+                            <span class="achievement-chip {% if a.secret %}achievement-secret{% elif a.kind == 'good' %}achievement-good{% else %}achievement-bad{% endif %}" title="{{ a.description }}">
+                                {{ a.name }} x{{ a.count }}
+                                <span class="fw-bold">{% if a.points > 0 %}+{% endif %}{{ a.points }}</span>
+                            </span>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-muted">Sin logros todavia.</div>
+                        {% endif %}
+                    </div>
+
                     <div>
-                        {% for a in p.achievement_stats[:10] %}
-                        <span class="achievement-chip {% if a.kind == 'good' %}achievement-good{% else %}achievement-bad{% endif %}" title="{{ a.description }}">
-                            {{ a.name }} x{{ a.count }}
-                            <span class="fw-bold">{% if a.points > 0 %}+{% endif %}{{ a.points }}</span>
-                        </span>
+                        <div class="fw-semibold small text-muted mb-1">Secretos</div>
+                        {% for s in p.secret_achievements %}
+                            <span class="achievement-chip {% if s.locked %}achievement-locked{% else %}achievement-secret{% endif %}" title="{{ s.description }}">
+                                {{ s.name }}{% if not s.locked %} x{{ s.count }}{% endif %}
+                                <span class="fw-bold">{% if s.points > 0 %}+{% endif %}{{ s.points }}</span>
+                            </span>
                         {% endfor %}
                     </div>
-                    {% else %}
-                    <div class="text-muted">Sin logros todavía.</div>
-                    {% endif %}
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -57,13 +57,13 @@
             font-size: 0.9em;
             font-weight: bold;
             color: white !important;
-            background-color: #0056b3; /* Un azul estándar */
+            background-color: #0056b3; /* Un azul estÃ¡ndar */
             border-radius: 5px;
             text-decoration: none;
             transition: background-color 0.2s ease-in-out;
         }
         .opgg-link:hover {
-            background-color: #004494; /* Un azul más oscuro al pasar el ratón */
+            background-color: #004494; /* Un azul mÃ¡s oscuro al pasar el ratÃ³n */
         }
         .dark-mode .opgg-link {
             background-color: #0056b3;
@@ -82,7 +82,7 @@
             background-color: #121212;
             color: #ffffff;
         }
-        /* Estilos específicos para tabla en modo claro */
+        /* Estilos especÃ­ficos para tabla en modo claro */
         #jugadoresTable thead th {
             background-color: #d0d0d0 !important;
             color: #000 !important;
@@ -94,7 +94,7 @@
             border-color: #dee2e6;
             color: #212529;
         }
-        /* Estilos específicos para tabla en modo oscuro */
+        /* Estilos especÃ­ficos para tabla en modo oscuro */
         .dark-mode .table {
             background-color: transparent;
             color: #e0e0e0;
@@ -224,18 +224,18 @@
             object-fit: cover;
             display: none; /* Ocultas por defecto para evitar superposiciones */
         }
-        /* Mostrar imágenes laterales solo en pantallas muy anchas */
+        /* Mostrar imÃ¡genes laterales solo en pantallas muy anchas */
         @media (min-width: 1500px) {
             .lateral-img {
                 display: block;
             }
-            /* Reservar espacio lateral para que las imágenes no superpongan el contenido */
+            /* Reservar espacio lateral para que las imÃ¡genes no superpongan el contenido */
             #main-content {
                 padding-left: calc(150px + 40px); /* ancho imagen + margen */
                 padding-right: calc(150px + 40px);
             }
             /* Mantener lateral images visibles sin alterar el ancho del navbar
-               para que el navbar sea consistente con otras páginas. */
+               para que el navbar sea consistente con otras pÃ¡ginas. */
         }
         .left-img {
             left: 20px;
@@ -299,7 +299,7 @@
             font-weight: bold;
         }
 
-        /* Evita el salto de línea en las celdas de datos */
+        /* Evita el salto de lÃ­nea en las celdas de datos */
         .table td {
             white-space: nowrap;
         }
@@ -325,7 +325,7 @@
         .table thead th[data-sort-by] {
             cursor: pointer;
             position: relative;
-            user-select: none; /* Evita la selección de texto al hacer doble clic */
+            user-select: none; /* Evita la selecciÃ³n de texto al hacer doble clic */
         }
 
         .table thead th[data-sort-by]::after {
@@ -408,15 +408,17 @@
                     <a class="nav-link" href="{{ url_for('h2h') }}">Comparador</a>
                 </li> #}
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('stats.estadisticas_globales') }}">Estadísticas Globales</a>
+                    <a class="nav-link" href="{{ url_for('stats.estadisticas_globales') }}">Estadisticas Globales</a>
 
                 </li>
-                
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.logros') }}">Logros</a>
+                </li>
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
                 <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
                 <div class="d-flex align-items-center ms-lg-2">
-                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear MÃºsica">
                         <i id="muteIcon" class="fas fa-microphone-slash"></i>
                     </button>
                     <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
@@ -453,16 +455,16 @@
         <table class="table table-hover table-striped" id="jugadoresTable">
             <thead>
                 <tr>
-                    <th data-sort-by="elo">Posición</th>
+                    <th data-sort-by="elo">PosiciÃ³n</th>
                     <th data-sort-by="jugador">Jugador</th>
-                    <th>Campeón Principal</th>
+                    <th>CampeÃ³n Principal</th>
                     <th data-sort-by="game_name">Game Name</th>
                     <th data-sort-by="elo">Elo</th>
                     <th data-sort-by="wins">Wins</th>
                     <th data-sort-by="losses">Losses</th>
                     <th data-sort-by="total_games">Total Games</th>
                     <th data-sort-by="win_rate">Win Rate</th>
-                    <th class="hidden">Valor Clasificación</th>
+                    <th class="hidden">Valor ClasificaciÃ³n</th>
                     <th>Dist. Peak Elo</th>
                     <th data-sort-by="lp_change_24h">LP en 24h</th>
                     <th>Racha Actual</th> {# Nueva columna para la racha #}
@@ -535,7 +537,7 @@
                             {{ diff_peak }} LPs
                         {% endif %}
                     </td> 
-                    <td > {# Columna de LP en 24h con más detalle #}
+                    <td > {# Columna de LP en 24h con mÃ¡s detalle #}
                         {% if jugador.get('wins_24h', 0) > 0 or jugador.get('losses_24h', 0) > 0 %}
                             {% set lp_val = jugador.get('lp_change_24h', 0) %}
                             <span class="{{ 'lp-change-positive' if lp_val > 0 else 'lp-change-negative' if lp_val < 0 else 'lp-change-neutral' }}">
@@ -555,7 +557,7 @@
                         {% elif jugador.get('current_loss_streak', 0) > 0 %}
                             <span class="lp-change-negative">{{ jugador.get('current_loss_streak', 0) }}D</span>
                         {% else %}
-                            <span class="lp-change-neutral">—</span>
+                            <span class="lp-change-neutral">â€”</span>
                         {% endif %}
                     </td>
 
@@ -584,14 +586,14 @@
     </div>
     {% else %}
     <div class="alert alert-info text-center" role="alert">
-        No hay datos de jugadores disponibles para mostrar en este momento. Por favor, inténtalo de nuevo más tarde.
+        No hay datos de jugadores disponibles para mostrar en este momento. Por favor, intÃ©ntalo de nuevo mÃ¡s tarde.
     </div>
     {% endif %}
 </div>
 
 </div> <!-- Cierre de main-content -->
 
-<!-- Script de Bootstrap JS (necesario para el menú desplegable y otras funcionalidades) -->
+<!-- Script de Bootstrap JS (necesario para el menÃº desplegable y otras funcionalidades) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
 <script>
@@ -602,7 +604,7 @@
         const volumeSlider = document.getElementById('volumeSlider');
         const muteIcon = document.getElementById('muteIcon');
 
-        // --- INICIO: LÓGICA DE AUDIO CON LOCALSTORAGE ---
+        // --- INICIO: LÃ“GICA DE AUDIO CON LOCALSTORAGE ---
         const savedVolume = localStorage.getItem('backgroundAudioVolume');
         if (savedVolume !== null) {
             backgroundAudio.volume = parseFloat(savedVolume);
@@ -616,11 +618,11 @@
         if (savedMuteState === 'true') {
             backgroundAudio.muted = true;
             muteIcon.className = 'fas fa-microphone-slash';
-            toggleAudioButton.title = 'Desmutear Música';
+            toggleAudioButton.title = 'Desmutear MÃºsica';
         } else {
             backgroundAudio.muted = false;
             muteIcon.className = 'fas fa-microphone-alt';
-            toggleAudioButton.title = 'Silenciar Música';
+            toggleAudioButton.title = 'Silenciar MÃºsica';
             const playPromise = backgroundAudio.play();
             if (playPromise !== undefined) {
                 playPromise.catch(error => console.log("Autoplay de audio bloqueado:", error));
@@ -631,11 +633,11 @@
             backgroundAudio.muted = !backgroundAudio.muted;
             if (backgroundAudio.muted) {
                 muteIcon.className = 'fas fa-microphone-slash';
-                toggleAudioButton.title = 'Desmutear Música';
+                toggleAudioButton.title = 'Desmutear MÃºsica';
                 localStorage.setItem('backgroundAudioMuted', 'true');
             } else {
                 muteIcon.className = 'fas fa-microphone-alt';
-                toggleAudioButton.title = 'Silenciar Música';
+                toggleAudioButton.title = 'Silenciar MÃºsica';
                 backgroundAudio.play().catch(e => console.log("Play fallido tras desmutear:", e));
                 localStorage.setItem('backgroundAudioMuted', 'false');
             }
@@ -650,7 +652,7 @@
                 toggleAudioButton.click(); // Simula un clic para mutear
             }
         });
-        // --- FIN: LÓGICA DE AUDIO CON LOCALSTORAGE ---
+        // --- FIN: LÃ“GICA DE AUDIO CON LOCALSTORAGE ---
 
         const imagenesElo = {
             "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
@@ -673,7 +675,7 @@
         const toggleModeButton = document.getElementById("toggle-mode");
         const body = document.body;
 
-        // --- INICIO: LÓGICA DE MODO OSCURO CON LOCALSTORAGE ---
+        // --- INICIO: LÃ“GICA DE MODO OSCURO CON LOCALSTORAGE ---
         if (localStorage.getItem('darkMode') === 'enabled') {
             body.classList.add('dark-mode');
             toggleModeButton.textContent = 'Modo Claro';
@@ -687,35 +689,35 @@
             toggleModeButton.textContent = isDarkMode ? 'Modo Claro' : 'Modo Oscuro';
             localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
         });
-        // --- FIN: LÓGICA DE MODO OSCURO CON LOCALSTORAGE ---
-        // --- INICIO DE LA NUEVA LÓGICA DE TABLA ---
+        // --- FIN: LÃ“GICA DE MODO OSCURO CON LOCALSTORAGE ---
+        // --- INICIO DE LA NUEVA LÃ“GICA DE TABLA ---
         
         const filtro = document.getElementById("filtro");
         const table = document.getElementById("jugadoresTable");
         const tbody = table.querySelector("tbody");
         const headers = table.querySelectorAll("thead th[data-sort-by]");
 
-        // Estado actual de la ordenación
+        // Estado actual de la ordenaciÃ³n
         let currentSort = {
             column: 'elo',
             direction: 'desc'
         };
 
-        // Función para obtener el valor de una celda para poder comparar y ordenar
+        // FunciÃ³n para obtener el valor de una celda para poder comparar y ordenar
         const getCellValue = (row, columnIndex, sortBy) => {
             const cell = row.cells[columnIndex];
             if (!cell) return null;
 
             switch (sortBy) {
                 case 'elo':
-                    // Usar el valor de clasificación oculto para ordenar por Elo
+                    // Usar el valor de clasificaciÃ³n oculto para ordenar por Elo
                     return parseFloat(row.querySelector(".hidden").textContent);
                 case 'jugador':
                 case 'game_name':
-                    // Para columnas de texto, usar el contenido en minúsculas
+                    // Para columnas de texto, usar el contenido en minÃºsculas
                     return cell.textContent.trim().toLowerCase();
                 case 'win_rate':
-                    // Para el win rate, quitar el '%' y convertir a número
+                    // Para el win rate, quitar el '%' y convertir a nÃºmero
                     return parseFloat(cell.textContent);
                 case 'lp_change_24h': // Handle new column for sorting
                     const lpChangeText = cell.textContent.trim();
@@ -723,12 +725,12 @@
                     // Extract number, handling '+' and '-' signs
                     return parseFloat(lpChangeText.replace(/[+LP]/g, '')); 
                 default:
-                    // Para el resto de columnas numéricas (wins, losses, total)
+                    // Para el resto de columnas numÃ©ricas (wins, losses, total)
                     return parseInt(cell.textContent, 10);
             }
         };
 
-        // Función principal para ordenar la tabla
+        // FunciÃ³n principal para ordenar la tabla
         const sortTable = (sortBy, direction) => {
             const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
             const allHeaders = Array.from(table.querySelectorAll('thead th'));
@@ -758,10 +760,10 @@
             updateTableCalculations(sortBy, sortedRows);
         };
 
-        // Función para actualizar la posición y la columna "Dif. Elo"
+        // FunciÃ³n para actualizar la posiciÃ³n y la columna "Dif. Elo"
         const updateTableCalculations = (sortedBy, visibleRows) => {
             visibleRows.forEach((row, index) => {
-                // Actualizar número de posición
+                // Actualizar nÃºmero de posiciÃ³n
                 row.cells[0].textContent = index + 1;
 
                 const eloDiffCell = row.querySelector(".elo-diferencia");
@@ -769,11 +771,11 @@
                 // Limpiar clases de estilo previas
                 eloDiffCell.classList.remove('elo-diff-positive', 'elo-diff-negative', 'elo-diff-neutral');
 
-                // Calcular la diferencia de ELO solo si la tabla está ordenada por ELO
+                // Calcular la diferencia de ELO solo si la tabla estÃ¡ ordenada por ELO
                 if (sortedBy === 'elo') {
                     if (index === 0) {
                         // El primer jugador no tiene diferencia
-                        eloDiffCell.textContent = "—";
+                        eloDiffCell.textContent = "â€”";
                         eloDiffCell.classList.add('elo-diff-neutral'); // Estilo neutral
                     } else {
                         // Obtener el valor de ELO directamente de la celda oculta
@@ -784,7 +786,7 @@
                         // Add '+' sign for positive differences
                         eloDiffCell.textContent = `${diff > 0 ? '+' : ''}${diff} LPs`;
 
-                        // Aplicar clases de estilo según la diferencia
+                        // Aplicar clases de estilo segÃºn la diferencia
                         if (diff > 0) {
                             eloDiffCell.classList.add('elo-diff-positive');
                         } else if (diff < 0) {
@@ -794,14 +796,14 @@
                         }
                     }
                 } else {
-                    // Si no está ordenado por ELO, mostrar N/A
+                    // Si no estÃ¡ ordenado por ELO, mostrar N/A
                     eloDiffCell.textContent = "N/A";
                     eloDiffCell.classList.add('elo-diff-neutral'); // Estilo neutral
                 }
             });
         };
 
-        // Función para aplicar el filtro de cola
+        // FunciÃ³n para aplicar el filtro de cola
         const aplicarFiltro = () => {
             const selectedQueue = filtro.value;
             tbody.querySelectorAll("tr").forEach(row => {
@@ -820,9 +822,9 @@
         });
 
         filtro.addEventListener("change", aplicarFiltro);
-        aplicarFiltro(); // Carga inicial con filtro y ordenación por defecto
+        aplicarFiltro(); // Carga inicial con filtro y ordenaciÃ³n por defecto
 
-        // --- LÓGICA PARA ROTAR EL BANNER SUPERIOR ---
+        // --- LÃ“GICA PARA ROTAR EL BANNER SUPERIOR ---
         const bannerImg = document.getElementById('banner-img');
         const banners = [
             "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
@@ -853,12 +855,12 @@
         }
         setInterval(cambiarImagenes, 5000);
         
-        // --- VERIFICACIÓN EN TIEMPO REAL DE PARTIDAS ACTIVAS ---
+        // --- VERIFICACIÃ“N EN TIEMPO REAL DE PARTIDAS ACTIVAS ---
         async function checkLiveGames() {
             const rows = document.querySelectorAll('#jugadoresTable tbody tr[data-puuid]');
             const ddragonVersion = '{{ ddragon_version }}';
             
-            console.log(`[LiveGame] Iniciando verificación batch para ${rows.length} jugadores...`);
+            console.log(`[LiveGame] Iniciando verificaciÃ³n batch para ${rows.length} jugadores...`);
             
             try {
                 // Obtener todos los estados de partida en una sola llamada
@@ -875,7 +877,7 @@
                     const puuid = row.getAttribute('data-puuid');
                     const jugador = row.getAttribute('data-jugador');
                     
-                    // Buscar el estadoLink dentro de esta fila específica (para manejar múltiples filas por jugador)
+                    // Buscar el estadoLink dentro de esta fila especÃ­fica (para manejar mÃºltiples filas por jugador)
                     const estadoLink = row.querySelector('.link-estado');
                     
                     if (!puuid || !estadoLink) {
@@ -893,7 +895,7 @@
                     estadoLink.innerHTML = '';
                     
                     if (data.en_partida) {
-                        // Jugador está en partida - mostrar en TODAS las filas independientemente de la cola
+                        // Jugador estÃ¡ en partida - mostrar en TODAS las filas independientemente de la cola
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'estado-en-partida';
                         statusSpan.textContent = 'In Game';
@@ -901,8 +903,8 @@
                         statusSpan.style.fontWeight = 'bold';
                         estadoLink.appendChild(statusSpan);
                         
-                        // Si el caché es viejo (>150s = 2.5 min), añadir indicador visual
-                        // El worker verifica cada 2 min, así que 2.5 min da margen razonable
+                        // Si el cachÃ© es viejo (>150s = 2.5 min), aÃ±adir indicador visual
+                        // El worker verifica cada 2 min, asÃ­ que 2.5 min da margen razonable
                         if (data.cache_age_seconds && data.cache_age_seconds > 150) {
                             statusSpan.style.opacity = '0.7';
                             statusSpan.title = `Datos de hace ${data.cache_age_seconds}s - puede haber cambiado`;
@@ -910,7 +912,7 @@
 
                         
                         if (data.nombre_campeon && data.nombre_campeon !== 'Desconocido') {
-                            // Crear nueva imagen del campeón
+                            // Crear nueva imagen del campeÃ³n
                             const img = document.createElement('img');
                             img.src = `https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${data.nombre_campeon}.png`;
                             img.alt = data.nombre_campeon;
@@ -923,23 +925,23 @@
                                 this.style.display = 'none';
                             };
                             estadoLink.appendChild(img);
-                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA con ${data.nombre_campeon} (fila ${row.className}, caché: ${data.cache_age_seconds || 'N/A'}s)`);
+                            console.log(`[LiveGame] âœ“ ${jugador} EN PARTIDA con ${data.nombre_campeon} (fila ${row.className}, cachÃ©: ${data.cache_age_seconds || 'N/A'}s)`);
                         } else {
-                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA (campeón desconocido) (fila ${row.className}, caché: ${data.cache_age_seconds || 'N/A'}s)`);
+                            console.log(`[LiveGame] âœ“ ${jugador} EN PARTIDA (campeÃ³n desconocido) (fila ${row.className}, cachÃ©: ${data.cache_age_seconds || 'N/A'}s)`);
                         }
                     } else {
-                        // Jugador no está en partida
+                        // Jugador no estÃ¡ en partida
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'estado-texto';
                         
-                        // Si no hay datos de caché, mostrar indicador de incertidumbre
+                        // Si no hay datos de cachÃ©, mostrar indicador de incertidumbre
                         if (data.cache_age_seconds === null) {
                             statusSpan.textContent = 'Inactivo';
                             statusSpan.style.opacity = '0.5';
-                            statusSpan.title = 'Sin datos recientes - el worker no ha verificado aún';
+                            statusSpan.title = 'Sin datos recientes - el worker no ha verificado aÃºn';
                         } else {
                             statusSpan.textContent = 'Inactivo';
-                            // Si el caché es viejo (>150s = 2.5 min), indicar que puede haber cambiado
+                            // Si el cachÃ© es viejo (>150s = 2.5 min), indicar que puede haber cambiado
                             if (data.cache_age_seconds > 150) {
                                 statusSpan.style.opacity = '0.7';
                                 statusSpan.title = `Datos de hace ${data.cache_age_seconds}s - puede haber cambiado`;
@@ -953,27 +955,29 @@
                 }
 
                 
-                console.log('[LiveGame] Verificación completada');
+                console.log('[LiveGame] VerificaciÃ³n completada');
             } catch (e) {
-                console.error('[LiveGame] Error en verificación batch:', e);
+                console.error('[LiveGame] Error en verificaciÃ³n batch:', e);
             }
         }
 
 
 
         
-        // Verificar partidas al cargar la página inmediatamente (datos desde caché)
-        console.log('[LiveGame] Iniciando verificación de partidas activas...');
+        // Verificar partidas al cargar la pÃ¡gina inmediatamente (datos desde cachÃ©)
+        console.log('[LiveGame] Iniciando verificaciÃ³n de partidas activas...');
         checkLiveGames();
 
         
         // Verificar partidas cada 60 segundos
         setInterval(checkLiveGames, 60000);
 
-        // --- FIN VERIFICACIÓN EN TIEMPO REAL ---
+        // --- FIN VERIFICACIÃ“N EN TIEMPO REAL ---
     });
 </script>
 
 
 </body>
 </html>
+
+
