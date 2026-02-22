@@ -187,6 +187,14 @@
                                 </span>
                             </div>
                             <div class="small text-muted mb-2">Jugadores que lo consiguieron: <strong>{{ a.achievers_count }}</strong></div>
+                            <div class="small text-muted mb-1">Rangos y puntos:</div>
+                            <div class="mb-2">
+                                {% for tier in a.rank_tiers %}
+                                <span class="achievement-chip {% if a.kind == 'good' %}chip-good{% else %}chip-bad{% endif %}">
+                                    {{ tier.name }}: {{ tier.min_count }}+ | {% if a.kind == 'bad' %}-{% else %}+{% endif %}{{ tier.points }}
+                                </span>
+                                {% endfor %}
+                            </div>
                             <div class="achievers-list">
                                 {% if a.achievers %}
                                 {% for who in a.achievers %}
@@ -223,6 +231,14 @@
                                 </span>
                             </div>
                             <div class="small text-muted mb-2">Jugadores que lo consiguieron: <strong>{{ s.achievers_count }}</strong></div>
+                            <div class="small text-muted mb-1">Rangos y puntos:</div>
+                            <div class="mb-2">
+                                {% for tier in s.rank_tiers %}
+                                <span class="achievement-chip {% if s.locked %}chip-locked{% else %}chip-secret{% endif %}">
+                                    {{ tier.name }}: {{ tier.min_count }}+ | {% if s.kind == 'bad' %}-{% else %}+{% endif %}{{ tier.points }}
+                                </span>
+                                {% endfor %}
+                            </div>
                             <div class="achievers-list">
                                 {% if s.achievers %}
                                 {% for who in s.achievers %}

@@ -638,6 +638,7 @@ def calculate_global_achievements():
                 "achievers_count": len(achievers),
                 "total_hits": total_hits,
                 "global_rank": _build_achievement_rank(definition, total_hits),
+                "rank_tiers": _get_achievement_tiers(definition),
             }
         )
 
@@ -673,6 +674,7 @@ def calculate_global_achievements():
                 "achievers_count": len(achievers),
                 "total_hits": total_hits,
                 "global_rank": _build_achievement_rank(definition, total_hits),
+                "rank_tiers": _get_achievement_tiers(definition),
             }
         )
 
