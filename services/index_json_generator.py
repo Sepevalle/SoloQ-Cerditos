@@ -51,6 +51,11 @@ def _get_peak_elo_key(jugador: Dict[str, Any]) -> str:
     return f"{ACTIVE_SPLIT_KEY}|{jugador['queue_type']}|{jugador['puuid']}"
 
 
+def _get_legacy_peak_elo_key(jugador: Dict[str, Any]) -> str:
+    """Genera la clave legacy (sin split) para peak elo."""
+    return f"{jugador['queue_type']}|{jugador['puuid']}"
+
+
 def _fetch_player_data_from_sources() -> List[Dict[str, Any]]:
     """
     Obtiene datos de jugadores desde el caché o directamente de las APIs si el caché está vacío.
@@ -161,7 +166,14 @@ def _calculate_player_stats(
     
     # Calcular peak ELO
     key = _get_peak_elo_key(jugador)
-    peak = peak_elo_dict.get(key, 0)
+    legacy_key = _get_legacy_peak_elo_key(jugador)
+    peak = peak_elo_dict.get(key)
+    if peak is None:
+        peak = peak_elo_dict.get(legacy_key, 0)
+        # Migrar automáticamente valores legacy a la clave del split activo
+        if peak > 0:
+            peak_elo_dict[key] = peak
+
     if valor > peak:
         peak = valor
         peak_elo_dict[key] = valor
@@ -277,13 +289,13 @@ def generate_index_json(force: bool = False) -> bool:
         
         for jugador in datos_jugadores:
             try:
+                key = _get_peak_elo_key(jugador)
+                peak_antes = peak_elo_dict.get(key, 0)
                 jugador_procesado = _calculate_player_stats(jugador, peak_elo_dict, lp_history)
                 jugadores_procesados.append(jugador_procesado)
                 
-                # Verificar si se actualizó el peak
-                key = _get_peak_elo_key(jugador)
-                if jugador['valor_clasificacion'] > peak_elo_dict.get(key, 0):
-                    peak_elo_dict[key] = jugador['valor_clasificacion']
+                # Verificar si se actualizó/migró el peak
+                if peak_elo_dict.get(key, 0) > peak_antes:
                     peak_elo_actualizado = True
             except Exception as e:
                 print(f"[generate_index_json] Error procesando {jugador.get('jugador', 'unknown')}: {e}")
