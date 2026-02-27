@@ -339,8 +339,9 @@ def actualizar_historial_partidas_en_segundo_plano():
             import traceback
             traceback.print_exc()
         
-        # Esperar 10 minutos antes de la siguiente actualización completa
-        time.sleep(600)
+        # Esperar 48 horas antes de la siguiente actualización completa
+        # 48 horas = 172800 segundos
+        time.sleep(172800)
 
 
 
@@ -566,12 +567,12 @@ def _check_all_players_live_games():
                         jugadores_en_partida += 1
                     else:
                         # El jugador NO está en partida ahora
-                        # Verificar si estaba en partida antes - si es así, acabou de terminar
+                        # Verificar si estaba en partida antes - si es así, acabado de terminar
                         from services.player_update_tracker import get_player_status
                         status = get_player_status(puuid)
                         
                         if status.get('was_in_game', False):
-                            # El jugador estaba en partida y ahora no está - acabase de terminar
+                            # El jugador estaba en partida y ahora no está - acabó de terminar
                             print(f"[_check_all_players_live_games] ⚡ {jugador_nombre}: TERMINÓ PARTIDA - Actualizando historial...")
                             # Actualizar historial del jugador
                             actualizar_jugador_especifico(puuid, riot_id, jugador_nombre)
@@ -684,7 +685,7 @@ def actualizar_jugador_especifico(puuid, riot_id, jugador_nombre):
                     queue_id = match_info.get('queue_id')
                     if queue_id in ALLOWED_QUEUE_IDS:
                         matches_to_add.append(match_info)
-                        # Actualizar timestamp de última partida jugda
+                        # Actualizar timestamp de última partida jugado
                         from services.player_update_tracker import update_player_status
                         update_player_status(puuid, game_timestamp=match_ts)
         
@@ -790,7 +791,7 @@ def start_data_updater(riot_api_key):
     # Worker de historial de partidas
     history_thread = threading.Thread(target=actualizar_historial_partidas_en_segundo_plano, daemon=True)
     history_thread.start()
-    print("[data_updater] ✓ Worker de historial iniciado")
+    print("[data_updater] ✓ Worker de historial iniciado (cada 48 horas)")
     
     # Worker de recálculo de LP (cada 30 minutos)
     def _recalcular_lp_periodicamente():
