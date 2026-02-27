@@ -18,6 +18,11 @@ def _get_peak_elo_key(queue_type, puuid):
     return f"{ACTIVE_SPLIT_KEY}|{queue_type}|{puuid}"
 
 
+def _get_legacy_peak_elo_key(queue_type, puuid):
+    """Genera la clave legacy (sin split) para peak elo."""
+    return f"{queue_type}|{puuid}"
+
+
 def _build_player_profile(game_name):
     """Construye el perfil completo de un jugador."""
     # Obtener datos del caché principal
@@ -34,8 +39,12 @@ def _build_player_profile(game_name):
     # Leer peak elo
     _, peak_elo_dict = read_peak_elo()
     for entry in player_entries:
-        key = _get_peak_elo_key(entry.get('queue_type'), puuid)
-        peak = peak_elo_dict.get(key, 0)
+        queue_type = entry.get('queue_type')
+        key = _get_peak_elo_key(queue_type, puuid)
+        legacy_key = _get_legacy_peak_elo_key(queue_type, puuid)
+        peak = peak_elo_dict.get(key)
+        if peak is None:
+            peak = peak_elo_dict.get(legacy_key, 0)
         if entry['valor_clasificacion'] > peak:
             peak = entry['valor_clasificacion']
         entry['peak_elo'] = peak
