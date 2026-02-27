@@ -43,7 +43,7 @@ def keep_alive():
     print("[keep_alive] Hilo keep_alive iniciado.")
     while True:
         try:
-            time.sleep(600)  # 10 minutos
+            time.sleep(172800)  # 10 minutos
             print(f"[keep_alive] Ping: {datetime.now(timezone.utc)}")
         except Exception as e:
             print(f"[keep_alive] Error: {e}")
@@ -340,7 +340,7 @@ def actualizar_historial_partidas_en_segundo_plano():
             traceback.print_exc()
         
         # Esperar 10 minutos antes de la siguiente actualización completa
-        time.sleep(600)
+        time.sleep(172800)
 
 
 

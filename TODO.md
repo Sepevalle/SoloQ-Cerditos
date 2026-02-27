@@ -1,30 +1,20 @@
-# TODO - Sistema de Actualización Eficiente de Jugadores
+# TODO - Implementación de Sistema de Actualización Eficiente
 
-## Objetivo
-Optimizar las llamadas a la API de Riot evitando actualizaciones innecesarias para jugadores inactivos.
+## Pasos a completar:
 
-## Tareas a completar:
+### 1. Añadir endpoint API para actualización manual de jugador
+- [ ] Crear endpoint en blueprints/api.py para actualizar un jugador específico
+- [ ] El endpoint recibirá el puuid y llamará a la función existente
 
-### 1. Modificar data_updater.py
-- [ ] Cambiar intervalo de actualización completa de 10 min a 48 horas
-- [ ] Asegurar que el worker de verificación de estado "en partida" llame a actualización incremental cuando un jugador termina partida
-- [ ] Implementar lógica para solo actualizar jugadores que han jugado recientemente
+### 2. Añadir botón en perfil de jugador
+- [ ] Modificar templates/jugador.html para incluir botón de actualización
+- [ ] Añadir estilos y lógica JavaScript para el botón
+- [ ] El botón llamará al endpoint API de actualización
 
-### 2. Añadir endpoint API para actualización manual
-- [ ] Crear endpoint `/api/actualizar-jugador/<puuid>` en blueprints/api.py
-- [ ] Implementar función de actualización manual que permita forzar actualización
+### 3. Optimizar detección de jugadores inactivos
+- [ ] Mejorar la lógica en data_updater_new.py para no hacer llamadas API a jugadores inactivos
+- [ ] El ciclo de 48h ya existe, pero optimizaremos para solo actualizar jugadores activos
 
-### 3. Añadir botón en perfil de jugador
-- [ ] Añadir botón de actualización manual en templates/jugador.html
-- [ ] Conectar con el endpoint API
-
-### 4. Testing y verificación
-- [ ] Verificar que el sistema funciona correctamente
-- [ ] Monitorizar llamadas API
-
-## Notas:
-- El sistema existente ya tiene:
-  - `player_update_tracker.py` con seguimiento de estado
-  - `actualizar_jugador_especifico()` para actualizaciones incrementales
-  - `_check_all_players_live_games()` que verifica cada 2 minutos
-- Solo necesitamos ajustar la lógica y añadir el botón manual
+### 4. Mejorar sistema de recuperación de partidas al terminar partida
+- [ ] Ya existe _check_all_players_live_games(), optimizar para recuperar solo partidas nuevas
+- [ ] Ya existe actualizar_jugador_especifico() para actualización incremental

@@ -696,6 +696,141 @@ def get_all_live_games():
 
 
 
+@api_bp.route('/actualizar-jugador/<puuid>', methods=['POST'])
+def actualizar_jugador(puuid):
+    """
+    Endpoint para actualización manual de un jugador específico.
+    Permite forzar la actualización del historial de partidas.
+    """
+    from services.data_updater_new import actualizar_jugador_especifico
+    from services.player_service import get_riot_id_for_puuid, get_player_display_name
+    
+    try:
+        if not puuid:
+            return jsonify({"error": "PUUID no proporcionado"}), 400
+        
+        # Obtener información del jugador
+        riot_id = get_riot_id_for_puuid(puuid)
+        if not riot_id:
+            # Intentar buscar en todas las cuentas
+            from services.player_service import get_all_accounts, get_all_puuids
+            cuentas = get_all_accounts()
+            puuids = get_all_puuids()
+            for rid, nombre in cuentas:
+                if puuids.get(rid) == puuid:
+                    riot_id = rid
+                    break
+        
+        if not riot_id:
+            return jsonify({"error": "Jugador no encontrado"}), 404
+        
+        # Obtener nombre para mostrar
+        jugador_nombre = get_player_display_name(riot_id) or riot_id.split('#')[0]
+        
+        print(f"[api/actualizar-jugador] Solicitada actualización manual para {jugador_nombre} ({riot_id})")
+        
+        # Ejecutar actualización
+        result = actualizar_jugador_especifico(puuid, riot_id, jugador_nombre)
+        
+        if result.get('status') == 'success':
+            return jsonify({
+                "status": "success",
+                "mensaje": f"Historial actualizado para {jugador_nombre}",
+                "partidas_nuevas": result.get('matches_added', 0),
+                "puuid": puuid,
+                "riot_id": riot_id
+            }), 200
+        elif result.get('status') == 'no_new_matches':
+            return jsonify({
+                "status": "no_new_matches",
+                "mensaje": f"No hay partidas nuevas para {jugador_nombre}",
+                "puuid": puuid,
+                "riot_id": riot_id
+            }), 200
+        elif result.get('status') == 'error':
+            return jsonify({
+                "status": "error",
+                "error": result.get('error', 'Error desconocido'),
+                "puuid": puuid
+            }), 500
+        else:
+            return jsonify({
+                "status": "unknown",
+                "result": result,
+                "puuid": puuid
+            }), 500
+            
+    except Exception as e:
+        print(f"[api/actualizar-jugador] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
+
+
+@api_bp.route('/actualizar-jugador/<puuid>/status', methods=['GET'])
+def obtener_status_actualizacion(puuid):
+    """
+    Endpoint para obtener el estado de actualización de un jugador.
+    """
+    from services.player_update_tracker import get_player_status
+    
+    try:
+        if not puuid:
+            return jsonify({"error": "PUUID no proporcionado"}), 400
+        
+        status = get_player_status(puuid)
+        
+        # Calcular información adicional
+        import time
+        from datetime import datetime, timezone
+        
+        now = time.time()
+        last_update = status.get('last_update', 0)
+        last_full_update = status.get('last_full_update', 0)
+        last_game_ts = status.get('last_game_timestamp', 0)
+        
+        # Calcular tiempo desde última actualización
+        if last_update > 0:
+            time_since_update = now - last_update
+            hours_since_update = time_since_update / 3600
+            minutes_since_update = time_since_update / 60
+        else:
+            hours_since_update = None
+            minutes_since_update = None
+        
+        # Calcular tiempo desde última partida
+        if last_game_ts > 0:
+            last_game_seconds = last_game_ts / 1000
+            time_since_game = now - last_game_seconds
+            days_since_game = time_since_game / (24 * 3600)
+            hours_since_game = time_since_game / 3600
+        else:
+            days_since_game = None
+            hours_since_game = None
+        
+        # Determinar si necesita actualización
+        from services.data_updater_new import _es_jugador_activo
+        activo = _es_jugador_activo(puuid, days_threshold=7)
+        
+        return jsonify({
+            "puuid": puuid,
+            "ultima_actualizacion": datetime.fromtimestamp(last_update, tz=timezone.utc).isoformat() if last_update > 0 else None,
+            "ultima_actualizacion_completa": datetime.fromtimestamp(last_full_update, tz=timezone.utc).isoformat() if last_full_update > 0 else None,
+            "ultima_partida": datetime.fromtimestamp(last_game_ts/1000, tz=timezone.utc).isoformat() if last_game_ts > 0 else None,
+            "horas_desde_ultima_actualizacion": round(hours_since_update, 1) if hours_since_update is not None else None,
+            "dias_desde_ultima_partida": round(days_since_game, 1) if days_since_game is not None else None,
+            "horas_desde_ultima_partida": round(hours_since_game, 1) if hours_since_game is not None else None,
+            "esta_activo": activo,
+            "en_partida": status.get('was_in_game', False)
+        }), 200
+        
+    except Exception as e:
+        print(f"[api/actualizar-jugador/status] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Error en el servidor", "detalle": str(e)}), 500
+
+
 @api_bp.route('/update-global-stats', methods=['POST'])
 def request_global_stats_update():
 
