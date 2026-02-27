@@ -11,15 +11,16 @@ from services.player_service import get_riot_id_for_puuid
 from config.settings import SEASON_START_TIMESTAMP, QUEUE_TYPE_MAP
 
 
-def get_player_match_history(puuid, riot_id=None, limit=None):
+def get_player_match_history(puuid, riot_id=None, limit=None, force_refresh=False):
     """
     Obtiene el historial de partidas de un jugador.
     Usa caché en memoria primero, luego GitHub.
     """
-    # Intentar caché primero
-    cached = player_match_history_cache.get(puuid)
-    if cached:
-        return _apply_limit(cached, limit)
+    # Intentar caché primero (salvo que se fuerce refresco)
+    if not force_refresh:
+        cached = player_match_history_cache.get(puuid)
+        if cached:
+            return _apply_limit(cached, limit)
     
     # Leer de GitHub
     if not riot_id:

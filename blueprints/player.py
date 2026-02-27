@@ -54,7 +54,7 @@ def _build_player_profile(game_name):
     player_lp = lp_history.get(puuid, {})
 
     
-    historial = get_player_match_history(puuid, riot_id=game_name, limit=-1)
+    historial = get_player_match_history(puuid, riot_id=game_name, limit=-1, force_refresh=True)
     matches = historial.get('matches', [])
     
     # Construir perfil base

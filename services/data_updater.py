@@ -16,7 +16,6 @@ from services.github_service import (
     read_accounts_file,
     read_puuids,
     read_player_match_history,
-    save_player_match_history,
     read_lp_history,
     ensure_permission_files_for_players,
 )
@@ -26,6 +25,7 @@ from services.riot_api import (
     ALL_CHAMPIONS
 )
 from services.player_service import get_all_accounts, get_all_puuids
+from services.match_service import save_player_matches
 from services.stats_service import calculate_personal_records
 from services.data_processing import process_player_match_history
 from services.index_json_generator import generate_index_json
@@ -182,16 +182,23 @@ def actualizar_historial_partidas_en_segundo_plano():
                         
                         # Procesar IDs de partidas
                         new_in_this_batch = 0
+                        first_batch_has_existing = False
                         for match_id in match_ids:
                             # Verificar si ya tenemos esta partida
                             if match_id in existing_ids:
                                 # Ya la tenemos, incrementar contador consecutivo
                                 consecutive_existing += 1
+                                if iteration == 0:
+                                    first_batch_has_existing = True
                             else:
                                 # Es una partida nueva, resetear contador y añadir
                                 consecutive_existing = 0
                                 all_new_match_ids.append(match_id)
                                 new_in_this_batch += 1
+                        
+                        if iteration == 0 and first_batch_has_existing:
+                            print("[actualizar_historial] Primera pagina con partidas ya existentes; se detiene paginacion")
+                            break
                         
                         # Si recibimos menos de 'count' partidas, hemos llegado al final
                         if len(match_ids) < count:
@@ -306,7 +313,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                             print(f"[actualizar_historial] Ordenación verificada: {len(all_matches)} partidas, más reciente: {newest_date}, más antigua: {oldest_date}")
                         
                         # Guardar
-                        save_player_match_history(puuid, {'matches': all_matches})
+                        save_player_matches(puuid, {'matches': all_matches}, riot_id=riot_id)
                         print(f"[actualizar_historial] {len(matches_to_add)} nuevas partidas guardadas para {jugador_nombre}. Total: {len(all_matches)}")
                     else:
                         print(f"[actualizar_historial] No hay partidas nuevas para {jugador_nombre}")
