@@ -118,7 +118,7 @@ def _fetch_player_data_from_sources() -> List[Dict[str, Any]]:
                             'losses': entry.get('losses', 0),
                             'valor_clasificacion': valor_clasificacion,
                             'perfil_icon_url': perfil_icon_url,
-                            'url_ingame': f"https://www.op.gg/summoners/euw/{riot_id.replace('#', '-')}"
+                            'url_ingame': f"https://op.gg/lol/summoners/euw/{riot_id.replace('#', '-')}/ingame"
                         })
             except Exception as e:
                 print(f"[index_json_generator] Error obteniendo datos de {jugador_nombre}: {e}")
