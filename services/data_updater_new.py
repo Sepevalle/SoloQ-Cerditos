@@ -24,7 +24,7 @@ from services.riot_api import (
     obtener_info_partida, actualizar_ddragon_data,
     ALL_CHAMPIONS
 )
-from services.player_service import get_all_accounts, get_all_puuids
+from services.player_service import get_all_accounts, get_all_puuids, ensure_puuids_for_accounts
 from services.match_service import save_player_matches
 from services.stats_service import calculate_personal_records
 from services.data_processing import process_player_match_history
@@ -60,7 +60,9 @@ def actualizar_cache_periodicamente():
             
             # Obtener cuentas y PUUIDs
             cuentas = get_all_accounts()
-            puuids = get_all_puuids()
+            puuids, nuevos_puuids = ensure_puuids_for_accounts(cuentas, api_key=RIOT_API_KEY)
+            if nuevos_puuids:
+                print(f"[actualizar_cache_periodicamente] PUUIDs nuevos guardados: {nuevos_puuids}")
 
             # Asegurar archivos de permisos por jugador y por partida (por Riot ID legible)
             ensure_permission_files_for_players([riot_id for riot_id, _ in cuentas if riot_id])

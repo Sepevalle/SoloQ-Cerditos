@@ -91,3 +91,40 @@ def get_all_players_with_puuids():
         result.append((riot_id, display_name, puuid))
     
     return result
+
+
+def ensure_puuids_for_accounts(accounts, api_key=None):
+    """
+    Asegura que cada Riot ID en cuentas tenga PUUID.
+    Retorna el diccionario de PUUIDs y cuántos nuevos se guardaron.
+    """
+    api_key = api_key or RIOT_API_KEY
+    puuids = get_all_puuids()
+
+    if not api_key:
+        return puuids, 0
+
+    updated = 0
+    for riot_id, _display_name in accounts:
+        if not riot_id or puuids.get(riot_id):
+            continue
+
+        try:
+            if '#' not in riot_id:
+                print(f"[ensure_puuids_for_accounts] Riot ID invalido: {riot_id}")
+                continue
+
+            game_name, tag_line = riot_id.split('#', 1)
+            puuid_info = obtener_puuid(api_key, game_name, tag_line)
+            if puuid_info and 'puuid' in puuid_info:
+                puuids[riot_id] = puuid_info['puuid']
+                updated += 1
+            else:
+                print(f"[ensure_puuids_for_accounts] No se pudo obtener PUUID para {riot_id}")
+        except Exception as e:
+            print(f"[ensure_puuids_for_accounts] Error para {riot_id}: {e}")
+
+    if updated:
+        save_puuids(puuids)
+
+    return puuids, updated
