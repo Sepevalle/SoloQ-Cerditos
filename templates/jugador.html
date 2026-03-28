@@ -1025,6 +1025,7 @@
                     <tbody>
                         {% for match in perfil.historial_partidas %}
                         {% set kda_ratio = ((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 999 %}
+                        {% set role_quest = match.get('role_quest', {}) %}
                         <tr 
                             data-queue-id="{{ match.queue_id }}" 
                             data-champion-name="{{ match.champion_name }}"
@@ -1032,7 +1033,20 @@
                             style="cursor: pointer;"
                             onclick="toggleMatchDetails('match-{{ loop.index }}')"
                         >
-                            <td>{{ match.queue_id | get_queue_type }}</td>
+                            <td>
+                                <div>{{ match.queue_id | get_queue_type }}</div>
+                                {% if role_quest %}
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    {% if role_quest.get('assigned_role') and role_quest.get('assigned_role') != 'UNKNOWN' %}
+                                    <span class="badge rounded-pill text-bg-light border" title="Rol asignado por Riot">{{ role_quest.get('assigned_role_label') }}</span>
+                                    {% endif %}
+                                    <span class="badge rounded-pill text-bg-{{ role_quest.get('status_variant', 'secondary') }}" title="{{ role_quest.get('tooltip', '') }}">{{ role_quest.get('status_label', 'Role Quest') }}</span>
+                                </div>
+                                {% if role_quest.get('position_mismatch') %}
+                                <div class="small-text-stats mt-1" title="Rol jugado detectado al final de la partida">Jugado: {{ role_quest.get('played_role_label') }}</div>
+                                {% endif %}
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="champion-level-container">
                                     <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ match.champion_name }}.png" alt="{{ match.champion_name }}">

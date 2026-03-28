@@ -8,6 +8,7 @@ from collections import defaultdict
 from services.github_service import read_player_match_history, save_player_match_history
 from services.cache_service import player_match_history_cache
 from services.player_service import get_riot_id_for_puuid
+from services.role_quest_service import normalize_match_history_role_quest
 from config.settings import SEASON_START_TIMESTAMP, QUEUE_TYPE_MAP
 
 
@@ -25,10 +26,10 @@ def get_player_match_history(puuid, riot_id=None, limit=None, force_refresh=Fals
     # Leer de GitHub
     if not riot_id:
         riot_id = get_riot_id_for_puuid(puuid) or puuid
-    
     historial = read_player_match_history(puuid)
     if not historial:
         historial = {"matches": [], "remakes": [], "last_updated": time.time()}
+    historial = normalize_match_history_role_quest(historial)
     
     # Guardar en caché
     player_match_history_cache.set(puuid, historial)
@@ -57,6 +58,7 @@ def save_player_matches(puuid, historial_data, riot_id=None):
         riot_id = get_riot_id_for_puuid(puuid) or puuid
     
     # Actualizar caché
+    historial_data = normalize_match_history_role_quest(historial_data)
     player_match_history_cache.set(puuid, historial_data)
     
     # Guardar en GitHub

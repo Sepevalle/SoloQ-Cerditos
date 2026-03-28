@@ -8,6 +8,8 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 import queue
 
+from services.role_quest_service import build_role_quest_payload
+
 # Configuración de la API de Riot Games
 RIOT_API_KEY = os.environ.get("RIOT_API_KEY")
 if not RIOT_API_KEY:
@@ -345,6 +347,9 @@ def obtener_info_partida(args):
             print(f"[obtener_info_partida] Partida {match_id} marcada como remake. No se procesará.")
             return None
 
+        game_end_timestamp = info.get('gameEndTimestamp', 0)
+        game_duration = info.get('gameDuration', 0)
+        queue_id = info.get('queueId')
         all_participants_details = []
         main_player_data = None
         team_kills = {100: 0, 200: 0}
@@ -364,7 +369,13 @@ def obtener_info_partida(args):
                 if len(perks['styles']) > 1:
                     perk_sub_id = perks['styles'][1]['style']
             
+            participant_role_quest = build_role_quest_payload(
+                p,
+                queue_id=queue_id,
+                game_end_timestamp=game_end_timestamp,
+            )
             participant_summary = {
+                "puuid": p.get('puuid'),
                 "summoner_name": p.get('riotIdGameName', p.get('summonerName')),
                 "champion_name": obtener_nombre_campeon(p.get('championId')),
                 "win": p.get('win', False),
@@ -373,6 +384,14 @@ def obtener_info_partida(args):
                 "assists": p.get('assists', 0),
                 "items": [p.get(f'item{i}', 0) for i in range(7)],
                 "team_id": p.get('teamId'),
+                "team_position": p.get('teamPosition', ''),
+                "individual_position": p.get('individualPosition', ''),
+                "missions": participant_role_quest.get('missions', {}),
+                "player_scores": participant_role_quest.get('player_scores', {}),
+                "role_quest": participant_role_quest,
+                "gold_earned": p.get('goldEarned', 0),
+                "total_minions_killed": p.get('totalMinionsKilled', 0),
+                "neutral_minions_killed": p.get('neutralMinionsKilled', 0),
                 "total_damage_dealt_to_champions": p.get('totalDamageDealtToChampions', 0),
                 "vision_score": p.get('visionScore', 0),
                 "total_cs": p.get('totalMinionsKilled', 0) + p.get('neutralMinionsKilled', 0),
@@ -439,6 +458,11 @@ def obtener_info_partida(args):
         champion_name_readable = obtener_nombre_campeon(champion_id_numeric)
         # Get technical champion ID for Data Dragon images (e.g., "MonkeyKing" instead of "Wukong")
         champion_id_technical = ALL_CHAMPIONS.get(champion_id_numeric, champion_name_readable)
+        main_role_quest = build_role_quest_payload(
+            p,
+            queue_id=queue_id,
+            game_end_timestamp=game_end_timestamp,
+        )
         
         print(f"[obtener_info_partida] Información de partida {match_id} procesada para {puuid}.")
         return {
@@ -454,7 +478,7 @@ def obtener_info_partida(args):
             "kda": (p.get('kills', 0) + p.get('assists', 0)) / max(1, p.get('deaths', 0)),
             "player_items": player_items,
             "game_end_timestamp": game_end_timestamp,
-            "queue_id": info.get('queueId'),
+            "queue_id": queue_id,
             "champion_level": p.get('champLevel'),
             "summoner_spell_1_id": ALL_SUMMONER_SPELLS.get(spell1_id),
             "summoner_spell_2_id": ALL_SUMMONER_SPELLS.get(spell2_id),
@@ -493,7 +517,11 @@ def obtener_info_partida(args):
             "quadraKills": p.get('quadraKills', 0),
             "tripleKills": p.get('tripleKills', 0),
             "doubleKills": p.get('doubleKills', 0),
+            "team_position": p.get('teamPosition', ''),
             "individual_position": p.get('individualPosition', 'N/A'),
+            "missions": main_role_quest.get('missions', {}),
+            "player_scores": main_role_quest.get('player_scores', {}),
+            "role_quest": main_role_quest,
             "total_damage_taken": p.get('totalDamageTaken', 0),
             "total_time_cc_dealt": p.get('total_time_cc_dealt', 0),
             "first_blood_kill": p.get('firstBloodKill', False),

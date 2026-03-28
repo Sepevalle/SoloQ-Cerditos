@@ -268,6 +268,48 @@
         </div>
 
         <div class="card-body p-3 p-lg-4">
+            {% set role_quest = match.get('role_quest', {}) %}
+            <div class="border rounded-3 p-3 bg-light mb-4">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <span class="badge text-bg-dark">Role Quest</span>
+                    {% if role_quest.get('assigned_role') and role_quest.get('assigned_role') != 'UNKNOWN' %}
+                    <span class="badge text-bg-primary">Asignado: {{ role_quest.get('assigned_role_label') }}</span>
+                    {% endif %}
+                    {% if role_quest.get('played_role') and role_quest.get('played_role') != 'UNKNOWN' %}
+                    <span class="badge text-bg-secondary">Jugado: {{ role_quest.get('played_role_label') }}</span>
+                    {% endif %}
+                    <span class="badge text-bg-{{ role_quest.get('status_variant', 'secondary') }}">{{ role_quest.get('status_label', 'Sin datos') }}</span>
+                </div>
+                <div class="small text-muted">{{ role_quest.get('note', 'Sin informacion adicional de Role Quest.') }}</div>
+
+                {% if role_quest.get('missions_present') %}
+                <div class="mt-3">
+                    <div class="small fw-bold text-uppercase text-muted mb-2">missions</div>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for item in role_quest.get('missions_items', []) %}
+                        <span class="badge text-bg-light border">{{ item.key }}: {{ item.value }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if role_quest.get('player_scores_present') %}
+                <div class="mt-3">
+                    <div class="small fw-bold text-uppercase text-muted mb-2">playerScore*</div>
+                    <div class="small text-muted mb-2">Campos capturados: {{ role_quest.get('player_scores_count', 0) }}</div>
+                    {% if role_quest.get('non_zero_scores') %}
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for score in role_quest.get('non_zero_scores', []) %}
+                        <span class="badge text-bg-light border">{{ score.key }}: {{ score.value }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="small text-muted">Todos los `playerScore*` llegaron con valor 0 en esta captura.</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
             <div class="row g-4">
                 <div class="col-12 col-xl-6">
                     <div class="team-panel blue shadow-sm">
@@ -288,6 +330,14 @@
                                         <div class="player-names">
                                             <div class="champion-name">{{ participante.champion_name }}</div>
                                             <div class="summoner-name">{{ participante.summoner_name }}</div>
+                                            {% if participante.get('role_quest', {}).get('assigned_role') and participante.get('role_quest', {}).get('assigned_role') != 'UNKNOWN' %}
+                                            <div class="mt-1 d-flex flex-wrap gap-1">
+                                                <span class="badge text-bg-light border">{{ participante.get('role_quest', {}).get('assigned_role_label') }}</span>
+                                                {% if participante.get('role_quest', {}).get('position_mismatch') %}
+                                                <span class="badge text-bg-warning">Jugado: {{ participante.get('role_quest', {}).get('played_role_label') }}</span>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div class="player-kda">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</div>
@@ -347,6 +397,14 @@
                                         <div class="player-names">
                                             <div class="champion-name">{{ participante.champion_name }}</div>
                                             <div class="summoner-name">{{ participante.summoner_name }}</div>
+                                            {% if participante.get('role_quest', {}).get('assigned_role') and participante.get('role_quest', {}).get('assigned_role') != 'UNKNOWN' %}
+                                            <div class="mt-1 d-flex flex-wrap gap-1">
+                                                <span class="badge text-bg-light border">{{ participante.get('role_quest', {}).get('assigned_role_label') }}</span>
+                                                {% if participante.get('role_quest', {}).get('position_mismatch') %}
+                                                <span class="badge text-bg-warning">Jugado: {{ participante.get('role_quest', {}).get('played_role_label') }}</span>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div class="player-kda">{{ participante.kills }}/{{ participante.deaths }}/{{ participante.assists }}</div>
