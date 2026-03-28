@@ -76,6 +76,48 @@ BOOT_ITEM_SUFFIXES = (
     "3158",
 )
 
+ROLE_QUEST_PRESENTATION = {
+    "TOP": {
+        "quest_title": "Mision de la calle superior",
+        "reward_items": [
+            "Nivel maximo aumentado a 20.",
+            "+600 de experiencia y +12.5% de experiencia futura.",
+            "Teleport gratis o Teleport mejorado con escudo al aterrizar.",
+        ],
+    },
+    "JUNGLE": {
+        "quest_title": "Mision de la jungla",
+        "reward_items": [
+            "Smite mejorado al completar la quest.",
+            "Mas oro y experiencia al limpiar campamentos grandes.",
+            "Mejor movilidad dentro de la jungla y el rio.",
+        ],
+    },
+    "MIDDLE": {
+        "quest_title": "Mision de la calle central",
+        "reward_items": [
+            "Mejora de las botas al nivel 3.",
+            "Retirada mejorada.",
+        ],
+    },
+    "BOTTOM": {
+        "quest_title": "Mision de la calle inferior",
+        "reward_items": [
+            "+300 de oro al completar la quest.",
+            "Oro extra por subditos y por asesinatos o asistencias.",
+            "Las botas pasan al slot de Role Quest.",
+        ],
+    },
+    "UTILITY": {
+        "quest_title": "Mision de support",
+        "reward_items": [
+            "Objeto de support mejorado.",
+            "Control wards mas baratas.",
+            "Hasta 2 control wards en el slot de Role Quest.",
+        ],
+    },
+}
+
 STATUS_META = {
     "captured": {
         "label": "Campos Riot",
@@ -221,6 +263,8 @@ def _default_display_payload():
         "label": "Role Quest",
         "subtitle": "Sin datos",
         "asset_alt": "Role Quest",
+        "quest_title": "Role Quest",
+        "reward_items": [],
     }
 
 
@@ -295,6 +339,7 @@ def _build_role_quest_display(
         subtitle = status_label
 
     role_label = get_role_label(assigned_role)
+    presentation = ROLE_QUEST_PRESENTATION.get(assigned_role, {})
     return {
         "showable": True,
         "icon_slug": icon_slug,
@@ -304,6 +349,8 @@ def _build_role_quest_display(
         "label": role_label,
         "subtitle": subtitle,
         "asset_alt": f"Role Quest {role_label}",
+        "quest_title": presentation.get("quest_title", f"Role Quest {role_label}"),
+        "reward_items": presentation.get("reward_items", []),
     }
 
 

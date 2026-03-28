@@ -364,83 +364,65 @@
         .dark-mode .trinket-item .item-placeholder, .dark-mode .items-grid .item-placeholder {
             border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border in dark mode */
         }
-        .role-quest-summary {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .role-quest-summary__asset {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
+        .role-quest-item-slot {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            border-radius: 5px;
             background: rgba(15, 23, 42, 0.08);
-            border: 1px solid rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            cursor: help;
             flex: 0 0 auto;
         }
-        .role-quest-summary__asset img {
-            width: 36px;
-            height: 36px;
+        .role-quest-item-slot img {
+            border-radius: 5px;
             object-fit: cover;
-            border-radius: 10px;
             transition: filter 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
         }
-        .role-quest-summary__asset.is-completed {
+        .role-quest-item-slot.is-completed {
             background: rgba(25, 135, 84, 0.12);
-            border-color: rgba(25, 135, 84, 0.25);
+            border-color: rgba(25, 135, 84, 0.35);
         }
-        .role-quest-summary__asset.is-completed img {
+        .role-quest-item-slot.is-completed img {
             transform: scale(1.02);
         }
-        .role-quest-summary__asset.is-pending {
+        .role-quest-item-slot.is-pending {
             background: rgba(108, 117, 125, 0.12);
-            border-color: rgba(108, 117, 125, 0.18);
+            border-color: rgba(108, 117, 125, 0.2);
         }
-        .role-quest-summary__asset.is-pending img {
+        .role-quest-item-slot.is-pending img {
             filter: grayscale(1) saturate(0.15);
             opacity: 0.55;
         }
-        .role-quest-summary__meta {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            line-height: 1.1;
-            text-align: left;
-        }
-        .role-quest-summary__title {
-            font-size: 0.82rem;
+        .role-quest-popover .popover-header {
+            background: #111827;
+            color: #facc15;
             font-weight: 700;
-            color: #212529;
+            border-bottom: 1px solid rgba(250, 204, 21, 0.12);
         }
-        .role-quest-summary__status {
-            font-size: 0.72rem;
-            color: #6c757d;
+        .role-quest-popover .popover-body {
+            background: #0f172a;
+            color: #f8fafc;
+            font-size: 0.84rem;
         }
-        .role-quest-mismatch {
-            font-size: 0.72rem;
-            color: #6c757d;
+        .role-quest-popover .popover-body ul {
+            margin-bottom: 0;
+            padding-left: 1rem;
         }
-        .dark-mode .role-quest-summary__asset {
+        .role-quest-popover .popover-body li + li {
+            margin-top: 0.2rem;
+        }
+        .dark-mode .role-quest-item-slot {
             background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.1);
         }
-        .dark-mode .role-quest-summary__asset.is-completed {
+        .dark-mode .role-quest-item-slot.is-completed {
             background: rgba(25, 135, 84, 0.18);
-            border-color: rgba(25, 135, 84, 0.35);
+            border-color: rgba(25, 135, 84, 0.4);
         }
-        .dark-mode .role-quest-summary__asset.is-pending {
+        .dark-mode .role-quest-item-slot.is-pending {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.14);
-        }
-        .dark-mode .role-quest-summary__title {
-            color: #f8f9fa;
-        }
-        .dark-mode .role-quest-summary__status,
-        .dark-mode .role-quest-mismatch {
-            color: #adb5bd;
         }
         .match-history-table .match-result {
             font-size: 1.1em; /* Larger result text */
@@ -702,8 +684,52 @@
             overflow: hidden; /* Esencial para que la animación de grid funcione */
         }
         /* --- FIN: Animación para desplegar detalles de partida --- */
-    </style>
+</style>
 </head>
+
+{% macro render_role_quest_item(role_quest_display, ddragon_version, icon_size=25) -%}
+    {% if role_quest_display and role_quest_display.get('showable') %}
+        {% set popover_content -%}
+        <div class='small fw-semibold text-warning mb-1'>Recompensas</div>
+        <ul class='mb-0 ps-3'>
+            {% for reward in role_quest_display.get('reward_items', []) %}
+            <li>{{ reward }}</li>
+            {% endfor %}
+        </ul>
+        {% if role_quest_display.get('completed') %}
+        <div class='mt-2 small text-success'>Completada en {{ role_quest_display.get('subtitle') }}</div>
+        {% elif role_quest_display.get('subtitle') %}
+        <div class='mt-2 small text-muted'>{{ role_quest_display.get('subtitle') }}</div>
+        {% endif %}
+        {%- endset %}
+        <div
+            class="role-quest-item-slot {{ 'is-completed' if role_quest_display.get('completed') else 'is-pending' }}"
+            style="width: {{ icon_size }}px; height: {{ icon_size }}px;"
+            data-bs-toggle="popover"
+            data-bs-trigger="hover focus"
+            data-bs-placement="top"
+            data-bs-container="body"
+            data-bs-html="true"
+            data-bs-custom-class="role-quest-popover"
+            title="{{ role_quest_display.get('quest_title', role_quest_display.get('label', 'Role Quest')) }}"
+            data-bs-content="{{ popover_content | trim | replace('\n', ' ') | safe }}"
+        >
+            {% if role_quest_display.get('uses_boots_icon') and role_quest_display.get('boots_item_id') %}
+            <img
+                src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ role_quest_display.get('boots_item_id') }}.png"
+                alt="{{ role_quest_display.get('asset_alt', 'Role Quest') }}"
+                style="width: {{ icon_size }}px; height: {{ icon_size }}px;"
+            >
+            {% else %}
+            <img
+                src="{{ url_for('static', filename='role_quest/' ~ role_quest_display.get('icon_slug') ~ '.svg') }}"
+                alt="{{ role_quest_display.get('asset_alt', 'Role Quest') }}"
+                style="width: {{ icon_size }}px; height: {{ icon_size }}px;"
+            >
+            {% endif %}
+        </div>
+    {% endif %}
+{%- endmacro %}
 
 <body>
 
@@ -1114,26 +1140,6 @@
                         >
                             <td>
                                 <div>{{ match.queue_id | get_queue_type }}</div>
-                                {% if role_quest_display.get('showable') %}
-                                <div class="role-quest-summary mt-2" title="{{ role_quest.get('tooltip', '') }}">
-                                    <div class="role-quest-summary__asset {{ 'is-completed' if role_quest_display.get('completed') else 'is-pending' }}">
-                                        {% if role_quest_display.get('uses_boots_icon') and role_quest_display.get('boots_item_id') %}
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ role_quest_display.get('boots_item_id') }}.png" alt="{{ role_quest_display.get('asset_alt', 'Role Quest') }}">
-                                        {% else %}
-                                        <img src="{{ url_for('static', filename='role_quest/' ~ role_quest_display.get('icon_slug') ~ '.svg') }}" alt="{{ role_quest_display.get('asset_alt', 'Role Quest') }}">
-                                        {% endif %}
-                                    </div>
-                                    <div class="role-quest-summary__meta">
-                                        <span class="role-quest-summary__title">{{ role_quest_display.get('label', 'Role Quest') }}</span>
-                                        <span class="role-quest-summary__status">{{ role_quest_display.get('subtitle', role_quest.get('status_label', 'Sin datos')) }}</span>
-                                    </div>
-                                </div>
-                                {% elif role_quest %}
-                                <div class="small-text-stats mt-1" title="{{ role_quest.get('tooltip', '') }}">{{ role_quest.get('status_label', 'Role Quest') }}</div>
-                                {% endif %}
-                                {% if role_quest.get('position_mismatch') %}
-                                <div class="role-quest-mismatch mt-1" title="Rol jugado detectado al final de la partida">Jugado: {{ role_quest.get('played_role_label') }}</div>
-                                {% endif %}
                             </td>
                             <td>
                                 <div class="champion-level-container">
@@ -1283,6 +1289,7 @@
                                             <div class="item-placeholder"></div>
                                         {% endif %}
                                     </div>
+                                    {{ render_role_quest_item(role_quest_display, ddragon_version) }}
                                 </div>
                             </td>
                             <td>
@@ -1334,7 +1341,7 @@
                                                         <div class="text-start" style="width: 80px;">Daño</div>
                                                         <div class="text-start" style="width: 80px;">CS</div>
                                                         <div class="text-start" style="width: 50px;">Visión</div>
-                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                        <div class="text-center" style="width: 210px; padding-left: 0.5rem;">Objetos</div>
                                                     </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
@@ -1363,7 +1370,7 @@
                                                                 <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
                                                                     <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
                                                                 </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 210px;">
                                                                     {% for item_id in participante.get('items', []) %}
                                                                         {% if item_id > 0 %}
                                                                             <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
@@ -1371,6 +1378,7 @@
                                                                             <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
                                                                         {% endif %}
                                                                     {% endfor %}
+                                                                    {{ render_role_quest_item(participante.get('role_quest', {}).get('display', {}), ddragon_version, 22) }}
                                                                 </div>
                                                             </li>                                                            
                                                             {% endif %}
@@ -1392,7 +1400,7 @@
                                                         <div class="text-start" style="width: 80px;">Daño</div>
                                                         <div class="text-start" style="width: 80px;">CS</div>
                                                         <div class="text-start" style="width: 50px;">Visión</div>
-                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                        <div class="text-center" style="width: 210px; padding-left: 0.5rem;">Objetos</div>
                                                     </div>
                                                     <ul class="list-unstyled mb-0">
                                                         {% for participante in match.all_participants %}
@@ -1421,7 +1429,7 @@
                                                                 <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
                                                                     <span class="fw-bold">{{ participante.get('vision_score', 0) }}</span>
                                                                 </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 210px;">
                                                                     {% for item_id in participante.get('items', []) %}
                                                                         {% if item_id > 0 %}
                                                                             <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ item_id }}.png" alt="Item">
@@ -1429,6 +1437,7 @@
                                                                             <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
                                                                         {% endif %}
                                                                     {% endfor %}
+                                                                    {{ render_role_quest_item(participante.get('role_quest', {}).get('display', {}), ddragon_version, 22) }}
                                                                 </div>
                                                             </li>
                                                             {% endif %}
@@ -2256,7 +2265,14 @@ async function actualizarHistorialJugador(puuid) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Actualizar Historial';
     }
-}</script>
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(element => {
+        new bootstrap.Popover(element);
+    });
+});
+</script>
 
 
 </body>
