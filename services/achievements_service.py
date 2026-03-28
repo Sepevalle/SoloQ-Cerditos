@@ -811,6 +811,8 @@ def save_achievements_config_document(document):
     if not isinstance(document, dict):
         return False, "Payload invalido: se esperaba objeto JSON."
 
+    from services.cache_service import page_data_cache
+
     achievements = _extract_achievements_payload(document)
     if achievements is None:
         return False, "Payload invalido: falta achievements[]."
@@ -860,6 +862,7 @@ def save_achievements_config_document(document):
             "errors": [],
         }
     )
+    page_data_cache.invalidate("global_achievements_data")
 
     if github_ok:
         return True, "Configuracion guardada en GitHub y local."

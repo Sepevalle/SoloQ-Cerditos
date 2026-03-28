@@ -992,13 +992,25 @@
             Historial de Partidas
         </div>
         <div class="card-body">
-            <div class="filter-controls">
+            <form method="get" id="matchFiltersForm" class="filter-controls">
+                <input type="hidden" id="pageInput" name="page" value="1">
                 <label for="queueFilter">Tipo de Cola:</label>
-                <select id="queueFilter" class="form-select"></select>
+                <select id="queueFilter" name="queue" class="form-select">
+                    <option value="all" {% if selected_queue == 'all' %}selected{% endif %}>Todas</option>
+                    {% for option in queue_options %}
+                    <option value="{{ option.value }}" {% if selected_queue == option.value %}selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                </select>
                 <label for="championFilter">Campeón:</label>
-                <select id="championFilter" class="form-select">
-                    <option value="all">Todos</option>
-                    </select>
+                <select id="championFilter" name="champion" class="form-select">
+                    <option value="all" {% if selected_champion == 'all' %}selected{% endif %}>Todos</option>
+                    {% for champion_name in champion_options %}
+                    <option value="{{ champion_name }}" {% if selected_champion == champion_name %}selected{% endif %}>{{ champion_name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <div class="small text-muted mb-3">
+                {{ total_filtered_matches }} partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -1023,6 +1035,7 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% if perfil.historial_partidas %}
                         {% for match in perfil.historial_partidas %}
                         {% set kda_ratio = ((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 999 %}
                         <tr 
@@ -1214,7 +1227,7 @@
                         </tr>
                         {% if match.all_participants %}
                         <tr id="match-{{ loop.index }}" class="hidden">
-                            <td colspan="14" class="p-0"> {# Colspan ajustado para la nueva columna LP #}
+                            <td colspan="15" class="p-0"> {# Colspan ajustado para la nueva columna LP #}
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
                                         <div class="row g-2">
@@ -1341,6 +1354,11 @@
                         </tr>
                         {% endif %}
                         {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="15" class="text-center py-4 text-muted">No hay partidas para los filtros seleccionados.</td>
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -1348,6 +1366,15 @@
             <!-- Controles de Paginación -->
             <nav aria-label="Historial de partidas paginación" class="mt-4">
                 <ul class="pagination justify-content-center" id="pagination-controls">
+                    <li class="page-item {% if current_page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('player.perfil_jugador', game_name=perfil.game_name, page=current_page - 1, queue=selected_queue, champion=selected_champion) if current_page > 1 else '#' }}">&laquo; Anterior</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">PÃ¡gina {{ current_page }} de {{ total_pages }}</span>
+                    </li>
+                    <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('player.perfil_jugador', game_name=perfil.game_name, page=current_page + 1, queue=selected_queue, champion=selected_champion) if current_page < total_pages else '#' }}">Siguiente &raquo;</a>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -1906,6 +1933,31 @@
                 localStorage.setItem('backgroundAudioMuted', 'true');
             }
         });
+
+        const queueFilterControl = document.getElementById('queueFilter');
+        const championFilterControl = document.getElementById('championFilter');
+        const matchFiltersForm = document.getElementById('matchFiltersForm');
+        const pageInput = document.getElementById('pageInput');
+
+        [queueFilterControl, championFilterControl].forEach(control => {
+            if (!control || !matchFiltersForm) {
+                return;
+            }
+
+            control.addEventListener('change', () => {
+                if (pageInput) {
+                    pageInput.value = '1';
+                }
+                matchFiltersForm.submit();
+            });
+        });
+
+        const paginationLabel = document.querySelector('#pagination-controls span.page-link');
+        if (paginationLabel) {
+            paginationLabel.textContent = 'Pagina {{ current_page }} de {{ total_pages }}';
+        }
+
+        return;
 
         // --- INICIO: LGICA DE FILTRADO Y PAGINACIN (REESTRUCTURADA) ---
         const queueFilter = document.getElementById('queueFilter');

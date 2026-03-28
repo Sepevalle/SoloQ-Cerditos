@@ -243,6 +243,70 @@ class LpHistoryCache:
 
 
 # ============================================================================
+# CACHÉ GENÉRICO CON TTL
+# ============================================================================
+
+class TimedCache:
+    def __init__(self, ttl_seconds=120, max_size=128):
+        self._cache = {}
+        self._lock = threading.Lock()
+        self._ttl = ttl_seconds
+        self._max_size = max_size
+
+    def get(self, key, default=None):
+        """Obtiene un valor cacheado si no ha expirado."""
+        with self._lock:
+            entry = self._cache.get(key)
+            if not entry:
+                return default
+
+            if time.time() - entry["timestamp"] > self._ttl:
+                del self._cache[key]
+                return default
+
+            return entry["data"]
+
+    def set(self, key, data):
+        """Guarda un valor en caché."""
+        with self._lock:
+            self._cleanup_expired_locked()
+            if self._max_size and key not in self._cache and len(self._cache) >= self._max_size:
+                oldest_key = min(self._cache.items(), key=lambda item: item[1]["timestamp"])[0]
+                del self._cache[oldest_key]
+
+            self._cache[key] = {
+                "data": data,
+                "timestamp": time.time()
+            }
+
+    def invalidate(self, key):
+        """Invalida una clave específica."""
+        with self._lock:
+            self._cache.pop(key, None)
+
+    def invalidate_prefix(self, prefix):
+        """Invalida todas las claves que empiecen por el prefijo."""
+        with self._lock:
+            keys_to_remove = [key for key in self._cache if key.startswith(prefix)]
+            for key in keys_to_remove:
+                del self._cache[key]
+
+    def clear(self):
+        """Limpia todo el caché."""
+        with self._lock:
+            self._cache.clear()
+
+    def _cleanup_expired_locked(self):
+        now = time.time()
+        keys_to_remove = [
+            key for key, entry in self._cache.items()
+            if now - entry["timestamp"] > self._ttl
+        ]
+        for key in keys_to_remove:
+            del self._cache[key]
+
+
+# ============================================================================
 # CACHÉ DE ESTADÍSTICAS DE JUGADORES (INDEX) - NUEVO PARA RENDIMIENTO
 # ============================================================================
 
@@ -436,6 +500,9 @@ peak_elo_cache = PeakEloCache()
 player_match_history_cache = PlayerMatchHistoryCache()
 personal_records_cache = PersonalRecordsCache()
 lp_history_cache = LpHistoryCache()
+player_profile_cache = TimedCache(ttl_seconds=120, max_size=64)
+page_data_cache = TimedCache(ttl_seconds=180, max_size=32)
+match_lookup_cache = TimedCache(ttl_seconds=900, max_size=5000)
 player_stats_cache = PlayerStatsCache()  # NUEVO: Caché para estadísticas de jugadores
 api_response_cache = ApiResponseCache()
 live_game_cache = LiveGameCache(ttl_seconds=300)  # NUEVO: Caché para estado en partida (5 min TTL)
@@ -451,6 +518,9 @@ live_game_cache = LiveGameCache(ttl_seconds=300)  # NUEVO: Caché para estado en
 def cleanup_all_caches():
     """Limpia todos los cachés de memoria."""
     player_match_history_cache.clear()
+    player_profile_cache.clear()
+    page_data_cache.clear()
+    match_lookup_cache.clear()
     player_stats_cache.clear()  # NUEVO: Limpiar también el caché de estadísticas
     api_response_cache.cleanup()
     print("[cleanup_all_caches] Todos los cachés han sido limpiados")

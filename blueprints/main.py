@@ -7,7 +7,12 @@ import threading
 import config.settings as settings
 
 from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS
-from services.cache_service import player_cache, player_stats_cache
+from services.cache_service import (
+    player_cache,
+    player_stats_cache,
+    page_data_cache,
+    match_lookup_cache,
+)
 
 from services.github_service import read_peak_elo, save_peak_elo, read_lp_history
 from services.github_service import (
@@ -211,44 +216,67 @@ def index():
                            minutos_desde_actualizacion=minutos_desde_actualizacion)
 
 
+def _build_historial_global_dataset():
+    """Construye y cachea el dataset del historial global."""
+    cached_dataset = page_data_cache.get('historial_global_dataset')
+    if cached_dataset:
+        return cached_dataset
+
+    from services.player_service import get_all_accounts, get_all_puuids
+
+    cuentas = get_all_accounts()
+    puuids = get_all_puuids()
+    players_total = len(cuentas)
+    players_with_puuid = 0
+    all_matches = []
+
+    for riot_id, jugador_nombre in cuentas:
+        puuid = puuids.get(riot_id)
+        if not puuid:
+            continue
+
+        players_with_puuid += 1
+        historial = get_player_match_history(puuid, limit=-1)
+        matches = historial.get('matches', [])
+
+        for match in matches:
+            match_copy = dict(match)
+            match_copy['jugador_nombre'] = jugador_nombre
+            match_copy['riot_id'] = riot_id
+            all_matches.append(match_copy)
+
+            match_id = match_copy.get('match_id')
+            if match_id:
+                match_lookup_cache.set(match_id, {
+                    'game_name': riot_id,
+                    'puuid': puuid
+                })
+
+    all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+
+    dataset = {
+        'matches': all_matches,
+        'players_total': players_total,
+        'players_with_puuid': players_with_puuid,
+    }
+    page_data_cache.set('historial_global_dataset', dataset)
+    return dataset
 
 
 @main_bp.route('/historial_global')
 def historial_global():
     """Renderiza la página de historial global de partidas."""
     print("[historial_global] Petición recibida.")
-    
-    from services.player_service import get_all_accounts, get_all_puuids
-    from services.match_service import get_player_match_history
-    
     try:
         page = request.args.get('page', 1, type=int)
         if page is None or page < 1:
             page = 1
         per_page = 15
 
-        cuentas = get_all_accounts()
-        puuids = get_all_puuids()
-        players_total = len(cuentas)
-        players_with_puuid = 0
-        
-        all_matches = []
-        for riot_id, jugador_nombre in cuentas:
-            puuid = puuids.get(riot_id)
-            if not puuid:
-                continue
-            players_with_puuid += 1
-            
-            historial = get_player_match_history(puuid, limit=-1)
-            matches = historial.get('matches', [])
-            
-            for match in matches:
-                match['jugador_nombre'] = jugador_nombre
-                match['riot_id'] = riot_id
-                all_matches.append(match)
-        
-        # Ordenar por fecha descendente
-        all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+        dataset = _build_historial_global_dataset()
+        all_matches = dataset.get('matches', [])
+        players_total = dataset.get('players_total', 0)
+        players_with_puuid = dataset.get('players_with_puuid', 0)
 
         total_matches = len(all_matches)
         total_pages = max(1, (total_matches + per_page - 1) // per_page)
@@ -280,7 +308,10 @@ def logros():
     """Renderiza la página de logros globales por jugador."""
     print("[logros] Petición recibida.")
     try:
-        data = calculate_global_achievements()
+        data = page_data_cache.get('global_achievements_data')
+        if not data:
+            data = calculate_global_achievements()
+            page_data_cache.set('global_achievements_data', data)
         return render_template(
             'logros.html',
             players=data.get('players', []),

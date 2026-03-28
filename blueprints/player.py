@@ -1,16 +1,15 @@
-from flask import Blueprint, render_template, request, abort
+from flask import Blueprint, render_template, request
 from datetime import datetime, timezone, timedelta
 import config.settings as settings
-from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY
+from config.settings import ACTIVE_SPLIT_KEY
 
-from services.cache_service import player_cache
-from services.player_service import get_puuid_for_riot_id, get_player_display_name
-from services.match_service import get_player_match_history, calculate_streaks, filter_matches_by_queue
-from services.stats_service import calculate_personal_records, get_top_champions_for_player
-from services.github_service import read_peak_elo, read_lp_history
-from utils.helpers import calcular_valor_clasificacion
+from services.cache_service import player_cache, player_profile_cache, match_lookup_cache
+from services.match_service import get_player_match_history, calculate_streaks
+from services.stats_service import get_top_champions_for_player
+from services.github_service import read_peak_elo
 
 player_bp = Blueprint('player', __name__)
+MATCHES_PER_PAGE = 15
 
 
 def _get_peak_elo_key(queue_type, puuid):
@@ -27,7 +26,7 @@ def _build_player_profile(game_name):
     """Construye el perfil completo de un jugador."""
     # Obtener datos del caché principal
     all_players, _ = player_cache.get()
-    player_entries = [p for p in all_players if p.get('game_name') == game_name]
+    player_entries = [dict(p) for p in all_players if p.get('game_name') == game_name]
     
     if not player_entries:
         return None
@@ -35,6 +34,10 @@ def _build_player_profile(game_name):
     first_entry = player_entries[0]
     puuid = first_entry.get('puuid')
     display_name = first_entry.get('jugador', game_name)
+
+    cached_profile = player_profile_cache.get(puuid)
+    if cached_profile:
+        return cached_profile
     
     # Leer peak elo
     _, peak_elo_dict = read_peak_elo()
@@ -49,13 +52,20 @@ def _build_player_profile(game_name):
             peak = entry['valor_clasificacion']
         entry['peak_elo'] = peak
     
-    # Obtener historial de partidas
-    _, lp_history = read_lp_history()
-    player_lp = lp_history.get(puuid, {})
+    historial = get_player_match_history(puuid, riot_id=game_name, limit=-1)
+    matches = sorted(
+        historial.get('matches', []),
+        key=lambda x: x.get('game_end_timestamp', 0),
+        reverse=True
+    )
 
-    
-    historial = get_player_match_history(puuid, riot_id=game_name, limit=-1, force_refresh=True)
-    matches = historial.get('matches', [])
+    for match in matches:
+        match_id = match.get('match_id')
+        if match_id:
+            match_lookup_cache.set(match_id, {
+                'game_name': game_name,
+                'puuid': puuid
+            })
     
     # Construir perfil base
     perfil = {
@@ -126,11 +136,6 @@ def _build_player_profile(game_name):
             print(f"[_build_player_profile] Error calculando stats de campeones FlexQ: {e}")
             perfil['flexq']['top_champion_stats'] = []
 
-
-    
-    # Ordenar historial por fecha
-    perfil['historial_partidas'].sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-    
     # Calcular LP 24h
     try:
         now_utc = datetime.now(timezone.utc)
@@ -159,7 +164,89 @@ def _build_player_profile(game_name):
     except Exception as e:
         print(f"[_build_player_profile] Error calculando LP 24h: {e}")
     
+    player_profile_cache.set(puuid, perfil)
     return perfil
+
+
+def _get_match_filter_options(matches):
+    """Genera las opciones disponibles para filtrar el historial."""
+    queue_ids = sorted(
+        {match.get('queue_id') for match in matches if match.get('queue_id')},
+        key=lambda queue_id: settings.QUEUE_NAMES.get(queue_id, str(queue_id))
+    )
+    queue_options = [
+        {
+            'value': str(queue_id),
+            'label': settings.QUEUE_NAMES.get(queue_id, str(queue_id))
+        }
+        for queue_id in queue_ids
+    ]
+
+    champion_options = sorted(
+        {
+            match.get('champion_name')
+            for match in matches
+            if match.get('champion_name') and match.get('champion_name') != 'Desconocido'
+        }
+    )
+
+    return queue_options, champion_options
+
+
+def _filter_matches(matches, selected_queue, selected_champion):
+    """Filtra partidas según cola y campeón."""
+    filtered_matches = matches
+
+    if selected_queue != 'all':
+        try:
+            queue_id = int(selected_queue)
+            filtered_matches = [
+                match for match in filtered_matches
+                if match.get('queue_id') == queue_id
+            ]
+        except (TypeError, ValueError):
+            filtered_matches = []
+
+    if selected_champion != 'all':
+        filtered_matches = [
+            match for match in filtered_matches
+            if match.get('champion_name') == selected_champion
+        ]
+
+    return filtered_matches
+
+
+def _find_player_for_match_id(match_id):
+    """Localiza el jugador dueño de una partida usando caché y fallback por historial."""
+    cached_match_owner = match_lookup_cache.get(match_id)
+    if cached_match_owner:
+        return cached_match_owner
+
+    all_players, _ = player_cache.get()
+    seen_puuids = set()
+
+    for player_entry in all_players:
+        puuid = player_entry.get('puuid')
+        game_name = player_entry.get('game_name')
+        if not puuid or not game_name or puuid in seen_puuids:
+            continue
+
+        seen_puuids.add(puuid)
+        historial = get_player_match_history(puuid, riot_id=game_name, limit=-1)
+        for match in historial.get('matches', []):
+            current_match_id = match.get('match_id')
+            if not current_match_id:
+                continue
+
+            owner = {
+                'game_name': game_name,
+                'puuid': puuid
+            }
+            match_lookup_cache.set(current_match_id, owner)
+            if current_match_id == match_id:
+                return owner
+
+    return None
 
 
 @player_bp.route('/<path:game_name>')
@@ -175,6 +262,33 @@ def perfil_jugador(game_name):
         print(f"[perfil_jugador] Perfil de jugador {game_name} no encontrado. Retornando 404.")
         return render_template('404.html'), 404
 
+    selected_queue = (request.args.get('queue') or 'all').strip()
+    selected_champion = (request.args.get('champion') or 'all').strip()
+    current_page = request.args.get('page', 1, type=int) or 1
+    if current_page < 1:
+        current_page = 1
+
+    all_matches = perfil.get('historial_partidas', [])
+    queue_options, champion_options = _get_match_filter_options(all_matches)
+    valid_queue_values = {option['value'] for option in queue_options}
+    if selected_queue != 'all' and selected_queue not in valid_queue_values:
+        selected_queue = 'all'
+    if selected_champion != 'all' and selected_champion not in champion_options:
+        selected_champion = 'all'
+
+    filtered_matches = _filter_matches(all_matches, selected_queue, selected_champion)
+    total_filtered_matches = len(filtered_matches)
+    total_pages = max(1, (total_filtered_matches + MATCHES_PER_PAGE - 1) // MATCHES_PER_PAGE)
+    if current_page > total_pages:
+        current_page = total_pages
+
+    start_index = (current_page - 1) * MATCHES_PER_PAGE
+    end_index = start_index + MATCHES_PER_PAGE
+    page_matches = filtered_matches[start_index:end_index]
+
+    perfil_view = dict(perfil)
+    perfil_view['historial_partidas'] = page_matches
+
     user_agent_string = request.headers.get('User-Agent', '').lower()
     is_mobile = any(keyword in user_agent_string for keyword in ['mobi', 'android', 'iphone', 'ipad'])
     
@@ -183,9 +297,16 @@ def perfil_jugador(game_name):
     print(f"[perfil_jugador] Dispositivo detectado como {'Móvil' if is_mobile else 'Escritorio'}. Renderizando {template_name} para {game_name}.")
 
     return render_template(template_name,
-                           perfil=perfil,
+                           perfil=perfil_view,
                            ddragon_version=settings.DDRAGON_VERSION,
-
+                           queue_options=queue_options,
+                           champion_options=champion_options,
+                           selected_queue=selected_queue,
+                           selected_champion=selected_champion,
+                           current_page=current_page,
+                           total_pages=total_pages,
+                           total_filtered_matches=total_filtered_matches,
+                           matches_per_page=MATCHES_PER_PAGE,
                            datetime=datetime,
                            now=datetime.now())
 
@@ -234,21 +355,20 @@ def detalle_partida_por_id(match_id):
     """
     print(f"[detalle_partida_por_id] Petición recibida para partida: {match_id}")
     
-    # Buscar en todos los jugadores la partida con este match_id
-    all_players, _ = player_cache.get()
-    
-    for player_entry in all_players:
-        game_name = player_entry.get('game_name')
-        if not game_name:
-            continue
-            
+    for attempt in range(2):
+        match_owner = _find_player_for_match_id(match_id)
+        if not match_owner:
+            break
+
+        game_name = match_owner.get('game_name')
+
         try:
             perfil = _build_player_profile(game_name)
             if not perfil:
-                continue
-                
+                break
+
             matches = perfil.get('historial_partidas', [])
-            
+
             for idx, match in enumerate(matches):
                 if match.get('match_id') == match_id:
                     print(f"[detalle_partida_por_id] Partida encontrada para jugador {game_name}")
@@ -261,9 +381,16 @@ def detalle_partida_por_id(match_id):
                                            has_player_data=True,
                                            datetime=datetime,
                                            now=datetime.now())
+
+            match_lookup_cache.invalidate(match_id)
+            if attempt == 0:
+                continue
         except Exception as e:
             print(f"[detalle_partida_por_id] Error procesando jugador {game_name}: {e}")
-            continue
+            match_lookup_cache.invalidate(match_id)
+            if attempt == 0:
+                continue
+            break
     
     print(f"[detalle_partida_por_id] Partida {match_id} no encontrada")
     return render_template('404.html'), 404

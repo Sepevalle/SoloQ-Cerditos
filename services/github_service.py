@@ -388,30 +388,55 @@ def save_puuids(puuid_dict):
 
 def read_peak_elo():
     """Lee el archivo de peak ELO."""
+    from services.cache_service import peak_elo_cache
+
+    cached_ok, cached_data = peak_elo_cache.get()
+    if cached_ok:
+        return True, cached_data
+
     content, _ = read_file_from_github("peak_elo.json")
     if content and isinstance(content, dict):
+        peak_elo_cache.set(content)
         return True, content
     return False, {}
 
 
 def save_peak_elo(peak_elo_dict):
     """Guarda el diccionario de peak ELO."""
+    from services.cache_service import peak_elo_cache, player_profile_cache
+
     _, sha = read_file_from_github("peak_elo.json", use_raw=False)
-    return write_file_to_github("peak_elo.json", peak_elo_dict, message="Actualizar Peak ELO", sha=sha)
+    ok = write_file_to_github("peak_elo.json", peak_elo_dict, message="Actualizar Peak ELO", sha=sha)
+    if ok:
+        peak_elo_cache.set(peak_elo_dict)
+        player_profile_cache.clear()
+    return ok
 
 
 def read_lp_history():
     """Lee el archivo de historial de LP."""
+    from services.cache_service import lp_history_cache
+
+    cached_data = lp_history_cache.get()
+    if cached_data is not None:
+        return True, cached_data
+
     content, _ = read_file_from_github("lp_history.json")
     if content and isinstance(content, dict):
+        lp_history_cache.set(content)
         return True, content
     return False, {}
 
 
 def save_lp_history(lp_history):
     """Guarda el historial de LP."""
+    from services.cache_service import lp_history_cache
+
     _, sha = read_file_from_github("lp_history.json", use_raw=False)
-    return write_file_to_github("lp_history.json", lp_history, message="Actualizar LP History", sha=sha)
+    ok = write_file_to_github("lp_history.json", lp_history, message="Actualizar LP History", sha=sha)
+    if ok:
+        lp_history_cache.set(lp_history)
+    return ok
 
 
 def get_iso_week(timestamp_ms):
