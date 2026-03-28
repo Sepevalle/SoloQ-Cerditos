@@ -364,6 +364,84 @@
         .dark-mode .trinket-item .item-placeholder, .dark-mode .items-grid .item-placeholder {
             border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border in dark mode */
         }
+        .role-quest-summary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .role-quest-summary__asset {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            flex: 0 0 auto;
+        }
+        .role-quest-summary__asset img {
+            width: 36px;
+            height: 36px;
+            object-fit: cover;
+            border-radius: 10px;
+            transition: filter 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+        }
+        .role-quest-summary__asset.is-completed {
+            background: rgba(25, 135, 84, 0.12);
+            border-color: rgba(25, 135, 84, 0.25);
+        }
+        .role-quest-summary__asset.is-completed img {
+            transform: scale(1.02);
+        }
+        .role-quest-summary__asset.is-pending {
+            background: rgba(108, 117, 125, 0.12);
+            border-color: rgba(108, 117, 125, 0.18);
+        }
+        .role-quest-summary__asset.is-pending img {
+            filter: grayscale(1) saturate(0.15);
+            opacity: 0.55;
+        }
+        .role-quest-summary__meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            line-height: 1.1;
+            text-align: left;
+        }
+        .role-quest-summary__title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #212529;
+        }
+        .role-quest-summary__status {
+            font-size: 0.72rem;
+            color: #6c757d;
+        }
+        .role-quest-mismatch {
+            font-size: 0.72rem;
+            color: #6c757d;
+        }
+        .dark-mode .role-quest-summary__asset {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .dark-mode .role-quest-summary__asset.is-completed {
+            background: rgba(25, 135, 84, 0.18);
+            border-color: rgba(25, 135, 84, 0.35);
+        }
+        .dark-mode .role-quest-summary__asset.is-pending {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+        .dark-mode .role-quest-summary__title {
+            color: #f8f9fa;
+        }
+        .dark-mode .role-quest-summary__status,
+        .dark-mode .role-quest-mismatch {
+            color: #adb5bd;
+        }
         .match-history-table .match-result {
             font-size: 1.1em; /* Larger result text */
         }
@@ -1026,6 +1104,7 @@
                         {% for match in perfil.historial_partidas %}
                         {% set kda_ratio = ((match.kills + match.assists) / match.deaths) if match.deaths > 0 else 999 %}
                         {% set role_quest = match.get('role_quest', {}) %}
+                        {% set role_quest_display = role_quest.get('display', {}) %}
                         <tr 
                             data-queue-id="{{ match.queue_id }}" 
                             data-champion-name="{{ match.champion_name }}"
@@ -1035,16 +1114,25 @@
                         >
                             <td>
                                 <div>{{ match.queue_id | get_queue_type }}</div>
-                                {% if role_quest %}
-                                <div class="d-flex flex-wrap gap-1 mt-1">
-                                    {% if role_quest.get('assigned_role') and role_quest.get('assigned_role') != 'UNKNOWN' %}
-                                    <span class="badge rounded-pill text-bg-light border" title="Rol asignado por Riot">{{ role_quest.get('assigned_role_label') }}</span>
-                                    {% endif %}
-                                    <span class="badge rounded-pill text-bg-{{ role_quest.get('status_variant', 'secondary') }}" title="{{ role_quest.get('tooltip', '') }}">{{ role_quest.get('status_label', 'Role Quest') }}</span>
+                                {% if role_quest_display.get('showable') %}
+                                <div class="role-quest-summary mt-2" title="{{ role_quest.get('tooltip', '') }}">
+                                    <div class="role-quest-summary__asset {{ 'is-completed' if role_quest_display.get('completed') else 'is-pending' }}">
+                                        {% if role_quest_display.get('uses_boots_icon') and role_quest_display.get('boots_item_id') %}
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ role_quest_display.get('boots_item_id') }}.png" alt="{{ role_quest_display.get('asset_alt', 'Role Quest') }}">
+                                        {% else %}
+                                        <img src="{{ url_for('static', filename='role_quest/' ~ role_quest_display.get('icon_slug') ~ '.svg') }}" alt="{{ role_quest_display.get('asset_alt', 'Role Quest') }}">
+                                        {% endif %}
+                                    </div>
+                                    <div class="role-quest-summary__meta">
+                                        <span class="role-quest-summary__title">{{ role_quest_display.get('label', 'Role Quest') }}</span>
+                                        <span class="role-quest-summary__status">{{ role_quest_display.get('subtitle', role_quest.get('status_label', 'Sin datos')) }}</span>
+                                    </div>
                                 </div>
-                                {% if role_quest.get('position_mismatch') %}
-                                <div class="small-text-stats mt-1" title="Rol jugado detectado al final de la partida">Jugado: {{ role_quest.get('played_role_label') }}</div>
+                                {% elif role_quest %}
+                                <div class="small-text-stats mt-1" title="{{ role_quest.get('tooltip', '') }}">{{ role_quest.get('status_label', 'Role Quest') }}</div>
                                 {% endif %}
+                                {% if role_quest.get('position_mismatch') %}
+                                <div class="role-quest-mismatch mt-1" title="Rol jugado detectado al final de la partida">Jugado: {{ role_quest.get('played_role_label') }}</div>
                                 {% endif %}
                             </td>
                             <td>

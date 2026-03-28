@@ -8,6 +8,11 @@ Constantes globales y estructuras de datos inmutables del proyecto.
 
 RECORD_ICONS = {
     'longest_game': 'fas fa-clock',
+    'fastest_top_role_quest': 'fas fa-stopwatch',
+    'fastest_jungle_role_quest': 'fas fa-stopwatch',
+    'fastest_mid_role_quest': 'fas fa-stopwatch',
+    'fastest_bot_role_quest': 'fas fa-stopwatch',
+    'fastest_support_role_quest': 'fas fa-stopwatch',
     'most_kills': 'fas fa-skull-crossbones',
     'most_deaths': 'fas fa-skull',
     'most_assists': 'fas fa-hands-helping',
@@ -45,6 +50,11 @@ RECORD_ICONS = {
 
 RECORD_DISPLAY_NAMES = {
     'longest_game': 'Partida Más Larga',
+    'fastest_top_role_quest': 'Role Quest Top Más Rápida',
+    'fastest_jungle_role_quest': 'Role Quest Jungla Más Rápida',
+    'fastest_mid_role_quest': 'Role Quest Mid Más Rápida',
+    'fastest_bot_role_quest': 'Role Quest Bot Más Rápida',
+    'fastest_support_role_quest': 'Role Quest Support Más Rápida',
     'most_kills': 'Más Asesinatos',
     'most_deaths': 'Más Muertes',
     'most_assists': 'Más Asistencias',
@@ -82,6 +92,11 @@ RECORD_DISPLAY_NAMES = {
 
 PERSONAL_RECORD_KEYS = [
     'longest_game',
+    'fastest_top_role_quest',
+    'fastest_jungle_role_quest',
+    'fastest_mid_role_quest',
+    'fastest_bot_role_quest',
+    'fastest_support_role_quest',
     'most_kills',
     'most_deaths',
     'most_assists',
@@ -118,6 +133,11 @@ PERSONAL_RECORD_KEYS = [
 # ============================================================================
 
 RECORDS_NA_IF_ZERO = [
+    'fastest_top_role_quest',
+    'fastest_jungle_role_quest',
+    'fastest_mid_role_quest',
+    'fastest_bot_role_quest',
+    'fastest_support_role_quest',
     'largest_killing_spree',
     'largest_multikill',
     'most_turret_kills',
@@ -130,3 +150,19 @@ RECORDS_NA_IF_ZERO = [
     'most_quadra_kills',
     'most_penta_kills',
 ]
+
+LOWER_IS_BETTER_RECORDS = {
+    'fastest_top_role_quest',
+    'fastest_jungle_role_quest',
+    'fastest_mid_role_quest',
+    'fastest_bot_role_quest',
+    'fastest_support_role_quest',
+}
+
+ROLE_QUEST_RECORD_BY_ROLE = {
+    'TOP': 'fastest_top_role_quest',
+    'JUNGLE': 'fastest_jungle_role_quest',
+    'MIDDLE': 'fastest_mid_role_quest',
+    'BOTTOM': 'fastest_bot_role_quest',
+    'UTILITY': 'fastest_support_role_quest',
+}

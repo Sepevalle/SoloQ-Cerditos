@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 import config.settings as settings
 from config.settings import SEASON_START_TIMESTAMP
+from config.constants import PERSONAL_RECORD_KEYS
 
 from services.player_service import get_all_accounts, get_all_puuids, get_player_display_name, get_riot_id_for_puuid
 from services.match_service import get_player_match_history
@@ -91,8 +92,15 @@ def get_personal_records(puuid):
                 if record.get('value') is not None and record.get('value') != 0:
                     display_records.append(record)
         
-        # Ordenar por valor descendente
-        display_records.sort(key=lambda x: (x.get('value', 0) or 0), reverse=True)
+        # Mantener el orden definido en constantes para mezclar records normales
+        # y records donde "menos es mejor" sin desordenarlos visualmente.
+        display_records.sort(
+            key=lambda x: (
+                PERSONAL_RECORD_KEYS.index(x.get('record_type_key'))
+                if x.get('record_type_key') in PERSONAL_RECORD_KEYS
+                else len(PERSONAL_RECORD_KEYS)
+            )
+        )
 
         return jsonify(display_records)
     except Exception as e:

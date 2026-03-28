@@ -21,6 +21,8 @@ def get_player_match_history(puuid, riot_id=None, limit=None, force_refresh=Fals
     if not force_refresh:
         cached = player_match_history_cache.get(puuid)
         if cached:
+            cached = normalize_match_history_role_quest(cached)
+            player_match_history_cache.set(puuid, cached)
             return _apply_limit(cached, limit)
     
     # Leer de GitHub

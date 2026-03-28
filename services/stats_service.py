@@ -10,10 +10,13 @@ from config.constants import (
     RECORD_DISPLAY_NAMES, 
     RECORD_ICONS, 
     RECORDS_NA_IF_ZERO,
-    PERSONAL_RECORD_KEYS
+    PERSONAL_RECORD_KEYS,
+    LOWER_IS_BETTER_RECORDS,
+    ROLE_QUEST_RECORD_BY_ROLE,
 )
 from services.match_service import calculate_streaks, filter_matches_by_season
 from services.cache_service import personal_records_cache, global_stats_cache
+from services.role_quest_service import normalize_role_name
 from utils.helpers import calcular_valor_clasificacion
 
 
@@ -68,25 +71,68 @@ def _create_record_from_match(match, value, record_type):
 def _update_record(current, new_value, match, record_type):
     """Actualiza un récord si el nuevo valor es mejor."""
     new_record = _create_record_from_match(match, new_value, record_type)
-    
-    current_value = current.get("value") if current.get("value") is not None else -1
-    new_value_cmp = new_value if new_value is not None else -1
-    
-    # Actualizar si:
-    # 1. Nuevo valor es mayor
-    # 2. Valores iguales pero timestamp más antiguo (desempate)
-    # 3. Récord actual es default y nuevo es válido
+
     is_default = (current.get("value") == 0 and 
                   current.get("player") == "N/A" and 
                   current.get("achieved_timestamp") == 0)
-    
-    if (new_value_cmp > current_value or 
-        (new_value_cmp == current_value and 
+
+    if record_type in LOWER_IS_BETTER_RECORDS:
+        current_value = current.get("value")
+        current_value_cmp = current_value if current_value not in (None, 0) else float('inf')
+        new_value_cmp = new_value if new_value not in (None, 0) else float('inf')
+
+        if (new_value_cmp < current_value_cmp or
+            (new_value_cmp == current_value_cmp and
+             new_record["achieved_timestamp"] < current.get("achieved_timestamp", float('inf'))) or
+            (is_default and new_value_cmp != float('inf'))):
+            return new_record
+
+        return current
+
+    current_value = current.get("value") if current.get("value") is not None else -1
+    new_value_cmp = new_value if new_value is not None else -1
+
+    if (new_value_cmp > current_value or
+        (new_value_cmp == current_value and
          new_record["achieved_timestamp"] < current.get("achieved_timestamp", float('inf'))) or
         (is_default and new_value_cmp >= 0)):
         return new_record
-    
+
     return current
+
+
+def _extract_role_quest_record_values(match):
+    """Devuelve el record de Role Quest aplicable a una partida."""
+    if not isinstance(match, dict):
+        return {}
+
+    role_quest = match.get("role_quest")
+    role_quest = role_quest if isinstance(role_quest, dict) else {}
+
+    completion_seconds = role_quest.get("completion_seconds")
+    if completion_seconds is None:
+        completion_seconds = match.get("role_quest_completion_seconds")
+
+    try:
+        completion_seconds = float(completion_seconds)
+    except (TypeError, ValueError):
+        return {}
+
+    if completion_seconds <= 0:
+        return {}
+
+    assigned_role = normalize_role_name(
+        role_quest.get("assigned_role")
+        or match.get("team_position")
+        or match.get("teamPosition")
+        or match.get("individual_position")
+        or match.get("individualPosition")
+    )
+    record_key = ROLE_QUEST_RECORD_BY_ROLE.get(assigned_role)
+    if not record_key:
+        return {}
+
+    return {record_key: round(completion_seconds, 2)}
 
 
 def calculate_personal_records(puuid, matches, player_name, riot_id, champion_filter=None, queue_filter=None):
@@ -364,6 +410,14 @@ def calculate_personal_records(puuid, matches, player_name, riot_id, champion_fi
             match, 
             "most_penta_kills"
         )
+
+        for record_key, value in _extract_role_quest_record_values(match).items():
+            records[record_key] = _update_record(
+                records[record_key],
+                value,
+                match,
+                record_key,
+            )
     
     # Guardar en caché
     personal_records_cache.set(cache_key, records)
@@ -486,6 +540,7 @@ def calculate_global_stats(all_matches, queue_id_filter=None, champion_filter=No
             "most_quadra_kills": match.get("quadraKills", 0),
             "most_penta_kills": match.get("pentaKills", 0),
         }
+        records_to_check.update(_extract_role_quest_record_values(match))
         
         for record_key, value in records_to_check.items():
             global_records[record_key] = _update_record(
@@ -703,6 +758,7 @@ def extract_global_records(all_matches):
             "most_quadra_kills": actual_match.get("quadraKills", 0),
             "most_penta_kills": actual_match.get("pentaKills", 0),
         }
+        records_to_check.update(_extract_role_quest_record_values(actual_match))
         
         # Create a copy with player_name and riot_id for record creation
         match_for_record = dict(actual_match)

@@ -341,6 +341,11 @@
                         <div class="card-body text-center">
                             <h5 class="card-title">
                                 {% if key == 'longest_game' %}<i class="fas fa-clock"></i>Partida Más Larga
+                                {% elif key == 'fastest_top_role_quest' %}<i class="fas fa-stopwatch"></i>Role Quest Top Más Rápida
+                                {% elif key == 'fastest_jungle_role_quest' %}<i class="fas fa-stopwatch"></i>Role Quest Jungla Más Rápida
+                                {% elif key == 'fastest_mid_role_quest' %}<i class="fas fa-stopwatch"></i>Role Quest Mid Más Rápida
+                                {% elif key == 'fastest_bot_role_quest' %}<i class="fas fa-stopwatch"></i>Role Quest Bot Más Rápida
+                                {% elif key == 'fastest_support_role_quest' %}<i class="fas fa-stopwatch"></i>Role Quest Support Más Rápida
                                 {% elif key == 'most_kills' %}<i class="fas fa-crosshairs"></i>Más Kills
                                 {% elif key == 'most_deaths' %}<i class="fas fa-skull"></i>Más Muertes
                                 {% elif key == 'most_assists' %}<i class="fas fa-hands-helping"></i>Más Asistencias
@@ -374,6 +379,8 @@
                             </h5>
                             <p class="card-text fs-4">
                                 {% if record.value is none or record.value == 0 or record.player == 'N/A' %}N/A
+                                {% elif key in ['fastest_top_role_quest', 'fastest_jungle_role_quest', 'fastest_mid_role_quest', 'fastest_bot_role_quest', 'fastest_support_role_quest'] %}
+                                    {{ (record.value / 60) | int }}m {{ '%.2f' % (record.value % 60) }}s
                                 {% elif key in ['longest_game', 'most_time_spent_dead', 'most_time_ccing_others'] %}
                                     {{ (record.value / 60) | int }}m {{ (record.value % 60) | int }}s
                                 {# Apply formatting for percentage/KDA records #}
@@ -657,26 +664,70 @@
                     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                 }
 
+                function formatDurationValue(totalSeconds, precise = false) {
+                    if (totalSeconds === null || totalSeconds === undefined) return 'N/A';
+
+                    const numericValue = Number(totalSeconds);
+                    if (!Number.isFinite(numericValue)) return 'N/A';
+
+                    if (precise) {
+                        let minutes = Math.floor(numericValue / 60);
+                        let seconds = numericValue - (minutes * 60);
+                        let secondsText = seconds.toFixed(2);
+
+                        if (secondsText === '60.00') {
+                            minutes += 1;
+                            secondsText = '0.00';
+                        }
+
+                        return `${minutes}m ${secondsText}s`;
+                    }
+
+                    const roundedTotalSeconds = Math.round(numericValue);
+                    const minutes = Math.floor(roundedTotalSeconds / 60);
+                    const seconds = roundedTotalSeconds % 60;
+                    return `${minutes}m ${seconds}s`;
+                }
+
                 // Determine icon and format value based on record_type_key
                 switch (record.record_type_key) {
                     case 'longest_game':
-                        const minutes = Math.floor(record.value / 60);
-                        const seconds = record.value % 60;
-                        valueDisplay = `${minutes}m ${seconds}s`;
+                        valueDisplay = formatDurationValue(record.value);
                         iconClass = 'fas fa-clock';
                         titleText = 'Partida Más Larga';
                         break;
+                    case 'fastest_top_role_quest':
+                        valueDisplay = formatDurationValue(record.value, true);
+                        iconClass = 'fas fa-stopwatch';
+                        titleText = 'Role Quest Top Más Rápida';
+                        break;
+                    case 'fastest_jungle_role_quest':
+                        valueDisplay = formatDurationValue(record.value, true);
+                        iconClass = 'fas fa-stopwatch';
+                        titleText = 'Role Quest Jungla Más Rápida';
+                        break;
+                    case 'fastest_mid_role_quest':
+                        valueDisplay = formatDurationValue(record.value, true);
+                        iconClass = 'fas fa-stopwatch';
+                        titleText = 'Role Quest Mid Más Rápida';
+                        break;
+                    case 'fastest_bot_role_quest':
+                        valueDisplay = formatDurationValue(record.value, true);
+                        iconClass = 'fas fa-stopwatch';
+                        titleText = 'Role Quest Bot Más Rápida';
+                        break;
+                    case 'fastest_support_role_quest':
+                        valueDisplay = formatDurationValue(record.value, true);
+                        iconClass = 'fas fa-stopwatch';
+                        titleText = 'Role Quest Support Más Rápida';
+                        break;
                     case 'most_time_spent_dead':
-                        const minutesDead = Math.floor(record.value / 60);
-                        const secondsDead = record.value % 60;
-                        valueDisplay = `${minutesDead}m ${secondsDead}s`;
+                        valueDisplay = formatDurationValue(record.value);
                         iconClass = 'fas fa-bed';
                         titleText = 'Más Tiempo Muerto';
                         break;
                     case 'most_time_ccing_others':
-                        const minutesCC = Math.floor(record.value / 60);
-                        const secondsCC = record.value % 60;
-                        valueDisplay = `${minutesCC}m ${secondsCC}s`;
+                        valueDisplay = formatDurationValue(record.value);
                         iconClass = 'fas fa-hourglass-half';
                         titleText = 'Más Tiempo de CC';
                         break;
