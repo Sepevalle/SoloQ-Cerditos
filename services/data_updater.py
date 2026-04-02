@@ -9,7 +9,11 @@ import requests
 from datetime import datetime, timezone, timedelta
 from config.settings import (
     RIOT_API_KEY, RIOT_API_KEY_2, GITHUB_TOKEN, CACHE_UPDATE_INTERVAL,
-    BASE_URL_DDRAGON, DDRAGON_VERSION, FULL_HISTORY_UPDATE_INTERVAL
+    BASE_URL_DDRAGON, DDRAGON_VERSION, FULL_HISTORY_UPDATE_INTERVAL,
+    FULL_HISTORY_INITIAL_DELAY,
+    ENABLE_DDRAGON_PERIODIC_REFRESH, DDRAGON_REFRESH_INTERVAL,
+    ENABLE_LP_RECALC_WORKER, ENABLE_GLOBAL_STATS_BACKGROUND_CACHE,
+    ENABLE_PERSONAL_RECORDS_BACKGROUND_CACHE, ENABLE_DEDICATED_JSON_GENERATOR_THREAD,
 )
 from services.cache_service import player_cache, global_stats_cache, personal_records_cache
 from services.github_service import (
@@ -34,6 +38,9 @@ from services.player_update_tracker import (
     get_players_needing_update, load_tracker, save_tracker
 )
 from concurrent.futures import ThreadPoolExecutor
+
+
+_last_ddragon_refresh_ts = 0
 
 
 
@@ -122,8 +129,13 @@ def actualizar_cache_periodicamente():
             else:
                 print("[actualizar_cache_periodicamente] ⚠ Error generando JSON del index")
             
-            # Actualizar datos de DDragon
-            actualizar_ddragon_data()
+            # Actualizar datos de DDragon solo de forma espaciada.
+            global _last_ddragon_refresh_ts
+            if ENABLE_DDRAGON_PERIODIC_REFRESH and (
+                time.time() - _last_ddragon_refresh_ts >= DDRAGON_REFRESH_INTERVAL
+            ):
+                actualizar_ddragon_data()
+                _last_ddragon_refresh_ts = time.time()
 
             
         except Exception as e:
@@ -137,6 +149,9 @@ def actualizar_cache_periodicamente():
 def actualizar_historial_partidas_en_segundo_plano():
     """Actualiza el historial de partidas de todos los jugadores desde el inicio de la temporada."""
     print("[actualizar_historial_partidas_en_segundo_plano] Hilo iniciado.")
+    if FULL_HISTORY_INITIAL_DELAY > 0:
+        print(f"[actualizar_historial_partidas_en_segundo_plano] Esperando {FULL_HISTORY_INITIAL_DELAY}s antes del primer barrido completo")
+        time.sleep(FULL_HISTORY_INITIAL_DELAY)
     
     # Importar SEASON_START_TIMESTAMP para filtrar partidas
     from config.settings import SEASON_START_TIMESTAMP
@@ -807,20 +822,23 @@ def start_data_updater(riot_api_key):
             # Esperar 30 minutos entre ejecuciones
             time.sleep(1800)
     
-    lp_recalc_thread = threading.Thread(target=_recalcular_lp_periodicamente, daemon=True)
-    lp_recalc_thread.start()
-    print("[data_updater] ✓ Worker de recálculo de LP iniciado")
+    if ENABLE_LP_RECALC_WORKER:
+        lp_recalc_thread = threading.Thread(target=_recalcular_lp_periodicamente, daemon=True)
+        lp_recalc_thread.start()
+        print("[data_updater] ✓ Worker de recálculo de LP iniciado")
 
     
     # Worker de estadísticas globales
-    stats_thread = threading.Thread(target=_calculate_and_cache_global_stats_periodically, daemon=True)
-    stats_thread.start()
-    print("[data_updater] ✓ Worker de estadísticas globales iniciado")
+    if ENABLE_GLOBAL_STATS_BACKGROUND_CACHE:
+        stats_thread = threading.Thread(target=_calculate_and_cache_global_stats_periodically, daemon=True)
+        stats_thread.start()
+        print("[data_updater] ✓ Worker de estadísticas globales iniciado")
     
     # Worker de récords personales
-    records_thread = threading.Thread(target=_calculate_and_cache_personal_records_periodically, daemon=True)
-    records_thread.start()
-    print("[data_updater] ✓ Worker de récords personales iniciado")
+    if ENABLE_PERSONAL_RECORDS_BACKGROUND_CACHE:
+        records_thread = threading.Thread(target=_calculate_and_cache_personal_records_periodically, daemon=True)
+        records_thread.start()
+        print("[data_updater] ✓ Worker de récords personales iniciado")
     
     # Worker de verificación de estado "en partida" (INDEPENDIENTE del JSON)
     live_game_thread = threading.Thread(target=_check_all_players_live_games, daemon=True)
@@ -828,8 +846,9 @@ def start_data_updater(riot_api_key):
     print("[data_updater] ✓ Worker de verificación de 'en partida' iniciado (cada 2 min)")
     
     # Worker de generación de JSON para el index
-    from services.index_json_generator import start_json_generator_thread
-    start_json_generator_thread(interval_seconds=130)  # Cada ~2 minutos
-    print("[data_updater] ✓ Worker de generación de JSON iniciado")
+    if ENABLE_DEDICATED_JSON_GENERATOR_THREAD:
+        from services.index_json_generator import start_json_generator_thread
+        start_json_generator_thread(interval_seconds=130)  # Cada ~2 minutos
+        print("[data_updater] ✓ Worker de generación de JSON iniciado")
     
     print("[data_updater] Todos los workers de actualización iniciados")

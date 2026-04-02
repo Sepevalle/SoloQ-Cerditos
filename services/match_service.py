@@ -30,12 +30,13 @@ def get_player_match_history(puuid, riot_id=None, limit=None, force_refresh=Fals
     if not riot_id:
         riot_id = get_riot_id_for_puuid(puuid) or puuid
     
-    historial = read_player_match_history(puuid)
+    historial = read_player_match_history(puuid, limit=limit)
     if not historial:
         historial = {"matches": [], "remakes": [], "last_updated": time.time()}
     
     # Guardar en caché
-    player_match_history_cache.set(puuid, historial)
+    if limit in (None, -1):
+        player_match_history_cache.set(puuid, historial)
     
     return _apply_limit(historial, limit)
 

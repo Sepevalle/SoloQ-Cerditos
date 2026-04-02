@@ -4,7 +4,13 @@ from datetime import datetime, timezone, timedelta
 import gc
 import time
 
-from config.settings import DDRAGON_VERSION, QUEUE_NAMES, TARGET_TIMEZONE, GLOBAL_STATS_UPDATE_INTERVAL
+from config.settings import (
+    DDRAGON_VERSION,
+    QUEUE_NAMES,
+    TARGET_TIMEZONE,
+    GLOBAL_STATS_UPDATE_INTERVAL,
+    STORE_GLOBAL_STATS_RAW_MATCHES,
+)
 
 from services.cache_service import player_cache, global_stats_cache
 from services.github_service import read_global_stats, save_global_stats, read_stats_reload_config, save_stats_reload_config
@@ -52,18 +58,19 @@ def _compile_all_matches(batch_size=50):
                 
                 for idx, match in enumerate(matches):
                     # Include both player name and riot_id for record display
-                    match['jugador_nombre'] = j.get('jugador', 'N/A')
-                    match['riot_id'] = j.get('game_name', 'N/A')
+                    match_copy = dict(match)
+                    match_copy['jugador_nombre'] = j.get('jugador', 'N/A')
+                    match_copy['riot_id'] = j.get('game_name', 'N/A')
                     # Log first match to verify riot_id is being set
                     if idx == 0 and i < 3:  # Log first 3 players' first match
-                        print(f"[_compile_all_matches] Player {j.get('jugador')}: game_name={j.get('game_name', 'N/A')}, riot_id set to: {match.get('riot_id', 'N/A')}")
-                    all_matches.append((j.get('jugador'), match))
+                        print(f"[_compile_all_matches] Player {j.get('jugador')}: game_name={j.get('game_name', 'N/A')}, riot_id set to: {match_copy.get('riot_id', 'N/A')}")
+                    all_matches.append((j.get('jugador'), match_copy))
 
-                    if match.get('champion_name'):
-                        all_champions.add(match.get('champion_name'))
+                    if match_copy.get('champion_name'):
+                        all_champions.add(match_copy.get('champion_name'))
 
-                    if match.get('queue_id'):
-                        available_queue_ids.add(match.get('queue_id'))
+                    if match_copy.get('queue_id'):
+                        available_queue_ids.add(match_copy.get('queue_id'))
                 
                 # Liberar memoria cada batch_size jugadores
                 if (i + 1) % batch_size == 0:
@@ -88,6 +95,46 @@ def _compile_all_matches(batch_size=50):
         'available_queue_ids': list(available_queue_ids),
         'total_players': total_players
     }
+
+
+def _compile_filtered_matches(queue_id=None, champion_name=None, batch_size=50):
+    """
+    Compila solo las partidas que hacen falta para un filtro concreto.
+    Evita retener el dataset completo en memoria cuando no hay raw cache.
+    """
+    print(f"[stats] Compilando partidas filtradas: queue_id={queue_id}, champion={champion_name}")
+    datos_jugadores, _ = player_cache.get()
+    filtered_matches = []
+
+    for i, jugador in enumerate(datos_jugadores):
+        puuid = jugador.get('puuid')
+        if not puuid:
+            continue
+
+        try:
+            historial = get_player_match_history(puuid, limit=-1)
+            matches = historial.get('matches', [])
+
+            for match in matches:
+                if queue_id is not None and match.get('queue_id') != queue_id:
+                    continue
+                if champion_name and match.get('champion_name') != champion_name:
+                    continue
+
+                match_copy = dict(match)
+                match_copy['jugador_nombre'] = jugador.get('jugador', 'N/A')
+                match_copy['riot_id'] = jugador.get('game_name', 'N/A')
+                filtered_matches.append((jugador.get('jugador'), match_copy))
+
+            if (i + 1) % batch_size == 0:
+                gc.collect()
+
+        except Exception as e:
+            print(f"[stats] Error compilando filtro para {jugador.get('jugador')}: {e}")
+            continue
+
+    print(f"[stats] Partidas filtradas compiladas: {len(filtered_matches)}")
+    return filtered_matches
 
 
 
@@ -351,6 +398,10 @@ def estadisticas_globales():
                             champion_counts = Counter(m[1].get('champion_name') for m in queue_matches_cached if m[1].get('champion_name'))
                             most_played_champions = champion_counts.most_common(10)
                             print(f"[estadisticas_globales] most_played_champions recalculado desde cache para cola {queue_id_str}")
+                        elif not STORE_GLOBAL_STATS_RAW_MATCHES:
+                            queue_matches_cached = _compile_filtered_matches(queue_id=int(queue_id_str))
+                            champion_counts = Counter(m[1].get('champion_name') for m in queue_matches_cached if m[1].get('champion_name'))
+                            most_played_champions = champion_counts.most_common(10)
 
                     print(f"[estadisticas_globales] Réccords cargados: {len(global_records)} récords")
                 else:
@@ -437,8 +488,60 @@ def estadisticas_globales():
             else:
                 # No hay caché disponible
                 print(f"[estadisticas_globales] No hay datos en caché para filtros dinámicos")
-                flash('Los filtros dinámicos requieren recalcular estadísticas. Por favor, actualiza las estadísticas primero.', 'warning')
-                return redirect(url_for('stats.estadisticas_globales'))
+                print("[estadisticas_globales] Recalculando filtros sin raw cache en memoria")
+                queue_id = None
+                if current_queue != 'all':
+                    try:
+                        queue_id = int(current_queue)
+                    except (ValueError, TypeError):
+                        queue_id = None
+
+                champion_name = selected_champion if selected_champion != 'all' else None
+                all_matches = _compile_filtered_matches(queue_id=queue_id, champion_name=champion_name)
+
+                if all_matches:
+                    global_records = extract_global_records(all_matches)
+                    wins = sum(1 for _, m in all_matches if m.get('win'))
+                    total_matches = len(all_matches)
+                    overall_win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
+                    all_matches_count = total_matches
+
+                    champion_counts = Counter(m.get('champion_name') for _, m in all_matches if m.get('champion_name'))
+                    most_played_champions = champion_counts.most_common(10)
+
+                    player_stats_filtered = {}
+                    for player_name, match in all_matches:
+                        if player_name not in player_stats_filtered:
+                            player_stats_filtered[player_name] = {'wins': 0, 'losses': 0, 'total_partidas': 0}
+                        player_stats_filtered[player_name]['total_partidas'] += 1
+                        if match.get('win'):
+                            player_stats_filtered[player_name]['wins'] += 1
+                        else:
+                            player_stats_filtered[player_name]['losses'] += 1
+
+                    player_stats = []
+                    for player_name, stats in player_stats_filtered.items():
+                        total = stats['total_partidas']
+                        player_stats.append({
+                            'summonerName': player_name,
+                            'total_partidas': total,
+                            'wins': stats['wins'],
+                            'losses': stats['losses'],
+                            'win_rate': (stats['wins'] / total * 100) if total > 0 else 0
+                        })
+                    player_stats.sort(key=lambda x: x['total_partidas'], reverse=True)
+
+                    del all_matches
+                    gc.collect()
+                else:
+                    from services.stats_service import _default_record, PERSONAL_RECORD_KEYS
+                    global_records = {key: _default_record() for key in PERSONAL_RECORD_KEYS}
+                    for key in global_records:
+                        global_records[key]['value'] = None
+                    overall_win_rate = 0
+                    most_played_champions = []
+                    player_stats = []
+                    all_matches_count = 0
 
 
 

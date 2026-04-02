@@ -35,7 +35,7 @@ def _build_player_profile(game_name):
     puuid = first_entry.get('puuid')
     display_name = first_entry.get('jugador', game_name)
 
-    cached_profile = player_profile_cache.get(puuid)
+    cached_profile = player_profile_cache.get(puuid) if settings.ENABLE_PROFILE_CACHE else None
     if cached_profile:
         return cached_profile
     
@@ -164,7 +164,8 @@ def _build_player_profile(game_name):
     except Exception as e:
         print(f"[_build_player_profile] Error calculando LP 24h: {e}")
     
-    player_profile_cache.set(puuid, perfil)
+    if settings.ENABLE_PROFILE_CACHE:
+        player_profile_cache.set(puuid, perfil)
     return perfil
 
 

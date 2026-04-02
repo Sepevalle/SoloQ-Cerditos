@@ -1,13 +1,22 @@
 """
-Configuración centralizada del proyecto SoloQ-Cerditos.
-Todas las variables de entorno y configuraciones globales se definen aquí.
+Configuracion centralizada del proyecto SoloQ-Cerditos.
+Todas las variables de entorno y configuraciones globales se definen aqui.
 """
 
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+
+
+def _env_flag(name, default=False):
+    """Lee flags booleanas desde variables de entorno."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on", "si")
+
 
 # ============================================================================
-# CONFIGURACIÓN DE API KEYS
+# CONFIGURACION DE API KEYS
 # ============================================================================
 
 RIOT_API_KEY = os.environ.get("RIOT_API_KEY")
@@ -16,7 +25,8 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 if not RIOT_API_KEY:
-    print("Error: RIOT_API_KEY no está configurada en las variables de entorno.")
+    print("Error: RIOT_API_KEY no esta configurada en las variables de entorno.")
+
 
 # ============================================================================
 # URLS BASE DE APIs
@@ -27,22 +37,42 @@ BASE_URL_EUW = "https://euw1.api.riotgames.com"
 BASE_URL_EUROPE = "https://europe.api.riotgames.com"
 BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 
+
 # ============================================================================
-# CONFIGURACIÓN DE GITHUB
+# CONFIGURACION DE GITHUB
 # ============================================================================
 
 GITHUB_REPO = "Sepevalle/SoloQ-Cerditos"
 LP_HISTORY_FILE_PATH = "lp_history.json"
 ACHIEVEMENTS_CONFIG_PATH = "config/logros/achievements_config.json"
 
+
 # ============================================================================
-# CONFIGURACIÓN DE ZONA HORARIA
+# CONFIGURACION DE ENTORNO / RENDER
+# ============================================================================
+
+IS_RENDER = any(
+    os.environ.get(var)
+    for var in (
+        "RENDER",
+        "RENDER_SERVICE_ID",
+        "RENDER_INSTANCE_ID",
+        "RENDER_EXTERNAL_URL",
+        "RENDER_EXTERNAL_HOSTNAME",
+    )
+)
+LOW_MEMORY_MODE = _env_flag("LOW_MEMORY_MODE", default=IS_RENDER)
+
+
+# ============================================================================
+# CONFIGURACION DE ZONA HORARIA
 # ============================================================================
 
 TARGET_TIMEZONE = timezone(timedelta(hours=2))
 
+
 # ============================================================================
-# CONFIGURACIÓN DE SPLITS/TEMPORADAS
+# CONFIGURACION DE SPLITS/TEMPORADAS
 # ============================================================================
 
 SPLITS = {
@@ -55,54 +85,70 @@ SPLITS = {
 ACTIVE_SPLIT_KEY = "s16_split1"
 SEASON_START_TIMESTAMP = int(SPLITS[ACTIVE_SPLIT_KEY]["start_date"].timestamp())
 
-# ============================================================================
-# CONFIGURACIÓN DE CACHÉS
-# ============================================================================
-
-# Caché principal de jugadores
-CACHE_TIMEOUT = 300  # 5 minutos
-
-# Caché de estadísticas globales
-GLOBAL_STATS_UPDATE_INTERVAL = 86400  # 24 horas
-
-# Caché de Peak ELO
-PEAK_ELO_TTL = 300  # 5 minutos
-
-# Caché de historial de partidas
-PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 300  # 5 minutos
-PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE = 15  # Máximo 15 jugadores en caché
-
-# Caché de récords personales
-PERSONAL_RECORDS_UPDATE_INTERVAL = 3600  # 1 hora
-
-# Caché de LP history
-LP_HISTORY_TTL = 300  # 5 minutos
 
 # ============================================================================
-# CONFIGURACIÓN DE RATE LIMITING
+# CONFIGURACION DE CACHES
+# ============================================================================
+
+# Cache principal de jugadores
+CACHE_TIMEOUT = 300
+
+# Cache de estadisticas globales
+GLOBAL_STATS_UPDATE_INTERVAL = 86400
+
+# Cache de Peak ELO
+PEAK_ELO_TTL = 300
+
+# Cache de historial de partidas
+PLAYER_MATCH_HISTORY_CACHE_TIMEOUT = 180 if LOW_MEMORY_MODE else 300
+PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE = 4 if LOW_MEMORY_MODE else 15
+PLAYER_MATCH_HISTORY_CACHE_MAX_MATCHES = 120 if LOW_MEMORY_MODE else 400
+
+# Cache de records personales
+PERSONAL_RECORDS_UPDATE_INTERVAL = 3600
+
+# Cache de LP history
+LP_HISTORY_TTL = 300
+
+# Caches genericos / perfiles / paginas
+PROFILE_CACHE_TTL = 45 if LOW_MEMORY_MODE else 120
+PROFILE_CACHE_MAX_SIZE = 2 if LOW_MEMORY_MODE else 64
+PAGE_DATA_CACHE_TTL = 60 if LOW_MEMORY_MODE else 180
+PAGE_DATA_CACHE_MAX_SIZE = 4 if LOW_MEMORY_MODE else 32
+MATCH_LOOKUP_CACHE_TTL = 300 if LOW_MEMORY_MODE else 900
+MATCH_LOOKUP_CACHE_MAX_SIZE = 1000 if LOW_MEMORY_MODE else 5000
+PLAYER_STATS_CACHE_TTL = 180 if LOW_MEMORY_MODE else 300
+PLAYER_STATS_CACHE_MAX_SIZE = 64 if LOW_MEMORY_MODE else 256
+LIVE_GAME_CACHE_TTL = 180 if LOW_MEMORY_MODE else 300
+
+
+# ============================================================================
+# CONFIGURACION DE RATE LIMITING
 # ============================================================================
 
 API_RATE_PER_SECOND = 20
 API_BURST_LIMIT = 100
 API_RESPONSE_CLEANUP_THRESHOLD = 50
 
-# ============================================================================
-# CONFIGURACIÓN DE SNAPSHOTS LP
-# ============================================================================
-
-LP_SNAPSHOTS_SAVE_INTERVAL = 3600  # 1 hora
 
 # ============================================================================
-# CONFIGURACIÓN DE DATA DRAGON
+# CONFIGURACION DE SNAPSHOTS LP
 # ============================================================================
 
-# Esta versión se actualiza automáticamente al iniciar la aplicación
-# mediante la función actualizar_version_ddragon() en services/riot_api.py
+LP_SNAPSHOTS_SAVE_INTERVAL = 3600
+
+
+# ============================================================================
+# CONFIGURACION DE DATA DRAGON
+# ============================================================================
+
+# Esta version se actualiza automaticamente al iniciar la aplicacion
+# mediante la funcion actualizar_version_ddragon() en services/riot_api.py
 DDRAGON_VERSION = "16.3.1"
 
 
 # ============================================================================
-# CONFIGURACIÓN DEL SERVIDOR
+# CONFIGURACION DEL SERVIDOR
 # ============================================================================
 
 PORT = int(os.environ.get("PORT", 5000))
@@ -146,6 +192,7 @@ QUEUE_TYPE_MAP = {
     440: "RANKED_FLEX_SR",
 }
 
+
 # ============================================================================
 # MAPEO DE RANGOS ELO
 # ============================================================================
@@ -167,8 +214,9 @@ RANK_ORDER = {
     "IV": 0,
 }
 
+
 # ============================================================================
-# CONFIGURACIÓN DE GEMINI AI
+# CONFIGURACION DE GEMINI AI
 # ============================================================================
 
 GEMINI_MODELS = [
@@ -178,21 +226,38 @@ GEMINI_MODELS = [
 ]
 GEMINI_MODEL = GEMINI_MODELS[0]
 
-# ============================================================================
-# INTERVALOS DE ACTUALIZACIÓN (para hilos de background)
-# ============================================================================
-
-CACHE_UPDATE_INTERVAL = 130  # segundos - actualización de caché de jugadores
-LP_TRACKER_INTERVAL = 300    # segundos - snapshots de LP
 
 # ============================================================================
-# CONFIGURACIÓN DE ACTUALIZACIÓN DE HISTORIAL DE PARTIDAS
+# INTERVALOS DE ACTUALIZACION (para hilos de background)
 # ============================================================================
 
-# Intervalo de actualización global completa (48 horas en segundos)
-FULL_HISTORY_UPDATE_INTERVAL = 48 * 60 * 60  # 48 horas
-
-# Intervalo de verificación de jugadores en partida (2 minutos)
-LIVE_GAME_CHECK_INTERVAL = 120  # segundos
+CACHE_UPDATE_INTERVAL = 130
+LP_TRACKER_INTERVAL = 300
 
 
+# ============================================================================
+# CONFIGURACION DE ACTUALIZACION DE HISTORIAL DE PARTIDAS
+# ============================================================================
+
+FULL_HISTORY_UPDATE_INTERVAL = 48 * 60 * 60
+LIVE_GAME_CHECK_INTERVAL = 120
+FULL_HISTORY_INITIAL_DELAY = int(os.environ.get("FULL_HISTORY_INITIAL_DELAY", "600" if LOW_MEMORY_MODE else "0"))
+
+
+# ============================================================================
+# FLAGS DE RENDIMIENTO / MEMORIA
+# ============================================================================
+
+ENABLE_PROFILE_CACHE = _env_flag("ENABLE_PROFILE_CACHE", default=not LOW_MEMORY_MODE)
+ENABLE_HEAVY_PAGE_CACHE = _env_flag("ENABLE_HEAVY_PAGE_CACHE", default=not LOW_MEMORY_MODE)
+STORE_GLOBAL_STATS_RAW_MATCHES = _env_flag("STORE_GLOBAL_STATS_RAW_MATCHES", default=not LOW_MEMORY_MODE)
+ENABLE_KEEP_ALIVE = _env_flag("ENABLE_KEEP_ALIVE", default=False)
+ENABLE_STATS_CALCULATOR_THREAD = _env_flag("ENABLE_STATS_CALCULATOR_THREAD", default=not LOW_MEMORY_MODE)
+ENABLE_GLOBAL_STATS_BACKGROUND_CACHE = _env_flag("ENABLE_GLOBAL_STATS_BACKGROUND_CACHE", default=not LOW_MEMORY_MODE)
+ENABLE_PERSONAL_RECORDS_BACKGROUND_CACHE = _env_flag("ENABLE_PERSONAL_RECORDS_BACKGROUND_CACHE", default=not LOW_MEMORY_MODE)
+ENABLE_LP_RECALC_WORKER = _env_flag("ENABLE_LP_RECALC_WORKER", default=not LOW_MEMORY_MODE)
+ENABLE_DEDICATED_JSON_GENERATOR_THREAD = _env_flag("ENABLE_DEDICATED_JSON_GENERATOR_THREAD", default=False)
+ENABLE_DDRAGON_PERIODIC_REFRESH = _env_flag("ENABLE_DDRAGON_PERIODIC_REFRESH", default=not LOW_MEMORY_MODE)
+ENABLE_BOOT_INDEX_WARMUP = _env_flag("ENABLE_BOOT_INDEX_WARMUP", default=not LOW_MEMORY_MODE)
+ENABLE_ASYNC_STALE_INDEX_REGEN = _env_flag("ENABLE_ASYNC_STALE_INDEX_REGEN", default=not LOW_MEMORY_MODE)
+DDRAGON_REFRESH_INTERVAL = int(os.environ.get("DDRAGON_REFRESH_INTERVAL", "21600"))

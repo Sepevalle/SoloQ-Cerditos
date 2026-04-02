@@ -449,69 +449,95 @@ def get_iso_week(timestamp_ms):
     return f"{year}-W{week:02d}"
 
 
-def read_player_match_history(puuid):
+def read_player_match_history(puuid, limit=None):
     """
     Lee el historial de partidas de un jugador.
     Soporta formatos:
     - v3 (chunked): match_history/{puuid}/index.json + weeks/*.json
     - v2 (weekly): match_history/{puuid}/index.json + weeks/*.json
     - legacy: match_history/{puuid}.json
-    
+
+    Args:
+        puuid: ID del jugador
+        limit: Si es un entero positivo, intenta cargar solo las partidas mas recientes necesarias.
+
     Returns:
         dict: {'matches': [...], 'remakes': [...], 'last_updated': timestamp}
     """
     # Intentar formato v2/v3 (con index)
     index_path = f"match_history/{puuid}/index.json"
     index_content, _ = read_file_from_github(index_path)
-    
+
     if index_content and isinstance(index_content, dict):
-        # Formato v2/v3 detectado
         files = index_content.get('files', [])
-        all_matches = []
         all_remakes = []
-        
+        unique_matches = []
+        seen_ids = set()
+        load_all = limit in (None, -1)
+        max_matches = None if load_all else max(int(limit), 0)
+
         print(f"[read_player_match_history] Formato v2/v3 detectado para {puuid[:16]}...")
         print(f"[read_player_match_history] Cargando {len(files)} archivos...")
-        
+
         for file_path in files:
             full_path = f"match_history/{puuid}/{file_path}"
             chunk_content, _ = read_file_from_github(full_path)
-            
+
             if chunk_content and isinstance(chunk_content, dict):
-                matches = chunk_content.get('matches', [])
+                matches = sorted(
+                    chunk_content.get('matches', []),
+                    key=lambda x: x.get('game_end_timestamp', 0),
+                    reverse=True
+                )
                 remakes = chunk_content.get('remakes', [])
-                all_matches.extend(matches)
                 all_remakes.extend(remakes)
                 print(f"[read_player_match_history]   ✓ {file_path}: {len(matches)} matches, {len(remakes)} remakes")
+
+                for match in matches:
+                    match_id = match.get('match_id')
+                    if match_id and match_id not in seen_ids:
+                        seen_ids.add(match_id)
+                        unique_matches.append(match)
+
+                    if max_matches and len(unique_matches) >= max_matches:
+                        break
             else:
                 print(f"[read_player_match_history]   ⚠️ No se pudo cargar: {file_path}")
-        
-        # Eliminar duplicados por match_id y ordenar
-        seen_ids = set()
-        unique_matches = []
-        for match in sorted(all_matches, key=lambda x: x.get('game_end_timestamp', 0), reverse=True):
-            match_id = match.get('match_id')
-            if match_id and match_id not in seen_ids:
-                seen_ids.add(match_id)
-                unique_matches.append(match)
-        
+
+            if max_matches and len(unique_matches) >= max_matches:
+                print(f"[read_player_match_history] Limite satisfecho ({max_matches} matches), deteniendo carga temprana")
+                break
+
+        unique_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+        if max_matches:
+            unique_matches = unique_matches[:max_matches]
+
         result = {
             'matches': unique_matches,
             'remakes': all_remakes,
             'last_updated': index_content.get('last_updated', time.time())
         }
-        
-        print(f"[read_player_match_history] Total: {len(unique_matches)} matches únicos, {len(all_remakes)} remakes")
+
+        print(f"[read_player_match_history] Total: {len(unique_matches)} matches unicos, {len(all_remakes)} remakes")
         return result
-    
+
     # Fallback a formato legacy
     legacy_path = f"match_history/{puuid}.json"
     content, _ = read_file_from_github(legacy_path)
-    
+
     if content and isinstance(content, dict):
         print(f"[read_player_match_history] Formato legacy detectado para {puuid[:16]}...")
+        if limit not in (None, -1):
+            matches = sorted(
+                content.get('matches', []),
+                key=lambda x: x.get('game_end_timestamp', 0),
+                reverse=True
+            )
+            result = dict(content)
+            result['matches'] = matches[:limit]
+            return result
         return content
-    
+
     return {}
 
 

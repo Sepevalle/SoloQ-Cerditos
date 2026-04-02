@@ -19,7 +19,10 @@ from config.settings import (
     GITHUB_TOKEN,
     PORT,
     DEBUG,
-    SECRET_KEY
+    SECRET_KEY,
+    ENABLE_KEEP_ALIVE,
+    ENABLE_STATS_CALCULATOR_THREAD,
+    ENABLE_BOOT_INDEX_WARMUP,
 )
 
 # Importar utilidades
@@ -53,7 +56,6 @@ from services.index_json_generator import (
     generate_index_json, 
     load_index_json, 
     is_json_fresh,
-    start_json_generator_thread
 )
 
 
@@ -133,15 +135,17 @@ def start_background_services(riot_api_key, github_token):
     time.sleep(0.5)
     
     # 6. Stats Calculator (cálculo de estadísticas - en thread daemon)
-    stats_thread = threading.Thread(target=start_stats_calculator, daemon=True)
-    stats_thread.start()
-    time.sleep(0.5)
+    if ENABLE_STATS_CALCULATOR_THREAD:
+        stats_thread = threading.Thread(target=start_stats_calculator, daemon=True)
+        stats_thread.start()
+        time.sleep(0.5)
 
     
     # 7. Keep Alive (mantener app activa)
-    keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
-    keep_alive_thread.start()
-    print("[main] ✓ Keep-alive iniciado")
+    if ENABLE_KEEP_ALIVE:
+        keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+        keep_alive_thread.start()
+        print("[main] ✓ Keep-alive iniciado")
     
     print("\n" + "="*60)
     print("TODOS LOS SERVICIOS INICIADOS CORRECTAMENTE")
@@ -182,14 +186,17 @@ start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
 # Precargar JSON del index si no existe o está antiguo
 print("[main] Verificando JSON del index...")
 json_data = load_index_json()
-if json_data is None or not is_json_fresh(max_age_seconds=300):
-    print("[main] Generando JSON del index (primera vez o antiguo)...")
-    if generate_index_json(force=True):
-        print("[main] ✓ JSON del index generado correctamente")
+if ENABLE_BOOT_INDEX_WARMUP:
+    if json_data is None or not is_json_fresh(max_age_seconds=300):
+        print("[main] Generando JSON del index (primera vez o antiguo)...")
+        if generate_index_json(force=True):
+            print("[main] ✓ JSON del index generado correctamente")
+        else:
+            print("[main] ⚠ No se pudo generar el JSON del index")
     else:
-        print("[main] ⚠ No se pudo generar el JSON del index")
+        print("[main] ✓ JSON del index ya existe y está actualizado")
 else:
-    print("[main] ✓ JSON del index ya existe y está actualizado")
+    print("[main] Precarga del index desactivada en este entorno")
 
 print(f"\n[main] 🚀 Aplicación lista para servir en http://0.0.0.0:{PORT}")
 print(f"[main] Modo DEBUG: {DEBUG}\n")

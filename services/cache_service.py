@@ -11,10 +11,22 @@ from config.settings import (
     PEAK_ELO_TTL,
     PLAYER_MATCH_HISTORY_CACHE_TIMEOUT,
     PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE,
+    PLAYER_MATCH_HISTORY_CACHE_MAX_MATCHES,
     PERSONAL_RECORDS_UPDATE_INTERVAL,
     LP_HISTORY_TTL,
     API_RESPONSE_CLEANUP_THRESHOLD,
+    PROFILE_CACHE_TTL,
+    PROFILE_CACHE_MAX_SIZE,
+    PAGE_DATA_CACHE_TTL,
+    PAGE_DATA_CACHE_MAX_SIZE,
+    MATCH_LOOKUP_CACHE_TTL,
+    MATCH_LOOKUP_CACHE_MAX_SIZE,
+    PLAYER_STATS_CACHE_TTL,
+    PLAYER_STATS_CACHE_MAX_SIZE,
+    LIVE_GAME_CACHE_TTL,
+    STORE_GLOBAL_STATS_RAW_MATCHES,
 )
+from utils.helpers import maybe_trim_process_memory
 
 
 # ============================================================================
@@ -86,7 +98,7 @@ class GlobalStatsCache:
         """Actualiza el caché de estadísticas globales."""
         with self._lock:
             self._cache["data"] = data
-            self._cache["all_matches"] = all_matches
+            self._cache["all_matches"] = all_matches if STORE_GLOBAL_STATS_RAW_MATCHES else []
             self._cache["timestamp"] = time.time()
 
     def is_stale(self):
@@ -108,6 +120,7 @@ class GlobalStatsCache:
         """Invalida el caché de estadísticas globales."""
         with self._lock:
             self._cache["data"] = None
+            self._cache["all_matches"] = []
             self._cache["timestamp"] = 0
 
 
@@ -148,6 +161,7 @@ class PlayerMatchHistoryCache:
         self._lock = threading.Lock()
         self._timeout = PLAYER_MATCH_HISTORY_CACHE_TIMEOUT
         self._max_size = PLAYER_MATCH_HISTORY_CACHE_MAX_SIZE
+        self._max_matches = PLAYER_MATCH_HISTORY_CACHE_MAX_MATCHES
 
     def get(self, puuid):
         """Obtiene el historial de partidas de un jugador."""
@@ -155,11 +169,17 @@ class PlayerMatchHistoryCache:
             cached = self._cache.get(puuid)
             if cached and (time.time() - cached["timestamp"] < self._timeout):
                 return cached["data"]
+            if cached:
+                self._cache.pop(puuid, None)
             return None
 
     def set(self, puuid, data):
         """Guarda el historial de partidas de un jugador."""
         with self._lock:
+            match_count = len((data or {}).get("matches", [])) if isinstance(data, dict) else 0
+            if self._max_matches and match_count > self._max_matches:
+                self._cache.pop(puuid, None)
+                return
             self._cleanup_if_needed()
             self._cache[puuid] = {
                 "data": data,
@@ -318,7 +338,8 @@ class PlayerStatsCache:
     def __init__(self):
         self._cache = {}  # {puuid_queue: {'data': {...}, 'timestamp': ...}}
         self._lock = threading.Lock()
-        self._ttl = 300  # 5 minutos de TTL
+        self._ttl = PLAYER_STATS_CACHE_TTL
+        self._max_size = PLAYER_STATS_CACHE_MAX_SIZE
 
     def _make_key(self, puuid, queue_type):
         """Genera una clave única para puuid + queue_type."""
@@ -337,6 +358,9 @@ class PlayerStatsCache:
         """Guarda las estadísticas de un jugador."""
         with self._lock:
             key = self._make_key(puuid, queue_type)
+            if self._max_size and key not in self._cache and len(self._cache) >= self._max_size:
+                oldest_key = min(self._cache.items(), key=lambda item: item[1]["timestamp"])[0]
+                del self._cache[oldest_key]
             self._cache[key] = {
                 "data": data,
                 "timestamp": time.time()
@@ -500,12 +524,12 @@ peak_elo_cache = PeakEloCache()
 player_match_history_cache = PlayerMatchHistoryCache()
 personal_records_cache = PersonalRecordsCache()
 lp_history_cache = LpHistoryCache()
-player_profile_cache = TimedCache(ttl_seconds=120, max_size=64)
-page_data_cache = TimedCache(ttl_seconds=180, max_size=32)
-match_lookup_cache = TimedCache(ttl_seconds=900, max_size=5000)
+player_profile_cache = TimedCache(ttl_seconds=PROFILE_CACHE_TTL, max_size=PROFILE_CACHE_MAX_SIZE)
+page_data_cache = TimedCache(ttl_seconds=PAGE_DATA_CACHE_TTL, max_size=PAGE_DATA_CACHE_MAX_SIZE)
+match_lookup_cache = TimedCache(ttl_seconds=MATCH_LOOKUP_CACHE_TTL, max_size=MATCH_LOOKUP_CACHE_MAX_SIZE)
 player_stats_cache = PlayerStatsCache()  # NUEVO: Caché para estadísticas de jugadores
 api_response_cache = ApiResponseCache()
-live_game_cache = LiveGameCache(ttl_seconds=300)  # NUEVO: Caché para estado en partida (5 min TTL)
+live_game_cache = LiveGameCache(ttl_seconds=LIVE_GAME_CACHE_TTL)  # NUEVO: Caché para estado en partida
 
 
 
@@ -521,8 +545,11 @@ def cleanup_all_caches():
     player_profile_cache.clear()
     page_data_cache.clear()
     match_lookup_cache.clear()
+    global_stats_cache.invalidate()
     player_stats_cache.clear()  # NUEVO: Limpiar también el caché de estadísticas
     api_response_cache.cleanup()
+    live_game_cache.clear()
+    maybe_trim_process_memory("cleanup_all_caches")
     print("[cleanup_all_caches] Todos los cachés han sido limpiados")
 
 

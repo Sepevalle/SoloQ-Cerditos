@@ -37,7 +37,7 @@ from services.riot_api import (
     obtener_elo
 )
 from services.player_service import get_all_accounts, get_all_puuids
-from utils.helpers import calcular_valor_clasificacion
+from utils.helpers import calcular_valor_clasificacion, maybe_trim_process_memory
 
 # Ruta del archivo JSON generado (local)
 INDEX_JSON_PATH = "stats_index.json"
@@ -340,6 +340,7 @@ def generate_index_json(force: bool = False) -> bool:
             print(f"[generate_index_json] ⚠ Error guardando en GitHub: {e}")
         
         elapsed = time.time() - start_time
+        maybe_trim_process_memory("generate_index_json")
         print(f"[generate_index_json] ✓ JSON generado en {elapsed:.2f}s ({len(jugadores_procesados)} jugadores)")
         return True
         

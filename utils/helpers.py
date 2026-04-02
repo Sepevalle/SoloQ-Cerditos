@@ -3,6 +3,7 @@ Funciones utilitarias y helpers del proyecto.
 """
 
 import base64
+import gc
 import json
 import os
 import requests
@@ -105,6 +106,28 @@ def parse_json_safe(json_str, default=None):
         return json.loads(json_str)
     except (json.JSONDecodeError, TypeError):
         return default if default is not None else {}
+
+
+def maybe_trim_process_memory(reason=None):
+    """
+    Intenta devolver memoria al SO tras operaciones pesadas.
+    En Linux usa malloc_trim(0); en otros sistemas hace solo gc.collect().
+    """
+    gc.collect()
+
+    if os.name != "posix":
+        return False
+
+    try:
+        import ctypes
+
+        libc = ctypes.CDLL("libc.so.6")
+        trimmed = bool(libc.malloc_trim(0))
+        if trimmed and reason:
+            print(f"[memory] RSS recortado tras: {reason}")
+        return trimmed
+    except Exception:
+        return False
 
 
 def keep_alive():

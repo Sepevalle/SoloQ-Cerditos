@@ -192,9 +192,9 @@ def index():
     # Si el JSON existe pero está antiguo (>5 min), iniciar regeneración en background
     elif not is_json_fresh(max_age_seconds=300):
         print("[index] JSON antiguo detectado, iniciando regeneración en background...")
-        # Iniciar thread para regenerar sin bloquear
-        thread = threading.Thread(target=generate_index_json, daemon=True)
-        thread.start()
+        if settings.ENABLE_ASYNC_STALE_INDEX_REGEN:
+            thread = threading.Thread(target=generate_index_json, daemon=True)
+            thread.start()
     
     # Extraer datos del JSON
     datos_jugadores = json_data.get('datos_jugadores', [])
@@ -218,7 +218,7 @@ def index():
 
 def _build_historial_global_dataset():
     """Construye y cachea el dataset del historial global."""
-    cached_dataset = page_data_cache.get('historial_global_dataset')
+    cached_dataset = page_data_cache.get('historial_global_dataset') if settings.ENABLE_HEAVY_PAGE_CACHE else None
     if cached_dataset:
         return cached_dataset
 
@@ -259,7 +259,8 @@ def _build_historial_global_dataset():
         'players_total': players_total,
         'players_with_puuid': players_with_puuid,
     }
-    page_data_cache.set('historial_global_dataset', dataset)
+    if settings.ENABLE_HEAVY_PAGE_CACHE:
+        page_data_cache.set('historial_global_dataset', dataset)
     return dataset
 
 
@@ -308,10 +309,11 @@ def logros():
     """Renderiza la página de logros globales por jugador."""
     print("[logros] Petición recibida.")
     try:
-        data = page_data_cache.get('global_achievements_data')
+        data = page_data_cache.get('global_achievements_data') if settings.ENABLE_HEAVY_PAGE_CACHE else None
         if not data:
             data = calculate_global_achievements()
-            page_data_cache.set('global_achievements_data', data)
+            if settings.ENABLE_HEAVY_PAGE_CACHE:
+                page_data_cache.set('global_achievements_data', data)
         return render_template(
             'logros.html',
             players=data.get('players', []),
