@@ -566,7 +566,7 @@
 
                     <td class="elo-diferencia"></td>
                     <td class="estado-celda">
-                        <a href="{{ jugador.url_ingame }}" target="_blank" class="link-estado" id="estado-{{ jugador.puuid }}">
+                        <a href="https://www.op.gg/summoners/euw/{{ jugador.game_name | replace('#', '-') | urlencode }}" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-{{ jugador.puuid }}">
                             {% if jugador.en_partida %}
                                 <span class="estado-en-partida">In Game</span>
                                 <img src="http://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" 
