@@ -109,7 +109,7 @@
             <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                 <a class="page-link" href="{{ url_for('main.historial_global', page=page-1) }}" tabindex="-1">Anterior</a>
             </li>
-            {% for p in range(1, total_pages + 1) %}
+            {% for p in page_numbers %}
             <li class="page-item {% if p == page %}active{% endif %}">
                 <a class="page-link" href="{{ url_for('main.historial_global', page=p) }}">{{ p }}</a>
             </li>

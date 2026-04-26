@@ -13,6 +13,7 @@ from services.cache_service import (
     page_data_cache,
     match_lookup_cache,
     achievements_cache,
+    historial_global_cache,
 )
 
 from services.github_service import read_peak_elo, save_peak_elo, read_lp_history
@@ -237,10 +238,7 @@ def index():
 
 
 def _build_historial_global_dataset():
-    """Construye y cachea el dataset del historial global."""
-    cached_dataset = page_data_cache.get('historial_global_dataset')
-    if cached_dataset:
-        return cached_dataset
+    """Construye un snapshot ligero del historial global."""
 
     from services.player_service import get_all_accounts, get_all_puuids
 
@@ -260,12 +258,22 @@ def _build_historial_global_dataset():
         matches = historial.get('matches', [])
 
         for match in matches:
-            match_copy = dict(match)
-            match_copy['jugador_nombre'] = jugador_nombre
-            match_copy['riot_id'] = riot_id
-            all_matches.append(match_copy)
+            match_summary = {
+                'match_id': match.get('match_id'),
+                'jugador_nombre': jugador_nombre,
+                'riot_id': riot_id,
+                'champion_name': match.get('champion_name'),
+                'win': match.get('win'),
+                'kills': match.get('kills', 0),
+                'deaths': match.get('deaths', 0),
+                'assists': match.get('assists', 0),
+                'queue_id': match.get('queue_id'),
+                'lp_change_this_game': match.get('lp_change_this_game'),
+                'game_end_timestamp': match.get('game_end_timestamp', 0),
+            }
+            all_matches.append(match_summary)
 
-            match_id = match_copy.get('match_id')
+            match_id = match_summary.get('match_id')
             if match_id:
                 match_lookup_cache.set(match_id, {
                     'game_name': riot_id,
@@ -279,8 +287,26 @@ def _build_historial_global_dataset():
         'players_total': players_total,
         'players_with_puuid': players_with_puuid,
     }
-    page_data_cache.set('historial_global_dataset', dataset)
     return dataset
+
+
+def _refresh_historial_global_in_background():
+    """Recalcula el historial global en background si no hay otro calculo en marcha."""
+    if historial_global_cache.is_calculating():
+        return
+
+    historial_global_cache.set_calculating(True)
+    try:
+        print("[historial-global-background] Iniciando refresco...")
+        dataset = _build_historial_global_dataset()
+        historial_global_cache.set(dataset)
+        print("[historial-global-background] Refresco completado.")
+    except Exception as e:
+        print(f"[historial-global-background] Error: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        historial_global_cache.set_calculating(False)
 
 
 @main_bp.route('/historial_global')
@@ -293,7 +319,14 @@ def historial_global():
             page = 1
         per_page = 15
 
-        dataset = _build_historial_global_dataset()
+        cache_data = historial_global_cache.get()
+        dataset = cache_data.get('data')
+        if not dataset:
+            dataset = _build_historial_global_dataset()
+            historial_global_cache.set(dataset)
+            cache_data = historial_global_cache.get()
+        elif historial_global_cache.is_stale() and not historial_global_cache.is_calculating():
+            threading.Thread(target=_refresh_historial_global_in_background, daemon=True).start()
         all_matches = dataset.get('matches', [])
         players_total = dataset.get('players_total', 0)
         players_with_puuid = dataset.get('players_with_puuid', 0)
@@ -305,6 +338,9 @@ def historial_global():
         start = (page - 1) * per_page
         end = start + per_page
         page_matches = all_matches[start:end]
+        page_start = max(1, page - 2)
+        page_end = min(total_pages, page + 2)
+        page_numbers = list(range(page_start, page_end + 1))
         
         return render_template('historial_global.html',
                              matches=page_matches,
@@ -312,6 +348,7 @@ def historial_global():
                              per_page=per_page,
                              total_matches=total_matches,
                              total_pages=total_pages,
+                             page_numbers=page_numbers,
                              players_total=players_total,
                              players_with_puuid=players_with_puuid,
                              ddragon_version=settings.DDRAGON_VERSION,
