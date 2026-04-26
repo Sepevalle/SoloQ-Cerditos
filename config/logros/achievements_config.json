@@ -1,7 +1,7 @@
 {
-  "version": 2,
+  "version": 3,
   "enabled": true,
-  "notes": "Logros redefinidos para premiar hitos memorables en vez de puro volumen. Cada logro puntua una sola vez por jugador en la vista global.",
+  "notes": "Catalogo redefinido con criterios mas expertos de LoL: carry real, macro, vision, frontline, clutch y errores graves. La vista global premia desbloqueos memorables por jugador.",
   "achievements": [
     {
       "key": "immortal_win",
@@ -36,7 +36,7 @@
     {
       "key": "teamfight_emperor",
       "name": "Emperador de Teamfights",
-      "description": "Gana con 75% o mas de participacion en kills.",
+      "description": "Gana una partida larga con 75% o mas de participacion en kills.",
       "points": 16,
       "kind": "good",
       "metric": "kill_participation",
@@ -62,6 +62,18 @@
       "max_ranks": 1
     },
     {
+      "key": "macro_engine",
+      "name": "Motor Macro",
+      "description": "Supera 30000 de dano a objetivos.",
+      "points": 15,
+      "kind": "good",
+      "metric": "damage_dealt_to_objectives",
+      "op": "ge",
+      "threshold": 30000,
+      "difficulty": "hard",
+      "max_ranks": 1
+    },
+    {
       "key": "map_oracle",
       "name": "Oraculo del Mapa",
       "description": "Mantiene 1.6 o mas de vision por minuto en partida larga.",
@@ -77,16 +89,59 @@
       }
     },
     {
-      "key": "macro_engine",
-      "name": "Motor Macro",
-      "description": "Supera 30000 de dano a objetivos.",
+      "key": "support_brain",
+      "name": "Support Cerebral",
+      "description": "Si juegas support, alcanza 2.2 o mas de vision por minuto.",
+      "points": 17,
+      "kind": "good",
+      "metric": "vision_score_per_min",
+      "op": "ge",
+      "threshold": 2.2,
+      "difficulty": "hard",
+      "max_ranks": 1,
+      "extra": {
+        "allowed_positions": [
+          "UTILITY"
+        ],
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "jungle_tyrant",
+      "name": "Tirano de la Jungla",
+      "description": "Si juegas jungla, logra 65% o mas de participacion en kills en partida larga.",
+      "points": 17,
+      "kind": "good",
+      "metric": "kill_participation",
+      "op": "ge",
+      "threshold": 65,
+      "difficulty": "hard",
+      "max_ranks": 1,
+      "extra": {
+        "allowed_positions": [
+          "JUNGLE"
+        ],
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "lane_bully",
+      "name": "Abuson de Linea",
+      "description": "Si no eres jungla ni support, manten 8.5 o mas CS/min en partida larga.",
       "points": 15,
       "kind": "good",
-      "metric": "damage_dealt_to_objectives",
+      "metric": "cs_per_min",
       "op": "ge",
-      "threshold": 30000,
+      "threshold": 8.5,
       "difficulty": "hard",
-      "max_ranks": 1
+      "max_ranks": 1,
+      "extra": {
+        "excluded_positions": [
+          "JUNGLE",
+          "UTILITY"
+        ],
+        "min_duration": 1200
+      }
     },
     {
       "key": "fortress_frontline",
@@ -104,6 +159,25 @@
       }
     },
     {
+      "key": "stonewall_tank",
+      "name": "Muro Imposible",
+      "description": "Si juegas top o support, recibe 60000 o mas de dano con 5 o menos muertes.",
+      "points": 18,
+      "kind": "good",
+      "metric": "total_damage_taken",
+      "op": "ge",
+      "threshold": 60000,
+      "difficulty": "extreme",
+      "max_ranks": 1,
+      "extra": {
+        "allowed_positions": [
+          "TOP",
+          "UTILITY"
+        ],
+        "max_deaths": 5
+      }
+    },
+    {
       "key": "siege_master",
       "name": "Maestro del Asedio",
       "description": "Tira 3 o mas torres en una sola partida.",
@@ -116,6 +190,33 @@
       "max_ranks": 1
     },
     {
+      "key": "money_printer",
+      "name": "Impresora de Oro",
+      "description": "Termina una partida con 18000 o mas de oro.",
+      "points": 14,
+      "kind": "good",
+      "metric": "gold_earned",
+      "op": "ge",
+      "threshold": 18000,
+      "difficulty": "hard",
+      "max_ranks": 1
+    },
+    {
+      "key": "first_blood_hunter",
+      "name": "Cazador de Primera Sangre",
+      "description": "Consigue la primera sangre y gana la partida.",
+      "points": 12,
+      "kind": "good",
+      "metric": "first_blood_kill",
+      "op": "eq",
+      "threshold": true,
+      "difficulty": "medium",
+      "max_ranks": 1,
+      "extra": {
+        "win": true
+      }
+    },
+    {
       "key": "quadra_clutch",
       "name": "Quadra Clutch",
       "description": "Consigue al menos una quadra kill.",
@@ -125,6 +226,18 @@
       "op": "ge",
       "threshold": 1,
       "difficulty": "extreme",
+      "max_ranks": 1
+    },
+    {
+      "key": "cc_jailer",
+      "name": "Carcelero",
+      "description": "Aporta 90 o mas segundos de control de masas.",
+      "points": 15,
+      "kind": "good",
+      "metric": "time_ccing_others",
+      "op": "ge",
+      "threshold": 90,
+      "difficulty": "hard",
       "max_ranks": 1
     },
     {
@@ -170,6 +283,24 @@
       }
     },
     {
+      "key": "dark_support",
+      "name": "Support a Ciegas",
+      "description": "Si juegas support, termina una partida larga con 18 o menos de vision.",
+      "points": -13,
+      "kind": "bad",
+      "metric": "vision_score",
+      "op": "le",
+      "threshold": 18,
+      "difficulty": "hard",
+      "max_ranks": 1,
+      "extra": {
+        "allowed_positions": [
+          "UTILITY"
+        ],
+        "min_duration": 1200
+      }
+    },
+    {
       "key": "solo_queue_isolation",
       "name": "Aislado del Equipo",
       "description": "Partida larga con menos de 30% de participacion en kills.",
@@ -181,6 +312,77 @@
       "difficulty": "hard",
       "max_ranks": 1,
       "extra": {
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "afk_side_lane",
+      "name": "AFK en Side",
+      "description": "Si juegas linea, cae por debajo de 5.5 CS/min en partida larga.",
+      "points": -9,
+      "kind": "bad",
+      "metric": "cs_per_min",
+      "op": "lt",
+      "threshold": 5.5,
+      "difficulty": "medium",
+      "max_ranks": 1,
+      "extra": {
+        "excluded_positions": [
+          "JUNGLE",
+          "UTILITY"
+        ],
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "no_objective_pressure",
+      "name": "Sin Presion de Objetivos",
+      "description": "Partida larga con menos de 10000 de dano a objetivos.",
+      "points": -10,
+      "kind": "bad",
+      "metric": "damage_dealt_to_objectives",
+      "op": "lt",
+      "threshold": 10000,
+      "difficulty": "medium",
+      "max_ranks": 1,
+      "extra": {
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "paper_frontline",
+      "name": "Frontline de Papel",
+      "description": "Si juegas top o support, muere 9 o mas veces en partida larga.",
+      "points": -11,
+      "kind": "bad",
+      "metric": "deaths",
+      "op": "ge",
+      "threshold": 9,
+      "difficulty": "hard",
+      "max_ranks": 1,
+      "extra": {
+        "allowed_positions": [
+          "TOP",
+          "UTILITY"
+        ],
+        "min_duration": 1200
+      }
+    },
+    {
+      "key": "tourist_jungler",
+      "name": "Jungla de Turismo",
+      "description": "Si juegas jungla, termina una partida larga con menos de 45% de participacion en kills.",
+      "points": -14,
+      "kind": "bad",
+      "metric": "kill_participation",
+      "op": "lt",
+      "threshold": 45,
+      "difficulty": "hard",
+      "max_ranks": 1,
+      "extra": {
+        "allowed_positions": [
+          "JUNGLE"
+        ],
         "min_duration": 1200
       }
     },
@@ -249,6 +451,23 @@
         "win": true,
         "min_kills": 10,
         "min_assists": 10
+      }
+    },
+    {
+      "key": "perfect_map_control",
+      "name": "Control Total",
+      "description": "Partida larga con 2.4 o mas de vision por minuto y 4 o menos muertes.",
+      "points": 22,
+      "kind": "good",
+      "metric": "vision_score_per_min",
+      "op": "ge",
+      "threshold": 2.4,
+      "difficulty": "extreme",
+      "max_ranks": 1,
+      "secret": true,
+      "extra": {
+        "min_duration": 1200,
+        "max_deaths": 4
       }
     }
   ]

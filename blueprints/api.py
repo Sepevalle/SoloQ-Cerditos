@@ -5,7 +5,7 @@ from config.settings import SEASON_START_TIMESTAMP
 from services.player_service import get_all_accounts, get_all_puuids, get_player_display_name, get_riot_id_for_puuid
 from services.match_service import get_player_match_history
 from services.stats_service import calculate_personal_records
-from services.cache_service import global_stats_cache
+from services.cache_service import global_stats_cache, achievements_cache
 from services.ai_service import check_player_permission, analyze_matches, analyze_match_detail, normalize_match_detail_output, block_player_permission, get_time_until_next_analysis, force_enable_permission
 from services.github_service import (
     read_match_timeline,
@@ -900,4 +900,44 @@ def request_global_stats_update():
         return jsonify({
             "status": "error",
             "message": f"Error al calcular estadísticas: {str(e)}"
+        }), 500
+
+
+@api_bp.route('/update-achievements', methods=['POST'])
+def request_achievements_update():
+    from services.achievements_service import calculate_global_achievements
+
+    try:
+        if achievements_cache.is_calculating():
+            return jsonify({
+                "status": "already_calculating",
+                "message": "El calculo de logros ya esta en progreso."
+            }), 429
+
+        achievements_cache.set_calculating(True)
+        print("[request_achievements_update] Iniciando recalculo manual de logros...")
+
+        try:
+            data = calculate_global_achievements()
+            achievements_cache.set(data)
+            return jsonify({
+                "status": "success",
+                "message": "Logros recalculados correctamente.",
+                "timestamp": time.time(),
+                "players": len(data.get("players", [])),
+                "public_achievements": len(data.get("achievements_view", [])),
+                "secret_achievements": len(data.get("secret_achievements_view", []))
+            }), 200
+        finally:
+            achievements_cache.set_calculating(False)
+            print("[request_achievements_update] Recalculo de logros completado.")
+
+    except Exception as e:
+        achievements_cache.set_calculating(False)
+        print(f"[request_achievements_update] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "status": "error",
+            "message": f"Error al recalcular logros: {str(e)}"
         }), 500

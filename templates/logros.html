@@ -156,9 +156,9 @@
         <div class="col-12 col-md-3">
             <div class="card summary-card h-100">
                 <div class="card-body">
-                    <small class="text-muted d-block mb-1">Activaciones registradas</small>
-                    <div class="summary-value">{{ global_stats.total_unlocked | default(0) }}</div>
-                    <div class="section-note">Se guardan para medir consistencia y rareza.</div>
+                    <small class="text-muted d-block mb-1">Logros conseguidos</small>
+                    <div class="summary-value">{{ global_stats.total_unique_unlocks | default(0) }}</div>
+                    <div class="section-note">Solo cuenta conseguido o no conseguido.</div>
                 </div>
             </div>
         </div>
@@ -237,7 +237,7 @@
                                     <th>Puntos</th>
                                     <th>Hitos</th>
                                     <th>Secretos</th>
-                                    <th>Activaciones</th>
+                                    <th>Partidas</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -252,7 +252,7 @@
                                     <td>{{ p.total_points }}</td>
                                     <td>{{ p.unique_achievements }}</td>
                                     <td>{{ p.secret_unlocked }}/{{ p.secret_unlocked + p.secret_locked }}</td>
-                                    <td>{{ p.hits_total }}</td>
+                                    <td>{{ p.total_matches }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -277,7 +277,6 @@
                             </div>
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 <span class="metric-pill">{{ a.achievers_count }} jugadores</span>
-                                <span class="metric-pill">{{ a.total_hits }} activaciones</span>
                                 <span class="metric-pill">{{ a.unlock_rate }}% de la sala</span>
                             </div>
                             <div class="mb-3">
@@ -293,7 +292,7 @@
                                 {% for who in a.top_achievers %}
                                 <li class="py-2">
                                     <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
-                                    <span class="text-muted">- {{ who.count }} activaciones{% if who.best_champion %} - {{ who.best_champion }}{% endif %}</span>
+                                    <span class="text-muted">{% if who.best_champion %}{{ who.best_champion }} - {% endif %}{{ who.level_name }}</span>
                                 </li>
                                 {% endfor %}
                             </ul>
@@ -320,14 +319,14 @@
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 <span class="metric-pill">{{ p.unique_achievements }} hitos</span>
                                 <span class="metric-pill">{{ p.secret_unlocked }} secretos</span>
-                                <span class="metric-pill">{{ p.hits_total }} activaciones</span>
+                                <span class="metric-pill">{{ p.total_matches }} partidas</span>
                             </div>
                             {% if p.spotlight_stats %}
                             <div class="mb-2 fw-semibold">Firma del jugador</div>
                             <div>
                                 {% for a in p.spotlight_stats %}
                                 <span class="achievement-chip {% if a.secret %}chip-secret{% elif a.kind == 'bad' %}chip-bad{% else %}chip-good{% endif %}" title="{{ a.description }}">
-                                    {{ a.name }}{% if a.count > 1 %} x{{ a.count }}{% endif %}
+                                    {{ a.name }}
                                 </span>
                                 {% endfor %}
                             </div>
@@ -356,7 +355,6 @@
                             </div>
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 <span class="metric-pill">{{ a.achievers_count }} jugadores</span>
-                                <span class="metric-pill">{{ a.total_hits }} veces</span>
                                 <span class="metric-pill">{{ a.unlock_rate }}% afectados</span>
                             </div>
                             <div class="mb-3">
@@ -368,7 +366,7 @@
                                 {% for who in a.top_achievers %}
                                 <li class="py-2">
                                     <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
-                                    <span class="text-muted">- {{ who.count }} veces{% if who.best_champion %} - {{ who.best_champion }}{% endif %}</span>
+                                    <span class="text-muted">{% if who.best_champion %}{{ who.best_champion }} - {% endif %}{{ who.level_name }}</span>
                                 </li>
                                 {% endfor %}
                             </ul>
@@ -396,7 +394,6 @@
                             </div>
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 <span class="metric-pill">{{ s.achievers_count }} jugadores</span>
-                                <span class="metric-pill">{{ s.total_hits }} activaciones</span>
                                 <span class="metric-pill">{{ s.unlock_rate }}% descubiertos</span>
                             </div>
                             <div class="mb-3">
@@ -409,7 +406,7 @@
                                 {% for who in s.top_achievers %}
                                 <li class="py-2">
                                     <a href="{{ url_for('player.perfil_jugador', game_name=who.riot_id) }}" class="link-perfil fw-semibold">{{ who.player_name }}</a>
-                                    <span class="text-muted">- {{ who.count }} veces{% if who.best_champion %} - {{ who.best_champion }}{% endif %}</span>
+                                    <span class="text-muted">{% if who.best_champion %}{{ who.best_champion }} - {% endif %}{{ who.level_name }}</span>
                                 </li>
                                 {% endfor %}
                             </ul>

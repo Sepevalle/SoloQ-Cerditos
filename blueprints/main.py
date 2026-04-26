@@ -12,6 +12,7 @@ from services.cache_service import (
     player_stats_cache,
     page_data_cache,
     match_lookup_cache,
+    achievements_cache,
 )
 
 from services.github_service import read_peak_elo, save_peak_elo, read_lp_history
@@ -308,10 +309,11 @@ def logros():
     """Renderiza la página de logros globales por jugador."""
     print("[logros] Petición recibida.")
     try:
-        data = page_data_cache.get('global_achievements_data')
+        cache_data = achievements_cache.get()
+        data = cache_data.get("data")
         if not data:
             data = calculate_global_achievements()
-            page_data_cache.set('global_achievements_data', data)
+            achievements_cache.set(data)
         return render_template(
             'logros.html',
             players=data.get('players', []),
@@ -322,6 +324,8 @@ def logros():
             achievements_config_source=data.get('config_source', 'unknown'),
             achievements_config_errors=data.get('config_errors', []),
             global_stats=data.get('global_stats', {}),
+            achievements_cache_stale=achievements_cache.is_stale(),
+            achievements_cache_timestamp=cache_data.get("timestamp", 0),
             ddragon_version=settings.DDRAGON_VERSION,
             has_player_data=True
         )

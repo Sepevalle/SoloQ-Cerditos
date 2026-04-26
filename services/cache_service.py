@@ -111,6 +111,46 @@ class GlobalStatsCache:
             self._cache["timestamp"] = 0
 
 
+class AchievementsCache:
+    def __init__(self, update_interval=900):
+        self._cache = {
+            "data": None,
+            "timestamp": 0
+        }
+        self._lock = threading.Lock()
+        self._update_interval = update_interval
+        self._calculating = False
+
+    def get(self):
+        with self._lock:
+            return {
+                "data": self._cache.get("data"),
+                "timestamp": self._cache.get("timestamp", 0)
+            }
+
+    def set(self, data):
+        with self._lock:
+            self._cache["data"] = data
+            self._cache["timestamp"] = time.time()
+
+    def is_stale(self):
+        with self._lock:
+            return time.time() - self._cache.get("timestamp", 0) > self._update_interval
+
+    def is_calculating(self):
+        with self._lock:
+            return self._calculating
+
+    def set_calculating(self, value):
+        with self._lock:
+            self._calculating = value
+
+    def invalidate(self):
+        with self._lock:
+            self._cache["data"] = None
+            self._cache["timestamp"] = 0
+
+
 # ============================================================================
 # CACHÉ DE PEAK ELO
 # ============================================================================
@@ -496,6 +536,7 @@ class LiveGameCache:
 
 player_cache = PlayerCache()
 global_stats_cache = GlobalStatsCache()
+achievements_cache = AchievementsCache()
 peak_elo_cache = PeakEloCache()
 player_match_history_cache = PlayerMatchHistoryCache()
 personal_records_cache = PersonalRecordsCache()
@@ -520,6 +561,7 @@ def cleanup_all_caches():
     player_match_history_cache.clear()
     player_profile_cache.clear()
     page_data_cache.clear()
+    achievements_cache.invalidate()
     match_lookup_cache.clear()
     player_stats_cache.clear()  # NUEVO: Limpiar también el caché de estadísticas
     api_response_cache.cleanup()
