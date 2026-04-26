@@ -17,6 +17,86 @@ from config.settings import (
 )
 
 
+ACCOUNT_DATA_TTL = 600
+PUUID_DATA_TTL = 600
+
+
+def _summarize_match_for_stats_cache(match):
+    """Reduce una partida a los campos necesarios para stats globales y filtros."""
+    if not isinstance(match, dict):
+        return {}
+
+    kills = match.get("kills", 0) or 0
+    deaths = match.get("deaths", 0) or 0
+    assists = match.get("assists", 0) or 0
+    total_minions = match.get("total_minions_killed", 0) or 0
+    neutral_minions = match.get("neutral_minions_killed", 0) or 0
+
+    return {
+        "puuid": match.get("puuid"),
+        "riot_id": match.get("riot_id"),
+        "jugador_nombre": match.get("jugador_nombre"),
+        "match_id": match.get("match_id"),
+        "champion_name": match.get("champion_name"),
+        "champion_id": match.get("champion_id"),
+        "queue_id": match.get("queue_id"),
+        "win": match.get("win"),
+        "game_end_timestamp": match.get("game_end_timestamp", 0),
+        "game_duration": match.get("game_duration", 0),
+        "kills": kills,
+        "deaths": deaths,
+        "assists": assists,
+        "kill_participation": match.get("kill_participation", 0),
+        "total_minions_killed": total_minions,
+        "neutral_minions_killed": neutral_minions,
+        "total_cs": total_minions + neutral_minions,
+        "kda": (kills + assists) / max(1, deaths),
+        "total_damage_dealt_to_champions": match.get("total_damage_dealt_to_champions", 0),
+        "gold_earned": match.get("gold_earned", 0),
+        "vision_score": match.get("vision_score", 0),
+        "largest_killing_spree": match.get("largest_killing_spree", 0),
+        "largestMultiKill": match.get("largestMultiKill", 0),
+        "total_time_spent_dead": match.get("total_time_spent_dead", 0),
+        "wards_placed": match.get("wards_placed", 0),
+        "wards_killed": match.get("wards_killed", 0),
+        "turret_kills": match.get("turret_kills", 0),
+        "inhibitor_kills": match.get("inhibitor_kills", 0),
+        "baron_kills": match.get("baron_kills", 0),
+        "dragon_kills": match.get("dragon_kills", 0),
+        "total_damage_taken": match.get("total_damage_taken", 0),
+        "total_heal": match.get("total_heal", 0),
+        "total_damage_shielded_on_teammates": match.get("total_damage_shielded_on_teammates", 0),
+        "time_ccing_others": match.get("time_ccing_others", 0),
+        "objectives_stolen": match.get("objectives_stolen", 0),
+        "doubleKills": match.get("doubleKills", 0),
+        "tripleKills": match.get("tripleKills", 0),
+        "quadraKills": match.get("quadraKills", 0),
+        "pentaKills": match.get("pentaKills", 0),
+    }
+
+
+def _summarize_all_matches_for_stats_cache(all_matches):
+    """Normaliza y resume la lista de partidas usada por stats globales."""
+    summarized = []
+    for item in all_matches or []:
+        if isinstance(item, tuple) and len(item) == 2:
+            player_name, match = item
+        elif isinstance(item, dict):
+            player_name = item.get("jugador_nombre") or item.get("player_name") or "Unknown"
+            match = item
+        else:
+            continue
+
+        match_summary = _summarize_match_for_stats_cache(match)
+        if not match_summary:
+            continue
+
+        if not match_summary.get("jugador_nombre"):
+            match_summary["jugador_nombre"] = player_name
+        summarized.append((player_name, match_summary))
+    return summarized
+
+
 # ============================================================================
 # CACHÉ PRINCIPAL DE JUGADORES
 # ============================================================================
@@ -86,7 +166,7 @@ class GlobalStatsCache:
         """Actualiza el caché de estadísticas globales."""
         with self._lock:
             self._cache["data"] = data
-            self._cache["all_matches"] = all_matches
+            self._cache["all_matches"] = _summarize_all_matches_for_stats_cache(all_matches)
             self._cache["timestamp"] = time.time()
 
     def is_stale(self):
@@ -582,6 +662,8 @@ peak_elo_cache = PeakEloCache()
 player_match_history_cache = PlayerMatchHistoryCache()
 personal_records_cache = PersonalRecordsCache()
 lp_history_cache = LpHistoryCache()
+accounts_cache = TimedCache(ttl_seconds=ACCOUNT_DATA_TTL, max_size=1)
+puuids_cache = TimedCache(ttl_seconds=PUUID_DATA_TTL, max_size=1)
 player_profile_cache = TimedCache(ttl_seconds=120, max_size=64)
 page_data_cache = TimedCache(ttl_seconds=180, max_size=32)
 match_lookup_cache = TimedCache(ttl_seconds=900, max_size=5000)
@@ -604,6 +686,8 @@ def cleanup_all_caches():
     page_data_cache.clear()
     achievements_cache.invalidate()
     historial_global_cache.invalidate()
+    accounts_cache.clear()
+    puuids_cache.clear()
     match_lookup_cache.clear()
     player_stats_cache.clear()  # NUEVO: Limpiar también el caché de estadísticas
     api_response_cache.cleanup()

@@ -607,21 +607,24 @@ def extract_global_records(all_matches):
         if not isinstance(actual_match, dict):
             continue
             
-        # Create a copy to avoid modifying original data
-        match_copy = dict(actual_match)
-        match_copy["jugador_nombre"] = player_name
-        matches_by_player[match_copy.get("puuid")].append(match_copy)
+        matches_by_player[actual_match.get("puuid")].append((player_name, actual_match))
 
 
     
     # Calcular rachas por jugador
     for puuid, player_matches in matches_by_player.items():
-        streaks = calculate_streaks(player_matches)
+        streak_matches = []
+        for player_name, match in player_matches:
+            if "jugador_nombre" not in match:
+                match = {**match, "jugador_nombre": player_name}
+            streak_matches.append(match)
+
+        streaks = calculate_streaks(streak_matches)
         
         if streaks["max_win_streak"] > records["longest_win_streak"]["value"]:
             current = 0
             end_match = None
-            for m in player_matches:
+            for m in streak_matches:
                 if m.get("win"):
                     current += 1
                     if current == streaks["max_win_streak"]:
@@ -638,7 +641,7 @@ def extract_global_records(all_matches):
         if streaks["max_loss_streak"] > records["longest_loss_streak"]["value"]:
             current = 0
             end_match = None
-            for m in player_matches:
+            for m in streak_matches:
                 if not m.get("win"):
                     current += 1
                     if current == streaks["max_loss_streak"]:
@@ -667,8 +670,12 @@ def extract_global_records(all_matches):
             continue
         
         # Use the match copy from earlier if available, otherwise create new copy
-        total_cs = actual_match.get("total_minions_killed", 0) + actual_match.get("neutral_minions_killed", 0)
-        kda = (actual_match.get("kills", 0) + actual_match.get("assists", 0)) / max(1, actual_match.get("deaths", 0))
+        total_cs = actual_match.get("total_cs")
+        if total_cs is None:
+            total_cs = (actual_match.get("total_minions_killed", 0) or 0) + (actual_match.get("neutral_minions_killed", 0) or 0)
+        kda = actual_match.get("kda")
+        if kda is None:
+            kda = (actual_match.get("kills", 0) + actual_match.get("assists", 0)) / max(1, actual_match.get("deaths", 0))
         kp = actual_match.get("kill_participation", 0)
 
 

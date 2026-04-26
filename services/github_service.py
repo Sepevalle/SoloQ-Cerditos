@@ -382,8 +382,13 @@ def read_puuids():
 
 def save_puuids(puuid_dict):
     """Guarda el diccionario de PUUIDs."""
+    from services.cache_service import puuids_cache
+
     _, sha = read_file_from_github("puuids.json", use_raw=False)
-    return write_file_to_github("puuids.json", puuid_dict, message="Actualizar PUUIDs", sha=sha)
+    ok = write_file_to_github("puuids.json", puuid_dict, message="Actualizar PUUIDs", sha=sha)
+    if ok:
+        puuids_cache.set("all_puuids", puuid_dict)
+    return ok
 
 
 def read_peak_elo():

@@ -6,17 +6,30 @@ Maneja PUUIDs, cuentas, y datos básicos de jugadores.
 from services.github_service import read_accounts_file, read_puuids, save_puuids
 from services.riot_api import obtener_puuid
 from config.settings import RIOT_API_KEY
+from services.cache_service import accounts_cache, puuids_cache
 
 
 def get_all_accounts():
     """Obtiene todas las cuentas registradas."""
-    return read_accounts_file()
+    cached = accounts_cache.get("all_accounts")
+    if cached is not None:
+        return cached
+
+    accounts = read_accounts_file()
+    accounts_cache.set("all_accounts", accounts)
+    return accounts
 
 
 def get_all_puuids():
     """Obtiene el diccionario completo de PUUIDs."""
+    cached = puuids_cache.get("all_puuids")
+    if cached is not None:
+        return cached
+
     success, puuids = read_puuids()
-    return puuids if success else {}
+    result = puuids if success else {}
+    puuids_cache.set("all_puuids", result)
+    return result
 
 
 
@@ -52,6 +65,7 @@ def ensure_puuid_for_account(riot_id, api_key=None):
             puuids = get_all_puuids()
             puuids[riot_id] = puuid
             save_puuids(puuids)
+            puuids_cache.set("all_puuids", puuids)
             return puuid, True
     except Exception as e:
         print(f"[ensure_puuid_for_account] Error: {e}")
@@ -126,5 +140,6 @@ def ensure_puuids_for_accounts(accounts, api_key=None):
 
     if updated:
         save_puuids(puuids)
+        puuids_cache.set("all_puuids", puuids)
 
     return puuids, updated
