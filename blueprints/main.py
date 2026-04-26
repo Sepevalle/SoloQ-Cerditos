@@ -52,6 +52,25 @@ from services.index_json_generator import (
 main_bp = Blueprint('main', __name__)
 
 
+def _refresh_achievements_in_background():
+    """Recalcula logros en background si no hay otro calculo en marcha."""
+    if achievements_cache.is_calculating():
+        return
+
+    achievements_cache.set_calculating(True)
+    try:
+        print("[logros-background] Iniciando refresco de logros...")
+        data = calculate_global_achievements()
+        achievements_cache.set(data)
+        print("[logros-background] Refresco de logros completado.")
+    except Exception as e:
+        print(f"[logros-background] Error: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        achievements_cache.set_calculating(False)
+
+
 def _get_peak_elo_key(jugador):
     """Genera la clave para peak elo basada en jugador."""
     return f"{ACTIVE_SPLIT_KEY}|{jugador['queue_type']}|{jugador['puuid']}"
@@ -314,6 +333,9 @@ def logros():
         if not data:
             data = calculate_global_achievements()
             achievements_cache.set(data)
+            cache_data = achievements_cache.get()
+        elif achievements_cache.is_stale() and not achievements_cache.is_calculating():
+            threading.Thread(target=_refresh_achievements_in_background, daemon=True).start()
         return render_template(
             'logros.html',
             players=data.get('players', []),
