@@ -7,8 +7,6 @@ import json
 import os
 import time
 from datetime import datetime, timezone
-from collections import defaultdict
-
 from config.settings import ACHIEVEMENTS_CONFIG_PATH
 from services.github_service import read_file_from_github, write_file_to_github
 from services.player_service import get_all_accounts, get_all_puuids
@@ -1016,6 +1014,85 @@ def _achievement_hit(match, definition):
     return hit, value
 
 
+def _is_better_achievement_value(definition, candidate_value, current_value):
+    if current_value is None:
+        return True
+
+    op = definition.get("op")
+    if op in {"le", "lt"}:
+        return candidate_value < current_value
+    if op in {"ge", "gt"}:
+        return candidate_value > current_value
+    return False
+
+
+def _build_unlocked_achievement_stat(definition):
+    return {
+        "key": definition["key"],
+        "name": definition["name"],
+        "description": definition["description"],
+        "points": int(definition.get("points", 0)),
+        "kind": definition["kind"],
+        "secret": bool(definition.get("secret", False)),
+        "count": 0,
+        "best_value": None,
+        "best_match_id": "",
+        "best_champion": "",
+        "best_timestamp": 0,
+    }
+
+
+def _build_showcase_entry(definition, players, include_locked=False):
+    achievers = []
+    total_hits = 0
+
+    for player in players:
+        stat = player["achievement_lookup"].get(definition["key"])
+        if not stat:
+            continue
+        total_hits += stat["count"]
+        achievers.append(
+            {
+                "player_name": player["player_name"],
+                "riot_id": player["riot_id"],
+                "count": stat["count"],
+                "best_value": stat["best_value"],
+                "best_match_id": stat["best_match_id"],
+                "best_champion": stat["best_champion"],
+                "level_name": player["level_name"],
+                "total_points": player["total_points"],
+            }
+        )
+
+    achievers.sort(
+        key=lambda item: (
+            item["count"],
+            item["best_value"] if item["best_value"] is not None else -999999,
+            item["total_points"],
+        ),
+        reverse=True,
+    )
+
+    locked = len(achievers) == 0
+    if locked and not include_locked:
+        return None
+
+    return {
+        "key": definition["key"],
+        "name": definition["name"] if not locked else "???",
+        "description": definition["description"] if not locked else "Logro secreto aun no descubierto.",
+        "points": int(definition.get("points", 0)),
+        "kind": definition["kind"],
+        "is_secret": bool(definition.get("secret", False)),
+        "locked": locked,
+        "achievers_count": len(achievers),
+        "total_hits": total_hits,
+        "unlock_rate": round((len(achievers) / max(1, len(players))) * 100, 1),
+        "top_achievers": achievers[:3],
+        "leader": achievers[0] if achievers else None,
+    }
+
+
 def _build_dynamic_level_track(max_possible_points):
     track = [dict(x) for x in LOW_FIXED_LEVELS]
     last_min = LOW_FIXED_LEVELS[-1]["min_points"]
@@ -1230,6 +1307,8 @@ def _empty_player_row(riot_id, player_name, puuid):
         "total_matches": 0,
         "achievement_stats": [],
         "achievement_counts": {},
+        "achievement_lookup": {},
+        "spotlight_stats": [],
         "secret_achievements": [],
         "secret_unlocked": 0,
         "secret_locked": 0,
@@ -1239,7 +1318,7 @@ def _empty_player_row(riot_id, player_name, puuid):
 
 def calculate_global_achievements():
     """
-    Calculate achievements for all players using stored match history.
+    Calculate a lightweight achievements overview centered on memorable unlocks.
     """
     accounts = get_all_accounts()
     puuids = get_all_puuids()
@@ -1247,8 +1326,11 @@ def calculate_global_achievements():
     active_achievements = config_doc.get("achievements", []) or []
     match_filters = config_doc.get("match_filters", {}) if isinstance(config_doc, dict) else {}
 
+    definition_by_key = {a["key"]: a for a in active_achievements}
     secret_catalog = [a for a in active_achievements if a.get("secret")]
     public_catalog = [a for a in active_achievements if not a.get("secret")]
+    public_good_catalog = [a for a in public_catalog if a.get("kind") == "good"]
+    public_bad_catalog = [a for a in public_catalog if a.get("kind") == "bad"]
     players = []
 
     for riot_id, display_name in accounts:
@@ -1262,18 +1344,7 @@ def calculate_global_achievements():
         player_row = _empty_player_row(riot_id, display_name, puuid)
         player_row["total_matches"] = len(matches)
 
-        by_key = defaultdict(lambda: {
-            "key": "",
-            "name": "",
-            "description": "",
-            "points": 0,
-            "kind": "good",
-            "secret": False,
-            "count": 0,
-            "best_value": 0,
-            "last_match_id": "",
-            "last_champion": "",
-        })
+        by_key = {}
 
         for match in matches:
             for definition in active_achievements:
@@ -1281,38 +1352,33 @@ def calculate_global_achievements():
                 if not hit:
                     continue
 
-                stat = by_key[definition["key"]]
-                stat["key"] = definition["key"]
-                stat["name"] = definition["name"]
-                stat["description"] = definition["description"]
-                stat["points"] = definition["points"]
-                stat["kind"] = definition["kind"]
-                stat["secret"] = bool(definition.get("secret", False))
+                stat = by_key.setdefault(
+                    definition["key"],
+                    _build_unlocked_achievement_stat(definition),
+                )
                 stat["count"] += 1
-                stat["best_value"] = max(stat["best_value"], value or 0)
-                stat["last_match_id"] = match.get("match_id", "")
-                stat["last_champion"] = match.get("champion_name", "")
+                if _is_better_achievement_value(definition, value, stat["best_value"]):
+                    stat["best_value"] = value
+                    stat["best_match_id"] = match.get("match_id", "")
+                    stat["best_champion"] = match.get("champion_name", "")
+                    stat["best_timestamp"] = match.get("game_end_timestamp", 0) or 0
 
                 player_row["hits_total"] += 1
 
         achievement_stats = sorted(
             by_key.values(),
-            key=lambda x: (x["count"] * abs(x["points"]), x["points"], x["count"]),
+            key=lambda x: (
+                abs(x["points"]),
+                x["count"],
+                0 if x.get("secret") else 1,
+                x["best_value"] if x["best_value"] is not None else -999999,
+            ),
             reverse=True,
         )
         unlocked_keys = set(by_key.keys())
-
-        definition_by_key = {a["key"]: a for a in active_achievements}
-
-        # Puntos por rangos por desafio individual.
         for stat in achievement_stats:
             definition = definition_by_key.get(stat["key"], {})
-            rank_info = _build_achievement_rank(definition, stat["count"])
-            stat.update(rank_info)
-            signed_points = rank_info["tier_points"]
-            if stat["kind"] == "bad":
-                signed_points = -signed_points
-            # Secret achievements only provide a small bonus to competitive points.
+            signed_points = int(definition.get("points", 0))
             competitive_points = _competitive_points_for_achievement(definition, signed_points)
             stat["rank_points"] = competitive_points
             stat["raw_rank_points"] = signed_points
@@ -1326,31 +1392,16 @@ def calculate_global_achievements():
             if stat.get("secret"):
                 player_row["secret_bonus_points"] += competitive_points
 
-        secret_stats = []
-        for secret_def in secret_catalog:
-            if secret_def["key"] in unlocked_keys:
-                secret_stats.append(dict(by_key[secret_def["key"]], locked=False))
-            else:
-                secret_stats.append(
-                    {
-                        "key": secret_def["key"],
-                        "name": "???",
-                        "description": "Logro secreto aun no descubierto.",
-                        "points": secret_def["points"],
-                        "kind": secret_def["kind"],
-                        "secret": True,
-                        "count": 0,
-                        "locked": True,
-                    }
-                )
-
         player_row["achievement_stats"] = achievement_stats
         player_row["achievement_counts"] = {
             item["key"]: item["count"] for item in achievement_stats
         }
-        player_row["secret_achievements"] = secret_stats
-        player_row["secret_unlocked"] = sum(1 for x in secret_stats if not x.get("locked"))
-        player_row["secret_locked"] = sum(1 for x in secret_stats if x.get("locked"))
+        player_row["achievement_lookup"] = by_key
+        player_row["spotlight_stats"] = achievement_stats[:4]
+        player_row["secret_unlocked"] = sum(
+            1 for key in unlocked_keys if definition_by_key.get(key, {}).get("secret")
+        )
+        player_row["secret_locked"] = max(0, len(secret_catalog) - player_row["secret_unlocked"])
         player_row["unique_achievements"] = len(achievement_stats)
 
         players.append(player_row)
@@ -1384,76 +1435,43 @@ def calculate_global_achievements():
     total_unique_unlocks = sum(p["unique_achievements"] for p in players)
     total_rank_points = sum(p["total_points"] for p in players)
 
-    achievements_view = []
-    for definition in public_catalog:
-        achievers = []
-        total_hits = 0
-        for player in players:
-            count = player["achievement_counts"].get(definition["key"], 0)
-            if count <= 0:
-                continue
-            total_hits += count
-            achievers.append(
-                {
-                    "player_name": player["player_name"],
-                    "riot_id": player["riot_id"],
-                    "count": count,
-                    "level_name": player["level_name"],
-                    "total_points": player["total_points"],
-                    "challenge_rank": _build_achievement_rank(definition, count),
-                }
-            )
-        achievements_view.append(
-            {
-                "key": definition["key"],
-                "name": definition["name"],
-                "description": definition["description"],
-                "points": definition["points"],
-                "kind": definition["kind"],
-                "is_secret": False,
-                "achievers": achievers,
-                "achievers_count": len(achievers),
-                "total_hits": total_hits,
-                "global_rank": _build_achievement_rank(definition, total_hits),
-                "rank_tiers": _decorate_tiers_for_display(definition),
-            }
+    achievements_view = [
+        _build_showcase_entry(definition, players)
+        for definition in public_good_catalog
+    ]
+    achievements_view = [entry for entry in achievements_view if entry is not None]
+    achievements_view.sort(
+        key=lambda item: (
+            item["achievers_count"],
+            -item["points"],
+            item["total_hits"],
         )
+    )
 
-    secret_achievements_view = []
-    for definition in secret_catalog:
-        achievers = []
-        total_hits = 0
-        for player in players:
-            count = player["achievement_counts"].get(definition["key"], 0)
-            if count <= 0:
-                continue
-            total_hits += count
-            achievers.append(
-                {
-                    "player_name": player["player_name"],
-                    "riot_id": player["riot_id"],
-                    "count": count,
-                    "level_name": player["level_name"],
-                    "total_points": player["total_points"],
-                    "challenge_rank": _build_achievement_rank(definition, count),
-                }
-            )
-        secret_achievements_view.append(
-            {
-                "key": definition["key"],
-                "name": definition["name"] if achievers else "???",
-                "description": definition["description"] if achievers else "Logro secreto aun no descubierto.",
-                "points": definition["points"],
-                "kind": definition["kind"],
-                "is_secret": True,
-                "locked": len(achievers) == 0,
-                "achievers": achievers,
-                "achievers_count": len(achievers),
-                "total_hits": total_hits,
-                "global_rank": _build_achievement_rank(definition, total_hits),
-                "rank_tiers": _decorate_tiers_for_display(definition),
-            }
+    negative_achievements_view = [
+        _build_showcase_entry(definition, players)
+        for definition in public_bad_catalog
+    ]
+    negative_achievements_view = [entry for entry in negative_achievements_view if entry is not None]
+    negative_achievements_view.sort(
+        key=lambda item: (
+            -item["achievers_count"],
+            -item["total_hits"],
+            abs(item["points"]),
         )
+    )
+
+    secret_achievements_view = [
+        _build_showcase_entry(definition, players, include_locked=True)
+        for definition in secret_catalog
+    ]
+    secret_achievements_view.sort(
+        key=lambda item: (
+            item["locked"],
+            item["achievers_count"],
+            -item["points"],
+        )
+    )
 
     global_stats = {
         "players_count": len(players),
@@ -1467,6 +1485,8 @@ def calculate_global_achievements():
         "max_possible_points": max_possible_points,
         "challenger_min_points": int(round(max_possible_points * CHALLENGER_PCT)),
         "secret_points_weight_pct": int(round(SECRET_POINTS_WEIGHT * 100)),
+        "active_public_achievements": len(achievements_view),
+        "active_negative_achievements": len(negative_achievements_view),
         "config_source": config_source,
         "config_errors_count": len(config_errors),
         "match_filters": match_filters,
@@ -1476,6 +1496,7 @@ def calculate_global_achievements():
         "players": players,
         "achievements_catalog": active_achievements,
         "achievements_view": achievements_view,
+        "negative_achievements_view": negative_achievements_view,
         "secret_achievements_view": secret_achievements_view,
         "levels_catalog": LEVELS,
         "global_stats": global_stats,

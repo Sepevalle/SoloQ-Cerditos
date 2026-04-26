@@ -317,6 +317,7 @@ def logros():
             players=data.get('players', []),
             achievements_catalog=data.get('achievements_catalog', []),
             achievements_view=data.get('achievements_view', []),
+            negative_achievements_view=data.get('negative_achievements_view', []),
             secret_achievements_view=data.get('secret_achievements_view', []),
             achievements_config_source=data.get('config_source', 'unknown'),
             achievements_config_errors=data.get('config_errors', []),
