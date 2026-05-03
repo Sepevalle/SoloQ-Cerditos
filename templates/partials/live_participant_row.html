@@ -1,0 +1,39 @@
+<div class="participant-row">
+    <div class="participant-main">
+        {% if participant.champion_name and participant.champion_name != 'Desconocido' %}
+            <img class="champion-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ participant.champion_name }}.png" alt="{{ participant.champion_name }}">
+        {% else %}
+            <div class="champion-icon bg-secondary"></div>
+        {% endif %}
+        <div class="min-w-0">
+            {% if participant.riot_id %}
+                <div class="player-name">{{ participant.riot_id }}</div>
+            {% else %}
+                <div class="player-name">Jugador oculto</div>
+            {% endif %}
+            <div class="small text-muted">
+                {{ participant.champion_name }}
+                {% if participant.bot %} · Bot{% endif %}
+            </div>
+        </div>
+    </div>
+    <div>
+        {% if participant.player_name %}
+            <a href="/jugador/{{ participant.riot_id | urlencode }}" class="badge bg-success known-badge text-decoration-none">
+                {{ participant.player_name }}
+            </a>
+        {% elif participant.is_known %}
+            <span class="badge bg-success known-badge">Cerdito</span>
+        {% else %}
+            <span class="badge bg-secondary known-badge">Externo</span>
+        {% endif %}
+    </div>
+    <div class="d-flex align-items-center gap-1">
+        {% if participant.spell1_name %}
+            <img class="spell-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ participant.spell1_name }}.png" alt="{{ participant.spell1_name }}">
+        {% endif %}
+        {% if participant.spell2_name %}
+            <img class="spell-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/spell/{{ participant.spell2_name }}.png" alt="{{ participant.spell2_name }}">
+        {% endif %}
+    </div>
+</div>

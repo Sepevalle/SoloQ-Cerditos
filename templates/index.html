@@ -41,6 +41,50 @@
             color: #007BFF !important;
             font-weight: bold;
         }
+        .live-games-panel {
+            border: 1px solid #d7e7ff;
+            background: #f7fbff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .live-game-card {
+            display: block;
+            height: 100%;
+            color: inherit;
+            text-decoration: none;
+            border: 1px solid #dce7f3;
+            border-radius: 8px;
+            padding: 12px;
+            background: #ffffff;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .live-game-card:hover {
+            color: inherit;
+            text-decoration: none;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+        .live-player-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 4px 6px 0 0;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef5ff;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .live-player-chip img {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+        }
+        .live-game-meta {
+            color: #5d6b7a;
+            font-size: 0.86rem;
+        }
         .table a {
             color: inherit;
             text-decoration: none;
@@ -77,6 +121,20 @@
         }
         .dark-mode .link-estado:hover {
             color: #99ccff;
+        }
+        .dark-mode .live-games-panel {
+            background: #17212c;
+            border-color: #2b4057;
+        }
+        .dark-mode .live-game-card {
+            background: #202b36;
+            border-color: #34475b;
+        }
+        .dark-mode .live-game-meta {
+            color: #b7c4d1;
+        }
+        .dark-mode .live-player-chip {
+            background: #263c55;
         }
         .dark-mode {
             background-color: #121212;
@@ -434,6 +492,50 @@
 <div class="container my-4 d-flex justify-content-center">
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
 </div>
+
+{% if active_live_games %}
+<div class="container-fluid px-md-5">
+    <section class="live-games-panel">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div>
+                <h4 class="mb-0">Partidas en curso</h4>
+                <div class="live-game-meta">Jugadores detectados con el cache actual de Spectator</div>
+            </div>
+            <span class="badge bg-primary">{{ active_live_games|length }} activas</span>
+        </div>
+        <div class="row g-3">
+            {% for game in active_live_games %}
+            <div class="col-12 col-lg-6 col-xxl-4">
+                <a class="live-game-card" href="{{ url_for('main.detalle_partida_en_vivo', game_id=game.game_id) }}">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="fw-bold">{{ game.queue_name }}</div>
+                            <div class="live-game-meta">
+                                {{ game.game_mode }} · {{ (game.duration_seconds // 60) }}:{{ '%02d'|format(game.duration_seconds % 60) }}
+                                {% if game.cache_age_seconds is not none %}
+                                    · cache {{ game.cache_age_seconds }}s
+                                {% endif %}
+                            </div>
+                        </div>
+                        <span class="badge bg-success">{{ game.known_players|length }} jugando</span>
+                    </div>
+                    <div class="mt-2">
+                        {% for player in game.known_players %}
+                            <span class="live-player-chip">
+                                {% if player.champion_name and player.champion_name != 'Desconocido' %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ player.champion_name }}.png" alt="{{ player.champion_name }}">
+                                {% endif %}
+                                {{ player.player_name or player.riot_id or 'Jugador' }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endif %}
     
 <div class="container-fluid px-md-5">
     <div class="d-flex justify-content-between align-items-center">
@@ -566,7 +668,7 @@
 
                     <td class="elo-diferencia"></td>
                     <td class="estado-celda">
-                        <a href="https://www.op.gg/summoners/euw/{{ jugador.game_name | replace('#', '-') | urlencode }}" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-{{ jugador.puuid }}">
+                        <a href="https://www.op.gg/summoners/euw/{{ jugador.game_name | replace('#', '-') | urlencode }}" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-{{ jugador.puuid }}" data-opgg-url="https://www.op.gg/summoners/euw/{{ jugador.game_name | replace('#', '-') | urlencode }}">
                             {% if jugador.en_partida %}
                                 <span class="estado-en-partida">In Game</span>
                                 <img src="http://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ jugador.nombre_campeon }}.png" 
@@ -898,6 +1000,11 @@
                     estadoLink.innerHTML = '';
                     
                     if (data.en_partida) {
+                        if (data.detail_url) {
+                            estadoLink.href = data.detail_url;
+                            estadoLink.target = '_self';
+                            estadoLink.rel = '';
+                        }
                         // Jugador está en partida - mostrar en TODAS las filas independientemente de la cola
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'estado-en-partida';
@@ -934,6 +1041,12 @@
                         }
                     } else {
                         // Jugador no está en partida
+                        const opggUrl = estadoLink.getAttribute('data-opgg-url');
+                        if (opggUrl) {
+                            estadoLink.href = opggUrl;
+                            estadoLink.target = '_blank';
+                            estadoLink.rel = 'noopener noreferrer';
+                        }
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'estado-texto';
                         

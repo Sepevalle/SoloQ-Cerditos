@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, abort, render_template, request
 from datetime import datetime, timezone, timedelta
 import time
 import threading
@@ -28,6 +28,7 @@ from services.github_service import (
 from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
 from services.riot_api import esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
+from services.live_game_service import get_active_live_games, get_live_game_by_id
 from services.player_service import get_all_players_with_puuids
 from services.achievements_service import (
     calculate_global_achievements,
@@ -203,6 +204,7 @@ def index():
             datos_jugadores, timestamp = player_cache.get()
             return render_template('index.html',
                                    datos_jugadores=datos_jugadores,
+                                   active_live_games=get_active_live_games(),
                                    ultima_actualizacion="N/A",
                                    ddragon_version=settings.DDRAGON_VERSION,
                                    split_activo_nombre=SPLITS[ACTIVE_SPLIT_KEY]['name'],
@@ -229,12 +231,26 @@ def index():
     
     return render_template('index.html', 
                            datos_jugadores=datos_jugadores,
+                           active_live_games=get_active_live_games(),
                            ultima_actualizacion=ultima_actualizacion,
                            ddragon_version=settings.DDRAGON_VERSION,
                            split_activo_nombre=split_activo_nombre,
                            has_player_data=bool(datos_jugadores),
                            cache_stale=cache_stale,
                            minutos_desde_actualizacion=minutos_desde_actualizacion)
+
+
+@main_bp.route('/partida-en-vivo/<game_id>')
+def detalle_partida_en_vivo(game_id):
+    live_game = get_live_game_by_id(game_id)
+    if not live_game:
+        abort(404)
+
+    return render_template(
+        'partida_en_vivo.html',
+        live_game=live_game,
+        ddragon_version=settings.DDRAGON_VERSION,
+    )
 
 
 def _build_historial_global_dataset():

@@ -625,6 +625,26 @@ class LiveGameCache:
                 return None
             return time.time() - entry["timestamp"]
 
+    def snapshot(self):
+        """Retorna una copia ligera de las entradas no expiradas del caché."""
+        with self._lock:
+            now = time.time()
+            expired_keys = [
+                puuid for puuid, entry in self._cache.items()
+                if now - entry["timestamp"] > self._ttl
+            ]
+            for puuid in expired_keys:
+                del self._cache[puuid]
+
+            return {
+                puuid: {
+                    "data": entry["data"],
+                    "timestamp": entry["timestamp"],
+                    "age_seconds": now - entry["timestamp"],
+                }
+                for puuid, entry in self._cache.items()
+            }
+
     
     def set(self, puuid, game_data):
         """Guarda el estado en partida en el caché."""

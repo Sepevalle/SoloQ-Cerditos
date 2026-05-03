@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partida en curso</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            padding-top: 74px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .live-header {
+            border-bottom: 1px solid #d8e2ec;
+            padding-bottom: 18px;
+            margin-bottom: 22px;
+        }
+        .team-board {
+            border: 1px solid #dde7f1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .team-board.blue .team-title {
+            background: #eaf4ff;
+            color: #07579f;
+        }
+        .team-board.red .team-title {
+            background: #fff0f0;
+            color: #a41414;
+        }
+        .team-title {
+            padding: 10px 14px;
+            font-weight: 700;
+        }
+        .participant-row {
+            display: grid;
+            grid-template-columns: minmax(160px, 1.4fr) minmax(130px, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 14px;
+            border-top: 1px solid #edf1f5;
+        }
+        .participant-main {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            gap: 10px;
+        }
+        .champion-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex: 0 0 auto;
+        }
+        .spell-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+        .player-name {
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .known-badge {
+            font-size: 0.72rem;
+        }
+        .bans-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .ban-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #dde7f1;
+            border-radius: 999px;
+            padding: 4px 9px;
+            background: #fff;
+            font-size: 0.86rem;
+        }
+        .ban-chip img {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+        }
+        .dark-mode {
+            background-color: #121212;
+            color: #fff;
+        }
+        .dark-mode .navbar {
+            background-color: #343a40 !important;
+        }
+        .dark-mode .nav-link,
+        .dark-mode .navbar-brand {
+            color: #fff !important;
+        }
+        .dark-mode .live-header {
+            border-color: #334253;
+        }
+        .dark-mode .team-board,
+        .dark-mode .ban-chip {
+            background: #202b36;
+            border-color: #34475b;
+        }
+        .dark-mode .participant-row {
+            border-color: #34475b;
+        }
+        .dark-mode .team-board.blue .team-title {
+            background: #17314d;
+            color: #9fd0ff;
+        }
+        .dark-mode .team-board.red .team-title {
+            background: #411d22;
+            color: #ffb2b2;
+        }
+        @media (max-width: 768px) {
+            .participant-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">
+            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+            Cerditos y Valientes
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('stats.estadisticas_globales') }}">Estadisticas Globales</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('main.historial_global') }}">Historial Global</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('main.logros') }}">Logros</a></li>
+            </ul>
+            <button id="toggle-mode" class="btn btn-secondary">Modo Oscuro</button>
+        </div>
+    </div>
+</nav>
+
+<main class="container-fluid px-md-5 pb-5">
+    <section class="live-header">
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm mb-3">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h1 class="h3 mb-1">Partida en curso</h1>
+                <div class="text-muted">
+                    {{ live_game.queue_name }} · {{ live_game.game_mode }} · {{ (live_game.duration_seconds // 60) }}:{{ '%02d'|format(live_game.duration_seconds % 60) }}
+                </div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-primary">Game ID {{ live_game.game_id }}</span>
+                {% if live_game.cache_age_seconds is not none %}
+                    <div class="small text-muted mt-1">Cache de hace {{ live_game.cache_age_seconds }}s</div>
+                {% endif %}
+            </div>
+        </div>
+        {% if live_game.known_players %}
+            <div class="mt-3">
+                <div class="fw-bold mb-1">Cerditos jugando</div>
+                {% for player in live_game.known_players %}
+                    <span class="badge bg-success me-1">{{ player.player_name or player.riot_id }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-6">
+            <section class="team-board blue">
+                <div class="team-title">Equipo Azul</div>
+                {% for participant in live_game.blue_team %}
+                    {% include 'partials/live_participant_row.html' %}
+                {% endfor %}
+            </section>
+        </div>
+        <div class="col-12 col-xl-6">
+            <section class="team-board red">
+                <div class="team-title">Equipo Rojo</div>
+                {% for participant in live_game.red_team %}
+                    {% include 'partials/live_participant_row.html' %}
+                {% endfor %}
+            </section>
+        </div>
+    </div>
+
+    {% if live_game.bans %}
+    <section class="mt-4">
+        <h2 class="h5">Bans</h2>
+        <div class="bans-row">
+            {% for ban in live_game.bans %}
+                <span class="ban-chip">
+                    {% if ban.champion_name and ban.champion_name != 'Sin ban' and ban.champion_name != 'Desconocido' %}
+                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ ban.champion_name }}.png" alt="{{ ban.champion_name }}">
+                    {% endif %}
+                    {{ ban.champion_name }} · {{ 'Azul' if ban.team_id == 100 else 'Rojo' if ban.team_id == 200 else 'Equipo ?' }}
+                </span>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleButton = document.getElementById('toggle-mode');
+        const body = document.body;
+        if (localStorage.getItem('theme') === 'dark') {
+            body.classList.add('dark-mode');
+            toggleButton.textContent = 'Modo Claro';
+        }
+        toggleButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const dark = body.classList.contains('dark-mode');
+            localStorage.setItem('theme', dark ? 'dark' : 'light');
+            toggleButton.textContent = dark ? 'Modo Claro' : 'Modo Oscuro';
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, url_for
 import config.settings as settings
 from config.settings import SEASON_START_TIMESTAMP
 
@@ -642,8 +642,19 @@ def get_all_live_games():
                 result[puuid] = {
                     "en_partida": True,
                     "nombre_campeon": champion_name,
+                    "game_id": str(game_data.get("gameId")) if game_data.get("gameId") is not None else None,
+                    "queue_id": game_data.get("gameQueueConfigId") or game_data.get("queueId"),
+                    "queue_name": settings.QUEUE_NAMES.get(
+                        game_data.get("gameQueueConfigId") or game_data.get("queueId"),
+                        "Cola desconocida"
+                    ),
                     "game_mode": game_data.get("gameMode", "Unknown"),
                     "game_type": game_data.get("gameType", "Unknown"),
+                    "map_id": game_data.get("mapId", 0),
+                    "detail_url": url_for(
+                        "main.detalle_partida_en_vivo",
+                        game_id=str(game_data.get("gameId"))
+                    ) if game_data.get("gameId") is not None else None,
                     "cache_age_seconds": int(cache_age) if cache_age else None
                 }
                 en_partida_count += 1
