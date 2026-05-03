@@ -70,6 +70,7 @@ def _participant_summary(participant, known_players):
         "player_name": known.get("player_name"),
         "is_known": bool(known),
         "perks": participant.get("perks") or {},
+        "customizations": participant.get("gameCustomizationObjects") or [],
     }
 
 

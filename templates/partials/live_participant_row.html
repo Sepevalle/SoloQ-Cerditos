@@ -15,6 +15,18 @@
                 {{ participant.champion_name }}
                 {% if participant.bot %} · Bot{% endif %}
             </div>
+                {% if participant.customizations %}
+                    <div class="mt-1 d-flex flex-wrap align-items-center gap-1">
+                        {% for c in participant.customizations %}
+                            {% set maybe_id = c.content | int %}
+                            {% if maybe_id > 0 %}
+                                <img title="{{ c.category }}: {{ c.content }}" src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/item/{{ maybe_id }}.png" class="item-icon" style="width:20px;height:20px;border-radius:4px;" alt="{{ c.category }}">
+                            {% else %}
+                                <span class="badge bg-info text-dark me-1">{{ c.category }}: {{ c.content }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
         </div>
     </div>
     <div>
