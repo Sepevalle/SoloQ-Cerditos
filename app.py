@@ -31,6 +31,7 @@ from blueprints import (
     main_bp,
     player_bp,
     stats_bp,
+    team_bp,
     api_bp
 )
 
@@ -79,6 +80,7 @@ def create_app():
     app.register_blueprint(main_bp, url_prefix='/')
     app.register_blueprint(player_bp, url_prefix='/jugador')
     app.register_blueprint(stats_bp, url_prefix='/stats')
+    app.register_blueprint(team_bp, url_prefix='/equipo')
     app.register_blueprint(api_bp, url_prefix='/api')
     
     # Manejador de error 404

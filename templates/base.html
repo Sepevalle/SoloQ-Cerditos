@@ -318,6 +318,9 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'main.logros' %}active{% endif %}" href="{{ url_for('main.logros') }}">Logros</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'team.equipo' %}active{% endif %}" href="{{ url_for('team.equipo') }}">Equipo</a>
+                </li>
                 {% block nav_items %}{% endblock %}
             </ul>
             <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
