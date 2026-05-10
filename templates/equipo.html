@@ -7,80 +7,195 @@
         padding-top: 86px;
         padding-bottom: 48px;
     }
-    .team-header {
+    .team-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+    }
+    .team-hero {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr) 260px;
+        gap: 18px;
+        align-items: stretch;
+        border: 1px solid #d8dee6;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 58%, #f4f7fb 100%);
+        padding: 18px;
+    }
+    .team-logo-panel {
         display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: flex-start;
-        margin-bottom: 20px;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        border: 1px dashed #b8c2cf;
+        border-radius: 8px;
+        min-height: 180px;
+        background: rgba(255, 255, 255, 0.76);
+    }
+    .team-logo {
+        width: 104px;
+        height: 104px;
+        border-radius: 8px;
+        object-fit: contain;
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        padding: 8px;
+    }
+    .team-logo-placeholder {
+        width: 104px;
+        height: 104px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        border: 1px solid #d4dae2;
+        background: #eef2f7;
+        color: #344054;
+        font-weight: 800;
+        font-size: 2rem;
+    }
+    .logo-upload-form {
+        width: 100%;
+        padding: 0 10px;
+    }
+    .logo-upload-form .form-control {
+        font-size: 0.82rem;
+    }
+    .team-kicker {
+        color: #667085;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
     }
     .team-title {
-        margin: 0;
-        font-weight: 700;
+        margin: 4px 0 8px;
+        font-weight: 800;
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        line-height: 1;
     }
     .team-subtitle {
-        color: #6c757d;
-        margin-top: 4px;
+        color: #667085;
+        max-width: 760px;
+        margin-bottom: 18px;
     }
-    .dark-mode .team-subtitle,
-    .dark-mode .team-muted {
-        color: #adb5bd !important;
+    .roster-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .roster-slot {
+        border: 1px solid #e1e7ef;
+        border-radius: 8px;
+        padding: 10px;
+        background: #fff;
+        min-height: 74px;
+    }
+    .roster-role {
+        color: #667085;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+    .roster-name {
+        font-weight: 700;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+    .team-status-panel {
+        display: grid;
+        align-content: space-between;
+        border-left: 1px solid #e2e8f0;
+        padding-left: 18px;
+    }
+    .status-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #edf1f6;
+        font-size: 0.92rem;
+    }
+    .status-row:last-child {
+        border-bottom: 0;
+    }
+    .status-label {
+        color: #667085;
+    }
+    .status-value {
+        font-weight: 800;
     }
     .metric-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 12px;
-        margin-bottom: 22px;
+    }
+    .metric-card,
+    .team-section {
+        border: 1px solid #d8dee6;
+        border-radius: 8px;
+        background: #fff;
     }
     .metric-card {
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 14px;
-        background: #fff;
+        padding: 16px;
     }
     .metric-label {
-        color: #6c757d;
+        color: #667085;
         font-size: 0.82rem;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
     .metric-value {
-        font-size: 1.55rem;
-        font-weight: 700;
-        line-height: 1.1;
+        font-size: 1.65rem;
+        font-weight: 800;
+        line-height: 1.05;
     }
-    .dark-mode .metric-card,
-    .dark-mode .team-section {
-        background: #1f2933;
-        border-color: #3b4652;
+    .metric-note {
+        color: #667085;
+        font-size: 0.8rem;
+        margin-top: 6px;
     }
     .team-section {
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        background: #fff;
         padding: 16px;
-        margin-bottom: 18px;
+    }
+    .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
     }
     .section-title {
-        font-size: 1.05rem;
-        font-weight: 700;
-        margin-bottom: 12px;
+        font-size: 1.02rem;
+        font-weight: 800;
+        margin: 0;
+    }
+    .section-meta,
+    .team-muted {
+        color: #667085;
+    }
+    .result-strip {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
     }
     .result-dot {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
         color: #fff;
-        font-weight: 700;
-        font-size: 0.78rem;
+        font-weight: 800;
+        font-size: 0.8rem;
+        text-decoration: none;
     }
     .result-dot.win {
-        background: #198754;
+        background: #16845b;
     }
     .result-dot.loss {
-        background: #dc3545;
+        background: #c43d4b;
     }
     .champion-strip {
         display: flex;
@@ -91,56 +206,108 @@
     .champion-strip img {
         width: 30px;
         height: 30px;
-        border-radius: 50%;
+        border-radius: 8px;
         object-fit: cover;
+        border: 1px solid #d8dee6;
+    }
+    .team-table {
+        --bs-table-bg: transparent;
     }
     .team-table td,
     .team-table th {
         vertical-align: middle;
         white-space: nowrap;
     }
+    .team-table thead th {
+        color: #667085;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        border-bottom-color: #d8dee6;
+    }
     .team-table .composition-cell {
         min-width: 210px;
         white-space: normal;
     }
-    .team-muted {
-        color: #6c757d;
-    }
     .lp-positive {
-        color: #198754;
-        font-weight: 700;
+        color: #16845b;
+        font-weight: 800;
     }
     .lp-negative {
-        color: #dc3545;
-        font-weight: 700;
+        color: #c43d4b;
+        font-weight: 800;
     }
     .lp-neutral {
-        color: #6c757d;
-        font-weight: 700;
+        color: #667085;
+        font-weight: 800;
     }
-    .roster-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
+    .dark-mode .team-hero {
+        background: linear-gradient(135deg, #18202a 0%, #202a35 56%, #151b23 100%);
+        border-color: #3b4652;
     }
-    .roster-list li {
-        border: 1px solid #dee2e6;
-        border-radius: 999px;
-        padding: 5px 10px;
-        font-size: 0.9rem;
+    .dark-mode .team-logo-panel,
+    .dark-mode .roster-slot,
+    .dark-mode .metric-card,
+    .dark-mode .team-section {
+        background: #1f2933;
+        border-color: #3b4652;
     }
-    .dark-mode .roster-list li {
-        border-color: #495057;
+    .dark-mode .team-logo-placeholder {
+        background: #273341;
+        color: #e9eef5;
+        border-color: #485566;
     }
-    @media (max-width: 767px) {
-        .team-header {
+    .dark-mode .team-status-panel {
+        border-left-color: #3b4652;
+    }
+    .dark-mode .status-row {
+        border-bottom-color: #323e4b;
+    }
+    .dark-mode .team-kicker,
+    .dark-mode .team-subtitle,
+    .dark-mode .status-label,
+    .dark-mode .metric-label,
+    .dark-mode .metric-note,
+    .dark-mode .section-meta,
+    .dark-mode .team-muted,
+    .dark-mode .roster-role {
+        color: #aeb8c5 !important;
+    }
+    @media (max-width: 1199px) {
+        .team-hero {
+            grid-template-columns: 170px minmax(0, 1fr);
+        }
+        .team-status-panel {
+            grid-column: 1 / -1;
+            border-left: 0;
+            border-top: 1px solid #e2e8f0;
+            padding-left: 0;
+            padding-top: 12px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .status-row {
+            border-bottom: 0;
             display: block;
         }
+        .metric-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 767px) {
+        .team-hero,
+        .team-status-panel {
+            grid-template-columns: 1fr;
+        }
+        .roster-grid,
+        .metric-grid {
+            grid-template-columns: 1fr;
+        }
+        .team-logo-panel {
+            min-height: 0;
+        }
         .metric-value {
-            font-size: 1.3rem;
+            font-size: 1.35rem;
         }
     }
 {% endblock %}
@@ -149,221 +316,278 @@
 <main class="container team-page">
     {% set config = dashboard.config %}
     {% set summary = dashboard.summary %}
+    {% set logo_path = config.logo_path %}
 
-    <div class="team-header">
-        <div>
-            <h1 class="team-title">{{ config.name }}</h1>
-            <div class="team-subtitle">Seguimiento de partidas jugadas por los 5 integrantes como equipo.</div>
-        </div>
-        <div class="text-lg-end team-muted small">
-            Roster en <code>{{ config.config_path }}</code>
-        </div>
-    </div>
-
-    {% if dashboard.missing_roster %}
-        <div class="alert alert-warning">
-            Configura exactamente 5 jugadores con Riot ID valido en <code>{{ config.config_path }}</code> para activar el seguimiento del equipo.
-        </div>
-    {% endif %}
-
-    {% if config.is_fallback %}
-        <div class="alert alert-info">
-            No se encontro <code>{{ config.config_path }}</code>; se esta usando un roster temporal con los 5 primeros PUUIDs disponibles.
-        </div>
-    {% endif %}
-
-    <section class="team-section">
-        <div class="section-title">Roster</div>
-        <ul class="roster-list">
-            {% for player in config.players %}
-                <li>
-                    {{ player.display_name or player.riot_id }}
-                    {% if player.role %}<span class="team-muted">· {{ player.role }}</span>{% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-    </section>
-
-    <div class="metric-grid">
-        <div class="metric-card">
-            <div class="metric-label">Partidas juntos</div>
-            <div class="metric-value">{{ summary.total_matches }}</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Balance</div>
-            <div class="metric-value">{{ summary.wins }}W - {{ summary.losses }}L</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Winrate equipo</div>
-            <div class="metric-value {% if summary.win_rate >= 50 %}text-success{% elif summary.total_matches > 0 %}text-danger{% endif %}">
-                {{ "%.1f"|format(summary.win_rate) }}%
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Forma ultimas 10</div>
-            <div class="metric-value">{{ summary.recent_wins }}W - {{ summary.recent_losses }}L</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Racha colectiva</div>
-            <div class="metric-value {% if summary.current_streak.type == 'win' %}text-success{% elif summary.current_streak.type == 'loss' %}text-danger{% endif %}">
-                {{ summary.current_streak.label }}
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">LP combinado</div>
-            <div class="metric-value {% if summary.lp_change > 0 %}lp-positive{% elif summary.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
-                {% if summary.lp_change > 0 %}+{% endif %}{{ summary.lp_change }}
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">KDA medio equipo</div>
-            <div class="metric-value">{{ "%.2f"|format(summary.avg_kda) }}</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Duracion media</div>
-            <div class="metric-value">{{ summary.avg_duration }}</div>
-        </div>
-    </div>
-
-    {% if summary.total_matches == 0 %}
-        <div class="alert alert-secondary">
-            Aun no hay partidas guardadas donde aparezcan los 5 jugadores del roster en el mismo equipo.
-        </div>
-    {% else %}
-        <section class="team-section">
-            <div class="section-title">Forma reciente</div>
-            <div class="d-flex gap-2 flex-wrap">
-                {% for match in dashboard.recent_form %}
-                    <a class="text-decoration-none" href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" title="{{ match.queue_name }} · {{ match.game_end_timestamp | format_timestamp }}">
-                        <span class="result-dot {% if match.win %}win{% else %}loss{% endif %}">
-                            {{ "V" if match.win else "D" }}
-                        </span>
-                    </a>
+    <div class="team-shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} mb-0">{{ message }}</div>
                 {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <section class="team-hero">
+            <div class="team-logo-panel">
+                {% if logo_path %}
+                    <img class="team-logo" src="{{ url_for('static', filename=logo_path) }}" alt="Logo {{ config.name }}">
+                {% else %}
+                    <div class="team-logo-placeholder">{{ config.name[:2] | upper }}</div>
+                {% endif %}
+                <form class="logo-upload-form" action="{{ url_for('team.subir_logo') }}" method="post" enctype="multipart/form-data">
+                    <input class="form-control form-control-sm mb-2" type="file" name="team_logo" accept="image/png">
+                    <button class="btn btn-dark btn-sm w-100" type="submit">
+                        <i class="fas fa-upload me-1"></i>Subir PNG
+                    </button>
+                </form>
             </div>
+
+            <div>
+                <div class="team-kicker">Hoja de equipo</div>
+                <h1 class="team-title">{{ config.name }}</h1>
+                <p class="team-subtitle mb-0">Rendimiento colectivo calculado solo con partidas donde aparecen los 5 integrantes en el mismo equipo.</p>
+
+                <div class="roster-grid mt-4">
+                    {% for player in config.players %}
+                        <div class="roster-slot">
+                            <div class="roster-role">{{ player.role or "ROL" }}</div>
+                            <div class="roster-name">{{ player.display_name or player.riot_id }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <aside class="team-status-panel">
+                <div class="status-row">
+                    <span class="status-label">Roster</span>
+                    <span class="status-value">{{ config.players | length }}/5</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Partidas</span>
+                    <span class="status-value">{{ summary.total_matches }}</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Ultima partida</span>
+                    <span class="status-value">
+                        {% if summary.last_match %}{{ summary.last_match.game_end_timestamp | format_timestamp }}{% else %}N/A{% endif %}
+                    </span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Config</span>
+                    <span class="status-value"><code>{{ config.config_path }}</code></span>
+                </div>
+            </aside>
         </section>
 
-        <div class="row g-3">
-            <div class="col-lg-5">
-                <section class="team-section h-100">
-                    <div class="section-title">Rendimiento por cola</div>
-                    <div class="table-responsive">
-                        <table class="table table-sm team-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Cola</th>
-                                    <th>Partidas</th>
-                                    <th>Balance</th>
-                                    <th>WR</th>
-                                    <th>LP</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for queue in dashboard.queue_stats %}
-                                    <tr>
-                                        <td>{{ queue.queue_name }}</td>
-                                        <td>{{ queue.matches }}</td>
-                                        <td>{{ queue.wins }}W - {{ queue.losses }}L</td>
-                                        <td>{{ "%.1f"|format(queue.win_rate) }}%</td>
-                                        <td class="{% if queue.lp_change > 0 %}lp-positive{% elif queue.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
-                                            {% if queue.lp_change > 0 %}+{% endif %}{{ queue.lp_change }}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+        {% if dashboard.missing_roster %}
+            <div class="alert alert-warning mb-0">
+                Configura exactamente 5 jugadores con Riot ID valido en <code>{{ config.config_path }}</code> para activar el seguimiento.
             </div>
-            <div class="col-lg-7">
-                <section class="team-section h-100">
-                    <div class="section-title">Composiciones repetidas</div>
-                    {% if dashboard.champion_compositions %}
+        {% endif %}
+
+        {% if config.is_fallback %}
+            <div class="alert alert-info mb-0">
+                No se encontro <code>{{ config.config_path }}</code>; se esta usando un roster temporal.
+            </div>
+        {% endif %}
+
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="metric-label">Balance del equipo</div>
+                <div class="metric-value">{{ summary.wins }}W - {{ summary.losses }}L</div>
+                <div class="metric-note">{{ summary.total_matches }} partidas juntas</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Winrate colectivo</div>
+                <div class="metric-value {% if summary.win_rate >= 50 %}text-success{% elif summary.total_matches > 0 %}text-danger{% endif %}">
+                    {{ "%.1f"|format(summary.win_rate) }}%
+                </div>
+                <div class="metric-note">Forma 10: {{ summary.recent_wins }}W - {{ summary.recent_losses }}L</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Racha actual</div>
+                <div class="metric-value {% if summary.current_streak.type == 'win' %}text-success{% elif summary.current_streak.type == 'loss' %}text-danger{% endif %}">
+                    {{ summary.current_streak.label }}
+                </div>
+                <div class="metric-note">Secuencia colectiva reciente</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">LP combinado</div>
+                <div class="metric-value {% if summary.lp_change > 0 %}lp-positive{% elif summary.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
+                    {% if summary.lp_change > 0 %}+{% endif %}{{ summary.lp_change }}
+                </div>
+                <div class="metric-note">Suma de cambios del roster</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">KDA medio</div>
+                <div class="metric-value">{{ "%.2f"|format(summary.avg_kda) }}</div>
+                <div class="metric-note">Kills + assists / deaths</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Duracion media</div>
+                <div class="metric-value">{{ summary.avg_duration }}</div>
+                <div class="metric-note">Tiempo por partida</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Damage medio</div>
+                <div class="metric-value">{{ summary.avg_damage | round(0) | int | thousands_separator }}</div>
+                <div class="metric-note">Daño a campeones</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Objetivos medios</div>
+                <div class="metric-value">{{ "%.1f"|format(summary.avg_dragons) }} / {{ "%.1f"|format(summary.avg_barons) }}</div>
+                <div class="metric-note">Dragones / Barones</div>
+            </div>
+        </div>
+
+        {% if summary.total_matches == 0 %}
+            <div class="alert alert-secondary mb-0">
+                Aun no hay partidas guardadas donde aparezcan los 5 jugadores del roster en el mismo equipo.
+            </div>
+        {% else %}
+            <section class="team-section">
+                <div class="section-head">
+                    <h2 class="section-title">Forma reciente</h2>
+                    <span class="section-meta">Ultimas {{ dashboard.recent_form | length }} partidas</span>
+                </div>
+                <div class="result-strip">
+                    {% for match in dashboard.recent_form %}
+                        <a class="result-dot {% if match.win %}win{% else %}loss{% endif %}" href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" title="{{ match.queue_name }} - {{ match.game_end_timestamp | format_timestamp }}">
+                            {{ "V" if match.win else "D" }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <div class="row g-3">
+                <div class="col-lg-5">
+                    <section class="team-section h-100">
+                        <div class="section-head">
+                            <h2 class="section-title">Rendimiento por cola</h2>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-sm team-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Composicion</th>
+                                        <th>Cola</th>
                                         <th>Partidas</th>
                                         <th>Balance</th>
                                         <th>WR</th>
+                                        <th>LP</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for comp in dashboard.champion_compositions %}
+                                    {% for queue in dashboard.queue_stats %}
                                         <tr>
-                                            <td class="composition-cell">
-                                                <div class="champion-strip">
-                                                    {% for champion in comp.composition %}
-                                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion }}.png" alt="{{ champion }}" title="{{ champion }}">
-                                                    {% endfor %}
-                                                </div>
+                                            <td>{{ queue.queue_name }}</td>
+                                            <td>{{ queue.matches }}</td>
+                                            <td>{{ queue.wins }}W - {{ queue.losses }}L</td>
+                                            <td>{{ "%.1f"|format(queue.win_rate) }}%</td>
+                                            <td class="{% if queue.lp_change > 0 %}lp-positive{% elif queue.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
+                                                {% if queue.lp_change > 0 %}+{% endif %}{{ queue.lp_change }}
                                             </td>
-                                            <td>{{ comp.matches }}</td>
-                                            <td>{{ comp.wins }}W - {{ comp.losses }}L</td>
-                                            <td>{{ "%.1f"|format(comp.win_rate) }}%</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
-                    {% else %}
-                        <div class="team-muted">No hay composiciones suficientes para agrupar.</div>
-                    {% endif %}
-                </section>
-            </div>
-        </div>
-
-        <section class="team-section">
-            <div class="section-title">Historial del equipo</div>
-            <div class="table-responsive">
-                <table class="table table-hover team-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Cola</th>
-                            <th>Resultado</th>
-                            <th>Composicion</th>
-                            <th>KDA equipo</th>
-                            <th>Objetivos</th>
-                            <th>Vision</th>
-                            <th>Duracion</th>
-                            <th>LP</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for match in dashboard.team_matches %}
-                            <tr>
-                                <td>{{ match.game_end_timestamp | format_timestamp }}</td>
-                                <td>{{ match.queue_name }}</td>
-                                <td>
-                                    <a href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" class="{% if match.win %}text-success{% else %}text-danger{% endif %} fw-bold text-decoration-none">
-                                        {{ match.result_label }}
-                                    </a>
-                                </td>
-                                <td class="composition-cell">
-                                    <div class="champion-strip">
-                                        {% for champion in match.composition %}
-                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion }}.png" alt="{{ champion }}" title="{{ champion }}">
+                    </section>
+                </div>
+                <div class="col-lg-7">
+                    <section class="team-section h-100">
+                        <div class="section-head">
+                            <h2 class="section-title">Composiciones repetidas</h2>
+                        </div>
+                        {% if dashboard.champion_compositions %}
+                            <div class="table-responsive">
+                                <table class="table table-sm team-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Composicion</th>
+                                            <th>Partidas</th>
+                                            <th>Balance</th>
+                                            <th>WR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for comp in dashboard.champion_compositions %}
+                                            <tr>
+                                                <td class="composition-cell">
+                                                    <div class="champion-strip">
+                                                        {% for champion in comp.composition %}
+                                                            <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion }}.png" alt="{{ champion }}" title="{{ champion }}">
+                                                        {% endfor %}
+                                                    </div>
+                                                </td>
+                                                <td>{{ comp.matches }}</td>
+                                                <td>{{ comp.wins }}W - {{ comp.losses }}L</td>
+                                                <td>{{ "%.1f"|format(comp.win_rate) }}%</td>
+                                            </tr>
                                         {% endfor %}
-                                    </div>
-                                </td>
-                                <td>{{ match.team_kills }}/{{ match.team_deaths }}/{{ match.team_assists }} ({{ "%.2f"|format(match.team_kda) }})</td>
-                                <td>
-                                    {{ match.dragon_kills }} drakes · {{ match.baron_kills }} barons · {{ match.turret_kills }} torres
-                                    {% if match.objectives_stolen %}<span class="badge bg-info ms-1">{{ match.objectives_stolen }} rob.</span>{% endif %}
-                                </td>
-                                <td>{{ match.team_vision | thousands_separator }}</td>
-                                <td>{{ match.duration_label }}</td>
-                                <td class="{% if match.lp_change > 0 %}lp-positive{% elif match.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
-                                    {% if match.lp_change > 0 %}+{% endif %}{{ match.lp_change }}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="team-muted">No hay composiciones suficientes para agrupar.</div>
+                        {% endif %}
+                    </section>
+                </div>
             </div>
-        </section>
-    {% endif %}
+
+            <section class="team-section">
+                <div class="section-head">
+                    <h2 class="section-title">Historial del equipo</h2>
+                    <span class="section-meta">{{ dashboard.team_matches | length }} partidas detectadas</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover team-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cola</th>
+                                <th>Resultado</th>
+                                <th>Composicion</th>
+                                <th>KDA equipo</th>
+                                <th>Objetivos</th>
+                                <th>Vision</th>
+                                <th>Duracion</th>
+                                <th>LP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for match in dashboard.team_matches %}
+                                <tr>
+                                    <td>{{ match.game_end_timestamp | format_timestamp }}</td>
+                                    <td>{{ match.queue_name }}</td>
+                                    <td>
+                                        <a href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" class="{% if match.win %}text-success{% else %}text-danger{% endif %} fw-bold text-decoration-none">
+                                            {{ match.result_label }}
+                                        </a>
+                                    </td>
+                                    <td class="composition-cell">
+                                        <div class="champion-strip">
+                                            {% for champion in match.composition %}
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion }}.png" alt="{{ champion }}" title="{{ champion }}">
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>{{ match.team_kills }}/{{ match.team_deaths }}/{{ match.team_assists }} ({{ "%.2f"|format(match.team_kda) }})</td>
+                                    <td>
+                                        {{ match.dragon_kills }} drakes | {{ match.baron_kills }} barons | {{ match.turret_kills }} torres
+                                        {% if match.objectives_stolen %}<span class="badge bg-info ms-1">{{ match.objectives_stolen }} rob.</span>{% endif %}
+                                    </td>
+                                    <td>{{ match.team_vision | thousands_separator }}</td>
+                                    <td>{{ match.duration_label }}</td>
+                                    <td class="{% if match.lp_change > 0 %}lp-positive{% elif match.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
+                                        {% if match.lp_change > 0 %}+{% endif %}{{ match.lp_change }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        {% endif %}
+    </div>
 </main>
 {% endblock %}

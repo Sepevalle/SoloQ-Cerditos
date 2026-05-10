@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 import config.settings as settings
-from services.team_service import build_team_dashboard
+from services.team_service import build_team_dashboard, save_team_logo
 
 
 team_bp = Blueprint("team", __name__)
@@ -17,3 +17,11 @@ def equipo():
         ddragon_version=settings.DDRAGON_VERSION,
         has_player_data=True,
     )
+
+
+@team_bp.route("/logo", methods=["POST"])
+def subir_logo():
+    """Sube el PNG del logo del equipo."""
+    ok, message = save_team_logo(request.files.get("team_logo"))
+    flash(message, "success" if ok else "danger")
+    return redirect(url_for("team.equipo"))

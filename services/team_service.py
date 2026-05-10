@@ -12,9 +12,13 @@ from services.player_service import get_all_puuids
 
 
 TEAM_CONFIG_PATH = "team_tracker.json"
+TEAM_LOGO_UPLOAD_DIR = os.path.join("static", "uploads")
+TEAM_LOGO_FILENAME = "team_logo.png"
+TEAM_LOGO_STATIC_PATH = "uploads/team_logo.png"
 ROLE_ORDER = {
     "TOP": 0,
     "JUNGLE": 1,
+    "JUNGLER": 1,
     "MIDDLE": 2,
     "MID": 2,
     "BOTTOM": 3,
@@ -48,9 +52,34 @@ def get_team_config():
     return {
         "name": "Equipo Principal",
         "players": players,
+        "logo_path": "",
         "config_path": TEAM_CONFIG_PATH,
         "is_fallback": True,
     }
+
+
+def save_team_logo(uploaded_file):
+    """Guarda el logo del equipo si es un PNG valido y actualiza la configuracion."""
+    if not uploaded_file or not uploaded_file.filename:
+        return False, "Selecciona un archivo PNG."
+
+    if not uploaded_file.filename.lower().endswith(".png"):
+        return False, "El logo debe ser un archivo .png."
+
+    try:
+        signature = uploaded_file.stream.read(8)
+        uploaded_file.stream.seek(0)
+    except Exception:
+        return False, "No se pudo leer el archivo."
+
+    if signature != b"\x89PNG\r\n\x1a\n":
+        return False, "El archivo no parece ser un PNG valido."
+
+    os.makedirs(TEAM_LOGO_UPLOAD_DIR, exist_ok=True)
+    destination = os.path.join(TEAM_LOGO_UPLOAD_DIR, TEAM_LOGO_FILENAME)
+    uploaded_file.save(destination)
+    _update_team_config({"logo_path": TEAM_LOGO_STATIC_PATH})
+    return True, "Logo del equipo actualizado."
 
 
 def build_team_dashboard():
@@ -70,28 +99,33 @@ def build_team_dashboard():
             "missing_roster": True,
         }
 
-    histories_by_puuid = {}
     matches_by_id = defaultdict(dict)
+    candidate_matches = {}
 
     for player in complete_roster:
         puuid = player["puuid"]
         riot_id = player.get("riot_id")
         historial = _get_match_history(puuid, riot_id)
         matches = historial.get("matches", []) if historial else []
-        histories_by_puuid[puuid] = matches
         for match in matches:
             match_id = match.get("match_id")
             if match_id:
                 matches_by_id[match_id][puuid] = match
+                candidate_matches.setdefault(match_id, match)
 
     team_puuids = {p["puuid"] for p in complete_roster}
     team_matches = []
 
-    for match_id, player_matches in matches_by_id.items():
-        if set(player_matches.keys()) != team_puuids:
+    for match_id, representative_match in candidate_matches.items():
+        if not _match_contains_roster(representative_match, team_puuids):
             continue
 
-        team_match = _build_team_match(match_id, player_matches, complete_roster)
+        team_match = _build_team_match(
+            match_id,
+            representative_match,
+            matches_by_id.get(match_id, {}),
+            complete_roster,
+        )
         if team_match:
             team_matches.append(team_match)
 
@@ -124,9 +158,31 @@ def _normalize_team_config(config):
     return {
         "name": config.get("name", "Equipo Principal"),
         "players": players,
+        "logo_path": config.get("logo_path", ""),
         "config_path": TEAM_CONFIG_PATH,
         "is_fallback": False,
     }
+
+
+def _update_team_config(updates):
+    config = _read_json_file(TEAM_CONFIG_PATH)
+    if not isinstance(config, dict):
+        current = get_team_config()
+        config = {
+            "name": current.get("name", "Equipo Principal"),
+            "players": [
+                {
+                    "riot_id": p.get("riot_id", ""),
+                    "role": p.get("role", ""),
+                }
+                for p in current.get("players", [])
+            ],
+        }
+
+    config.update(updates)
+    with open(TEAM_CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def _get_known_puuids():
@@ -164,7 +220,23 @@ def _get_match_history(puuid, riot_id):
     local_history = _read_local_match_history(puuid)
     if local_history is not None:
         return local_history
+    if not _allow_remote_reads():
+        return {"matches": [], "remakes": [], "last_updated": 0}
     return get_player_match_history(puuid, riot_id=riot_id, limit=-1)
+
+
+def _allow_remote_reads():
+    explicit = os.environ.get("TEAM_TRACKER_ALLOW_REMOTE")
+    if explicit is not None:
+        return explicit == "1"
+
+    render_env_vars = (
+        "RENDER",
+        "RENDER_SERVICE_ID",
+        "RENDER_EXTERNAL_URL",
+        "RENDER_EXTERNAL_HOSTNAME",
+    )
+    return bool(os.environ.get("GITHUB_TOKEN") or any(os.environ.get(k) for k in render_env_vars))
 
 
 def _read_local_match_history(puuid):
@@ -217,8 +289,17 @@ def _read_json_file(path):
         return None
 
 
-def _build_team_match(match_id, player_matches, roster):
-    representative = next(iter(player_matches.values()))
+def _match_contains_roster(match, team_puuids):
+    participants = match.get("all_participants") or []
+    participant_by_puuid = {p.get("puuid"): p for p in participants if p.get("puuid")}
+    if not team_puuids.issubset(set(participant_by_puuid.keys())):
+        return False
+
+    team_ids = {participant_by_puuid[puuid].get("team_id") for puuid in team_puuids}
+    return len(team_ids) == 1
+
+
+def _build_team_match(match_id, representative, player_matches, roster):
     participants = representative.get("all_participants") or []
     participant_by_puuid = {p.get("puuid"): p for p in participants if p.get("puuid")}
     roster_puuids = [p["puuid"] for p in roster]
@@ -240,7 +321,7 @@ def _build_team_match(match_id, player_matches, roster):
     player_rows = []
     for roster_player in roster:
         puuid = roster_player["puuid"]
-        match = player_matches[puuid]
+        match = player_matches.get(puuid) or {}
         participant = participant_by_puuid.get(puuid) or {}
         position = match.get("individual_position") or roster_player.get("role") or ""
         player_rows.append({
@@ -265,7 +346,7 @@ def _build_team_match(match_id, player_matches, roster):
     kills = sum(p["kills"] for p in player_rows)
     deaths = sum(p["deaths"] for p in player_rows)
     assists = sum(p["assists"] for p in player_rows)
-    win = bool(representative.get("win"))
+    win = bool(known_participants[0].get("win") if known_participants else representative.get("win"))
     lp_change = sum(_num(m.get("lp_change_this_game")) for m in player_matches.values())
 
     return {
