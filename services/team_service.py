@@ -134,6 +134,11 @@ def build_team_dashboard():
         "queue_stats": _build_queue_stats(team_matches),
         "recent_form": team_matches[:10],
         "champion_compositions": _build_champion_compositions(team_matches),
+        "player_stats": _build_player_stats(team_matches),
+        "duration_buckets": _build_duration_buckets(team_matches),
+        "objective_profile": _build_objective_profile(team_matches),
+        "recent_trends": _build_recent_trends(team_matches),
+        "insights": _build_team_insights(team_matches),
         "missing_roster": False,
     }
 
@@ -477,8 +482,11 @@ def _build_team_match(match_id, representative, player_matches, roster):
             "assists": _num(match.get("assists", participant.get("assists"))),
             "damage": _num(match.get("total_damage_dealt_to_champions", participant.get("total_damage_dealt_to_champions"))),
             "vision": _num(match.get("vision_score", participant.get("vision_score"))),
-            "gold": _num(match.get("gold_earned")),
-            "cs": _num(match.get("total_minions_killed")) + _num(match.get("neutral_minions_killed")),
+            "gold": _num(match.get("gold_earned", participant.get("gold_earned"))),
+            "cs": (
+                _num(match.get("total_minions_killed", participant.get("total_minions_killed")))
+                + _num(match.get("neutral_minions_killed", participant.get("neutral_minions_killed")))
+            ),
             "team_id": participant.get("team_id", team_id),
         })
 
@@ -543,6 +551,10 @@ def _build_summary(team_matches):
         "avg_vision": sum(m.get("team_vision", 0) for m in team_matches) / len(team_matches),
         "avg_dragons": sum(m.get("dragon_kills", 0) for m in team_matches) / len(team_matches),
         "avg_barons": sum(m.get("baron_kills", 0) for m in team_matches) / len(team_matches),
+        "avg_turrets": sum(m.get("turret_kills", 0) for m in team_matches) / len(team_matches),
+        "avg_deaths": sum(m.get("team_deaths", 0) for m in team_matches) / len(team_matches),
+        "avg_kills": sum(m.get("team_kills", 0) for m in team_matches) / len(team_matches),
+        "avg_cs": sum(m.get("team_cs", 0) for m in team_matches) / len(team_matches),
         "last_match": team_matches[0],
     }
 
@@ -562,7 +574,10 @@ def _build_queue_stats(team_matches):
             "wins": wins,
             "losses": len(matches) - wins,
             "win_rate": wins / len(matches) * 100 if matches else 0,
-            "lp_change": sum(m.get("lp_change", 0) for m in matches),
+            "avg_kda": sum(m.get("team_kda", 0) for m in matches) / len(matches) if matches else 0,
+            "avg_dragons": sum(m.get("dragon_kills", 0) for m in matches) / len(matches) if matches else 0,
+            "avg_barons": sum(m.get("baron_kills", 0) for m in matches) / len(matches) if matches else 0,
+            "avg_vision": sum(m.get("team_vision", 0) for m in matches) / len(matches) if matches else 0,
         })
 
     return sorted(stats, key=lambda s: s["matches"], reverse=True)
@@ -593,6 +608,211 @@ def _build_champion_compositions(team_matches):
             "last_seen": last_seen.get(composition, 0),
         })
     return rows
+
+
+def _build_player_stats(team_matches):
+    grouped = {}
+    for match in team_matches:
+        team_kills = max(1, _num(match.get("team_kills")))
+        for player in match.get("players", []):
+            puuid = player.get("puuid") or player.get("riot_id")
+            if not puuid:
+                continue
+            row = grouped.setdefault(puuid, {
+                "display_name": player.get("display_name") or player.get("riot_id"),
+                "riot_id": player.get("riot_id"),
+                "role": player.get("role") or player.get("position") or "",
+                "matches": 0,
+                "wins": 0,
+                "kills": 0,
+                "deaths": 0,
+                "assists": 0,
+                "damage": 0,
+                "vision": 0,
+                "gold": 0,
+                "cs": 0,
+                "kill_participation_sum": 0,
+                "champions": Counter(),
+                "champion_wins": Counter(),
+            })
+            champion = player.get("champion_name") or "Desconocido"
+            kills = _num(player.get("kills"))
+            assists = _num(player.get("assists"))
+
+            row["matches"] += 1
+            row["wins"] += 1 if match.get("win") else 0
+            row["kills"] += kills
+            row["deaths"] += _num(player.get("deaths"))
+            row["assists"] += assists
+            row["damage"] += _num(player.get("damage"))
+            row["vision"] += _num(player.get("vision"))
+            row["gold"] += _num(player.get("gold"))
+            row["cs"] += _num(player.get("cs"))
+            row["kill_participation_sum"] += (kills + assists) / team_kills * 100
+            row["champions"][champion] += 1
+            if match.get("win"):
+                row["champion_wins"][champion] += 1
+
+    players = []
+    for row in grouped.values():
+        matches = max(1, row["matches"])
+        deaths = max(1, row["deaths"])
+        top_champion, top_count = row["champions"].most_common(1)[0] if row["champions"] else ("Desconocido", 0)
+        champion_pool = []
+        for champion, count in row["champions"].most_common(5):
+            wins = row["champion_wins"][champion]
+            champion_pool.append({
+                "champion": champion,
+                "matches": count,
+                "wins": wins,
+                "win_rate": wins / count * 100 if count else 0,
+            })
+        players.append({
+            "display_name": row["display_name"],
+            "riot_id": row["riot_id"],
+            "role": row["role"],
+            "matches": row["matches"],
+            "wins": row["wins"],
+            "losses": row["matches"] - row["wins"],
+            "win_rate": row["wins"] / matches * 100,
+            "avg_kills": row["kills"] / matches,
+            "avg_deaths": row["deaths"] / matches,
+            "avg_assists": row["assists"] / matches,
+            "avg_kda": (row["kills"] + row["assists"]) / deaths,
+            "avg_damage": row["damage"] / matches,
+            "avg_vision": row["vision"] / matches,
+            "avg_gold": row["gold"] / matches,
+            "avg_cs": row["cs"] / matches,
+            "avg_kill_participation": row["kill_participation_sum"] / matches,
+            "top_champion": top_champion,
+            "top_champion_matches": top_count,
+            "champion_pool": champion_pool,
+        })
+
+    return sorted(players, key=lambda p: ROLE_ORDER.get((p.get("role") or "").upper(), 99))
+
+
+def _build_duration_buckets(team_matches):
+    buckets = [
+        {"key": "early", "label": "<25 min", "min": 0, "max": 25 * 60},
+        {"key": "mid", "label": "25-35 min", "min": 25 * 60, "max": 35 * 60},
+        {"key": "late", "label": "35+ min", "min": 35 * 60, "max": None},
+    ]
+    rows = []
+    for bucket in buckets:
+        matches = [
+            m for m in team_matches
+            if m.get("game_duration", 0) >= bucket["min"]
+            and (bucket["max"] is None or m.get("game_duration", 0) < bucket["max"])
+        ]
+        wins = sum(1 for m in matches if m.get("win"))
+        rows.append({
+            "key": bucket["key"],
+            "label": bucket["label"],
+            "matches": len(matches),
+            "wins": wins,
+            "losses": len(matches) - wins,
+            "win_rate": wins / len(matches) * 100 if matches else 0,
+            "avg_kda": sum(m.get("team_kda", 0) for m in matches) / len(matches) if matches else 0,
+            "avg_deaths": sum(m.get("team_deaths", 0) for m in matches) / len(matches) if matches else 0,
+        })
+    return rows
+
+
+def _build_objective_profile(team_matches):
+    if not team_matches:
+        return {}
+
+    total = len(team_matches)
+    return {
+        "avg_dragons": sum(m.get("dragon_kills", 0) for m in team_matches) / total,
+        "avg_barons": sum(m.get("baron_kills", 0) for m in team_matches) / total,
+        "avg_turrets": sum(m.get("turret_kills", 0) for m in team_matches) / total,
+        "avg_inhibitors": sum(m.get("inhibitor_kills", 0) for m in team_matches) / total,
+        "avg_stolen": sum(m.get("objectives_stolen", 0) for m in team_matches) / total,
+        "best_objective_game": max(
+            team_matches,
+            key=lambda m: (
+                m.get("dragon_kills", 0)
+                + m.get("baron_kills", 0) * 2
+                + m.get("turret_kills", 0)
+                + m.get("inhibitor_kills", 0) * 2
+            ),
+        ),
+    }
+
+
+def _build_recent_trends(team_matches):
+    recent = team_matches[:5]
+    previous = team_matches[5:10]
+
+    def _slice_stats(matches):
+        if not matches:
+            return {
+                "matches": 0,
+                "win_rate": 0,
+                "avg_kda": 0,
+                "avg_deaths": 0,
+                "avg_objectives": 0,
+            }
+        return {
+            "matches": len(matches),
+            "win_rate": sum(1 for m in matches if m.get("win")) / len(matches) * 100,
+            "avg_kda": sum(m.get("team_kda", 0) for m in matches) / len(matches),
+            "avg_deaths": sum(m.get("team_deaths", 0) for m in matches) / len(matches),
+            "avg_objectives": sum(
+                m.get("dragon_kills", 0) + m.get("baron_kills", 0) + m.get("turret_kills", 0)
+                for m in matches
+            ) / len(matches),
+        }
+
+    recent_stats = _slice_stats(recent)
+    previous_stats = _slice_stats(previous)
+    return {
+        "recent": recent_stats,
+        "previous": previous_stats,
+        "win_rate_delta": recent_stats["win_rate"] - previous_stats["win_rate"],
+        "kda_delta": recent_stats["avg_kda"] - previous_stats["avg_kda"],
+        "deaths_delta": recent_stats["avg_deaths"] - previous_stats["avg_deaths"],
+        "objectives_delta": recent_stats["avg_objectives"] - previous_stats["avg_objectives"],
+    }
+
+
+def _build_team_insights(team_matches):
+    if not team_matches:
+        return []
+
+    summary = _build_summary(team_matches)
+    buckets = _build_duration_buckets(team_matches)
+    trends = _build_recent_trends(team_matches)
+    insights = []
+
+    if summary["win_rate"] >= 60:
+        insights.append({"type": "strength", "title": "Winrate solido", "text": "El bloque funciona bien cuando juega como cinco."})
+    elif summary["win_rate"] < 45:
+        insights.append({"type": "risk", "title": "Resultados por debajo del objetivo", "text": "Conviene revisar draft, muertes y control de objetivos en derrotas."})
+
+    if summary.get("avg_deaths", 0) > 28:
+        insights.append({"type": "risk", "title": "Demasiadas muertes", "text": "El equipo esta concediendo muchas ventanas al rival."})
+    elif summary.get("avg_deaths", 0) and summary.get("avg_deaths", 0) < 20:
+        insights.append({"type": "strength", "title": "Buena disciplina", "text": "La media de muertes es baja para partidas de equipo."})
+
+    if summary.get("avg_dragons", 0) >= 2.5:
+        insights.append({"type": "strength", "title": "Buen control de dragones", "text": "El equipo convierte presencia de mapa en objetivos neutrales."})
+    elif summary.get("avg_dragons", 0) < 1.5:
+        insights.append({"type": "risk", "title": "Pocos dragones", "text": "Puede faltar prioridad previa o coordinacion de setup."})
+
+    late_bucket = next((b for b in buckets if b["key"] == "late"), None)
+    if late_bucket and late_bucket["matches"] >= 2 and late_bucket["win_rate"] < summary["win_rate"]:
+        insights.append({"type": "risk", "title": "Late game vulnerable", "text": "El winrate cae en partidas largas; revisad cierres y vision avanzada."})
+
+    if trends["recent"]["matches"] and trends["previous"]["matches"]:
+        if trends["win_rate_delta"] >= 20:
+            insights.append({"type": "strength", "title": "Forma reciente al alza", "text": "Las ultimas cinco partidas mejoran claramente el bloque anterior."})
+        elif trends["win_rate_delta"] <= -20:
+            insights.append({"type": "risk", "title": "Forma reciente a la baja", "text": "La tendencia reciente empeora; merece revision de patrones comunes."})
+
+    return insights[:5]
 
 
 def _calculate_streak(team_matches):
@@ -628,6 +848,10 @@ def _empty_summary():
         "avg_vision": 0,
         "avg_dragons": 0,
         "avg_barons": 0,
+        "avg_turrets": 0,
+        "avg_deaths": 0,
+        "avg_kills": 0,
+        "avg_cs": 0,
         "last_match": None,
     }
 

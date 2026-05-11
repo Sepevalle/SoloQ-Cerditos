@@ -158,6 +158,49 @@
         font-size: 0.8rem;
         margin-top: 6px;
     }
+    .team-tabs {
+        border-bottom: 1px solid #d8dee6;
+        gap: 6px;
+    }
+    .team-tabs .nav-link {
+        border: 0;
+        border-radius: 8px 8px 0 0;
+        color: #667085;
+        font-weight: 700;
+    }
+    .team-tabs .nav-link.active {
+        background: #111827;
+        color: #fff;
+    }
+    .insight-grid,
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .insight-card,
+    .detail-card {
+        border: 1px solid #e1e7ef;
+        border-radius: 8px;
+        padding: 12px;
+        background: #fff;
+    }
+    .insight-card.strength {
+        border-left: 4px solid #16845b;
+    }
+    .insight-card.risk {
+        border-left: 4px solid #c43d4b;
+    }
+    .detail-label {
+        color: #667085;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .detail-value {
+        font-size: 1.2rem;
+        font-weight: 800;
+    }
     .team-section {
         padding: 16px;
     }
@@ -232,18 +275,6 @@
         min-width: 210px;
         white-space: normal;
     }
-    .lp-positive {
-        color: #16845b;
-        font-weight: 800;
-    }
-    .lp-negative {
-        color: #c43d4b;
-        font-weight: 800;
-    }
-    .lp-neutral {
-        color: #667085;
-        font-weight: 800;
-    }
     .dark-mode .team-hero {
         background: linear-gradient(135deg, #18202a 0%, #202a35 56%, #151b23 100%);
         border-color: #3b4652;
@@ -251,7 +282,9 @@
     .dark-mode .team-logo-panel,
     .dark-mode .roster-slot,
     .dark-mode .metric-card,
-    .dark-mode .team-section {
+    .dark-mode .team-section,
+    .dark-mode .insight-card,
+    .dark-mode .detail-card {
         background: #1f2933;
         border-color: #3b4652;
     }
@@ -271,6 +304,7 @@
     .dark-mode .status-label,
     .dark-mode .metric-label,
     .dark-mode .metric-note,
+    .dark-mode .detail-label,
     .dark-mode .section-meta,
     .dark-mode .team-muted,
     .dark-mode .roster-role {
@@ -303,7 +337,9 @@
             grid-template-columns: 1fr;
         }
         .roster-grid,
-        .metric-grid {
+        .metric-grid,
+        .insight-grid,
+        .detail-grid {
             grid-template-columns: 1fr;
         }
         .team-logo-panel {
@@ -419,11 +455,11 @@
                 <div class="metric-note">Partidas juntos recientes</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">LP del equipo</div>
-                <div class="metric-value {% if summary.lp_change > 0 %}lp-positive{% elif summary.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
-                    {% if summary.lp_change > 0 %}+{% endif %}{{ summary.lp_change }}
+                <div class="metric-label">Muertes medias</div>
+                <div class="metric-value {% if summary.avg_deaths <= 20 %}text-success{% elif summary.avg_deaths >= 28 %}text-danger{% endif %}">
+                    {{ "%.1f"|format(summary.avg_deaths) }}
                 </div>
-                <div class="metric-note">Solo partidas con los 5</div>
+                <div class="metric-note">Disciplina y control de mapa</div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">KDA medio</div>
@@ -442,8 +478,8 @@
             </div>
             <div class="metric-card">
                 <div class="metric-label">Objetivos medios</div>
-                <div class="metric-value">{{ "%.1f"|format(summary.avg_dragons) }} / {{ "%.1f"|format(summary.avg_barons) }}</div>
-                <div class="metric-note">Dragones / Barones</div>
+                <div class="metric-value">{{ "%.1f"|format(summary.avg_dragons) }}D / {{ "%.1f"|format(summary.avg_barons) }}B</div>
+                <div class="metric-note">{{ "%.1f"|format(summary.avg_turrets) }} torres por partida</div>
             </div>
         </div>
 
@@ -454,25 +490,145 @@
         {% endif %}
 
         {% if summary.total_matches > 0 %}
-            <section class="team-section">
-                <div class="section-head">
-                    <h2 class="section-title">Partidas en equipo</h2>
-                    <span class="section-meta">{{ summary.total_matches }} partidas juntos</span>
-                </div>
-                <div class="result-strip">
-                    {% for match in dashboard.recent_form %}
-                        <a class="result-dot {% if match.win %}win{% else %}loss{% endif %}" href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" title="{{ match.queue_name }} - {{ match.game_end_timestamp | format_timestamp }}">
-                            {{ "V" if match.win else "D" }}
-                        </a>
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
+            <ul class="nav nav-tabs team-tabs" id="teamTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview-pane" type="button" role="tab">Resumen</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="players-tab" data-bs-toggle="tab" data-bs-target="#players-pane" type="button" role="tab">Jugadores</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="draft-tab" data-bs-toggle="tab" data-bs-target="#draft-pane" type="button" role="tab">Draft</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" type="button" role="tab">Historial</button>
+                </li>
+            </ul>
 
-        {% if summary.total_matches > 0 %}
-            <div class="row g-3">
-                <div class="col-lg-5">
-                    <section class="team-section h-100">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="overview-pane" role="tabpanel" tabindex="0">
+                    <section class="team-section mt-3">
+                        <div class="section-head">
+                            <h2 class="section-title">Forma reciente</h2>
+                            <span class="section-meta">{{ summary.total_matches }} partidas juntos</span>
+                        </div>
+                        <div class="result-strip">
+                            {% for match in dashboard.recent_form %}
+                                <a class="result-dot {% if match.win %}win{% else %}loss{% endif %}" href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" title="{{ match.queue_name }} - {{ match.game_end_timestamp | format_timestamp }}">
+                                    {{ "V" if match.win else "D" }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+
+                    {% if dashboard.insights %}
+                        <section class="team-section mt-3">
+                            <div class="section-head">
+                                <h2 class="section-title">Lectura del rendimiento</h2>
+                            </div>
+                            <div class="insight-grid">
+                                {% for insight in dashboard.insights %}
+                                    <div class="insight-card {{ insight.type }}">
+                                        <div class="fw-bold mb-1">{{ insight.title }}</div>
+                                        <div class="team-muted">{{ insight.text }}</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </section>
+                    {% endif %}
+
+                    <div class="row g-3 mt-0">
+                        <div class="col-lg-6">
+                            <section class="team-section h-100">
+                                <div class="section-head">
+                                    <h2 class="section-title">Objetivos</h2>
+                                </div>
+                                <div class="detail-grid">
+                                    <div class="detail-card"><div class="detail-label">Dragones</div><div class="detail-value">{{ "%.2f"|format(dashboard.objective_profile.avg_dragons) }}</div></div>
+                                    <div class="detail-card"><div class="detail-label">Barones</div><div class="detail-value">{{ "%.2f"|format(dashboard.objective_profile.avg_barons) }}</div></div>
+                                    <div class="detail-card"><div class="detail-label">Torres</div><div class="detail-value">{{ "%.2f"|format(dashboard.objective_profile.avg_turrets) }}</div></div>
+                                    <div class="detail-card"><div class="detail-label">Inhibidores</div><div class="detail-value">{{ "%.2f"|format(dashboard.objective_profile.avg_inhibitors) }}</div></div>
+                                    <div class="detail-card"><div class="detail-label">Robos</div><div class="detail-value">{{ "%.2f"|format(dashboard.objective_profile.avg_stolen) }}</div></div>
+                                    <div class="detail-card"><div class="detail-label">Vision</div><div class="detail-value">{{ summary.avg_vision | round(0) | int | thousands_separator }}</div></div>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="col-lg-6">
+                            <section class="team-section h-100">
+                                <div class="section-head">
+                                    <h2 class="section-title">Por duracion</h2>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm team-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Tramo</th>
+                                                <th>Partidas</th>
+                                                <th>Balance</th>
+                                                <th>WR</th>
+                                                <th>KDA</th>
+                                                <th>Muertes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for bucket in dashboard.duration_buckets %}
+                                                <tr>
+                                                    <td>{{ bucket.label }}</td>
+                                                    <td>{{ bucket.matches }}</td>
+                                                    <td>{{ bucket.wins }}W - {{ bucket.losses }}L</td>
+                                                    <td>{{ "%.1f"|format(bucket.win_rate) }}%</td>
+                                                    <td>{{ "%.2f"|format(bucket.avg_kda) }}</td>
+                                                    <td>{{ "%.1f"|format(bucket.avg_deaths) }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <section class="team-section mt-3">
+                        <div class="section-head">
+                            <h2 class="section-title">Tendencia ultimas 5 vs anteriores 5</h2>
+                        </div>
+                        <div class="detail-grid">
+                            <div class="detail-card">
+                                <div class="detail-label">Winrate</div>
+                                <div class="detail-value {% if dashboard.recent_trends.win_rate_delta > 0 %}text-success{% elif dashboard.recent_trends.win_rate_delta < 0 %}text-danger{% endif %}">
+                                    {% if dashboard.recent_trends.win_rate_delta > 0 %}+{% endif %}{{ "%.1f"|format(dashboard.recent_trends.win_rate_delta) }} pts
+                                </div>
+                            </div>
+                            <div class="detail-card">
+                                <div class="detail-label">KDA</div>
+                                <div class="detail-value {% if dashboard.recent_trends.kda_delta > 0 %}text-success{% elif dashboard.recent_trends.kda_delta < 0 %}text-danger{% endif %}">
+                                    {% if dashboard.recent_trends.kda_delta > 0 %}+{% endif %}{{ "%.2f"|format(dashboard.recent_trends.kda_delta) }}
+                                </div>
+                            </div>
+                            <div class="detail-card">
+                                <div class="detail-label">Muertes</div>
+                                <div class="detail-value {% if dashboard.recent_trends.deaths_delta < 0 %}text-success{% elif dashboard.recent_trends.deaths_delta > 0 %}text-danger{% endif %}">
+                                    {% if dashboard.recent_trends.deaths_delta > 0 %}+{% endif %}{{ "%.1f"|format(dashboard.recent_trends.deaths_delta) }}
+                                </div>
+                            </div>
+                            <div class="detail-card">
+                                <div class="detail-label">Objetivos</div>
+                                <div class="detail-value {% if dashboard.recent_trends.objectives_delta > 0 %}text-success{% elif dashboard.recent_trends.objectives_delta < 0 %}text-danger{% endif %}">
+                                    {% if dashboard.recent_trends.objectives_delta > 0 %}+{% endif %}{{ "%.1f"|format(dashboard.recent_trends.objectives_delta) }}
+                                </div>
+                            </div>
+                            <div class="detail-card">
+                                <div class="detail-label">Ultimas 5</div>
+                                <div class="detail-value">{{ "%.1f"|format(dashboard.recent_trends.recent.win_rate) }}%</div>
+                            </div>
+                            <div class="detail-card">
+                                <div class="detail-label">Anteriores 5</div>
+                                <div class="detail-value">{{ "%.1f"|format(dashboard.recent_trends.previous.win_rate) }}%</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="team-section mt-3">
                         <div class="section-head">
                             <h2 class="section-title">Rendimiento por cola</h2>
                         </div>
@@ -484,7 +640,9 @@
                                         <th>Partidas</th>
                                         <th>Balance</th>
                                         <th>WR</th>
-                                        <th>LP</th>
+                                        <th>KDA</th>
+                                        <th>Objetivos</th>
+                                        <th>Vision</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -494,9 +652,9 @@
                                             <td>{{ queue.matches }}</td>
                                             <td>{{ queue.wins }}W - {{ queue.losses }}L</td>
                                             <td>{{ "%.1f"|format(queue.win_rate) }}%</td>
-                                            <td class="{% if queue.lp_change > 0 %}lp-positive{% elif queue.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
-                                                {% if queue.lp_change > 0 %}+{% endif %}{{ queue.lp_change }}
-                                            </td>
+                                            <td>{{ "%.2f"|format(queue.avg_kda) }}</td>
+                                            <td>{{ "%.1f"|format(queue.avg_dragons) }}D / {{ "%.1f"|format(queue.avg_barons) }}B</td>
+                                            <td>{{ queue.avg_vision | round(0) | int | thousands_separator }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -504,8 +662,71 @@
                         </div>
                     </section>
                 </div>
-                <div class="col-lg-7">
-                    <section class="team-section h-100">
+
+                <div class="tab-pane fade" id="players-pane" role="tabpanel" tabindex="0">
+                    <section class="team-section mt-3">
+                        <div class="section-head">
+                            <h2 class="section-title">Jugadores en partidas de equipo</h2>
+                            <span class="section-meta">Solo partidas con el roster completo</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover team-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Rol</th>
+                                        <th>Jugador</th>
+                                        <th>Campeon mas usado</th>
+                                        <th>KDA</th>
+                                        <th>KP</th>
+                                        <th>Daño</th>
+                                        <th>Vision</th>
+                                        <th>CS</th>
+                                        <th>Muertes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for player in dashboard.player_stats %}
+                                        <tr>
+                                            <td>{{ player.role or "ROL" }}</td>
+                                            <td class="text-start">{{ player.display_name }}</td>
+                                            <td>{{ player.top_champion }} <span class="team-muted">({{ player.top_champion_matches }})</span></td>
+                                            <td>{{ "%.2f"|format(player.avg_kda) }}</td>
+                                            <td>{{ "%.1f"|format(player.avg_kill_participation) }}%</td>
+                                            <td>{{ player.avg_damage | round(0) | int | thousands_separator }}</td>
+                                            <td>{{ player.avg_vision | round(0) | int | thousands_separator }}</td>
+                                            <td>{{ "%.1f"|format(player.avg_cs) }}</td>
+                                            <td>{{ "%.1f"|format(player.avg_deaths) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="team-section mt-3">
+                        <div class="section-head">
+                            <h2 class="section-title">Pool usado con el equipo</h2>
+                        </div>
+                        <div class="row g-3">
+                            {% for player in dashboard.player_stats %}
+                                <div class="col-lg-4">
+                                    <div class="detail-card h-100">
+                                        <div class="fw-bold mb-2">{{ player.display_name }}</div>
+                                        {% for champion in player.champion_pool %}
+                                            <div class="d-flex justify-content-between gap-2 border-bottom py-1">
+                                                <span>{{ champion.champion }}</span>
+                                                <span class="fw-bold">{{ champion.matches }}p | {{ "%.0f"|format(champion.win_rate) }}%</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+
+                <div class="tab-pane fade" id="draft-pane" role="tabpanel" tabindex="0">
+                    <section class="team-section mt-3">
                         <div class="section-head">
                             <h2 class="section-title">Composiciones repetidas</h2>
                         </div>
@@ -543,61 +764,59 @@
                         {% endif %}
                     </section>
                 </div>
-            </div>
 
-            <section class="team-section">
-                <div class="section-head">
-                    <h2 class="section-title">Historial del equipo</h2>
-                    <span class="section-meta">{{ dashboard.team_matches | length }} partidas detectadas</span>
+                <div class="tab-pane fade" id="history-pane" role="tabpanel" tabindex="0">
+                    <section class="team-section mt-3">
+                        <div class="section-head">
+                            <h2 class="section-title">Historial del equipo</h2>
+                            <span class="section-meta">{{ dashboard.team_matches | length }} partidas detectadas</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover team-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Cola</th>
+                                        <th>Resultado</th>
+                                        <th>Composicion</th>
+                                        <th>KDA equipo</th>
+                                        <th>Objetivos</th>
+                                        <th>Vision</th>
+                                        <th>Duracion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for match in dashboard.team_matches %}
+                                        <tr>
+                                            <td>{{ match.game_end_timestamp | format_timestamp }}</td>
+                                            <td>{{ match.queue_name }}</td>
+                                            <td>
+                                                <a href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" class="{% if match.win %}text-success{% else %}text-danger{% endif %} fw-bold text-decoration-none">
+                                                    {{ match.result_label }}
+                                                </a>
+                                            </td>
+                                            <td class="composition-cell">
+                                                <div class="champion-strip">
+                                                    {% for champion in match.composition %}
+                                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion }}.png" alt="{{ champion }}" title="{{ champion }}">
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
+                                            <td>{{ match.team_kills }}/{{ match.team_deaths }}/{{ match.team_assists }} ({{ "%.2f"|format(match.team_kda) }})</td>
+                                            <td>
+                                                {{ match.dragon_kills }} drakes | {{ match.baron_kills }} barons | {{ match.turret_kills }} torres
+                                                {% if match.objectives_stolen %}<span class="badge bg-info ms-1">{{ match.objectives_stolen }} rob.</span>{% endif %}
+                                            </td>
+                                            <td>{{ match.team_vision | thousands_separator }}</td>
+                                            <td>{{ match.duration_label }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover team-table mb-0">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Cola</th>
-                                <th>Resultado</th>
-                                <th>Composicion</th>
-                                <th>KDA equipo</th>
-                                <th>Objetivos</th>
-                                <th>Vision</th>
-                                <th>Duracion</th>
-                                <th>LP</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for match in dashboard.team_matches %}
-                                <tr>
-                                    <td>{{ match.game_end_timestamp | format_timestamp }}</td>
-                                    <td>{{ match.queue_name }}</td>
-                                    <td>
-                                        <a href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" class="{% if match.win %}text-success{% else %}text-danger{% endif %} fw-bold text-decoration-none">
-                                            {{ match.result_label }}
-                                        </a>
-                                    </td>
-                                    <td class="composition-cell">
-                                        <div class="champion-strip">
-                                            {% for champion in match.composition %}
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ ddragon_version }}/img/champion/{{ champion }}.png" alt="{{ champion }}" title="{{ champion }}">
-                                            {% endfor %}
-                                        </div>
-                                    </td>
-                                    <td>{{ match.team_kills }}/{{ match.team_deaths }}/{{ match.team_assists }} ({{ "%.2f"|format(match.team_kda) }})</td>
-                                    <td>
-                                        {{ match.dragon_kills }} drakes | {{ match.baron_kills }} barons | {{ match.turret_kills }} torres
-                                        {% if match.objectives_stolen %}<span class="badge bg-info ms-1">{{ match.objectives_stolen }} rob.</span>{% endif %}
-                                    </td>
-                                    <td>{{ match.team_vision | thousands_separator }}</td>
-                                    <td>{{ match.duration_label }}</td>
-                                    <td class="{% if match.lp_change > 0 %}lp-positive{% elif match.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
-                                        {% if match.lp_change > 0 %}+{% endif %}{{ match.lp_change }}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+            </div>
         {% endif %}
     </div>
 </main>
