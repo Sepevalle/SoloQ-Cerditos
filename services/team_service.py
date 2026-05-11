@@ -360,13 +360,23 @@ def _compute_team_matches(roster):
     team_puuids = {p["puuid"] for p in roster}
     team_matches = []
     print(f"[team_service] Partidas candidatas del roster: {len(candidate_matches)}")
+    full_history_matches = 0
+    rejected_missing_roster = 0
     for match_id, representative in candidate_matches.items():
-        if not _match_contains_roster(representative, team_puuids):
+        player_matches = matches_by_id.get(match_id, {})
+        has_full_history = team_puuids.issubset(set(player_matches.keys()))
+        if has_full_history:
+            full_history_matches += 1
+        if not has_full_history and not _match_contains_roster(representative, team_puuids):
+            rejected_missing_roster += 1
             continue
-        team_match = _build_team_match(match_id, representative, matches_by_id.get(match_id, {}), roster)
+        team_match = _build_team_match(match_id, representative, player_matches, roster)
         if team_match:
             team_matches.append(team_match)
 
+    print(f"[team_service] Match IDs presentes en los 5 historiales: {full_history_matches}")
+    print(f"[team_service] Candidatas descartadas por faltar roster: {rejected_missing_roster}")
+    print(f"[team_service] Partidas de equipo detectadas: {len(team_matches)}")
     return _normalize_team_matches(team_matches)
 
 
@@ -403,7 +413,10 @@ def _normalize_team_matches(team_matches):
 
 
 def _build_team_match(match_id, representative, player_matches, roster):
-    participants = representative.get("all_participants") or []
+    participants = []
+    for match in [representative, *player_matches.values()]:
+        participants.extend(match.get("all_participants") or [])
+
     participant_by_puuid = {p.get("puuid"): p for p in participants if p.get("puuid")}
     roster_puuids = [p["puuid"] for p in roster]
     team_participants = [participant_by_puuid.get(puuid) for puuid in roster_puuids]
@@ -417,6 +430,9 @@ def _build_team_match(match_id, representative, player_matches, roster):
             same_team = False
         else:
             team_id = next(iter(team_ids))
+    elif len(player_matches) == 5:
+        wins = {bool(match.get("win")) for match in player_matches.values()}
+        same_team = len(wins) == 1
 
     if not same_team:
         return None
