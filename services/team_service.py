@@ -349,6 +349,7 @@ def _compute_team_matches(roster):
         riot_id = player.get("riot_id")
         history = _get_match_history(puuid, riot_id)
         matches = history.get("matches", []) if history else []
+        print(f"[team_service] Historial {riot_id}: {len(matches)} partidas")
         for match in matches:
             match_id = match.get("match_id")
             if not match_id:
@@ -358,6 +359,7 @@ def _compute_team_matches(roster):
 
     team_puuids = {p["puuid"] for p in roster}
     team_matches = []
+    print(f"[team_service] Partidas candidatas del roster: {len(candidate_matches)}")
     for match_id, representative in candidate_matches.items():
         if not _match_contains_roster(representative, team_puuids):
             continue
@@ -616,6 +618,9 @@ def _load_team_matches_cache(config, roster):
 
     def _validate_cache(cached):
         if not isinstance(cached, dict):
+            return False
+        if cached.get("total_team_matches", 0) == 0 and not cached.get("team_matches"):
+            print("[team_service] Cache vacio ignorado para forzar recalculo")
             return False
         cached_team_name = cached.get("team_name")
         cached_players = cached.get("players", [])
