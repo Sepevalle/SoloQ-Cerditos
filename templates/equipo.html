@@ -787,13 +787,13 @@
                                 </thead>
                                 <tbody>
                                     {% for match in dashboard.team_matches %}
-                                        <tr>
+                                        <tr style="cursor: pointer;" onclick="window.location.href='{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}';" title="Ver detalle de la partida">
                                             <td>{{ match.game_end_timestamp | format_timestamp }}</td>
                                             <td>{{ match.queue_name }}</td>
                                             <td>
-                                                <a href="{{ url_for('player.detalle_partida_por_id', match_id=match.match_id) }}" class="{% if match.win %}text-success{% else %}text-danger{% endif %} fw-bold text-decoration-none">
+                                                <span class="{% if match.win %}text-success{% else %}text-danger{% endif %} fw-bold">
                                                     {{ match.result_label }}
-                                                </a>
+                                                </span>
                                             </td>
                                             <td class="composition-cell">
                                                 <div class="champion-strip">
