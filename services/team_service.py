@@ -7,6 +7,7 @@ import os
 from collections import Counter, defaultdict
 
 from config.settings import QUEUE_NAMES
+from services.github_service import read_file_from_github, write_file_to_github
 from services.match_service import get_player_match_history
 from services.player_service import get_all_puuids
 
@@ -95,6 +96,7 @@ def build_team_dashboard():
         return {
             "config": config,
             "summary": _empty_summary(),
+            "aggregate_summary": _empty_summary(),
             "team_matches": [],
             "queue_stats": [],
             "recent_form": [],
@@ -493,41 +495,53 @@ def _num(value):
 
 def _load_team_matches_cache(config, roster):
     """Carga las partidas del equipo desde el caché si es válido."""
-    if not os.path.exists(TEAM_MATCHES_CACHE_PATH):
-        return None
+    current_team_name = config.get("name")
+    current_puuids = {p["puuid"] for p in roster}
 
-    try:
-        with open(TEAM_MATCHES_CACHE_PATH, "r", encoding="utf-8") as f:
-            cached = json.load(f)
-
-        # Verificar que el caché es para el mismo equipo
+    def _validate_cache(cached):
+        if not isinstance(cached, dict):
+            return False
         cached_team_name = cached.get("team_name")
         cached_players = cached.get("players", [])
-        current_team_name = config.get("name")
-        current_puuids = {p["puuid"] for p in roster}
-
         if (cached_team_name != current_team_name or
             len(cached_players) != len(roster) or
             {p["puuid"] for p in cached_players} != current_puuids):
-            print("[team_service] Caché desactualizado (equipo cambió)")
-            return None
+            return False
+        return True
 
-        # Verificar que no es demasiado viejo (24 horas)
-        import time
-        last_updated = cached.get("last_updated", 0)
-        if time.time() - last_updated > 24 * 3600:
-            print("[team_service] Caché expirado")
-            return None
+    if os.path.exists(TEAM_MATCHES_CACHE_PATH):
+        try:
+            with open(TEAM_MATCHES_CACHE_PATH, "r", encoding="utf-8") as f:
+                cached = json.load(f)
 
-        return cached
+            if _validate_cache(cached):
+                import time
+                last_updated = cached.get("last_updated", 0)
+                if time.time() - last_updated <= 24 * 3600:
+                    return cached
+                print("[team_service] Caché local expirado")
+            else:
+                print("[team_service] Caché local desactualizado")
+        except Exception as e:
+            print(f"[team_service] Error leyendo caché local: {e}")
 
-    except Exception as e:
-        print(f"[team_service] Error leyendo caché: {e}")
-        return None
+    # Intentar recuperar el caché desde GitHub si no hay local válido
+    remote_cached, _ = read_file_from_github(TEAM_MATCHES_CACHE_PATH, use_raw=False)
+    if remote_cached and _validate_cache(remote_cached):
+        try:
+            with open(TEAM_MATCHES_CACHE_PATH, "w", encoding="utf-8") as f:
+                json.dump(remote_cached, f, indent=2, ensure_ascii=False)
+                f.write("\n")
+            print("[team_service] Caché descargado desde GitHub")
+        except Exception as e:
+            print(f"[team_service] Error guardando caché local desde GitHub: {e}")
+        return remote_cached
+
+    return None
 
 
 def _save_team_matches_cache(config, roster, team_matches):
-    """Guarda las partidas del equipo en el caché."""
+    """Guarda las partidas del equipo en el caché local y en GitHub."""
     import time
     cache_data = {
         "team_name": config.get("name"),
@@ -541,9 +555,15 @@ def _save_team_matches_cache(config, roster, team_matches):
         with open(TEAM_MATCHES_CACHE_PATH, "w", encoding="utf-8") as f:
             json.dump(cache_data, f, indent=2, ensure_ascii=False)
             f.write("\n")
-        print(f"[team_service] Caché guardado con {len(team_matches)} partidas")
+        print(f"[team_service] Caché local guardado con {len(team_matches)} partidas")
     except Exception as e:
-        print(f"[team_service] Error guardando caché: {e}")
+        print(f"[team_service] Error guardando caché local: {e}")
+
+    # Persistir el archivo en GitHub cuando sea posible
+    if write_file_to_github(TEAM_MATCHES_CACHE_PATH, cache_data, message="Actualización automática de team_matches.json"):
+        print("[team_service] team_matches.json persistido en GitHub")
+    else:
+        print("[team_service] No se pudo persistir team_matches.json en GitHub")
 
 
 def _build_aggregate_summary(roster):

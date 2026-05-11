@@ -12,6 +12,7 @@ from collections import defaultdict
 # Añadir el directorio raíz al path para importar módulos
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from services.github_service import write_file_to_github
 from services.team_service import get_team_config
 from services.match_service import get_player_match_history
 
@@ -103,6 +104,11 @@ def generate_team_matches_json():
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output_data, f, indent=2, ensure_ascii=False)
         f.write("\n")
+
+    if write_file_to_github(output_path, output_data, message="Actualizar team_matches.json desde script"):
+        print("✓ team_matches.json guardado en GitHub")
+    else:
+        print("⚠️ No se pudo guardar team_matches.json en GitHub")
 
     print(f"✓ Generado {output_path} con {len(team_matches)} partidas del equipo")
     return True
