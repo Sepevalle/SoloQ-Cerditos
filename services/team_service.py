@@ -257,12 +257,27 @@ def _read_local_accounts():
 
 
 def _get_match_history(puuid, riot_id):
+    if _prefer_github_storage() and _allow_remote_reads():
+        remote_history = get_player_match_history(
+            puuid,
+            riot_id=riot_id,
+            limit=-1,
+            force_refresh=True,
+        )
+        if remote_history and remote_history.get("matches"):
+            return remote_history
+
     local_history = _read_local_match_history(puuid)
     if local_history is not None:
         return local_history
     if not _allow_remote_reads():
         return {"matches": [], "remakes": [], "last_updated": 0}
-    return get_player_match_history(puuid, riot_id=riot_id, limit=-1)
+    return get_player_match_history(
+        puuid,
+        riot_id=riot_id,
+        limit=-1,
+        force_refresh=True,
+    )
 
 
 def _allow_remote_reads():
@@ -349,7 +364,14 @@ def _compute_team_matches(roster):
         riot_id = player.get("riot_id")
         history = _get_match_history(puuid, riot_id)
         matches = history.get("matches", []) if history else []
-        print(f"[team_service] Historial {riot_id}: {len(matches)} partidas")
+        timestamps = [m.get("game_end_timestamp", 0) for m in matches if m.get("game_end_timestamp")]
+        if timestamps:
+            print(
+                f"[team_service] Historial {riot_id}: {len(matches)} partidas "
+                f"({min(timestamps)} -> {max(timestamps)})"
+            )
+        else:
+            print(f"[team_service] Historial {riot_id}: {len(matches)} partidas")
         for match in matches:
             match_id = match.get("match_id")
             if not match_id:
