@@ -10,7 +10,7 @@ import sys
 from collections import defaultdict
 
 # Añadir el directorio raíz al path para importar módulos
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from services.github_service import write_file_to_github
 from services.team_service import get_team_config

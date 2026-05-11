@@ -186,6 +186,9 @@ def write_file_to_github(file_path, content, message="Actualización automática
     if not GITHUB_TOKEN:
         print(f"[write_file_to_github] Error: Token de GitHub no configurado")
         return False
+
+    if sha is None:
+        sha = get_file_sha_only(file_path)
     
     url = get_github_file_url(file_path, raw=False)
     headers = get_github_headers()
@@ -267,6 +270,50 @@ def write_file_to_github(file_path, content, message="Actualización automática
             return False
     
     print(f"[write_file_to_github] ✗ Falló después de {max_retries} intentos")
+    return False
+
+
+def write_binary_file_to_github(file_path, content_bytes, message="Actualizacion automatica", sha=None, max_retries=MAX_RETRIES):
+    """Escribe o actualiza un archivo binario en GitHub."""
+    if not GITHUB_TOKEN:
+        print("[write_binary_file_to_github] Error: Token de GitHub no configurado")
+        return False
+
+    if sha is None:
+        sha = get_file_sha_only(file_path)
+
+    url = get_github_file_url(file_path, raw=False)
+    headers = get_github_headers()
+    content_b64 = base64.b64encode(content_bytes).decode("utf-8")
+
+    for attempt in range(max_retries):
+        data = {
+            "message": message,
+            "content": content_b64,
+            "branch": "main",
+        }
+        if sha:
+            data["sha"] = sha
+
+        try:
+            response = requests.put(url, headers=headers, json=data, timeout=60)
+            print(f"[write_binary_file_to_github] Intento {attempt + 1}/{max_retries} - Respuesta: {response.status_code}")
+            if response.status_code in (200, 201):
+                return True
+            if response.status_code == 409:
+                sha = get_file_sha_only(file_path)
+                continue
+            if response.status_code in (403, 500, 502, 503, 504):
+                time.sleep(RETRY_BACKOFF_BASE ** attempt)
+                continue
+            print(f"[write_binary_file_to_github] Error: {response.status_code} - {response.text[:500]}")
+            return False
+        except requests.exceptions.Timeout:
+            time.sleep(RETRY_BACKOFF_BASE ** attempt)
+        except Exception as e:
+            print(f"[write_binary_file_to_github] Error: {e}")
+            return False
+
     return False
 
 

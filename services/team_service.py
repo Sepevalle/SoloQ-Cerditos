@@ -4,18 +4,21 @@ Servicio para seguimiento del rendimiento colectivo de un equipo.
 
 import json
 import os
+import time
 from collections import Counter, defaultdict
 
-from config.settings import QUEUE_NAMES
-from services.github_service import read_file_from_github, write_file_to_github
+from config.settings import GITHUB_REPO, GITHUB_TOKEN, QUEUE_NAMES
+from services.github_service import read_file_from_github, write_binary_file_to_github, write_file_to_github
 from services.match_service import get_player_match_history
 from services.player_service import get_all_puuids
 
 
 TEAM_CONFIG_PATH = "team_tracker.json"
+TEAM_MATCHES_CACHE_PATH = "team_matches.json"
 TEAM_LOGO_UPLOAD_DIR = os.path.join("static", "uploads")
 TEAM_LOGO_FILENAME = "team_logo.png"
 TEAM_LOGO_STATIC_PATH = "uploads/team_logo.png"
+TEAM_LOGO_GITHUB_PATH = f"static/{TEAM_LOGO_STATIC_PATH}"
 ROLE_ORDER = {
     "TOP": 0,
     "JUNGLE": 1,
@@ -31,14 +34,10 @@ ROLE_ORDER = {
 
 
 def get_team_config():
-    """Lee la configuracion del equipo o genera un fallback con los 5 primeros PUUIDs."""
-    if os.path.exists(TEAM_CONFIG_PATH):
-        try:
-            with open(TEAM_CONFIG_PATH, "r", encoding="utf-8") as f:
-                config = json.load(f)
-            return _normalize_team_config(config)
-        except Exception as e:
-            print(f"[team_service] Error leyendo {TEAM_CONFIG_PATH}: {e}")
+    """Lee la configuracion del equipo desde GitHub/local o genera un fallback."""
+    config = _read_team_config_data()
+    if isinstance(config, dict):
+        return _normalize_team_config(config)
 
     puuids = _get_known_puuids()
     players = []
@@ -76,14 +75,26 @@ def save_team_logo(uploaded_file):
     if signature != b"\x89PNG\r\n\x1a\n":
         return False, "El archivo no parece ser un PNG valido."
 
+    content = uploaded_file.read()
+    uploaded_file.stream.seek(0)
+
+    if _prefer_github_storage():
+        ok = write_binary_file_to_github(
+            TEAM_LOGO_GITHUB_PATH,
+            content,
+            message="Actualizar logo del equipo",
+        )
+        if ok:
+            raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{TEAM_LOGO_GITHUB_PATH}"
+            _update_team_config({"logo_path": raw_url})
+            return True, "Logo del equipo actualizado en GitHub."
+        return False, "No se pudo guardar el logo en GitHub."
+
     os.makedirs(TEAM_LOGO_UPLOAD_DIR, exist_ok=True)
     destination = os.path.join(TEAM_LOGO_UPLOAD_DIR, TEAM_LOGO_FILENAME)
     uploaded_file.save(destination)
     _update_team_config({"logo_path": TEAM_LOGO_STATIC_PATH})
     return True, "Logo del equipo actualizado."
-
-
-TEAM_MATCHES_CACHE_PATH = "team_matches.json"
 
 
 def build_team_dashboard():
@@ -107,7 +118,7 @@ def build_team_dashboard():
     # Intentar leer del caché
     cached_data = _load_team_matches_cache(config, complete_roster)
     if cached_data:
-        team_matches = cached_data["team_matches"]
+        team_matches = _normalize_team_matches(cached_data.get("team_matches", []))
         print(f"[team_service] Usando caché de {len(team_matches)} partidas del equipo")
     else:
         # Calcular desde cero
@@ -129,10 +140,11 @@ def build_team_dashboard():
 
 def _normalize_team_config(config):
     puuids = _get_known_puuids()
+    puuids_by_lower_riot_id = {riot_id.lower(): puuid for riot_id, puuid in puuids.items()}
     players = []
     for player in config.get("players", []):
         riot_id = player.get("riot_id", "").strip()
-        puuid = player.get("puuid") or puuids.get(riot_id)
+        puuid = player.get("puuid") or puuids.get(riot_id) or puuids_by_lower_riot_id.get(riot_id.lower())
         players.append({
             "riot_id": riot_id,
             "display_name": player.get("display_name") or _get_display_name(riot_id),
@@ -150,7 +162,7 @@ def _normalize_team_config(config):
 
 
 def _update_team_config(updates):
-    config = _read_json_file(TEAM_CONFIG_PATH)
+    config, sha = _read_team_config_with_sha()
     if not isinstance(config, dict):
         current = get_team_config()
         config = {
@@ -165,9 +177,52 @@ def _update_team_config(updates):
         }
 
     config.update(updates)
+    if _prefer_github_storage():
+        ok = write_file_to_github(
+            TEAM_CONFIG_PATH,
+            config,
+            message="Actualizar configuracion del equipo",
+            sha=sha,
+        )
+        if not ok:
+            print(f"[team_service] No se pudo persistir {TEAM_CONFIG_PATH} en GitHub")
+
     with open(TEAM_CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
         f.write("\n")
+
+
+def _read_team_config_data():
+    config, _sha = _read_team_config_with_sha()
+    return config
+
+
+def _read_team_config_with_sha():
+    if _prefer_github_storage():
+        remote_config, sha = read_file_from_github(TEAM_CONFIG_PATH, use_raw=False)
+        if isinstance(remote_config, dict):
+            return remote_config, sha
+
+    local_config = _read_json_file(TEAM_CONFIG_PATH)
+    if isinstance(local_config, dict):
+        return local_config, None
+
+    if not _prefer_github_storage():
+        remote_config, sha = read_file_from_github(TEAM_CONFIG_PATH, use_raw=False)
+        if isinstance(remote_config, dict):
+            return remote_config, sha
+
+    return None, None
+
+
+def _prefer_github_storage():
+    render_env_vars = (
+        "RENDER",
+        "RENDER_SERVICE_ID",
+        "RENDER_EXTERNAL_URL",
+        "RENDER_EXTERNAL_HOSTNAME",
+    )
+    return bool(GITHUB_TOKEN or any(os.environ.get(k) for k in render_env_vars))
 
 
 def _get_known_puuids():
@@ -282,6 +337,67 @@ def _match_contains_roster(match, team_puuids):
 
     team_ids = {participant_by_puuid[puuid].get("team_id") for puuid in team_puuids}
     return len(team_ids) == 1
+
+
+def _compute_team_matches(roster):
+    """Calcula las partidas donde los 5 jugadores aparecen en el mismo equipo."""
+    matches_by_id = defaultdict(dict)
+    candidate_matches = {}
+
+    for player in roster:
+        puuid = player["puuid"]
+        riot_id = player.get("riot_id")
+        history = _get_match_history(puuid, riot_id)
+        matches = history.get("matches", []) if history else []
+        for match in matches:
+            match_id = match.get("match_id")
+            if not match_id:
+                continue
+            matches_by_id[match_id][puuid] = match
+            candidate_matches.setdefault(match_id, match)
+
+    team_puuids = {p["puuid"] for p in roster}
+    team_matches = []
+    for match_id, representative in candidate_matches.items():
+        if not _match_contains_roster(representative, team_puuids):
+            continue
+        team_match = _build_team_match(match_id, representative, matches_by_id.get(match_id, {}), roster)
+        if team_match:
+            team_matches.append(team_match)
+
+    return _normalize_team_matches(team_matches)
+
+
+def _normalize_team_matches(team_matches):
+    normalized = []
+    seen = set()
+    for match in sorted(team_matches or [], key=lambda m: m.get("game_end_timestamp", 0), reverse=True):
+        match_id = match.get("match_id")
+        if match_id and match_id in seen:
+            continue
+        if match_id:
+            seen.add(match_id)
+        match.setdefault("queue_name", QUEUE_NAMES.get(match.get("queue_id"), "Desconocida"))
+        match.setdefault("duration_label", _format_duration(match.get("game_duration", 0)))
+        match.setdefault("result_label", "Victoria" if match.get("win") else "Derrota")
+        match.setdefault("players", match.get("participants", []))
+        if not match.get("composition"):
+            match["composition"] = [
+                p.get("champion_name", "Desconocido")
+                for p in match.get("players", [])
+                if p.get("champion_name")
+            ]
+        match.setdefault("team_damage", sum(_num(p.get("damage")) for p in match.get("players", [])))
+        match.setdefault("team_vision", sum(_num(p.get("vision")) for p in match.get("players", [])))
+        match.setdefault("team_gold", sum(_num(p.get("gold")) for p in match.get("players", [])))
+        match.setdefault("team_cs", sum(_num(p.get("cs")) for p in match.get("players", [])))
+        match.setdefault("turret_kills", match.get("tower_kills", 0))
+        match.setdefault("inhibitor_kills", 0)
+        match.setdefault("dragon_kills", 0)
+        match.setdefault("baron_kills", 0)
+        match.setdefault("objectives_stolen", 0)
+        normalized.append(match)
+    return normalized
 
 
 def _build_team_match(match_id, representative, player_matches, roster):
@@ -509,13 +625,12 @@ def _load_team_matches_cache(config, roster):
             return False
         return True
 
-    if os.path.exists(TEAM_MATCHES_CACHE_PATH):
+    if not _prefer_github_storage() and os.path.exists(TEAM_MATCHES_CACHE_PATH):
         try:
             with open(TEAM_MATCHES_CACHE_PATH, "r", encoding="utf-8") as f:
                 cached = json.load(f)
 
             if _validate_cache(cached):
-                import time
                 last_updated = cached.get("last_updated", 0)
                 if time.time() - last_updated <= 24 * 3600:
                     return cached
@@ -528,6 +643,10 @@ def _load_team_matches_cache(config, roster):
     # Intentar recuperar el caché desde GitHub si no hay local válido
     remote_cached, _ = read_file_from_github(TEAM_MATCHES_CACHE_PATH, use_raw=False)
     if remote_cached and _validate_cache(remote_cached):
+        last_updated = remote_cached.get("last_updated", 0)
+        if last_updated and time.time() - last_updated > 24 * 3600:
+            print("[team_service] Cache de GitHub expirado")
+            return None
         try:
             with open(TEAM_MATCHES_CACHE_PATH, "w", encoding="utf-8") as f:
                 json.dump(remote_cached, f, indent=2, ensure_ascii=False)
@@ -542,7 +661,6 @@ def _load_team_matches_cache(config, roster):
 
 def _save_team_matches_cache(config, roster, team_matches):
     """Guarda las partidas del equipo en el caché local y en GitHub."""
-    import time
     cache_data = {
         "team_name": config.get("name"),
         "players": roster,
@@ -585,7 +703,7 @@ def _build_aggregate_summary(roster):
                 total_wins += 1
             else:
                 total_losses += 1
-            total_lp_change += match.get("lp_change", 0)
+            total_lp_change += _num(match.get("lp_change_this_game", match.get("lp_change", 0)))
             all_matches.append(match)
 
     # Ordenar todas las partidas por timestamp descendente

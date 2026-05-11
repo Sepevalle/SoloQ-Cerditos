@@ -331,7 +331,11 @@
         <section class="team-hero">
             <div class="team-logo-panel">
                 {% if logo_path %}
-                    <img class="team-logo" src="{{ url_for('static', filename=logo_path) }}" alt="Logo {{ config.name }}">
+                    {% if logo_path.startswith('http://') or logo_path.startswith('https://') %}
+                        <img class="team-logo" src="{{ logo_path }}" alt="Logo {{ config.name }}">
+                    {% else %}
+                        <img class="team-logo" src="{{ url_for('static', filename=logo_path) }}" alt="Logo {{ config.name }}">
+                    {% endif %}
                 {% else %}
                     <div class="team-logo-placeholder">{{ config.name[:2] | upper }}</div>
                     <form class="logo-upload-form" action="{{ url_for('team.subir_logo') }}" method="post" enctype="multipart/form-data">
