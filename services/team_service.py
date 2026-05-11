@@ -129,7 +129,7 @@ def build_team_dashboard():
     return {
         "config": config,
         "summary": _build_summary(team_matches),
-        "aggregate_summary": _build_aggregate_summary(complete_roster),
+        "aggregate_summary": _empty_summary(),
         "team_matches": team_matches,
         "queue_stats": _build_queue_stats(team_matches),
         "recent_form": team_matches[:10],
