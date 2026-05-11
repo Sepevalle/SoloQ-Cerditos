@@ -394,27 +394,27 @@
         <div class="metric-grid">
             <div class="metric-card">
                 <div class="metric-label">Balance del equipo</div>
-                <div class="metric-value">{{ summary.wins }}W - {{ summary.losses }}L</div>
-                <div class="metric-note">{{ summary.total_matches }} partidas juntas</div>
+                <div class="metric-value">{{ aggregate_summary.wins }}W - {{ aggregate_summary.losses }}L</div>
+                <div class="metric-note">{{ aggregate_summary.total_matches }} partidas totales</div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Winrate colectivo</div>
-                <div class="metric-value {% if summary.win_rate >= 50 %}text-success{% elif summary.total_matches > 0 %}text-danger{% endif %}">
-                    {{ "%.1f"|format(summary.win_rate) }}%
+                <div class="metric-value {% if aggregate_summary.win_rate >= 50 %}text-success{% elif aggregate_summary.total_matches > 0 %}text-danger{% endif %}">
+                    {{ "%.1f"|format(aggregate_summary.win_rate) }}%
                 </div>
-                <div class="metric-note">Forma 10: {{ summary.recent_wins }}W - {{ summary.recent_losses }}L</div>
+                <div class="metric-note">Forma 50: {{ aggregate_summary.recent_wins }}W - {{ aggregate_summary.recent_losses }}L</div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Racha actual</div>
-                <div class="metric-value {% if summary.current_streak.type == 'win' %}text-success{% elif summary.current_streak.type == 'loss' %}text-danger{% endif %}">
-                    {{ summary.current_streak.label }}
+                <div class="metric-value {% if aggregate_summary.current_streak.type == 'win' %}text-success{% elif aggregate_summary.current_streak.type == 'loss' %}text-danger{% endif %}">
+                    {{ aggregate_summary.current_streak.label }}
                 </div>
                 <div class="metric-note">Secuencia colectiva reciente</div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">LP combinado</div>
-                <div class="metric-value {% if summary.lp_change > 0 %}lp-positive{% elif summary.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
-                    {% if summary.lp_change > 0 %}+{% endif %}{{ summary.lp_change }}
+                <div class="metric-value {% if aggregate_summary.lp_change > 0 %}lp-positive{% elif aggregate_summary.lp_change < 0 %}lp-negative{% else %}lp-neutral{% endif %}">
+                    {% if aggregate_summary.lp_change > 0 %}+{% endif %}{{ aggregate_summary.lp_change }}
                 </div>
                 <div class="metric-note">Suma de cambios del roster</div>
             </div>
@@ -440,15 +440,17 @@
             </div>
         </div>
 
-        {% if summary.total_matches == 0 %}
+        {% if aggregate_summary.total_matches == 0 %}
             <div class="alert alert-secondary mb-0">
-                Aun no hay partidas guardadas donde aparezcan los 5 jugadores del roster en el mismo equipo.
+                Los jugadores del equipo aun no tienen partidas registradas.
             </div>
-        {% else %}
+        {% endif %}
+
+        {% if summary.total_matches > 0 %}
             <section class="team-section">
                 <div class="section-head">
-                    <h2 class="section-title">Forma reciente</h2>
-                    <span class="section-meta">Ultimas {{ dashboard.recent_form | length }} partidas</span>
+                    <h2 class="section-title">Partidas en equipo</h2>
+                    <span class="section-meta">{{ summary.total_matches }} partidas juntos</span>
                 </div>
                 <div class="result-strip">
                     {% for match in dashboard.recent_form %}
@@ -458,7 +460,9 @@
                     {% endfor %}
                 </div>
             </section>
+        {% endif %}
 
+        {% if summary.total_matches > 0 %}
             <div class="row g-3">
                 <div class="col-lg-5">
                     <section class="team-section h-100">
@@ -587,6 +591,7 @@
                     </table>
                 </div>
             </section>
+        {% endif %}
         {% endif %}
     </div>
 </main>

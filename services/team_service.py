@@ -82,6 +82,9 @@ def save_team_logo(uploaded_file):
     return True, "Logo del equipo actualizado."
 
 
+TEAM_MATCHES_CACHE_PATH = "team_matches.json"
+
+
 def build_team_dashboard():
     """Construye el dataset de la pestana de equipo."""
     config = get_team_config()
@@ -99,41 +102,21 @@ def build_team_dashboard():
             "missing_roster": True,
         }
 
-    matches_by_id = defaultdict(dict)
-    candidate_matches = {}
-
-    for player in complete_roster:
-        puuid = player["puuid"]
-        riot_id = player.get("riot_id")
-        historial = _get_match_history(puuid, riot_id)
-        matches = historial.get("matches", []) if historial else []
-        for match in matches:
-            match_id = match.get("match_id")
-            if match_id:
-                matches_by_id[match_id][puuid] = match
-                candidate_matches.setdefault(match_id, match)
-
-    team_puuids = {p["puuid"] for p in complete_roster}
-    team_matches = []
-
-    for match_id, representative_match in candidate_matches.items():
-        if not _match_contains_roster(representative_match, team_puuids):
-            continue
-
-        team_match = _build_team_match(
-            match_id,
-            representative_match,
-            matches_by_id.get(match_id, {}),
-            complete_roster,
-        )
-        if team_match:
-            team_matches.append(team_match)
-
-    team_matches.sort(key=lambda m: m.get("game_end_timestamp", 0), reverse=True)
+    # Intentar leer del caché
+    cached_data = _load_team_matches_cache(config, complete_roster)
+    if cached_data:
+        team_matches = cached_data["team_matches"]
+        print(f"[team_service] Usando caché de {len(team_matches)} partidas del equipo")
+    else:
+        # Calcular desde cero
+        print("[team_service] Calculando partidas del equipo desde historiales...")
+        team_matches = _compute_team_matches(complete_roster)
+        _save_team_matches_cache(config, complete_roster, team_matches)
 
     return {
         "config": config,
         "summary": _build_summary(team_matches),
+        "aggregate_summary": _build_aggregate_summary(complete_roster),
         "team_matches": team_matches,
         "queue_stats": _build_queue_stats(team_matches),
         "recent_form": team_matches[:10],
@@ -506,3 +489,126 @@ def _num(value):
         return value if isinstance(value, (int, float)) else int(value or 0)
     except (TypeError, ValueError):
         return 0
+
+
+def _load_team_matches_cache(config, roster):
+    """Carga las partidas del equipo desde el caché si es válido."""
+    if not os.path.exists(TEAM_MATCHES_CACHE_PATH):
+        return None
+
+    try:
+        with open(TEAM_MATCHES_CACHE_PATH, "r", encoding="utf-8") as f:
+            cached = json.load(f)
+
+        # Verificar que el caché es para el mismo equipo
+        cached_team_name = cached.get("team_name")
+        cached_players = cached.get("players", [])
+        current_team_name = config.get("name")
+        current_puuids = {p["puuid"] for p in roster}
+
+        if (cached_team_name != current_team_name or
+            len(cached_players) != len(roster) or
+            {p["puuid"] for p in cached_players} != current_puuids):
+            print("[team_service] Caché desactualizado (equipo cambió)")
+            return None
+
+        # Verificar que no es demasiado viejo (24 horas)
+        import time
+        last_updated = cached.get("last_updated", 0)
+        if time.time() - last_updated > 24 * 3600:
+            print("[team_service] Caché expirado")
+            return None
+
+        return cached
+
+    except Exception as e:
+        print(f"[team_service] Error leyendo caché: {e}")
+        return None
+
+
+def _save_team_matches_cache(config, roster, team_matches):
+    """Guarda las partidas del equipo en el caché."""
+    import time
+    cache_data = {
+        "team_name": config.get("name"),
+        "players": roster,
+        "total_team_matches": len(team_matches),
+        "last_updated": time.time(),
+        "team_matches": team_matches
+    }
+
+    try:
+        with open(TEAM_MATCHES_CACHE_PATH, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        print(f"[team_service] Caché guardado con {len(team_matches)} partidas")
+    except Exception as e:
+        print(f"[team_service] Error guardando caché: {e}")
+
+
+def _build_aggregate_summary(roster):
+    """Construye estadísticas agregadas del equipo desde los historiales individuales."""
+    total_wins = 0
+    total_losses = 0
+    total_lp_change = 0
+    recent_matches = []
+    all_matches = []
+
+    for player in roster:
+        puuid = player["puuid"]
+        riot_id = player.get("riot_id")
+        historial = _get_match_history(puuid, riot_id)
+        matches = historial.get("matches", []) if historial else []
+
+        for match in matches:
+            if match.get("win"):
+                total_wins += 1
+            else:
+                total_losses += 1
+            total_lp_change += match.get("lp_change", 0)
+            all_matches.append(match)
+
+    # Ordenar todas las partidas por timestamp descendente
+    all_matches.sort(key=lambda m: m.get("game_end_timestamp", 0), reverse=True)
+    recent_matches = all_matches[:50]  # Últimas 50 para calcular forma reciente
+
+    recent_wins = sum(1 for m in recent_matches if m.get("win"))
+    recent_losses = len(recent_matches) - recent_wins
+
+    total_matches = total_wins + total_losses
+    win_rate = total_wins / total_matches * 100 if total_matches > 0 else 0
+
+    # Calcular racha actual (simplificada)
+    current_streak = {"type": "none", "count": 0, "label": "Sin racha"}
+    if all_matches:
+        streak_type = "win" if all_matches[0].get("win") else "loss"
+        streak_count = 0
+        for match in all_matches:
+            if match.get("win") == (streak_type == "win"):
+                streak_count += 1
+            else:
+                break
+        current_streak = {
+            "type": streak_type,
+            "count": streak_count,
+            "label": f"{streak_count}W" if streak_type == "win" else f"{streak_count}L"
+        }
+
+    return {
+        "total_matches": total_matches,
+        "wins": total_wins,
+        "losses": total_losses,
+        "win_rate": win_rate,
+        "current_streak": current_streak,
+        "recent_wins": recent_wins,
+        "recent_losses": recent_losses,
+        "recent_win_rate": recent_wins / (recent_wins + recent_losses) * 100 if (recent_wins + recent_losses) > 0 else 0,
+        "lp_change": total_lp_change,
+        "avg_duration": "N/A",  # No calculable fácilmente
+        "avg_kda": 0,  # No calculable fácilmente
+        "avg_damage": 0,
+        "avg_vision": 0,
+        "avg_dragons": 0,
+        "avg_barons": 0,
+        "last_match": all_matches[0] if all_matches else None,
+    }
