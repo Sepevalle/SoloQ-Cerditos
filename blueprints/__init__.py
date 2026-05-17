@@ -8,6 +8,7 @@ from blueprints.player import player_bp
 from blueprints.api import api_bp
 from blueprints.stats import stats_bp
 from blueprints.team import team_bp
+from blueprints.admin import admin_bp
 
 
 def register_blueprints(app: Flask):
@@ -17,6 +18,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(stats_bp, url_prefix='/stats')
     app.register_blueprint(team_bp, url_prefix='/equipo')
+    app.register_blueprint(admin_bp, url_prefix='')
 
     
     print("[register_blueprints] Blueprints registrados correctamente")
