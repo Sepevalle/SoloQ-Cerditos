@@ -496,17 +496,16 @@
     <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
 </div>
 
-{% if active_live_games %}
-<div class="container-fluid px-md-5">
+<div class="container-fluid px-md-5" id="live-games-container" {% if not active_live_games %}style="display: none;"{% endif %}>
     <section class="live-games-panel">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
             <div>
                 <h4 class="mb-0">Partidas en curso</h4>
                 <div class="live-game-meta">Jugadores detectados con el cache actual de Spectator</div>
             </div>
-            <span class="badge bg-primary">{{ active_live_games|length }} activas</span>
+            <span class="badge bg-primary" id="live-games-count">{{ active_live_games|length if active_live_games else 0 }} activas</span>
         </div>
-        <div class="row g-3">
+        <div class="row g-3" id="live-games-list">
             {% for game in active_live_games %}
             <div class="col-12 col-lg-6 col-xxl-4">
                 <a class="live-game-card" href="{{ url_for('main.detalle_partida_en_vivo', game_id=game.game_id) }}">
@@ -538,7 +537,6 @@
         </div>
     </section>
 </div>
-{% endif %}
     
 <div class="container-fluid px-md-5">
     <div class="d-flex justify-content-between align-items-center">
@@ -962,6 +960,116 @@
             rightBanner.src = imagePaths[currentImageIndex];
         }
         setInterval(cambiarImagenes, 5000);
+
+        function updateLiveGamesPanel(allLiveGames) {
+            const container = document.getElementById('live-games-container');
+            const list = document.getElementById('live-games-list');
+            const count = document.getElementById('live-games-count');
+            const ddragonVersion = '{{ ddragon_version }}';
+
+            if (!container || !list || !count) {
+                return;
+            }
+
+            const playerNamesByPuuid = {};
+            document.querySelectorAll('#jugadoresTable tbody tr[data-puuid]').forEach((row) => {
+                const puuid = row.getAttribute('data-puuid');
+                const jugador = row.getAttribute('data-jugador');
+                if (puuid && jugador && !playerNamesByPuuid[puuid]) {
+                    playerNamesByPuuid[puuid] = jugador;
+                }
+            });
+
+            const gamesById = {};
+            Object.entries(allLiveGames).forEach(([puuid, data]) => {
+                if (!data || !data.en_partida || !data.game_id) {
+                    return;
+                }
+
+                if (!gamesById[data.game_id]) {
+                    gamesById[data.game_id] = {
+                        gameId: data.game_id,
+                        queueName: data.queue_name || 'Cola desconocida',
+                        gameMode: data.game_mode || 'Unknown',
+                        detailUrl: data.detail_url || `/partida-en-vivo/${data.game_id}`,
+                        cacheAge: data.cache_age_seconds,
+                        players: []
+                    };
+                }
+
+                gamesById[data.game_id].players.push({
+                    name: playerNamesByPuuid[puuid] || 'Jugador',
+                    champion: data.nombre_campeon
+                });
+            });
+
+            const games = Object.values(gamesById).sort((a, b) => b.players.length - a.players.length);
+            list.innerHTML = '';
+            count.textContent = `${games.length} activas`;
+
+            if (!games.length) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = '';
+
+            games.forEach((game) => {
+                const col = document.createElement('div');
+                col.className = 'col-12 col-lg-6 col-xxl-4';
+
+                const card = document.createElement('a');
+                card.className = 'live-game-card';
+                card.href = game.detailUrl;
+
+                const header = document.createElement('div');
+                header.className = 'd-flex justify-content-between align-items-start gap-2';
+
+                const titleWrap = document.createElement('div');
+                const title = document.createElement('div');
+                title.className = 'fw-bold';
+                title.textContent = game.queueName;
+
+                const meta = document.createElement('div');
+                meta.className = 'live-game-meta';
+                meta.textContent = game.cacheAge !== null && game.cacheAge !== undefined
+                    ? `${game.gameMode} · cache ${game.cacheAge}s`
+                    : game.gameMode;
+
+                titleWrap.appendChild(title);
+                titleWrap.appendChild(meta);
+
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-success';
+                badge.textContent = `${game.players.length} jugando`;
+
+                header.appendChild(titleWrap);
+                header.appendChild(badge);
+
+                const chips = document.createElement('div');
+                chips.className = 'mt-2';
+
+                game.players.forEach((player) => {
+                    const chip = document.createElement('span');
+                    chip.className = 'live-player-chip';
+
+                    if (player.champion && player.champion !== 'Desconocido') {
+                        const img = document.createElement('img');
+                        img.src = `https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${player.champion}.png`;
+                        img.alt = player.champion;
+                        chip.appendChild(img);
+                    }
+
+                    chip.appendChild(document.createTextNode(player.name));
+                    chips.appendChild(chip);
+                });
+
+                card.appendChild(header);
+                card.appendChild(chips);
+                col.appendChild(card);
+                list.appendChild(col);
+            });
+        }
         
         // --- VERIFICACIÓN EN TIEMPO REAL DE PARTIDAS ACTIVAS ---
         async function checkLiveGames() {
@@ -980,7 +1088,8 @@
                 
                 const allLiveGames = await response.json();
                 console.log(`[LiveGame] Datos recibidos para ${Object.keys(allLiveGames).length} jugadores`);
-                
+                updateLiveGamesPanel(allLiveGames);
+                 
                 for (const row of rows) {
                     const puuid = row.getAttribute('data-puuid');
                     const jugador = row.getAttribute('data-jugador');
