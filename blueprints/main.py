@@ -45,7 +45,7 @@ from services.index_json_generator import (
     is_json_fresh,
     INDEX_JSON_PATH
 )
-from services.precompute_service import is_fresh as pre_is_fresh, read as pre_read, write_async as pre_write_async
+from services.precompute_service import is_fresh as pre_is_fresh, read as pre_read, write_async as pre_write_async, write_all_async as pre_write_all_async, write_github as pre_write_github
 
 
 
@@ -253,11 +253,14 @@ def index():
                            minutos_desde_actualizacion=minutos_desde_actualizacion,
                            generated_at=generated_at)
 
-    # Guardar el HTML generado en background para próximas peticiones
+    # Guardar el HTML generado en background para próximas peticiones (local + GitHub si está configurado)
     try:
-        pre_write_async(pre_key, rendered)
+        pre_write_all_async(pre_key, rendered)
     except Exception:
-        pass
+        try:
+            pre_write_async(pre_key, rendered)
+        except Exception:
+            pass
 
     return Response(rendered, mimetype='text/html')
 
@@ -405,9 +408,12 @@ def historial_global():
                              generated_at=generated_at)
 
         try:
-            pre_write_async(pre_key, rendered)
+            pre_write_all_async(pre_key, rendered)
         except Exception:
-            pass
+            try:
+                pre_write_async(pre_key, rendered)
+            except Exception:
+                pass
 
         return Response(rendered, mimetype='text/html')
     except Exception as e:

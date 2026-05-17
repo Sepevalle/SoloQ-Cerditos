@@ -4,7 +4,7 @@ import config.settings as settings
 from config.settings import ACTIVE_SPLIT_KEY
 
 from services.cache_service import player_cache, player_profile_cache, match_lookup_cache
-from services.precompute_service import is_fresh as pre_is_fresh, read as pre_read, write_async as pre_write_async
+from services.precompute_service import is_fresh as pre_is_fresh, read as pre_read, write_async as pre_write_async, write_all_async as pre_write_all_async, write_github as pre_write_github
 from services.match_service import get_player_match_history, calculate_streaks
 from services.stats_service import get_top_champions_for_player
 from services.github_service import read_peak_elo
@@ -326,9 +326,12 @@ def perfil_jugador(game_name):
                            generated_at=generated_at)
 
     try:
-        pre_write_async(pre_key, rendered)
+        pre_write_all_async(pre_key, rendered)
     except Exception:
-        pass
+        try:
+            pre_write_async(pre_key, rendered)
+        except Exception:
+            pass
 
     return Response(rendered, mimetype='text/html')
 
