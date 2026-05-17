@@ -138,7 +138,7 @@ def generate_precomputed_html(app, max_players: int | None = None) -> bool:
     max_players = max_players or int(os.environ.get("PRECOMPUTE_MAX_PLAYERS", "50"))
     started_at = time.time()
     try:
-        with app.app_context():
+        with app.test_request_context("/"):
             _render_index(app)
             _render_historial(app)
             _render_players(app, max_players=max_players)

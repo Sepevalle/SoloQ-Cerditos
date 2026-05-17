@@ -151,7 +151,7 @@ def main():
     args = parser.parse_args()
 
     app = create_app()
-    with app.app_context():
+    with app.test_request_context("/"):
         render_index(app)
         render_historial(app)
         render_players(app, max_players=args.players)
