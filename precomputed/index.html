@@ -1,0 +1,3257 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datos de Jugadores</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono.png" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .banner-img {
+            margin-top: 40px;
+            width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+        }
+        .small-text {
+            font-size: 0.6em;
+            font-weight: normal;
+        }
+        .small-text-stats {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        .win-rate-alto {
+            color: #228B22 !important;
+        }
+        .win-rate-bajo {
+            color: tomato !important;
+        }
+        .peak-elo {
+            color: gold;
+            font-weight: bold;
+        }
+        .estado-en-partida {
+            color: #007BFF !important;
+            font-weight: bold;
+        }
+        .live-games-panel {
+            border: 1px solid #d7e7ff;
+            background: #f7fbff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .live-game-card {
+            display: block;
+            height: 100%;
+            color: inherit;
+            text-decoration: none;
+            border: 1px solid #dce7f3;
+            border-radius: 8px;
+            padding: 12px;
+            background: #ffffff;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .live-game-card:hover {
+            color: inherit;
+            text-decoration: none;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+        .live-player-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 4px 6px 0 0;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef5ff;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .live-player-chip img {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+        }
+        .live-game-meta {
+            color: #5d6b7a;
+            font-size: 0.86rem;
+        }
+        .table a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .link-estado {
+            color: #007BFF;
+        }
+        .link-perfil:hover, .link-estado:hover {
+            text-decoration: underline;
+        }
+        .opgg-link {
+            display: inline-block;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: white !important;
+            background-color: #0056b3; /* Un azul estándar */
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .opgg-link:hover {
+            background-color: #004494; /* Un azul más oscuro al pasar el ratón */
+        }
+        .dark-mode .opgg-link {
+            background-color: #0056b3;
+            color: white !important;
+        }
+        .dark-mode .opgg-link:hover {
+            background-color: #003d82;
+        }
+        .dark-mode .link-estado {
+            color: #66b3ff;
+        }
+        .dark-mode .link-estado:hover {
+            color: #99ccff;
+        }
+        .dark-mode .live-games-panel {
+            background: #17212c;
+            border-color: #2b4057;
+        }
+        .dark-mode .live-game-card {
+            background: #202b36;
+            border-color: #34475b;
+        }
+        .dark-mode .live-game-meta {
+            color: #b7c4d1;
+        }
+        .dark-mode .live-player-chip {
+            background: #263c55;
+        }
+        .dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        /* Estilos específicos para tabla en modo claro */
+        #jugadoresTable thead th {
+            background-color: #d0d0d0 !important;
+            color: #000 !important;
+            font-weight: 600;
+            border-color: #999 !important;
+            padding: 10px !important;
+        }
+        #jugadoresTable tbody td {
+            border-color: #dee2e6;
+            color: #212529;
+        }
+        /* Estilos específicos para tabla en modo oscuro */
+        .dark-mode .table {
+            background-color: transparent;
+            color: #e0e0e0;
+        }
+        .dark-mode .table thead th {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+            font-weight: 600;
+            padding: 12px !important;
+        }
+        .dark-mode .table thead {
+            background-color: #495057 !important;
+        }
+        .dark-mode .table thead tr {
+            background-color: #495057 !important;
+        }
+        .dark-mode .table thead th * {
+            color: #fff !important;
+        }
+        .dark-mode .table tbody {
+            background-color: transparent;
+        }
+        .dark-mode .table tbody tr {
+            background-color: transparent;
+        }
+        .dark-mode .table tbody td {
+            color: #e0e0e0 !important;
+            border-color: #6c757d !important;
+            background-color: transparent !important;
+        }
+        .dark-mode .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+        .dark-mode .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        /* Links en tabla - modo oscuro: heredar color (no azul) */
+        .dark-mode #jugadoresTable a {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        .dark-mode #jugadoresTable a:hover {
+            color: inherit !important;
+            text-decoration: underline !important;
+        }
+        /* Bordes de tabla en modo claro */
+        .table {
+            background-color: white;
+        }
+        .dark-mode .navbar {
+            background-color: #343a40 !important;
+            color: white;
+        }
+        .dark-mode .navbar-brand {
+            color: white !important;
+        }
+        .dark-mode .nav-link {
+            color: white !important;
+        }
+        .dark-mode .navbar-toggler-icon {
+            /* Invierte el color del icono de hamburguesa para que sea visible en modo oscuro */
+            filter: invert(1) grayscale(100%) brightness(2);
+        }
+        .dark-mode .form-select,
+        .dark-mode .form-control {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .form-select option {
+            background-color: #343a40;
+            color: #fff;
+        }
+        .dark-mode .table tbody td {
+            border-color: #6c757d !important;
+        }
+        .dark-mode .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        .dark-mode .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .dark-mode label {
+            color: #e0e0e0;
+        }
+        .dark-mode #lastUpdated {
+            color: #adb5bd;
+        }
+        .dark-mode .small-text {
+            color: #adb5bd;
+        }
+        .dark-mode .small-text-stats {
+            color: #adb5bd;
+        }
+        .dark-mode a {
+            color: #66b3ff;
+        }
+        .dark-mode a:hover {
+            color: #99ccff;
+        }
+        .table td, .table th {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .jugador-columna {
+            text-align: left;
+        }
+        .hidden {
+            display: none;
+        }
+        .imagen-jugador {
+            width: 30px;
+            height: 30px;
+            vertical-align: middle;
+            display: inline-block;
+            margin-right: 8px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .lateral-img {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 150px;
+            height: auto;
+            object-fit: cover;
+            display: none; /* Ocultas por defecto para evitar superposiciones */
+        }
+        /* Mostrar imágenes laterales solo en pantallas muy anchas */
+        @media (min-width: 1500px) {
+            .lateral-img {
+                display: block;
+            }
+            /* Reservar espacio lateral para que las imágenes no superpongan el contenido */
+            #main-content {
+                padding-left: calc(150px + 40px); /* ancho imagen + margen */
+                padding-right: calc(150px + 40px);
+            }
+            /* Mantener lateral images visibles sin alterar el ancho del navbar
+               para que el navbar sea consistente con otras páginas. */
+        }
+        .left-img {
+            left: 20px;
+        }
+        .right-img {
+            right: 20px;
+        }
+
+        #volumeSlider {
+            width: 100px;
+            margin-left: 10px;
+            vertical-align: middle;
+            height: 20px;
+            padding: 0;
+        }
+
+        #volumeSlider::-webkit-slider-runnable-track {
+            background: #6c757d;
+            height: 0.2em;
+            border-radius: 1em;
+        }
+
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #333;
+            border-radius: 50%;
+            margin-top: -6.5px;
+        }
+
+        #volumeSlider::-moz-range-track {
+            background: #6c757d;
+            height: 0.2em;
+            border-radius: 1em;
+        }
+
+        #volumeSlider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #333;
+            border: none;
+            border-radius: 50px;
+        }
+
+        .dark-mode #volumeSlider::-webkit-slider-runnable-track,
+        .dark-mode #volumeSlider::-moz-range-track {
+            background: #495057;
+        }
+
+        .dark-mode #volumeSlider::-webkit-slider-thumb {
+            background: #fff;
+        }
+
+        .dark-mode #volumeSlider::-moz-range-thumb {
+            background: #fff;
+        }
+
+        #toggle-mode {
+            font-weight: bold;
+        }
+
+        /* Evita el salto de línea en las celdas de datos */
+        .table td {
+            white-space: nowrap;
+        }
+
+        .elo-columna {
+            text-align: center !important;
+            position: relative;
+        }
+        .elo-columna .elo-image {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            position: absolute;
+        }
+        .elo-columna .w-100 {
+            margin-left: 40px;
+            display: inline-block;
+            width: calc(100% - 40px);
+            text-align: center;
+        }
+
+        /* Estilos para encabezados de tabla ordenables */
+        .table thead th[data-sort-by] {
+            cursor: pointer;
+            position: relative;
+            user-select: none; /* Evita la selección de texto al hacer doble clic */
+        }
+
+        .table thead th[data-sort-by]::after {
+            content: ' \2195'; /* Flecha arriba-abajo por defecto */
+            font-size: 0.8em;
+            color: #aaa;
+            position: absolute;
+            right: 8px;
+        }
+
+        .table thead th.sort-asc::after {
+            content: ' \2191'; /* Flecha arriba */
+        }
+        .table thead th.sort-desc::after {
+            content: ' \2193'; /* Flecha abajo */
+        }
+
+        /* Estilos para el cambio de LP en 24h */
+        .lp-change-positive {
+            color: #228B22; /* Green for positive LP */
+            font-weight: bold;
+        }
+        .lp-change-negative {
+            color: #dc3545; /* Red for negative LP */
+            font-weight: bold;
+        }
+        .lp-change-neutral {
+            color: #6c757d; /* Gris */
+            font-weight: normal;
+        }
+
+        /* Nuevos estilos para la columna Dif. Elo */
+        .elo-diff-positive {
+            color: #228B22; /* Green for positive difference */
+            font-weight: bold;
+        }
+        .elo-diff-negative {
+            color: #dc3545; /* Red for negative difference */
+            font-weight: bold;
+        }
+        .elo-diff-neutral {
+            color: #6c757d; /* Gris */
+            font-weight: normal;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div id="main-content">
+
+
+<img id="left-banner" class="lateral-img left-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral izquierda">
+<img id="right-banner" class="lateral-img right-img" src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg" alt="Lateral derecha">
+
+<audio id="backgroundAudio" loop>
+    <source src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/backgroundMusic.mp3" type="audio/mpeg">
+    Tu navegador no soporta el elemento audio.
+</audio>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+
+            <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/Icono2.jpg" alt="Logo" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">
+            Cerditos y Valientes
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-column flex-lg-row">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="/">Inicio</a>
+
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link" href="/stats/estadisticas">Estadisticas Globales</a>
+
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/historial_global">Historial Global</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logros">Logros</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/equipo/">Equipo</a>
+                </li>
+            </ul>
+            <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center">
+                <button id="toggle-mode" class="btn btn-secondary w-100 w-lg-auto mb-2 mb-lg-0">Modo Oscuro</button>
+                <div class="d-flex align-items-center ms-lg-2">
+                    <button id="toggleAudio" class="btn btn-secondary" title="Desmutear Música">
+                        <i id="muteIcon" class="fas fa-microphone-slash"></i>
+                    </button>
+                    <input id="volumeSlider" type="range" class="form-range" min="0" max="1" step="0.01" value="1">
+                </div>
+            </div>
+        </div>
+    </div>
+</nav> 
+
+<div class="container my-4 d-flex justify-content-center">
+    <img src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png" alt="Banner" class="banner-img" id="banner-img">
+</div>
+
+
+    
+<div class="container-fluid px-md-5">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>Lista de Jugadores <span class="small-text"></span></h3>
+                <div id="lastUpdated" class="text-end">Actualizado: 17/05/2026 12:53:20 </div>
+    </div>
+    </div>
+    
+    <div class="row my-3">
+        <div class="col-12">
+            <label for="filtro" class="me-2 fw-bold">Filtrar por cola:</label>
+            <select id="filtro" class="form-select d-inline-block w-auto">
+                <option value="RANKED_SOLO_5x5" selected>SOLOQ</option>
+                <option value="RANKED_FLEX_SR">FLEX</option>
+                <option value="todo">TODO</option>
+            </select>
+        </div>
+    </div>
+    
+    
+    <div class="table-responsive">
+        <table class="table table-hover table-striped" id="jugadoresTable">
+            <thead>
+                <tr>
+                    <th data-sort-by="elo">Posición</th>
+                    <th data-sort-by="jugador">Jugador</th>
+                    <th>Campeón Principal</th>
+                    <th data-sort-by="game_name">Game Name</th>
+                    <th data-sort-by="elo">Elo</th>
+                    <th data-sort-by="wins">Wins</th>
+                    <th data-sort-by="losses">Losses</th>
+                    <th data-sort-by="total_games">Total Games</th>
+                    <th data-sort-by="win_rate">Win Rate</th>
+                    <th class="hidden">Valor Clasificación</th>
+                    <th>Dist. Peak Elo</th>
+                    <th data-sort-by="lp_change_24h">LP en 24h</th>
+                    <th>Racha Actual</th> 
+                    <th>Dif. Elo</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="A_GlbW4uWpy0vidrKtblqugqFoUHuNKOy8yUoc9E-NcMZUY7DXYbaxJD9WwMCag1G4ocMWg_B1xI1w" data-jugador="Sasan">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sasan.png"
+                                alt="Imagen de Sasan"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sasan</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Zaahen.png" 
+                                     alt="Zaahen"
+                                     title="Zaahen"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">33% WR</div>
+                                    <div class="small-text-stats">(9 partidas)</div>
+                                    
+                                    <div class="small-text-stats">1.97 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/Autopsy%20GRU%237549">Autopsy GRU#7549</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="PLATINUM" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                PLATINUM II (59 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>20</td>
+                    <td>21</td>
+                    <td>41</td>
+                    <td class="win-rate-bajo">
+                        48.78%
+                    </td>
+                    <td class="hidden">1859</td>
+                    <td>
+                        
+                        
+                            -26 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">2D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/Autopsy%20GRU-7549" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-A_GlbW4uWpy0vidrKtblqugqFoUHuNKOy8yUoc9E-NcMZUY7DXYbaxJD9WwMCag1G4ocMWg_B1xI1w" data-opgg-url="https://www.op.gg/summoners/euw/Autopsy%20GRU-7549">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-A_GlbW4uWpy0vidrKtblqugqFoUHuNKOy8yUoc9E-NcMZUY7DXYbaxJD9WwMCag1G4ocMWg_B1xI1w" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="A_GlbW4uWpy0vidrKtblqugqFoUHuNKOy8yUoc9E-NcMZUY7DXYbaxJD9WwMCag1G4ocMWg_B1xI1w" data-jugador="Sasan">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sasan.png"
+                                alt="Imagen de Sasan"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sasan</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Zaahen.png" 
+                                     alt="Zaahen"
+                                     title="Zaahen"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">0% WR</div>
+                                    <div class="small-text-stats">(1 partidas)</div>
+                                    
+                                    <div class="small-text-stats">1.75 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/Autopsy%20GRU%237549">Autopsy GRU#7549</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="EMERALD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                EMERALD I (46 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>22</td>
+                    <td>21</td>
+                    <td>43</td>
+                    <td class="win-rate-alto">
+                        51.16%
+                    </td>
+                    <td class="hidden">2346</td>
+                    <td>
+                        
+                        
+                            -62 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">3D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/Autopsy%20GRU-7549" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-A_GlbW4uWpy0vidrKtblqugqFoUHuNKOy8yUoc9E-NcMZUY7DXYbaxJD9WwMCag1G4ocMWg_B1xI1w" data-opgg-url="https://www.op.gg/summoners/euw/Autopsy%20GRU-7549">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-A_GlbW4uWpy0vidrKtblqugqFoUHuNKOy8yUoc9E-NcMZUY7DXYbaxJD9WwMCag1G4ocMWg_B1xI1w" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="_ecFeSLqXWsEHwVmgPybHxsSCAVHmRsv3tv9yoB5-_SRk7wdSeOdB-aoj9A0Ao9F6dXt7dnYxex82g" data-jugador="Sasan">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sasan.png"
+                                alt="Imagen de Sasan"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sasan</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Zaahen.png" 
+                                     alt="Zaahen"
+                                     title="Zaahen"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">25% WR</div>
+                                    <div class="small-text-stats">(4 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.62 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/Nightbryd%23EUW">Nightbryd#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="PLATINUM" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                PLATINUM I (56 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>27</td>
+                    <td>32</td>
+                    <td>59</td>
+                    <td class="win-rate-bajo">
+                        45.76%
+                    </td>
+                    <td class="hidden">1956</td>
+                    <td>
+                        
+                        
+                            -33 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">3D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/Nightbryd-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-_ecFeSLqXWsEHwVmgPybHxsSCAVHmRsv3tv9yoB5-_SRk7wdSeOdB-aoj9A0Ao9F6dXt7dnYxex82g" data-opgg-url="https://www.op.gg/summoners/euw/Nightbryd-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-_ecFeSLqXWsEHwVmgPybHxsSCAVHmRsv3tv9yoB5-_SRk7wdSeOdB-aoj9A0Ao9F6dXt7dnYxex82g" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="_ecFeSLqXWsEHwVmgPybHxsSCAVHmRsv3tv9yoB5-_SRk7wdSeOdB-aoj9A0Ao9F6dXt7dnYxex82g" data-jugador="Sasan">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sasan.png"
+                                alt="Imagen de Sasan"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sasan</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Taliyah.png" 
+                                     alt="Taliyah"
+                                     title="Taliyah"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">0% WR</div>
+                                    <div class="small-text-stats">(1 partidas)</div>
+                                    
+                                    <div class="small-text-stats">1.88 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/Nightbryd%23EUW">Nightbryd#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="PLATINUM" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                PLATINUM III (37 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>14</td>
+                    <td>9</td>
+                    <td>23</td>
+                    <td class="win-rate-alto">
+                        60.87%
+                    </td>
+                    <td class="hidden">1737</td>
+                    <td>
+                        
+                        
+                            -17 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/Nightbryd-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-_ecFeSLqXWsEHwVmgPybHxsSCAVHmRsv3tv9yoB5-_SRk7wdSeOdB-aoj9A0Ao9F6dXt7dnYxex82g" data-opgg-url="https://www.op.gg/summoners/euw/Nightbryd-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-_ecFeSLqXWsEHwVmgPybHxsSCAVHmRsv3tv9yoB5-_SRk7wdSeOdB-aoj9A0Ao9F6dXt7dnYxex82g" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="E_a-gysAzRbJGwzeArTHcZB3eSz-KlQqG_ZgfoRwGLBD9oF8n9VVIqeGqyVmTbFSIqvIjGGD7TOxiQ" data-jugador="Alberto">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Alberto.png"
+                                alt="Imagen de Alberto"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Alberto</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Leona.png" 
+                                     alt="Leona"
+                                     title="Leona"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">33% WR</div>
+                                    <div class="small-text-stats">(3 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.12 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/Rexel%20Artz%23EUW">Rexel Artz#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="EMERALD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                EMERALD IV (94 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>103</td>
+                    <td>77</td>
+                    <td>180</td>
+                    <td class="win-rate-alto">
+                        57.22%
+                    </td>
+                    <td class="hidden">2094</td>
+                    <td>
+                        
+                        
+                            -42 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                            
+                            <span class="lp-change-negative">
+                                -42 LP
+                            </span>
+                            <br>
+                            <span class="small-text-stats">
+                                (0V-2D)
+                            </span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">2D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/Rexel%20Artz-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-E_a-gysAzRbJGwzeArTHcZB3eSz-KlQqG_ZgfoRwGLBD9oF8n9VVIqeGqyVmTbFSIqvIjGGD7TOxiQ" data-opgg-url="https://www.op.gg/summoners/euw/Rexel%20Artz-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-E_a-gysAzRbJGwzeArTHcZB3eSz-KlQqG_ZgfoRwGLBD9oF8n9VVIqeGqyVmTbFSIqvIjGGD7TOxiQ" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="E_a-gysAzRbJGwzeArTHcZB3eSz-KlQqG_ZgfoRwGLBD9oF8n9VVIqeGqyVmTbFSIqvIjGGD7TOxiQ" data-jugador="Alberto">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Alberto.png"
+                                alt="Imagen de Alberto"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Alberto</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Karma.png" 
+                                     alt="Karma"
+                                     title="Karma"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">75% WR</div>
+                                    <div class="small-text-stats">(4 partidas)</div>
+                                    
+                                    <div class="small-text-stats">3.07 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/Rexel%20Artz%23EUW">Rexel Artz#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="PLATINUM" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                PLATINUM III (78 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>87</td>
+                    <td>81</td>
+                    <td>168</td>
+                    <td class="win-rate-alto">
+                        51.79%
+                    </td>
+                    <td class="hidden">1778</td>
+                    <td>
+                        
+                        
+                            -18 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/Rexel%20Artz-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-E_a-gysAzRbJGwzeArTHcZB3eSz-KlQqG_ZgfoRwGLBD9oF8n9VVIqeGqyVmTbFSIqvIjGGD7TOxiQ" data-opgg-url="https://www.op.gg/summoners/euw/Rexel%20Artz-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-E_a-gysAzRbJGwzeArTHcZB3eSz-KlQqG_ZgfoRwGLBD9oF8n9VVIqeGqyVmTbFSIqvIjGGD7TOxiQ" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="mMdXnum2S0SKoR8ie7vH20KZDXNGYMuZLeEbk6p9FKFjO4Plz6NCxjq7Njl3hqmfPk0918n7foFciw" data-jugador="Matiorius">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Matiorius.png"
+                                alt="Imagen de Matiorius"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Matiorius</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/MasterYi.png" 
+                                     alt="MasterYi"
+                                     title="MasterYi"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">57% WR</div>
+                                    <div class="small-text-stats">(7 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.06 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/T2%20GumayUzi%23T2G">T2 GumayUzi#T2G</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="DIAMOND" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                DIAMOND III (73 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>221</td>
+                    <td>207</td>
+                    <td>428</td>
+                    <td class="win-rate-alto">
+                        51.64%
+                    </td>
+                    <td class="hidden">2573</td>
+                    <td>
+                        
+                        
+                            -285 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">5D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/T2%20GumayUzi-T2G" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-mMdXnum2S0SKoR8ie7vH20KZDXNGYMuZLeEbk6p9FKFjO4Plz6NCxjq7Njl3hqmfPk0918n7foFciw" data-opgg-url="https://www.op.gg/summoners/euw/T2%20GumayUzi-T2G">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-mMdXnum2S0SKoR8ie7vH20KZDXNGYMuZLeEbk6p9FKFjO4Plz6NCxjq7Njl3hqmfPk0918n7foFciw" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="mMdXnum2S0SKoR8ie7vH20KZDXNGYMuZLeEbk6p9FKFjO4Plz6NCxjq7Njl3hqmfPk0918n7foFciw" data-jugador="Matiorius">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Matiorius.png"
+                                alt="Imagen de Matiorius"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Matiorius</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Yunara.png" 
+                                     alt="Yunara"
+                                     title="Yunara"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">0% WR</div>
+                                    <div class="small-text-stats">(1 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.33 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/T2%20GumayUzi%23T2G">T2 GumayUzi#T2G</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="EMERALD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                EMERALD I (36 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>27</td>
+                    <td>20</td>
+                    <td>47</td>
+                    <td class="win-rate-alto">
+                        57.45%
+                    </td>
+                    <td class="hidden">2336</td>
+                    <td>
+                        
+                        
+                            -18 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/T2%20GumayUzi-T2G" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-mMdXnum2S0SKoR8ie7vH20KZDXNGYMuZLeEbk6p9FKFjO4Plz6NCxjq7Njl3hqmfPk0918n7foFciw" data-opgg-url="https://www.op.gg/summoners/euw/T2%20GumayUzi-T2G">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-mMdXnum2S0SKoR8ie7vH20KZDXNGYMuZLeEbk6p9FKFjO4Plz6NCxjq7Njl3hqmfPk0918n7foFciw" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="hzDcKRZIMVqhTC1eKOBSYhfGQHjNAC4x6r33gMoGGCOi_AaP11QGvTNCofCk5IyDYiPmKcp0a87jqw" data-jugador="SerJaren">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/SerJaren.png"
+                                alt="Imagen de SerJaren"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">SerJaren</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Malzahar.png" 
+                                     alt="Malzahar"
+                                     title="Malzahar"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">86% WR</div>
+                                    <div class="small-text-stats">(7 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.11 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/LosLunesDePecho%23EUW">LosLunesDePecho#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="SILVER" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                SILVER I (21 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>61</td>
+                    <td>60</td>
+                    <td>121</td>
+                    <td class="win-rate-alto">
+                        50.41%
+                    </td>
+                    <td class="hidden">1121</td>
+                    <td>
+                        
+                        
+                            -19 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/LosLunesDePecho-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-hzDcKRZIMVqhTC1eKOBSYhfGQHjNAC4x6r33gMoGGCOi_AaP11QGvTNCofCk5IyDYiPmKcp0a87jqw" data-opgg-url="https://www.op.gg/summoners/euw/LosLunesDePecho-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-hzDcKRZIMVqhTC1eKOBSYhfGQHjNAC4x6r33gMoGGCOi_AaP11QGvTNCofCk5IyDYiPmKcp0a87jqw" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="hzDcKRZIMVqhTC1eKOBSYhfGQHjNAC4x6r33gMoGGCOi_AaP11QGvTNCofCk5IyDYiPmKcp0a87jqw" data-jugador="SerJaren">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/SerJaren.png"
+                                alt="Imagen de SerJaren"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">SerJaren</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Malzahar.png" 
+                                     alt="Malzahar"
+                                     title="Malzahar"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">73% WR</div>
+                                    <div class="small-text-stats">(11 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.58 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/LosLunesDePecho%23EUW">LosLunesDePecho#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="PLATINUM" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                PLATINUM III (37 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>73</td>
+                    <td>73</td>
+                    <td>146</td>
+                    <td class="win-rate-alto">
+                        50.00%
+                    </td>
+                    <td class="hidden">1737</td>
+                    <td>
+                        
+                        
+                            -19 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/LosLunesDePecho-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-hzDcKRZIMVqhTC1eKOBSYhfGQHjNAC4x6r33gMoGGCOi_AaP11QGvTNCofCk5IyDYiPmKcp0a87jqw" data-opgg-url="https://www.op.gg/summoners/euw/LosLunesDePecho-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-hzDcKRZIMVqhTC1eKOBSYhfGQHjNAC4x6r33gMoGGCOi_AaP11QGvTNCofCk5IyDYiPmKcp0a87jqw" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="FjnB_JwZ4CBosNr2PX5Ja6FIRi_qtzZxqyG2oZGdk95qSN0Qimc-3A4nW8yJfox2Q-Ksv-f-W8iJcw" data-jugador="Tato">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Tato.png"
+                                alt="Imagen de Tato"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Tato</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Shyvana.png" 
+                                     alt="Shyvana"
+                                     title="Shyvana"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">33% WR</div>
+                                    <div class="small-text-stats">(3 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.44 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/LaTatina%20in%20bush%232110">LaTatina in bush#2110</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="PLATINUM" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                PLATINUM III (95 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>134</td>
+                    <td>119</td>
+                    <td>253</td>
+                    <td class="win-rate-alto">
+                        52.96%
+                    </td>
+                    <td class="hidden">1795</td>
+                    <td>
+                        
+                        
+                            -58 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">1V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/LaTatina%20in%20bush-2110" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-FjnB_JwZ4CBosNr2PX5Ja6FIRi_qtzZxqyG2oZGdk95qSN0Qimc-3A4nW8yJfox2Q-Ksv-f-W8iJcw" data-opgg-url="https://www.op.gg/summoners/euw/LaTatina%20in%20bush-2110">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-FjnB_JwZ4CBosNr2PX5Ja6FIRi_qtzZxqyG2oZGdk95qSN0Qimc-3A4nW8yJfox2Q-Ksv-f-W8iJcw" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="FjnB_JwZ4CBosNr2PX5Ja6FIRi_qtzZxqyG2oZGdk95qSN0Qimc-3A4nW8yJfox2Q-Ksv-f-W8iJcw" data-jugador="Tato">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Tato.png"
+                                alt="Imagen de Tato"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Tato</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Naafiri.png" 
+                                     alt="Naafiri"
+                                     title="Naafiri"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">50% WR</div>
+                                    <div class="small-text-stats">(4 partidas)</div>
+                                    
+                                    <div class="small-text-stats">3.25 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/LaTatina%20in%20bush%232110">LaTatina in bush#2110</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="PLATINUM" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                PLATINUM III (36 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>65</td>
+                    <td>66</td>
+                    <td>131</td>
+                    <td class="win-rate-bajo">
+                        49.62%
+                    </td>
+                    <td class="hidden">1736</td>
+                    <td>
+                        
+                        
+                            -35 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/LaTatina%20in%20bush-2110" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-FjnB_JwZ4CBosNr2PX5Ja6FIRi_qtzZxqyG2oZGdk95qSN0Qimc-3A4nW8yJfox2Q-Ksv-f-W8iJcw" data-opgg-url="https://www.op.gg/summoners/euw/LaTatina%20in%20bush-2110">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-FjnB_JwZ4CBosNr2PX5Ja6FIRi_qtzZxqyG2oZGdk95qSN0Qimc-3A4nW8yJfox2Q-Ksv-f-W8iJcw" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="_Hv1K2C3gq9naSce-i0Mwhqwk26X5tLcBvv3MOvKmI0EAMayg0IK2cXQ3E0tvovTTkEHDhg7AAFjng" data-jugador="TatoJr.">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/TatoJr..png"
+                                alt="Imagen de TatoJr."
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">TatoJr.</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/MissFortune.png" 
+                                     alt="MissFortune"
+                                     title="MissFortune"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">20% WR</div>
+                                    <div class="small-text-stats">(5 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.58 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/MIguel%20d%20Unamumu%238058">MIguel d Unamumu#8058</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="BRONZE" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                BRONZE IV (13 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>3</td>
+                    <td>7</td>
+                    <td>10</td>
+                    <td class="win-rate-bajo">
+                        30.00%
+                    </td>
+                    <td class="hidden">413</td>
+                    <td>
+                        
+                        
+                            -16 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/MIguel%20d%20Unamumu-8058" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-_Hv1K2C3gq9naSce-i0Mwhqwk26X5tLcBvv3MOvKmI0EAMayg0IK2cXQ3E0tvovTTkEHDhg7AAFjng" data-opgg-url="https://www.op.gg/summoners/euw/MIguel%20d%20Unamumu-8058">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-_Hv1K2C3gq9naSce-i0Mwhqwk26X5tLcBvv3MOvKmI0EAMayg0IK2cXQ3E0tvovTTkEHDhg7AAFjng" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="w8U9OFGrvF20j7DqhP0SHZ-e0n6pk0xvRlg2P4ufCFzq-qfYR10cLaTVhv-Hi2UgCecnLy_QtMVJ4Q" data-jugador="Xukibol">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Xukibol.png"
+                                alt="Imagen de Xukibol"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Xukibol</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Lissandra.png" 
+                                     alt="Lissandra"
+                                     title="Lissandra"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">20% WR</div>
+                                    <div class="small-text-stats">(5 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.03 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/XuKiBoL%23EUW">XuKiBoL#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="GOLD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                GOLD II (87 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>21</td>
+                    <td>22</td>
+                    <td>43</td>
+                    <td class="win-rate-bajo">
+                        48.84%
+                    </td>
+                    <td class="hidden">1487</td>
+                    <td>
+                        
+                        
+                            -59 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">1V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/XuKiBoL-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-w8U9OFGrvF20j7DqhP0SHZ-e0n6pk0xvRlg2P4ufCFzq-qfYR10cLaTVhv-Hi2UgCecnLy_QtMVJ4Q" data-opgg-url="https://www.op.gg/summoners/euw/XuKiBoL-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-w8U9OFGrvF20j7DqhP0SHZ-e0n6pk0xvRlg2P4ufCFzq-qfYR10cLaTVhv-Hi2UgCecnLy_QtMVJ4Q" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="w8U9OFGrvF20j7DqhP0SHZ-e0n6pk0xvRlg2P4ufCFzq-qfYR10cLaTVhv-Hi2UgCecnLy_QtMVJ4Q" data-jugador="Xukibol">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Xukibol.png"
+                                alt="Imagen de Xukibol"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Xukibol</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Ashe.png" 
+                                     alt="Ashe"
+                                     title="Ashe"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">33% WR</div>
+                                    <div class="small-text-stats">(3 partidas)</div>
+                                    
+                                    <div class="small-text-stats">3.45 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/XuKiBoL%23EUW">XuKiBoL#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="GOLD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                GOLD II (40 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>12</td>
+                    <td>11</td>
+                    <td>23</td>
+                    <td class="win-rate-alto">
+                        52.17%
+                    </td>
+                    <td class="hidden">1440</td>
+                    <td>
+                        
+                        
+                            -16 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/XuKiBoL-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-w8U9OFGrvF20j7DqhP0SHZ-e0n6pk0xvRlg2P4ufCFzq-qfYR10cLaTVhv-Hi2UgCecnLy_QtMVJ4Q" data-opgg-url="https://www.op.gg/summoners/euw/XuKiBoL-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-w8U9OFGrvF20j7DqhP0SHZ-e0n6pk0xvRlg2P4ufCFzq-qfYR10cLaTVhv-Hi2UgCecnLy_QtMVJ4Q" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="VIx9CGMc7OWx-8TL7AGPdyKV-lnh0aFoMnwzX7oZjkkQTziS2LEC4h-SZ58MWATPUJV3B9CQm1iABA" data-jugador="Adri">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Adri.png"
+                                alt="Imagen de Adri"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Adri</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Nautilus.png" 
+                                     alt="Nautilus"
+                                     title="Nautilus"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">50% WR</div>
+                                    <div class="small-text-stats">(2 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.44 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/UrGOAT%23ESP">UrGOAT#ESP</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="SILVER" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                SILVER I (77 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>13</td>
+                    <td>14</td>
+                    <td>27</td>
+                    <td class="win-rate-bajo">
+                        48.15%
+                    </td>
+                    <td class="hidden">1177</td>
+                    <td>
+                        
+                        
+                            -16 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">1D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/UrGOAT-ESP" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-VIx9CGMc7OWx-8TL7AGPdyKV-lnh0aFoMnwzX7oZjkkQTziS2LEC4h-SZ58MWATPUJV3B9CQm1iABA" data-opgg-url="https://www.op.gg/summoners/euw/UrGOAT-ESP">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-VIx9CGMc7OWx-8TL7AGPdyKV-lnh0aFoMnwzX7oZjkkQTziS2LEC4h-SZ58MWATPUJV3B9CQm1iABA" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="VIx9CGMc7OWx-8TL7AGPdyKV-lnh0aFoMnwzX7oZjkkQTziS2LEC4h-SZ58MWATPUJV3B9CQm1iABA" data-jugador="Adri">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Adri.png"
+                                alt="Imagen de Adri"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Adri</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Urgot.png" 
+                                     alt="Urgot"
+                                     title="Urgot"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">60% WR</div>
+                                    <div class="small-text-stats">(5 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.66 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/UrGOAT%23ESP">UrGOAT#ESP</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="SILVER" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                SILVER III (27 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>12</td>
+                    <td>18</td>
+                    <td>30</td>
+                    <td class="win-rate-bajo">
+                        40.00%
+                    </td>
+                    <td class="hidden">927</td>
+                    <td>
+                        
+                        
+                            -37 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">3D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/UrGOAT-ESP" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-VIx9CGMc7OWx-8TL7AGPdyKV-lnh0aFoMnwzX7oZjkkQTziS2LEC4h-SZ58MWATPUJV3B9CQm1iABA" data-opgg-url="https://www.op.gg/summoners/euw/UrGOAT-ESP">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-VIx9CGMc7OWx-8TL7AGPdyKV-lnh0aFoMnwzX7oZjkkQTziS2LEC4h-SZ58MWATPUJV3B9CQm1iABA" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="l2TXgJEiCpD2ZQXbc7YRX9DQbQ9h7X_C_2-e23Y8oKwG5wvZJSbHjJ2fP_DWRU2VK-7hQYRDM3FH2g" data-jugador="Sepevalle">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sepevalle.png"
+                                alt="Imagen de Sepevalle"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sepevalle</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Malzahar.png" 
+                                     alt="Malzahar"
+                                     title="Malzahar"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">100% WR</div>
+                                    <div class="small-text-stats">(2 partidas)</div>
+                                    
+                                    <div class="small-text-stats">3.69 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/white%20wisky%23EUW">white wisky#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="GOLD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                GOLD II (65 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>4</td>
+                    <td>2</td>
+                    <td>6</td>
+                    <td class="win-rate-alto">
+                        66.67%
+                    </td>
+                    <td class="hidden">1465</td>
+                    <td>
+                        
+                        
+                            <span class="peak-elo">PEAK</span>
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">1V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/white%20wisky-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-l2TXgJEiCpD2ZQXbc7YRX9DQbQ9h7X_C_2-e23Y8oKwG5wvZJSbHjJ2fP_DWRU2VK-7hQYRDM3FH2g" data-opgg-url="https://www.op.gg/summoners/euw/white%20wisky-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-l2TXgJEiCpD2ZQXbc7YRX9DQbQ9h7X_C_2-e23Y8oKwG5wvZJSbHjJ2fP_DWRU2VK-7hQYRDM3FH2g" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="YrSwTGV1rB0cy07IWx3XI0ZHfjspq5iVzS2sScIOb88beocf1lYA5ykO6ygR2WeDCoka14N3Spczxg" data-jugador="Fernia">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Fernia.png"
+                                alt="Imagen de Fernia"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Fernia</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            <span>N/A</span>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/TuMotoPapi%23EUW">TuMotoPapi#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="SILVER" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                SILVER IV (25 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>4</td>
+                    <td>8</td>
+                    <td>12</td>
+                    <td class="win-rate-bajo">
+                        33.33%
+                    </td>
+                    <td class="hidden">825</td>
+                    <td>
+                        
+                        
+                            -20 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-neutral">—</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/TuMotoPapi-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-YrSwTGV1rB0cy07IWx3XI0ZHfjspq5iVzS2sScIOb88beocf1lYA5ykO6ygR2WeDCoka14N3Spczxg" data-opgg-url="https://www.op.gg/summoners/euw/TuMotoPapi-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-YrSwTGV1rB0cy07IWx3XI0ZHfjspq5iVzS2sScIOb88beocf1lYA5ykO6ygR2WeDCoka14N3Spczxg" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="YrSwTGV1rB0cy07IWx3XI0ZHfjspq5iVzS2sScIOb88beocf1lYA5ykO6ygR2WeDCoka14N3Spczxg" data-jugador="Fernia">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Fernia.png"
+                                alt="Imagen de Fernia"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Fernia</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Nautilus.png" 
+                                     alt="Nautilus"
+                                     title="Nautilus"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">70% WR</div>
+                                    <div class="small-text-stats">(10 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.31 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/TuMotoPapi%23EUW">TuMotoPapi#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="GOLD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                GOLD IV (21 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>49</td>
+                    <td>50</td>
+                    <td>99</td>
+                    <td class="win-rate-bajo">
+                        49.49%
+                    </td>
+                    <td class="hidden">1221</td>
+                    <td>
+                        
+                        
+                            <span class="peak-elo">PEAK</span>
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">1V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/TuMotoPapi-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-YrSwTGV1rB0cy07IWx3XI0ZHfjspq5iVzS2sScIOb88beocf1lYA5ykO6ygR2WeDCoka14N3Spczxg" data-opgg-url="https://www.op.gg/summoners/euw/TuMotoPapi-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-YrSwTGV1rB0cy07IWx3XI0ZHfjspq5iVzS2sScIOb88beocf1lYA5ykO6ygR2WeDCoka14N3Spczxg" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="aie78ipgoLAjpsAcckYrMyiIWPX3ohoix0pwA9RfpMJicWqUGBKKvPoOdRDn8K8FhNl8HVVo9N9xsA" data-jugador="Pedraza">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Pedraza.png"
+                                alt="Imagen de Pedraza"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Pedraza</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Shyvana.png" 
+                                     alt="Shyvana"
+                                     title="Shyvana"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">100% WR</div>
+                                    <div class="small-text-stats">(2 partidas)</div>
+                                    
+                                    <div class="small-text-stats">3.67 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/DUVODA%23EUW">DUVODA#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="GOLD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                GOLD III (6 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>55</td>
+                    <td>62</td>
+                    <td>117</td>
+                    <td class="win-rate-bajo">
+                        47.01%
+                    </td>
+                    <td class="hidden">1306</td>
+                    <td>
+                        
+                        
+                            -19 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">4V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/DUVODA-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-aie78ipgoLAjpsAcckYrMyiIWPX3ohoix0pwA9RfpMJicWqUGBKKvPoOdRDn8K8FhNl8HVVo9N9xsA" data-opgg-url="https://www.op.gg/summoners/euw/DUVODA-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-aie78ipgoLAjpsAcckYrMyiIWPX3ohoix0pwA9RfpMJicWqUGBKKvPoOdRDn8K8FhNl8HVVo9N9xsA" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="aie78ipgoLAjpsAcckYrMyiIWPX3ohoix0pwA9RfpMJicWqUGBKKvPoOdRDn8K8FhNl8HVVo9N9xsA" data-jugador="Pedraza">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Pedraza.png"
+                                alt="Imagen de Pedraza"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Pedraza</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Caitlyn.png" 
+                                     alt="Caitlyn"
+                                     title="Caitlyn"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">80% WR</div>
+                                    <div class="small-text-stats">(5 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.05 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/DUVODA%23EUW">DUVODA#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="GOLD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                GOLD I (6 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>46</td>
+                    <td>44</td>
+                    <td>90</td>
+                    <td class="win-rate-alto">
+                        51.11%
+                    </td>
+                    <td class="hidden">1506</td>
+                    <td>
+                        
+                        
+                            <span class="peak-elo">PEAK</span>
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">1V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/DUVODA-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-aie78ipgoLAjpsAcckYrMyiIWPX3ohoix0pwA9RfpMJicWqUGBKKvPoOdRDn8K8FhNl8HVVo9N9xsA" data-opgg-url="https://www.op.gg/summoners/euw/DUVODA-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-aie78ipgoLAjpsAcckYrMyiIWPX3ohoix0pwA9RfpMJicWqUGBKKvPoOdRDn8K8FhNl8HVVo9N9xsA" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="5AX3n7QIEwTzGCPEpZsVafPWNTOX1cURlGMafNeLt4HWE-SdogzcOh7Uyn8uDppv_t3kz4t2weCtOg" data-jugador="Sergio">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sergio.png"
+                                alt="Imagen de Sergio"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sergio</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            <span>N/A</span>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/SeputxX%23EUW">SeputxX#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="PLATINUM" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                PLATINUM I (17 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>65</td>
+                    <td>64</td>
+                    <td>129</td>
+                    <td class="win-rate-alto">
+                        50.39%
+                    </td>
+                    <td class="hidden">1917</td>
+                    <td>
+                        
+                        
+                            -36 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-neutral">—</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/SeputxX-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-5AX3n7QIEwTzGCPEpZsVafPWNTOX1cURlGMafNeLt4HWE-SdogzcOh7Uyn8uDppv_t3kz4t2weCtOg" data-opgg-url="https://www.op.gg/summoners/euw/SeputxX-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-5AX3n7QIEwTzGCPEpZsVafPWNTOX1cURlGMafNeLt4HWE-SdogzcOh7Uyn8uDppv_t3kz4t2weCtOg" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="5AX3n7QIEwTzGCPEpZsVafPWNTOX1cURlGMafNeLt4HWE-SdogzcOh7Uyn8uDppv_t3kz4t2weCtOg" data-jugador="Sergio">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sergio.png"
+                                alt="Imagen de Sergio"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sergio</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Briar.png" 
+                                     alt="Briar"
+                                     title="Briar"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">46% WR</div>
+                                    <div class="small-text-stats">(13 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.60 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/SeputxX%23EUW">SeputxX#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="EMERALD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                EMERALD III (5 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>103</td>
+                    <td>102</td>
+                    <td>205</td>
+                    <td class="win-rate-alto">
+                        50.24%
+                    </td>
+                    <td class="hidden">2105</td>
+                    <td>
+                        
+                        
+                            -90 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                            
+                            <span class="lp-change-negative">
+                                -108 LP
+                            </span>
+                            <br>
+                            <span class="small-text-stats">
+                                (2V-7D)
+                            </span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">1V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/SeputxX-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-5AX3n7QIEwTzGCPEpZsVafPWNTOX1cURlGMafNeLt4HWE-SdogzcOh7Uyn8uDppv_t3kz4t2weCtOg" data-opgg-url="https://www.op.gg/summoners/euw/SeputxX-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-5AX3n7QIEwTzGCPEpZsVafPWNTOX1cURlGMafNeLt4HWE-SdogzcOh7Uyn8uDppv_t3kz4t2weCtOg" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="yUECqKEmwWJf6H5AMG-CM9Ev8IAT9ioVN6qpsbw6wvVDaLgmLdykAnV980ZCb-le-AU1QBZmAdpR-Q" data-jugador="Tato">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Tato.png"
+                                alt="Imagen de Tato"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Tato</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Shyvana.png" 
+                                     alt="Shyvana"
+                                     title="Shyvana"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">67% WR</div>
+                                    <div class="small-text-stats">(3 partidas)</div>
+                                    
+                                    <div class="small-text-stats">4.10 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/Beagle%20lovers%23TT21">Beagle lovers#TT21</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="EMERALD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                EMERALD III (40 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>445</td>
+                    <td>431</td>
+                    <td>876</td>
+                    <td class="win-rate-alto">
+                        50.80%
+                    </td>
+                    <td class="hidden">2140</td>
+                    <td>
+                        
+                        
+                            -180 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">2D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/Beagle%20lovers-TT21" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-yUECqKEmwWJf6H5AMG-CM9Ev8IAT9ioVN6qpsbw6wvVDaLgmLdykAnV980ZCb-le-AU1QBZmAdpR-Q" data-opgg-url="https://www.op.gg/summoners/euw/Beagle%20lovers-TT21">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-yUECqKEmwWJf6H5AMG-CM9Ev8IAT9ioVN6qpsbw6wvVDaLgmLdykAnV980ZCb-le-AU1QBZmAdpR-Q" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_FLEX_SR" data-puuid="yUECqKEmwWJf6H5AMG-CM9Ev8IAT9ioVN6qpsbw6wvVDaLgmLdykAnV980ZCb-le-AU1QBZmAdpR-Q" data-jugador="Tato">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Tato.png"
+                                alt="Imagen de Tato"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Tato</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Ashe.png" 
+                                     alt="Ashe"
+                                     title="Ashe"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">100% WR</div>
+                                    <div class="small-text-stats">(1 partidas)</div>
+                                    
+                                    <div class="small-text-stats">3.80 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/Beagle%20lovers%23TT21">Beagle lovers#TT21</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="GOLD" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                GOLD I (6 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>71</td>
+                    <td>63</td>
+                    <td>134</td>
+                    <td class="win-rate-alto">
+                        52.99%
+                    </td>
+                    <td class="hidden">1506</td>
+                    <td>
+                        
+                        
+                            <span class="peak-elo">PEAK</span>
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">1V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/Beagle%20lovers-TT21" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-yUECqKEmwWJf6H5AMG-CM9Ev8IAT9ioVN6qpsbw6wvVDaLgmLdykAnV980ZCb-le-AU1QBZmAdpR-Q" data-opgg-url="https://www.op.gg/summoners/euw/Beagle%20lovers-TT21">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-yUECqKEmwWJf6H5AMG-CM9Ev8IAT9ioVN6qpsbw6wvVDaLgmLdykAnV980ZCb-le-AU1QBZmAdpR-Q" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="TH_Fdt37V8tAZKjNw6c9aUzoP0V3ozfa0aUPglzAs1PckX9C5rFWWYX8uc-Z8mZCeptgU7TLorh7GQ" data-jugador="Sepevalle">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sepevalle.png"
+                                alt="Imagen de Sepevalle"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sepevalle</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Briar.png" 
+                                     alt="Briar"
+                                     title="Briar"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-alto">50% WR</div>
+                                    <div class="small-text-stats">(2 partidas)</div>
+                                    
+                                    <div class="small-text-stats">2.05 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/sepevalle%23EUW">sepevalle#EUW</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="SILVER" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                SILVER III (75 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>4</td>
+                    <td>3</td>
+                    <td>7</td>
+                    <td class="win-rate-alto">
+                        57.14%
+                    </td>
+                    <td class="hidden">975</td>
+                    <td>
+                        
+                        
+                            <span class="peak-elo">PEAK</span>
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-positive">1V</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/sepevalle-EUW" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-TH_Fdt37V8tAZKjNw6c9aUzoP0V3ozfa0aUPglzAs1PckX9C5rFWWYX8uc-Z8mZCeptgU7TLorh7GQ" data-opgg-url="https://www.op.gg/summoners/euw/sepevalle-EUW">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-TH_Fdt37V8tAZKjNw6c9aUzoP0V3ozfa0aUPglzAs1PckX9C5rFWWYX8uc-Z8mZCeptgU7TLorh7GQ" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+                
+                
+                <tr class="queue-type RANKED_SOLO_5x5" data-puuid="4H-1O0pYFWegseUXOdINsMR7QpJnb3F69LnEnhH5CmFhQFH0kbVa6o9mtM_Cr2YrlcR9We4-KeVlJg" data-jugador="Sergio">
+                    <td></td>
+                    <td class="jugador-columna">
+
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/img_perfil/Sergio.png"
+                                alt="Imagen de Sergio"
+                                class="imagen-jugador"
+                                style="width:32px; height:32px; object-fit:cover; border-radius:50%; background: #fff;"
+                                onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'white\'/></svg>';">
+                            <span class="ms-2">Sergio</span>
+                        </div>
+                    </td>
+                    <td>
+                        
+                        
+                            
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Briar.png" 
+                                     alt="Briar"
+                                     title="Briar"
+                                     style="width: 32px; height: 32px; border-radius: 50%;" />
+                                <div class="ms-2 text-start">
+                                    <div class="fw-bold win-rate-bajo">25% WR</div>
+                                    <div class="small-text-stats">(12 partidas)</div>
+                                    
+                                    <div class="small-text-stats">1.85 KDA</div>
+                                    
+                                </div>
+                            </div>
+                        
+                    </td>
+                    <td>
+                        <a href="/jugador/SquirtingOnMyFet%23uWu">SquirtingOnMyFet#uWu</a>
+                    </td>
+                    <td class="elo-columna">
+                        <div class="d-flex align-items-center" style="position: relative;">
+                            <img src="" alt="DIAMOND" class="elo-image" style="width: 35px; height: 25px; object-fit: contain; position: absolute; left: 0;">
+                            <span class="w-100 text-center" style="margin-left: 40px; display: inline-block;">
+                                DIAMOND IV (48 LPs)
+                            </span>
+                        </div>
+                    </td>
+                    <td>141</td>
+                    <td>113</td>
+                    <td>254</td>
+                    <td class="win-rate-alto">
+                        55.51%
+                    </td>
+                    <td class="hidden">2448</td>
+                    <td>
+                        
+                        
+                            -173 LPs
+                        
+                    </td> 
+                    <td > 
+                        
+                             <span class="lp-change-neutral">0 LP</span>
+                        
+                    </td>
+                    <td> 
+                        
+                            <span class="lp-change-negative">3D</span>
+                        
+                    </td>
+
+                    <td class="elo-diferencia"></td>
+                    <td class="estado-celda">
+                        <a href="https://www.op.gg/summoners/euw/SquirtingOnMyFet-uWu" target="_blank" rel="noopener noreferrer" class="link-estado" id="estado-4H-1O0pYFWegseUXOdINsMR7QpJnb3F69LnEnhH5CmFhQFH0kbVa6o9mtM_Cr2YrlcR9We4-KeVlJg" data-opgg-url="https://www.op.gg/summoners/euw/SquirtingOnMyFet-uWu">
+                            
+                                <span class="estado-texto">Inactivo</span>
+                                <img src="" alt="" class="champion-ingame hidden" id="champion-4H-1O0pYFWegseUXOdINsMR7QpJnb3F69LnEnhH5CmFhQFH0kbVa6o9mtM_Cr2YrlcR9We4-KeVlJg" style="width: 25px; height: 25px; vertical-align: middle; margin-left: 5px;" />
+                            
+                        </a>
+                    </td>
+
+
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+</div> <!-- Cierre de main-content -->
+
+<!-- Script de Bootstrap JS (necesario para el menú desplegable y otras funcionalidades) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const backgroundAudio = document.getElementById('backgroundAudio');
+
+        const toggleAudioButton = document.getElementById('toggleAudio');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const muteIcon = document.getElementById('muteIcon');
+
+        // --- INICIO: LÓGICA DE AUDIO CON LOCALSTORAGE ---
+        const savedVolume = localStorage.getItem('backgroundAudioVolume');
+        if (savedVolume !== null) {
+            backgroundAudio.volume = parseFloat(savedVolume);
+            volumeSlider.value = parseFloat(savedVolume);
+        } else {
+            backgroundAudio.volume = 1.0;
+            volumeSlider.value = 1.0;
+        }
+
+        const savedMuteState = localStorage.getItem('backgroundAudioMuted');
+        if (savedMuteState === 'true') {
+            backgroundAudio.muted = true;
+            muteIcon.className = 'fas fa-microphone-slash';
+            toggleAudioButton.title = 'Desmutear Música';
+        } else {
+            backgroundAudio.muted = false;
+            muteIcon.className = 'fas fa-microphone-alt';
+            toggleAudioButton.title = 'Silenciar Música';
+            const playPromise = backgroundAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => console.log("Autoplay de audio bloqueado:", error));
+            }
+        }
+
+        toggleAudioButton.addEventListener('click', () => {
+            backgroundAudio.muted = !backgroundAudio.muted;
+            if (backgroundAudio.muted) {
+                muteIcon.className = 'fas fa-microphone-slash';
+                toggleAudioButton.title = 'Desmutear Música';
+                localStorage.setItem('backgroundAudioMuted', 'true');
+            } else {
+                muteIcon.className = 'fas fa-microphone-alt';
+                toggleAudioButton.title = 'Silenciar Música';
+                backgroundAudio.play().catch(e => console.log("Play fallido tras desmutear:", e));
+                localStorage.setItem('backgroundAudioMuted', 'false');
+            }
+        });
+
+        volumeSlider.addEventListener('input', function() {
+            backgroundAudio.volume = this.value;
+            localStorage.setItem('backgroundAudioVolume', this.value);
+            if (this.value > 0 && backgroundAudio.muted) {
+                toggleAudioButton.click(); // Simula un clic para desmutear
+            } else if (this.value == 0 && !backgroundAudio.muted) {
+                toggleAudioButton.click(); // Simula un clic para mutear
+            }
+        });
+        // --- FIN: LÓGICA DE AUDIO CON LOCALSTORAGE ---
+
+        const imagenesElo = {
+            "IRON": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Iron.png",
+            "BRONZE": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Bronze.png",
+            "SILVER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Silver.png",
+            "GOLD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Gold.png",
+            "PLATINUM": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/PLATINUM.png",
+            "EMERALD": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/Emerald.png",
+            "DIAMOND": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/DIAMOND.png",
+            "MASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/MASTER.png",
+            "GRANDMASTER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/GRANDMASTER.png",
+            "CHALLENGER": "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/logos_elo/CHALLENGER.png"
+        };
+
+        document.querySelectorAll(".elo-image").forEach(el => {
+            const elo = el.alt.toUpperCase();
+            if (imagenesElo[elo]) el.src = imagenesElo[elo];
+        });
+
+        const toggleModeButton = document.getElementById("toggle-mode");
+        const body = document.body;
+
+        // --- INICIO: LÓGICA DE MODO OSCURO CON LOCALSTORAGE ---
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            toggleModeButton.textContent = 'Modo Claro';
+        } else {
+            toggleModeButton.textContent = 'Modo Oscuro';
+        }
+
+        toggleModeButton.addEventListener('click', function() {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            toggleModeButton.textContent = isDarkMode ? 'Modo Claro' : 'Modo Oscuro';
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+        });
+        // --- FIN: LÓGICA DE MODO OSCURO CON LOCALSTORAGE ---
+        // --- INICIO DE LA NUEVA LÓGICA DE TABLA ---
+        
+        const filtro = document.getElementById("filtro");
+        const table = document.getElementById("jugadoresTable");
+        const tbody = table.querySelector("tbody");
+        const headers = table.querySelectorAll("thead th[data-sort-by]");
+
+        // Estado actual de la ordenación
+        let currentSort = {
+            column: 'elo',
+            direction: 'desc'
+        };
+
+        // Función para obtener el valor de una celda para poder comparar y ordenar
+        const getCellValue = (row, columnIndex, sortBy) => {
+            const cell = row.cells[columnIndex];
+            if (!cell) return null;
+
+            switch (sortBy) {
+                case 'elo':
+                    // Usar el valor de clasificación oculto para ordenar por Elo
+                    return parseFloat(row.querySelector(".hidden").textContent);
+                case 'jugador':
+                case 'game_name':
+                    // Para columnas de texto, usar el contenido en minúsculas
+                    return cell.textContent.trim().toLowerCase();
+                case 'win_rate':
+                    // Para el win rate, quitar el '%' y convertir a número
+                    return parseFloat(cell.textContent);
+                case 'lp_change_24h': // Handle new column for sorting
+                    const lpChangeText = cell.textContent.trim();
+                    if (lpChangeText === 'N/A') return -Infinity; // Place N/A at the bottom
+                    // Extract number, handling '+' and '-' signs
+                    return parseFloat(lpChangeText.replace(/[+LP]/g, '')); 
+                default:
+                    // Para el resto de columnas numéricas (wins, losses, total)
+                    return parseInt(cell.textContent, 10);
+            }
+        };
+
+        // Función principal para ordenar la tabla
+        const sortTable = (sortBy, direction) => {
+            const visibleRows = Array.from(tbody.querySelectorAll("tr:not([style*='display: none'])"));
+            const allHeaders = Array.from(table.querySelectorAll('thead th'));
+            const columnIndex = allHeaders.findIndex(th => th.dataset.sortBy === sortBy);
+
+            if (columnIndex === -1) return;
+
+            const dirModifier = direction === 'asc' ? 1 : -1;
+
+            const sortedRows = visibleRows.sort((a, b) => {
+                const aVal = getCellValue(a, columnIndex, sortBy);
+                const bVal = getCellValue(b, columnIndex, sortBy);
+                if (aVal < bVal) return -1 * dirModifier;
+                if (aVal > bVal) return 1 * dirModifier;
+                return 0;
+            });
+
+            sortedRows.forEach(row => tbody.appendChild(row));
+
+            headers.forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sortBy === sortBy) {
+                    th.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            updateTableCalculations(sortBy, sortedRows);
+        };
+
+        // Función para actualizar la posición y la columna "Dif. Elo"
+        const updateTableCalculations = (sortedBy, visibleRows) => {
+            visibleRows.forEach((row, index) => {
+                // Actualizar número de posición
+                row.cells[0].textContent = index + 1;
+
+                const eloDiffCell = row.querySelector(".elo-diferencia");
+                
+                // Limpiar clases de estilo previas
+                eloDiffCell.classList.remove('elo-diff-positive', 'elo-diff-negative', 'elo-diff-neutral');
+
+                // Calcular la diferencia de ELO solo si la tabla está ordenada por ELO
+                if (sortedBy === 'elo') {
+                    if (index === 0) {
+                        // El primer jugador no tiene diferencia
+                        eloDiffCell.textContent = "—";
+                        eloDiffCell.classList.add('elo-diff-neutral'); // Estilo neutral
+                    } else {
+                        // Obtener el valor de ELO directamente de la celda oculta
+                        const currentElo = parseFloat(row.querySelector(".hidden").textContent);
+                        const prevElo = parseFloat(visibleRows[index - 1].querySelector(".hidden").textContent);
+                        const diff = Math.round(currentElo - prevElo); // Calculate current - previous
+                        
+                        // Add '+' sign for positive differences
+                        eloDiffCell.textContent = `${diff > 0 ? '+' : ''}${diff} LPs`;
+
+                        // Aplicar clases de estilo según la diferencia
+                        if (diff > 0) {
+                            eloDiffCell.classList.add('elo-diff-positive');
+                        } else if (diff < 0) {
+                            eloDiffCell.classList.add('elo-diff-negative');
+                        } else {
+                            eloDiffCell.classList.add('elo-diff-neutral');
+                        }
+                    }
+                } else {
+                    // Si no está ordenado por ELO, mostrar N/A
+                    eloDiffCell.textContent = "N/A";
+                    eloDiffCell.classList.add('elo-diff-neutral'); // Estilo neutral
+                }
+            });
+        };
+
+        // Función para aplicar el filtro de cola
+        const aplicarFiltro = () => {
+            const selectedQueue = filtro.value;
+            tbody.querySelectorAll("tr").forEach(row => {
+                row.style.display = (selectedQueue === 'todo' || row.classList.contains(selectedQueue)) ? '' : 'none';
+            });
+            sortTable(currentSort.column, currentSort.direction);
+        };
+
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const sortBy = header.dataset.sortBy;
+                currentSort.direction = (currentSort.column === sortBy && currentSort.direction === 'desc') ? 'asc' : 'desc';
+                currentSort.column = sortBy;
+                sortTable(currentSort.column, currentSort.direction);
+            });
+        });
+
+        filtro.addEventListener("change", aplicarFiltro);
+        aplicarFiltro(); // Carga inicial con filtro y ordenación por defecto
+
+        // --- LÓGICA PARA ROTAR EL BANNER SUPERIOR ---
+        const bannerImg = document.getElementById('banner-img');
+        const banners = [
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/refs/heads/main/banners/Banner5.png"
+        ];
+        let currentBannerIndex = 0;
+
+        function changeBanner() {
+            currentBannerIndex = (currentBannerIndex + 1) % banners.length;
+            bannerImg.src = banners[currentBannerIndex];
+        }
+        setInterval(changeBanner, 5000); // Cambia el banner cada 5 segundos
+
+        const leftBanner = document.getElementById("left-banner");
+        const rightBanner = document.getElementById("right-banner");
+        const imagePaths = [
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/1.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/2.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/3.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/4.jpg",
+            "https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/bannerlateral/5.jpg"
+        ];
+        let currentImageIndex = 0;
+
+        function cambiarImagenes() {
+            currentImageIndex = (currentImageIndex + 1) % imagePaths.length;
+            leftBanner.src = imagePaths[currentImageIndex];
+            rightBanner.src = imagePaths[currentImageIndex];
+        }
+        setInterval(cambiarImagenes, 5000);
+        
+        // --- VERIFICACIÓN EN TIEMPO REAL DE PARTIDAS ACTIVAS ---
+        async function checkLiveGames() {
+            const rows = document.querySelectorAll('#jugadoresTable tbody tr[data-puuid]');
+            const ddragonVersion = '16.10.1';
+            
+            console.log(`[LiveGame] Iniciando verificación batch para ${rows.length} jugadores...`);
+            
+            try {
+                // Obtener todos los estados de partida en una sola llamada
+                const response = await fetch('/api/live-games/all');
+                if (!response.ok) {
+                    console.error(`[LiveGame] Error obteniendo estados: ${response.status}`);
+                    return;
+                }
+                
+                const allLiveGames = await response.json();
+                console.log(`[LiveGame] Datos recibidos para ${Object.keys(allLiveGames).length} jugadores`);
+                
+                for (const row of rows) {
+                    const puuid = row.getAttribute('data-puuid');
+                    const jugador = row.getAttribute('data-jugador');
+                    
+                    // Buscar el estadoLink dentro de esta fila específica (para manejar múltiples filas por jugador)
+                    const estadoLink = row.querySelector('.link-estado');
+                    
+                    if (!puuid || !estadoLink) {
+                        console.log(`[LiveGame] Saltando ${jugador}: falta puuid o estadoLink`);
+                        continue;
+                    }
+                    
+                    const data = allLiveGames[puuid];
+                    if (!data) {
+                        console.log(`[LiveGame] No hay datos para ${jugador}`);
+                        continue;
+                    }
+                    
+                    // Limpiar contenido actual
+                    estadoLink.innerHTML = '';
+                    
+                    if (data.en_partida) {
+                        if (data.detail_url) {
+                            estadoLink.href = data.detail_url;
+                            estadoLink.target = '_self';
+                            estadoLink.rel = '';
+                        }
+                        // Jugador está en partida - mostrar en TODAS las filas independientemente de la cola
+                        const statusSpan = document.createElement('span');
+                        statusSpan.className = 'estado-en-partida';
+                        statusSpan.textContent = 'In Game';
+                        statusSpan.style.color = '#007BFF';
+                        statusSpan.style.fontWeight = 'bold';
+                        estadoLink.appendChild(statusSpan);
+                        
+                        // Si el caché es viejo (>150s = 2.5 min), añadir indicador visual
+                        // El worker verifica cada 2 min, así que 2.5 min da margen razonable
+                        if (data.cache_age_seconds && data.cache_age_seconds > 150) {
+                            statusSpan.style.opacity = '0.7';
+                            statusSpan.title = `Datos de hace ${data.cache_age_seconds}s - puede haber cambiado`;
+                        }
+
+                        
+                        if (data.nombre_campeon && data.nombre_campeon !== 'Desconocido') {
+                            // Crear nueva imagen del campeón
+                            const img = document.createElement('img');
+                            img.src = `https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${data.nombre_campeon}.png`;
+                            img.alt = data.nombre_campeon;
+                            img.style.width = '25px';
+                            img.style.height = '25px';
+                            img.style.verticalAlign = 'middle';
+                            img.style.marginLeft = '5px';
+                            img.onerror = function() {
+                                console.log(`[LiveGame] Error cargando imagen para ${data.nombre_campeon}`);
+                                this.style.display = 'none';
+                            };
+                            estadoLink.appendChild(img);
+                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA con ${data.nombre_campeon} (fila ${row.className}, caché: ${data.cache_age_seconds || 'N/A'}s)`);
+                        } else {
+                            console.log(`[LiveGame] ✓ ${jugador} EN PARTIDA (campeón desconocido) (fila ${row.className}, caché: ${data.cache_age_seconds || 'N/A'}s)`);
+                        }
+                    } else {
+                        // Jugador no está en partida
+                        const opggUrl = estadoLink.getAttribute('data-opgg-url');
+                        if (opggUrl) {
+                            estadoLink.href = opggUrl;
+                            estadoLink.target = '_blank';
+                            estadoLink.rel = 'noopener noreferrer';
+                        }
+                        const statusSpan = document.createElement('span');
+                        statusSpan.className = 'estado-texto';
+                        
+                        // Si no hay datos de caché, mostrar indicador de incertidumbre
+                        if (data.cache_age_seconds === null) {
+                            statusSpan.textContent = 'Inactivo';
+                            statusSpan.style.opacity = '0.5';
+                            statusSpan.title = 'Sin datos recientes - el worker no ha verificado aún';
+                        } else {
+                            statusSpan.textContent = 'Inactivo';
+                            // Si el caché es viejo (>150s = 2.5 min), indicar que puede haber cambiado
+                            if (data.cache_age_seconds > 150) {
+                                statusSpan.style.opacity = '0.7';
+                                statusSpan.title = `Datos de hace ${data.cache_age_seconds}s - puede haber cambiado`;
+                            }
+                        }
+
+                        
+                        estadoLink.appendChild(statusSpan);
+                    }
+
+                }
+
+                
+                console.log('[LiveGame] Verificación completada');
+            } catch (e) {
+                console.error('[LiveGame] Error en verificación batch:', e);
+            }
+        }
+
+
+
+        
+        // Verificar partidas al cargar la página inmediatamente (datos desde caché)
+        console.log('[LiveGame] Iniciando verificación de partidas activas...');
+        checkLiveGames();
+
+        
+        // Verificar partidas cada 60 segundos
+        setInterval(checkLiveGames, 60000);
+
+        // --- FIN VERIFICACIÓN EN TIEMPO REAL ---
+    });
+</script>
+
+
+</body>
+</html>
