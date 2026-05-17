@@ -267,7 +267,8 @@ def perfil_jugador(game_name):
 
     pre_key = f"player_{game_name}_page_{current_page}_queue_{selected_queue}_champ_{selected_champion}"
     try:
-        content = pre_read_fresh(pre_key, max_age_seconds=600)
+        # perfiles de jugador: 30 minutes
+        content = pre_read_fresh(pre_key, max_age_seconds=1800)
         if content:
             return Response(content, mimetype='text/html')
     except Exception:

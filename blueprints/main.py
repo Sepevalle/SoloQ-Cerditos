@@ -194,7 +194,8 @@ def index():
     # Intentar servir HTML precomputado si existe
     pre_key = 'index'
     try:
-        content = pre_read_fresh(pre_key, max_age_seconds=600)
+        # index: 5 minutes
+        content = pre_read_fresh(pre_key, max_age_seconds=300)
         if content:
             return Response(content, mimetype='text/html')
     except Exception:
@@ -382,12 +383,14 @@ def historial_global():
         page_end = min(total_pages, page + 2)
         page_numbers = list(range(page_start, page_end + 1))
         
-        # Intentar servir HTML precomputado por página
+        # Intentar servir HTML precomputado por página (solo para primeras 5 páginas)
         pre_key = f"historial_global_page_{page}"
         try:
-            content = pre_read_fresh(pre_key, max_age_seconds=600)
-            if content:
-                return Response(content, mimetype='text/html')
+            if page <= 5:
+                # historial paginado: 120 minutes
+                content = pre_read_fresh(pre_key, max_age_seconds=7200)
+                if content:
+                    return Response(content, mimetype='text/html')
         except Exception:
             pass
 

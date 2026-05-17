@@ -52,7 +52,7 @@ def render_index(app):
     print('[generate] index generado y encolado para escritura')
 
 
-def render_historial(app):
+def render_historial(app, max_pages=5):
     print('[generate] Generando historial_global...')
     dataset = main_bp._build_historial_global_dataset()
     all_matches = dataset.get('matches', [])
@@ -60,7 +60,9 @@ def render_historial(app):
     total_matches = len(all_matches)
     total_pages = max(1, (total_matches + per_page - 1) // per_page)
 
-    for page in range(1, total_pages + 1):
+    pages_to_generate = min(total_pages, max_pages)
+
+    for page in range(1, pages_to_generate + 1):
         start = (page - 1) * per_page
         end = start + per_page
         page_matches = all_matches[start:end]
@@ -81,8 +83,8 @@ def render_historial(app):
             generated_at=generated_at
         )
         key = f'historial_global_page_{page}'
-        write_all(key, rendered)
-        print(f'[generate] historial page {page}/{total_pages} encolado')
+        write_all_async(key, rendered)
+        print(f'[generate] historial page {page}/{pages_to_generate} encolado')
 
 
 def render_players(app, max_players=50):
@@ -148,12 +150,13 @@ def render_players(app, max_players=50):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--players', type=int, default=50, help='Número máximo de perfiles a generar')
+    parser.add_argument('--max-historial-pages', type=int, default=5, help='Número máximo de páginas de historial_global a generar')
     args = parser.parse_args()
 
     app = create_app()
     with app.test_request_context("/"):
         render_index(app)
-        render_historial(app)
+        render_historial(app, max_pages=args.max_historial_pages)
         render_players(app, max_players=args.players)
 
     print('[generate] Trabajo completado')
