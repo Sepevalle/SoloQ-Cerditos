@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, Response
 from datetime import datetime, timezone, timedelta
 import config.settings as settings
 from config.settings import ACTIVE_SPLIT_KEY
 
 from services.cache_service import player_cache, player_profile_cache, match_lookup_cache
+from services.precompute_service import is_fresh as pre_is_fresh, read as pre_read, write_async as pre_write_async
 from services.match_service import get_player_match_history, calculate_streaks
 from services.stats_service import get_top_champions_for_player
 from services.github_service import read_peak_elo
@@ -257,16 +258,28 @@ def perfil_jugador(game_name):
     el tipo de dispositivo para renderizar la plantilla adecuada.
     """
     print(f"[perfil_jugador] Petición recibida para el perfil de jugador: {game_name}")
-    perfil = _build_player_profile(game_name)
-    if not perfil:
-        print(f"[perfil_jugador] Perfil de jugador {game_name} no encontrado. Retornando 404.")
-        return render_template('404.html'), 404
-
+    # Intentar servir HTML precomputado (incluye paginación y filtros)
     selected_queue = (request.args.get('queue') or 'all').strip()
     selected_champion = (request.args.get('champion') or 'all').strip()
     current_page = request.args.get('page', 1, type=int) or 1
     if current_page < 1:
         current_page = 1
+
+    pre_key = f"player_{game_name}_page_{current_page}_queue_{selected_queue}_champ_{selected_champion}"
+    try:
+        if pre_is_fresh(pre_key, max_age_seconds=600):
+            content = pre_read(pre_key)
+            if content:
+                return Response(content, mimetype='text/html')
+    except Exception:
+        pass
+
+    perfil = _build_player_profile(game_name)
+    if not perfil:
+        print(f"[perfil_jugador] Perfil de jugador {game_name} no encontrado. Retornando 404.")
+        return render_template('404.html'), 404
+
+    # selected_queue, selected_champion, current_page already calculated above
 
     all_matches = perfil.get('historial_partidas', [])
     queue_options, champion_options = _get_match_filter_options(all_matches)
@@ -296,7 +309,8 @@ def perfil_jugador(game_name):
     
     print(f"[perfil_jugador] Dispositivo detectado como {'Móvil' if is_mobile else 'Escritorio'}. Renderizando {template_name} para {game_name}.")
 
-    return render_template(template_name,
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    rendered = render_template(template_name,
                            perfil=perfil_view,
                            ddragon_version=settings.DDRAGON_VERSION,
                            queue_options=queue_options,
@@ -308,7 +322,15 @@ def perfil_jugador(game_name):
                            total_filtered_matches=total_filtered_matches,
                            matches_per_page=MATCHES_PER_PAGE,
                            datetime=datetime,
-                           now=datetime.now())
+                           now=datetime.now(),
+                           generated_at=generated_at)
+
+    try:
+        pre_write_async(pre_key, rendered)
+    except Exception:
+        pass
+
+    return Response(rendered, mimetype='text/html')
 
 
 

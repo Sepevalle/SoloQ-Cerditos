@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, abort, render_template, request
+from flask import Blueprint, abort, render_template, request, Response
 from datetime import datetime, timezone, timedelta
 import time
 import threading
@@ -45,6 +45,7 @@ from services.index_json_generator import (
     is_json_fresh,
     INDEX_JSON_PATH
 )
+from services.precompute_service import is_fresh as pre_is_fresh, read as pre_read, write_async as pre_write_async
 
 
 
@@ -190,6 +191,16 @@ def index():
     """
     print("[index] Petición recibida para la página principal.")
     
+    # Intentar servir HTML precomputado si existe
+    pre_key = 'index'
+    try:
+        if pre_is_fresh(pre_key, max_age_seconds=600):
+            content = pre_read(pre_key)
+            if content:
+                return Response(content, mimetype='text/html')
+    except Exception:
+        pass
+
     # Intentar cargar desde JSON pre-generado
     json_data = load_index_json()
     
@@ -229,7 +240,9 @@ def index():
     print(f"[index] Renderizando index.html con JSON ({len(datos_jugadores)} jugadores, "
           f"actualizado hace {minutos_desde_actualizacion} min)")
     
-    return render_template('index.html', 
+    # Añadir timestamp de generación y renderizar a string para posible precomputado
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    rendered = render_template('index.html', 
                            datos_jugadores=datos_jugadores,
                            active_live_games=get_active_live_games(),
                            ultima_actualizacion=ultima_actualizacion,
@@ -237,7 +250,16 @@ def index():
                            split_activo_nombre=split_activo_nombre,
                            has_player_data=bool(datos_jugadores),
                            cache_stale=cache_stale,
-                           minutos_desde_actualizacion=minutos_desde_actualizacion)
+                           minutos_desde_actualizacion=minutos_desde_actualizacion,
+                           generated_at=generated_at)
+
+    # Guardar el HTML generado en background para próximas peticiones
+    try:
+        pre_write_async(pre_key, rendered)
+    except Exception:
+        pass
+
+    return Response(rendered, mimetype='text/html')
 
 
 @main_bp.route('/partida-en-vivo/<game_id>')
@@ -358,7 +380,18 @@ def historial_global():
         page_end = min(total_pages, page + 2)
         page_numbers = list(range(page_start, page_end + 1))
         
-        return render_template('historial_global.html',
+        # Intentar servir HTML precomputado por página
+        pre_key = f"historial_global_page_{page}"
+        try:
+            if pre_is_fresh(pre_key, max_age_seconds=600):
+                content = pre_read(pre_key)
+                if content:
+                    return Response(content, mimetype='text/html')
+        except Exception:
+            pass
+
+        generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        rendered = render_template('historial_global.html',
                              matches=page_matches,
                              page=page,
                              per_page=per_page,
@@ -368,7 +401,15 @@ def historial_global():
                              players_total=players_total,
                              players_with_puuid=players_with_puuid,
                              ddragon_version=settings.DDRAGON_VERSION,
-                             has_player_data=True)
+                             has_player_data=True,
+                             generated_at=generated_at)
+
+        try:
+            pre_write_async(pre_key, rendered)
+        except Exception:
+            pass
+
+        return Response(rendered, mimetype='text/html')
     except Exception as e:
         print(f"[historial_global] Error: {e}")
         import traceback

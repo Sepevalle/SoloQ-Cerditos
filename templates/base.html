@@ -336,6 +336,10 @@
     </div>
 </nav>
 
+<div class="container mt-3">
+    <p class="small-text" id="generatedAt">{% if generated_at is defined and generated_at %}Generado: {{ generated_at }}{% endif %}</p>
+</div>
+
 {% block content %}{% endblock %}
 
 </div> <!-- Cierre de main-content -->
