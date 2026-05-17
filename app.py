@@ -32,7 +32,8 @@ from blueprints import (
     player_bp,
     stats_bp,
     team_bp,
-    api_bp
+    api_bp,
+    admin_bp
 )
 
 # Importar servicios
@@ -82,6 +83,7 @@ def create_app():
     app.register_blueprint(stats_bp, url_prefix='/stats')
     app.register_blueprint(team_bp, url_prefix='/equipo')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(admin_bp, url_prefix='')
     
     # Manejador de error 404
     @app.errorhandler(404)
