@@ -4,7 +4,7 @@ import config.settings as settings
 from config.settings import ACTIVE_SPLIT_KEY
 
 from services.cache_service import player_cache, player_profile_cache, match_lookup_cache
-from services.precompute_service import is_fresh as pre_is_fresh, read as pre_read, write_async as pre_write_async, write_all_async as pre_write_all_async, write_github as pre_write_github
+from services.precompute_service import read_fresh as pre_read_fresh, write_async as pre_write_async, write_all_async as pre_write_all_async, write_github as pre_write_github
 from services.match_service import get_player_match_history, calculate_streaks
 from services.stats_service import get_top_champions_for_player
 from services.github_service import read_peak_elo
@@ -267,10 +267,9 @@ def perfil_jugador(game_name):
 
     pre_key = f"player_{game_name}_page_{current_page}_queue_{selected_queue}_champ_{selected_champion}"
     try:
-        if pre_is_fresh(pre_key, max_age_seconds=600):
-            content = pre_read(pre_key)
-            if content:
-                return Response(content, mimetype='text/html')
+        content = pre_read_fresh(pre_key, max_age_seconds=600)
+        if content:
+            return Response(content, mimetype='text/html')
     except Exception:
         pass
 

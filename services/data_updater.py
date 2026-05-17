@@ -29,6 +29,7 @@ from services.match_service import save_player_matches
 from services.stats_service import calculate_personal_records
 from services.data_processing import process_player_match_history
 from services.index_json_generator import generate_index_json
+from services.precompute_generator import request_precompute_refresh
 from services.player_update_tracker import (
     update_player_status, mark_player_updated, needs_update, 
     get_players_needing_update, load_tracker, save_tracker
@@ -118,6 +119,7 @@ def actualizar_cache_periodicamente():
             # Generar JSON del index con los nuevos datos
             print("[actualizar_cache_periodicamente] Generando JSON del index...")
             if generate_index_json():
+                request_precompute_refresh("index actualizado")
                 print("[actualizar_cache_periodicamente] ✓ JSON del index generado correctamente")
             else:
                 print("[actualizar_cache_periodicamente] ⚠ Error generando JSON del index")
@@ -335,6 +337,7 @@ def actualizar_historial_partidas_en_segundo_plano():
                 time.sleep(2)
             
             print("[actualizar_historial_partidas_en_segundo_plano] Actualización completada")
+            request_precompute_refresh("historial de partidas actualizado")
             
         except Exception as e:
             print(f"[actualizar_historial_partidas_en_segundo_plano] Error: {e}")
@@ -719,6 +722,7 @@ def actualizar_jugador_especifico(puuid, riot_id, jugador_nombre):
             mark_player_updated(puuid, is_full_update=False)
             
             print(f"[actualizar_jugador_especifico] ✓ {len(matches_to_add)} partidas guardadas para {jugador_nombre}")
+            request_precompute_refresh(f"jugador actualizado: {riot_id}")
             return {'status': 'success', 'matches_added': len(matches_to_add)}
         else:
             mark_player_updated(puuid, is_full_update=False)

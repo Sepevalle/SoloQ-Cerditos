@@ -45,7 +45,7 @@ from services.index_json_generator import (
     is_json_fresh,
     INDEX_JSON_PATH
 )
-from services.precompute_service import is_fresh as pre_is_fresh, read as pre_read, write_async as pre_write_async, write_all_async as pre_write_all_async, write_github as pre_write_github
+from services.precompute_service import read_fresh as pre_read_fresh, write_async as pre_write_async, write_all_async as pre_write_all_async, write_github as pre_write_github
 
 
 
@@ -194,10 +194,9 @@ def index():
     # Intentar servir HTML precomputado si existe
     pre_key = 'index'
     try:
-        if pre_is_fresh(pre_key, max_age_seconds=600):
-            content = pre_read(pre_key)
-            if content:
-                return Response(content, mimetype='text/html')
+        content = pre_read_fresh(pre_key, max_age_seconds=600)
+        if content:
+            return Response(content, mimetype='text/html')
     except Exception:
         pass
 
@@ -386,10 +385,9 @@ def historial_global():
         # Intentar servir HTML precomputado por página
         pre_key = f"historial_global_page_{page}"
         try:
-            if pre_is_fresh(pre_key, max_age_seconds=600):
-                content = pre_read(pre_key)
-                if content:
-                    return Response(content, mimetype='text/html')
+            content = pre_read_fresh(pre_key, max_age_seconds=600)
+            if content:
+                return Response(content, mimetype='text/html')
         except Exception:
             pass
 

@@ -12,7 +12,7 @@ from datetime import datetime
 
 from app import create_app
 from services.index_json_generator import generate_index_json, load_index_json
-from services.precompute_service import write_all_async, write_github
+from services.precompute_service import write_all, write_github
 from services.precompute_service import _safe_key
 
 # Import helpers to build historial and player profiles
@@ -48,7 +48,7 @@ def render_index(app):
         generated_at=generated_at
     )
 
-    write_all_async('index', rendered)
+    write_all('index', rendered)
     print('[generate] index generado y encolado para escritura')
 
 
@@ -81,7 +81,7 @@ def render_historial(app):
             generated_at=generated_at
         )
         key = f'historial_global_page_{page}'
-        write_all_async(key, rendered)
+        write_all(key, rendered)
         print(f'[generate] historial page {page}/{total_pages} encolado')
 
 
@@ -136,7 +136,7 @@ def render_players(app, max_players=50):
             )
 
             key = f'player_{_safe_key(game_name)}_page_1_queue_all_champ_all'
-            write_all_async(key, rendered)
+            write_all(key, rendered)
             print(f'[generate] Perfil {game_name} encolado')
             count += 1
             if count >= max_players:

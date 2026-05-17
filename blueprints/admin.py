@@ -35,6 +35,8 @@ def list_keys():
             for fn in os.listdir(base):
                 if fn.endswith('.html'):
                     files.append(fn)
-        return jsonify({'ok': True, 'files': files})
+        manifest = precompute_service._read_manifest()
+        github_pages = sorted(manifest.get("pages", {}).keys())
+        return jsonify({'ok': True, 'files': files, 'github_pages': github_pages})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500

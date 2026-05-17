@@ -57,6 +57,7 @@ from services.index_json_generator import (
     is_json_fresh,
     start_json_generator_thread
 )
+from services.precompute_generator import start_precompute_generator_thread
 
 
 
@@ -146,6 +147,10 @@ def start_background_services(riot_api_key, github_token):
     keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
     keep_alive_thread.start()
     print("[main] ✓ Keep-alive iniciado")
+
+    # 8. HTML pregenerado persistente (GitHub + cache local)
+    start_precompute_generator_thread(app)
+    print("[main] ✓ Worker de HTML pregenerado iniciado")
     
     print("\n" + "="*60)
     print("TODOS LOS SERVICIOS INICIADOS CORRECTAMENTE")
