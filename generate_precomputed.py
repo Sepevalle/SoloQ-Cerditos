@@ -9,6 +9,11 @@ usando `services/precompute_service` (si hay `GITHUB_TOKEN`).
 import sys
 import argparse
 from datetime import datetime
+import os
+
+# Evitar que la importación de `app` inicie servicios pesados cuando se
+# ejecuta este script.
+os.environ.setdefault('START_BACKGROUND_SERVICES', '0')
 
 from app import create_app
 from services.index_json_generator import generate_index_json, load_index_json
@@ -83,7 +88,9 @@ def render_historial(app, max_pages=5):
             generated_at=generated_at
         )
         key = f'historial_global_page_{page}'
-        write_all_async(key, rendered)
+        # Escribir sin hilos para controlar memoria/uso y asegurar que el
+        # archivo se suba antes de continuar.
+        write_all(key, rendered)
         print(f'[generate] historial page {page}/{pages_to_generate} encolado')
 
 

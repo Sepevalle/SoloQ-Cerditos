@@ -158,50 +158,55 @@ def start_background_services(riot_api_key, github_token):
 
 
 # Crear aplicación Flask a nivel de módulo (para Gunicorn)
-print("\n" + "="*60)
-print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
-print("="*60 + "\n")
-
-# Actualizar versión y datos de Data Dragon al inicio (DEBE SER PRIMERO)
-print("[main] Actualizando versión de Data Dragon...")
-actualizar_version_ddragon()
-print("[main] ✓ Versión de Data Dragon actualizada")
-
-print("[main] Cargando datos de campeones, runas y hechizos de Data Dragon...")
-actualizar_ddragon_data()
-print("[main] ✓ Datos de Data Dragon cargados correctamente")
-
-
-# Validar configuración esencial
-if not RIOT_API_KEY:
-    print("⚠️  ADVERTENCIA: RIOT_API_KEY no está configurada")
-    print("    Algunas funciones no estarán disponibles")
-
-if not GITHUB_TOKEN:
-    print("⚠️  ADVERTENCIA: GITHUB_TOKEN no está configurado")
-    print("    El almacenamiento persistente no funcionará")
-
-# Crear aplicación Flask
 app = create_app()
-print("[main] ✓ Aplicación Flask creada")
 
-# Iniciar servicios en segundo plano
-start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
+# Control de arranque: por defecto arrancan los servicios en background, pero
+# esto puede desactivarse estableciendo START_BACKGROUND_SERVICES=0 en el
+# entorno (útil para ejecutar scripts ligeros como generate_precomputed).
+START_SERVICES = os.environ.get('START_BACKGROUND_SERVICES', '1') == '1'
 
-# Precargar JSON del index si no existe o está antiguo
-print("[main] Verificando JSON del index...")
-json_data = load_index_json()
-if json_data is None or not is_json_fresh(max_age_seconds=300):
-    print("[main] Generando JSON del index (primera vez o antiguo)...")
-    if generate_index_json(force=True):
-        print("[main] ✓ JSON del index generado correctamente")
+if START_SERVICES:
+    print("\n" + "="*60)
+    print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
+    print("="*60 + "\n")
+
+    # Actualizar versión y datos de Data Dragon al inicio (DEBE SER PRIMERO)
+    print("[main] Actualizando versión de Data Dragon...")
+    actualizar_version_ddragon()
+    print("[main] ✓ Versión de Data Dragon actualizada")
+
+    print("[main] Cargando datos de campeones, runas y hechizos de Data Dragon...")
+    actualizar_ddragon_data()
+    print("[main] ✓ Datos de Data Dragon cargados correctamente")
+
+    # Validar configuración esencial
+    if not RIOT_API_KEY:
+        print("⚠️  ADVERTENCIA: RIOT_API_KEY no está configurada")
+        print("    Algunas funciones no estarán disponibles")
+
+    if not GITHUB_TOKEN:
+        print("⚠️  ADVERTENCIA: GITHUB_TOKEN no está configurado")
+        print("    El almacenamiento persistente no funcionará")
+
+    print("[main] ✓ Aplicación Flask creada")
+
+    # Iniciar servicios en segundo plano
+    start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
+
+    # Precargar JSON del index si no existe o está antiguo
+    print("[main] Verificando JSON del index...")
+    json_data = load_index_json()
+    if json_data is None or not is_json_fresh(max_age_seconds=300):
+        print("[main] Generando JSON del index (primera vez o antiguo)...")
+        if generate_index_json(force=True):
+            print("[main] ✓ JSON del index generado correctamente")
+        else:
+            print("[main] ⚠ No se pudo generar el JSON del index")
     else:
-        print("[main] ⚠ No se pudo generar el JSON del index")
-else:
-    print("[main] ✓ JSON del index ya existe y está actualizado")
+        print("[main] ✓ JSON del index ya existe y está actualizado")
 
-print(f"\n[main] 🚀 Aplicación lista para servir en http://0.0.0.0:{PORT}")
-print(f"[main] Modo DEBUG: {DEBUG}\n")
+    print(f"\n[main] 🚀 Aplicación lista para servir en http://0.0.0.0:{PORT}")
+    print(f"[main] Modo DEBUG: {DEBUG}\n")
 
 
 
