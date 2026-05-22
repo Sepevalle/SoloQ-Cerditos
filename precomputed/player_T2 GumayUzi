@@ -948,8 +948,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="">
-                                0 LP
+                            <span class="lp-gain">
+                                +22 LP
                             </span>
                             <span class="small-text-stats">
                                 (1V-0D)
@@ -1417,7 +1417,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+22 LP</span>
+                                    
                                 
                             </td>
 
@@ -14148,7 +14150,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 2102, "timestamp": 1770923425844}, {"elo": 2127, "timestamp": 1773096199377}, {"elo": 2152, "timestamp": 1773098613677}, {"elo": 2177, "timestamp": 1773100658190}, {"elo": 2202, "timestamp": 1773872995500}, {"elo": 2187, "timestamp": 1773875654072}, {"elo": 2172, "timestamp": 1773878261975}, {"elo": 2196, "timestamp": 1774551900242}, {"elo": 2180, "timestamp": 1774553926274}, {"elo": 2164, "timestamp": 1774890124837}, {"elo": 2188, "timestamp": 1774892086112}, {"elo": 2212, "timestamp": 1774894154311}, {"elo": 2196, "timestamp": 1775321390898}, {"elo": 2220, "timestamp": 1775324032299}, {"elo": 2204, "timestamp": 1775326155866}, {"elo": 2187, "timestamp": 1776883737332}, {"elo": 2210, "timestamp": 1776951781558}, {"elo": 2233, "timestamp": 1776954212489}, {"elo": 2279, "timestamp": 1777007689011}, {"elo": 2262, "timestamp": 1777301494612}, {"elo": 2336, "timestamp": 1778324465853}];
+            const eloHistory = [{"elo": 2102, "timestamp": 1770923425844}, {"elo": 2127, "timestamp": 1773096199377}, {"elo": 2152, "timestamp": 1773098613677}, {"elo": 2177, "timestamp": 1773100658190}, {"elo": 2202, "timestamp": 1773872995500}, {"elo": 2187, "timestamp": 1773875654072}, {"elo": 2172, "timestamp": 1773878261975}, {"elo": 2196, "timestamp": 1774551900242}, {"elo": 2180, "timestamp": 1774553926274}, {"elo": 2164, "timestamp": 1774890124837}, {"elo": 2188, "timestamp": 1774892086112}, {"elo": 2212, "timestamp": 1774894154311}, {"elo": 2196, "timestamp": 1775321390898}, {"elo": 2220, "timestamp": 1775324032299}, {"elo": 2204, "timestamp": 1775326155866}, {"elo": 2187, "timestamp": 1776883737332}, {"elo": 2210, "timestamp": 1776951781558}, {"elo": 2233, "timestamp": 1776954212489}, {"elo": 2279, "timestamp": 1777007689011}, {"elo": 2262, "timestamp": 1777301494612}, {"elo": 2336, "timestamp": 1778324465853}, {"elo": 2358, "timestamp": 1779480125693}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
