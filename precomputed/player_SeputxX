@@ -956,8 +956,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="lp-gain">
-                                +6 LP
+                            <span class="lp-loss">
+                                -12 LP
                             </span>
                             <span class="small-text-stats">
                                 (1V-2D)
@@ -1375,7 +1375,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-18 LP</span>
+                                    
                                 
                             </td>
 
@@ -14080,7 +14082,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 1782, "timestamp": 1772577638578}, {"elo": 1801, "timestamp": 1772661108976}, {"elo": 1820, "timestamp": 1772665005952}, {"elo": 1800, "timestamp": 1772668096173}, {"elo": 1819, "timestamp": 1772670193530}, {"elo": 1799, "timestamp": 1772748240091}, {"elo": 1799, "timestamp": 1772750803533}, {"elo": 1757, "timestamp": 1772752417025}, {"elo": 1735, "timestamp": 1772755596454}, {"elo": 1713, "timestamp": 1772758068034}, {"elo": 1718, "timestamp": 1774300960935}, {"elo": 1756, "timestamp": 1774304111331}, {"elo": 1775, "timestamp": 1774307249933}, {"elo": 1755, "timestamp": 1774387817604}, {"elo": 1734, "timestamp": 1774390115120}, {"elo": 1713, "timestamp": 1774392437279}, {"elo": 1691, "timestamp": 1774466146763}, {"elo": 1709, "timestamp": 1774468698247}, {"elo": 1728, "timestamp": 1774470966963}, {"elo": 1707, "timestamp": 1774476540442}, {"elo": 1726, "timestamp": 1774478754828}, {"elo": 1745, "timestamp": 1774551900242}, {"elo": 1724, "timestamp": 1774553926274}, {"elo": 1743, "timestamp": 1774727818741}, {"elo": 1722, "timestamp": 1774730401928}, {"elo": 1741, "timestamp": 1774821873222}, {"elo": 1713, "timestamp": 1775585640859}, {"elo": 1732, "timestamp": 1775668884605}, {"elo": 1751, "timestamp": 1775672067071}, {"elo": 1731, "timestamp": 1775752160169}, {"elo": 1750, "timestamp": 1775754073530}, {"elo": 1770, "timestamp": 1775841897088}, {"elo": 1750, "timestamp": 1775846802940}, {"elo": 1770, "timestamp": 1775908181941}, {"elo": 1750, "timestamp": 1775931003997}, {"elo": 1770, "timestamp": 1775933394028}, {"elo": 1750, "timestamp": 1776883737332}, {"elo": 1770, "timestamp": 1776885293222}, {"elo": 1898, "timestamp": 1777923925091}, {"elo": 1921, "timestamp": 1778090860293}, {"elo": 1944, "timestamp": 1778175070586}, {"elo": 1927, "timestamp": 1778177088268}, {"elo": 1910, "timestamp": 1778262580254}, {"elo": 1892, "timestamp": 1778265116335}, {"elo": 1874, "timestamp": 1778404496106}, {"elo": 1895, "timestamp": 1778406591758}, {"elo": 1917, "timestamp": 1778408766272}, {"elo": 1939, "timestamp": 1779125615612}, {"elo": 1961, "timestamp": 1779128314173}, {"elo": 1984, "timestamp": 1779216746108}, {"elo": 2007, "timestamp": 1779219828998}, {"elo": 2007, "timestamp": 1779397388110}, {"elo": 2022, "timestamp": 1779399003980}, {"elo": 2045, "timestamp": 1779468744832}, {"elo": 2028, "timestamp": 1779531950480}];
+            const eloHistory = [{"elo": 1782, "timestamp": 1772577638578}, {"elo": 1801, "timestamp": 1772661108976}, {"elo": 1820, "timestamp": 1772665005952}, {"elo": 1800, "timestamp": 1772668096173}, {"elo": 1819, "timestamp": 1772670193530}, {"elo": 1799, "timestamp": 1772748240091}, {"elo": 1799, "timestamp": 1772750803533}, {"elo": 1757, "timestamp": 1772752417025}, {"elo": 1735, "timestamp": 1772755596454}, {"elo": 1713, "timestamp": 1772758068034}, {"elo": 1718, "timestamp": 1774300960935}, {"elo": 1756, "timestamp": 1774304111331}, {"elo": 1775, "timestamp": 1774307249933}, {"elo": 1755, "timestamp": 1774387817604}, {"elo": 1734, "timestamp": 1774390115120}, {"elo": 1713, "timestamp": 1774392437279}, {"elo": 1691, "timestamp": 1774466146763}, {"elo": 1709, "timestamp": 1774468698247}, {"elo": 1728, "timestamp": 1774470966963}, {"elo": 1707, "timestamp": 1774476540442}, {"elo": 1726, "timestamp": 1774478754828}, {"elo": 1745, "timestamp": 1774551900242}, {"elo": 1724, "timestamp": 1774553926274}, {"elo": 1743, "timestamp": 1774727818741}, {"elo": 1722, "timestamp": 1774730401928}, {"elo": 1741, "timestamp": 1774821873222}, {"elo": 1713, "timestamp": 1775585640859}, {"elo": 1732, "timestamp": 1775668884605}, {"elo": 1751, "timestamp": 1775672067071}, {"elo": 1731, "timestamp": 1775752160169}, {"elo": 1750, "timestamp": 1775754073530}, {"elo": 1770, "timestamp": 1775841897088}, {"elo": 1750, "timestamp": 1775846802940}, {"elo": 1770, "timestamp": 1775908181941}, {"elo": 1750, "timestamp": 1775931003997}, {"elo": 1770, "timestamp": 1775933394028}, {"elo": 1750, "timestamp": 1776883737332}, {"elo": 1770, "timestamp": 1776885293222}, {"elo": 1898, "timestamp": 1777923925091}, {"elo": 1921, "timestamp": 1778090860293}, {"elo": 1944, "timestamp": 1778175070586}, {"elo": 1927, "timestamp": 1778177088268}, {"elo": 1910, "timestamp": 1778262580254}, {"elo": 1892, "timestamp": 1778265116335}, {"elo": 1874, "timestamp": 1778404496106}, {"elo": 1895, "timestamp": 1778406591758}, {"elo": 1917, "timestamp": 1778408766272}, {"elo": 1939, "timestamp": 1779125615612}, {"elo": 1961, "timestamp": 1779128314173}, {"elo": 1984, "timestamp": 1779216746108}, {"elo": 2007, "timestamp": 1779219828998}, {"elo": 2007, "timestamp": 1779397388110}, {"elo": 2022, "timestamp": 1779399003980}, {"elo": 2045, "timestamp": 1779468744832}, {"elo": 2028, "timestamp": 1779531950480}, {"elo": 2010, "timestamp": 1779535927037}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
