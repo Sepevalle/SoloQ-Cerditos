@@ -204,8 +204,8 @@ def actualizar_historial_partidas_en_segundo_plano():
                                 all_new_match_ids.append(match_id)
                                 new_in_this_batch += 1
                         
-                        if iteration == 0 and first_batch_has_existing:
-                            print("[actualizar_historial] Primera pagina con partidas ya existentes; se detiene paginacion")
+                        if iteration == 0 and new_in_this_batch == 0:
+                            print("[actualizar_historial] Primera pagina sin partidas nuevas; se detiene paginacion")
                             break
                         
                         # Si recibimos menos de 'count' partidas, hemos llegado al final
