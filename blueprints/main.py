@@ -651,6 +651,7 @@ def _build_hours_report_data():
         total_games = row["wins"] + row["losses"]
         ranked_visible_matches = ranked_visible_by_player.get(row["player_name"], 0)
         history_gap = max(0, ranked_visible_matches - row["raw_matches"])
+        extra_matches = max(0, row["raw_matches"] - ranked_visible_matches)
         player_rows.append({
             "player_name": row["player_name"],
             "accounts_count": len(row["accounts"]),
@@ -662,6 +663,7 @@ def _build_hours_report_data():
             "raw_matches": row["raw_matches"],
             "ranked_visible_matches": ranked_visible_matches,
             "history_gap": history_gap,
+            "extra_matches": extra_matches,
             "avg_label": format_seconds(row["seconds"] / row["matches"]) if row["matches"] else "0h 00m",
             "win_rate": round((row["wins"] / total_games) * 100, 1) if total_games else 0,
             "share": round((row["seconds"] / total_player_seconds) * 100, 1) if total_player_seconds else 0,

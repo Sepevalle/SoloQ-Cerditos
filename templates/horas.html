@@ -472,7 +472,9 @@
                             <td>{{ player.matches }}</td>
                             <td>
                                 {{ player.get('ranked_visible_matches', 0) }}
-                                {% if player.get('history_gap', 0) > 0 %}
+                                {% if player.get('extra_matches', 0) > 0 %}
+                                    <div class="small-text-stats text-muted">+{{ player.get('extra_matches', 0) }} partidas no son ranked visibles</div>
+                                {% elif player.get('history_gap', 0) > 0 %}
                                     <span class="text-warning fw-bold" title="Partidas ranked visibles en el index que aun no aparecen en el historial guardado">-{{ player.get('history_gap', 0) }}</span>
                                 {% endif %}
                             </td>
