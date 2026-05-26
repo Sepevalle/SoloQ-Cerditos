@@ -726,6 +726,74 @@ def _format_hours_wait(seconds):
     return " ".join(parts)
 
 
+def _normalize_hours_snapshot(snapshot):
+    """Asegura compatibilidad con snapshots viejos de horas."""
+    if not isinstance(snapshot, dict):
+        snapshot = {}
+
+    report = snapshot.get("report") or {}
+    player_rows = snapshot.get("player_rows") or []
+    queue_rows = snapshot.get("queue_rows") or []
+
+    normalized_players = []
+    for player in player_rows:
+        if not isinstance(player, dict):
+            continue
+        normalized_players.append({
+            "player_name": player.get("player_name", "N/A"),
+            "accounts_count": player.get("accounts_count", 0),
+            "accounts_list": player.get("accounts_list", []),
+            "hours": player.get("hours", 0),
+            "hours_label": player.get("hours_label", "0h 00m"),
+            "recent_label": player.get("recent_label", "0h 00m"),
+            "matches": player.get("matches", 0),
+            "ranked_visible_matches": player.get("ranked_visible_matches", 0),
+            "history_gap": player.get("history_gap", 0),
+            "avg_label": player.get("avg_label", "0h 00m"),
+            "win_rate": player.get("win_rate", 0),
+            "share": player.get("share", 0),
+            "top_queue": player.get("top_queue", "N/A"),
+            "top_queue_label": player.get("top_queue_label", "0h 00m"),
+            "last_played": player.get("last_played", "N/A"),
+        })
+
+    normalized_queues = []
+    for queue in queue_rows:
+        if not isinstance(queue, dict):
+            continue
+        normalized_queues.append({
+            "name": queue.get("name", "N/A"),
+            "hours": queue.get("hours", 0),
+            "hours_label": queue.get("hours_label", "0h 00m"),
+            "matches": queue.get("matches", 0),
+            "share": queue.get("share", 0),
+        })
+
+    report_defaults = {
+        "total_player_label": "0h 00m",
+        "players_count": 0,
+        "matches_count": 0,
+        "latest_date": "N/A",
+        "unique_matches_count": 0,
+        "unique_match_label": "0h 00m",
+        "avg_per_player_label": "0h 00m",
+        "leader": None,
+        "generated_at": "N/A",
+        "accounts_source_count": 0,
+        "puuids_source_count": 0,
+        "accounts_processed_count": 0,
+        "stats_index_rows_count": 0,
+        "schema_version": 0,
+    }
+    report_defaults.update(report)
+
+    return {
+        "report": report_defaults,
+        "player_rows": normalized_players,
+        "queue_rows": normalized_queues,
+    }
+
+
 def _get_time_until_next_hours_generation(snapshot=None):
     if not snapshot:
         success, snapshot = read_hours_report()
@@ -761,30 +829,16 @@ def horas():
     success, snapshot = read_hours_report()
     if not success:
         snapshot = {}
+    snapshot = _normalize_hours_snapshot(snapshot)
 
     can_generate, seconds_remaining, time_remaining = _get_time_until_next_hours_generation(snapshot)
-    report_data = snapshot if snapshot else {
-        "report": {
-            "total_player_label": "0h 00m",
-            "players_count": 0,
-            "matches_count": 0,
-            "latest_date": "N/A",
-            "unique_matches_count": 0,
-            "unique_match_label": "0h 00m",
-            "avg_per_player_label": "0h 00m",
-            "leader": None,
-            "generated_at": "N/A",
-        },
-        "player_rows": [],
-        "queue_rows": [],
-    }
 
     return render_template(
         'horas.html',
-        report=report_data.get("report", {}),
-        player_rows=report_data.get("player_rows", []),
-        queue_rows=report_data.get("queue_rows", []),
-        needs_update=not bool(snapshot),
+        report=snapshot.get("report", {}),
+        player_rows=snapshot.get("player_rows", []),
+        queue_rows=snapshot.get("queue_rows", []),
+        needs_update=not bool(snapshot.get("player_rows")),
         can_generate=can_generate,
         seconds_remaining=seconds_remaining,
         time_remaining=time_remaining,

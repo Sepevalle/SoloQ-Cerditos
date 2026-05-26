@@ -460,9 +460,9 @@
                             </td>
                             <td>{{ player.matches }}</td>
                             <td>
-                                {{ player.ranked_visible_matches }}
-                                {% if player.history_gap > 0 %}
-                                    <span class="text-warning fw-bold" title="Partidas ranked visibles en el index que aun no aparecen en el historial guardado">-{{ player.history_gap }}</span>
+                                {{ player.get('ranked_visible_matches', 0) }}
+                                {% if player.get('history_gap', 0) > 0 %}
+                                    <span class="text-warning fw-bold" title="Partidas ranked visibles en el index que aun no aparecen en el historial guardado">-{{ player.get('history_gap', 0) }}</span>
                                 {% endif %}
                             </td>
                             <td>{{ player.avg_label }}</td>
