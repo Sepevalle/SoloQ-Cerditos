@@ -998,6 +998,44 @@ def save_hours_report(report_data):
     )
 
 
+def read_achievements_report():
+    """Lee el informe precalculado de logros."""
+    content, _ = read_file_from_github("achievements_report.json", use_raw=False)
+    if content and isinstance(content, dict):
+        return True, content
+    return False, {}
+
+
+def save_achievements_report(report_data):
+    """Guarda el informe precalculado de logros."""
+    _, sha = read_file_from_github("achievements_report.json", use_raw=False)
+    return write_file_to_github(
+        "achievements_report.json",
+        report_data,
+        message="Actualizar informe de logros",
+        sha=sha
+    )
+
+
+def read_team_report():
+    """Lee el dashboard precalculado del equipo."""
+    content, _ = read_file_from_github("team_report.json", use_raw=False)
+    if content and isinstance(content, dict):
+        return True, content
+    return False, {}
+
+
+def save_team_report(report_data):
+    """Guarda el dashboard precalculado del equipo."""
+    _, sha = read_file_from_github("team_report.json", use_raw=False)
+    return write_file_to_github(
+        "team_report.json",
+        report_data,
+        message="Actualizar dashboard de equipo",
+        sha=sha
+    )
+
+
 def read_stats_reload_config():
     """Lee la configuración de recarga forzada de estadísticas."""
     file_path = "config/stats_reload.json"

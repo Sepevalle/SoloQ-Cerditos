@@ -98,11 +98,39 @@
         color: #64748b;
         font-size: 0.9rem;
     }
+    .control-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 12px;
+        padding: 14px 16px;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+    .control-title {
+        font-weight: 800;
+    }
+    @media (max-width: 767px) {
+        .control-panel {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-5 pt-5 logros-shell">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mb-3">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <div class="hero-panel p-4 p-lg-5 mb-4">
         <div class="row align-items-end g-4">
             <div class="col-12 col-lg-7">
@@ -141,6 +169,32 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="control-panel mb-4">
+        <div>
+            <div class="control-title">Snapshot precalculado</div>
+            <div class="section-note">
+                {% if needs_update %}
+                    Todavia no hay informe de logros guardado. Genera el primer snapshot para rellenar la pagina.
+                {% elif can_generate %}
+                    Disponible para regenerar. Ultimo snapshot: {{ generated_at }}.
+                {% else %}
+                    Ultimo snapshot: {{ generated_at }}. Nueva generacion disponible en {{ time_remaining }}.
+                {% endif %}
+            </div>
+        </div>
+        <form action="{{ url_for('main.actualizar_logros') }}" method="post" class="m-0">
+            {% if can_generate %}
+            <button type="submit" class="btn btn-warning">
+                <i class="fas fa-rotate me-2"></i>Generar logros
+            </button>
+            {% else %}
+            <button type="button" class="btn btn-secondary" disabled>
+                <i class="fas fa-clock me-2"></i>{{ time_remaining }}
+            </button>
+            {% endif %}
+        </form>
     </div>
 
     <div class="row g-3 mb-4">

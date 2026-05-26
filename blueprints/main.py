@@ -27,6 +27,8 @@ from services.github_service import (
     save_stats_reload_config,
     read_hours_report,
     save_hours_report,
+    read_achievements_report,
+    save_achievements_report,
 )
 from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
@@ -432,14 +434,10 @@ def logros():
     """Renderiza la página de logros globales por jugador."""
     print("[logros] Petición recibida.")
     try:
-        cache_data = achievements_cache.get()
-        data = cache_data.get("data")
-        if not data:
-            data = calculate_global_achievements()
-            achievements_cache.set(data)
-            cache_data = achievements_cache.get()
-        elif achievements_cache.is_stale() and not achievements_cache.is_calculating():
-            threading.Thread(target=_refresh_achievements_in_background, daemon=True).start()
+        success, data = read_achievements_report()
+        if not success:
+            data = {}
+        can_generate, seconds_remaining, time_remaining = _get_time_until_next_achievements_generation(data)
         return render_template(
             'logros.html',
             players=data.get('players', []),
@@ -450,8 +448,11 @@ def logros():
             achievements_config_source=data.get('config_source', 'unknown'),
             achievements_config_errors=data.get('config_errors', []),
             global_stats=data.get('global_stats', {}),
-            achievements_cache_stale=achievements_cache.is_stale(),
-            achievements_cache_timestamp=cache_data.get("timestamp", 0),
+            needs_update=not bool(data),
+            can_generate=can_generate,
+            seconds_remaining=seconds_remaining,
+            time_remaining=time_remaining,
+            generated_at=data.get("generated_at", "N/A"),
             ddragon_version=settings.DDRAGON_VERSION,
             has_player_data=True
         )
@@ -460,6 +461,58 @@ def logros():
         import traceback
         traceback.print_exc()
         return render_template('404.html'), 500
+
+
+def _get_time_until_next_achievements_generation(snapshot=None):
+    if not snapshot:
+        success, snapshot = read_achievements_report()
+        if not success:
+            snapshot = {}
+
+    calculated_at = snapshot.get("calculated_at_iso")
+    if not calculated_at:
+        return True, 0, "0s"
+
+    try:
+        last_calc = datetime.fromisoformat(str(calculated_at).replace("Z", "+00:00"))
+        if last_calc.tzinfo is None:
+            last_calc = last_calc.replace(tzinfo=timezone.utc)
+        elapsed = (datetime.now(timezone.utc) - last_calc).total_seconds()
+        interval = settings.GLOBAL_STATS_UPDATE_INTERVAL
+        if elapsed >= interval:
+            return True, 0, "0s"
+        remaining = int(interval - elapsed)
+        return False, remaining, _format_hours_wait(remaining)
+    except Exception as e:
+        print(f"[_get_time_until_next_achievements_generation] Error parseando fecha: {e}")
+        return True, 0, "0s"
+
+
+@main_bp.route('/logros/actualizar', methods=['POST'])
+def actualizar_logros():
+    """Genera y guarda el snapshot de logros, como maximo cada 24h."""
+    success, snapshot = read_achievements_report()
+    can_generate, _seconds_remaining, time_remaining = _get_time_until_next_achievements_generation(snapshot if success else {})
+    if not can_generate:
+        flash(f"El informe de logros se genero recientemente. Espera {time_remaining}.", "warning")
+        return redirect(url_for("main.logros"))
+
+    try:
+        data = calculate_global_achievements()
+        data["generated_at"] = datetime.now(TARGET_TIMEZONE).strftime("%d/%m/%Y %H:%M")
+        data["calculated_at_iso"] = datetime.now(timezone.utc).isoformat()
+        achievements_cache.set(data)
+        if save_achievements_report(data):
+            flash("Informe de logros actualizado correctamente.", "success")
+        else:
+            flash("No se pudo guardar el informe de logros. Revisa GITHUB_TOKEN o permisos.", "danger")
+    except Exception as e:
+        print(f"[actualizar_logros] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error al generar el informe de logros: {e}", "danger")
+
+    return redirect(url_for("main.logros"))
 
 
 def _build_hours_report_data():

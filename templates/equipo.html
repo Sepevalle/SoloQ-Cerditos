@@ -142,6 +142,7 @@
         gap: 12px;
     }
     .metric-card,
+    .control-panel,
     .team-section {
         border: 1px solid rgba(15, 23, 42, 0.08);
         border-radius: 16px;
@@ -156,6 +157,17 @@
     }
     .metric-card {
         padding: 20px;
+    }
+    .control-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border-radius: 12px;
+    }
+    .control-title {
+        font-weight: 800;
     }
     .metric-label {
         color: #667085;
@@ -299,6 +311,7 @@
     .dark-mode .team-logo-panel,
     .dark-mode .roster-slot,
     .dark-mode .metric-card,
+    .dark-mode .control-panel,
     .dark-mode .team-section,
     .dark-mode .insight-card,
     .dark-mode .detail-card {
@@ -349,6 +362,10 @@
         }
     }
     @media (max-width: 767px) {
+        .control-panel {
+            align-items: stretch;
+            flex-direction: column;
+        }
         .team-hero,
         .team-status-panel {
             grid-template-columns: 1fr;
@@ -382,6 +399,32 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+        <section class="control-panel">
+            <div>
+                <div class="control-title">Snapshot precalculado</div>
+                <div class="team-muted">
+                    {% if needs_update %}
+                        Todavia no hay dashboard de equipo guardado. Genera el primer snapshot para rellenar la pagina.
+                    {% elif can_generate %}
+                        Disponible para regenerar. Ultimo snapshot: {{ generated_at }}.
+                    {% else %}
+                        Ultimo snapshot: {{ generated_at }}. Nueva generacion disponible en {{ time_remaining }}.
+                    {% endif %}
+                </div>
+            </div>
+            <form action="{{ url_for('team.actualizar_equipo') }}" method="post" class="m-0">
+                {% if can_generate %}
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-rotate me-2"></i>Generar dashboard
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-secondary" disabled>
+                    <i class="fas fa-clock me-2"></i>{{ time_remaining }}
+                </button>
+                {% endif %}
+            </form>
+        </section>
 
         <section class="team-hero">
             <div class="team-logo-panel">
