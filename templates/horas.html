@@ -411,7 +411,18 @@
                     </div>
                     <div>
                         <div class="podium-hours">{{ player.hours_label }}</div>
-                        <div class="opacity-75">{{ player.matches }} partidas | {{ player.win_rate }}% WR</div>
+                        <div class="opacity-75">
+                            {{ player.matches }} partidas
+                            {% if player.raw_matches != player.matches %}
+                                ({{ player.raw_matches }} totales)
+                            {% endif %}
+                            | {{ player.win_rate }}% WR
+                        </div>
+                        {% if player.raw_matches != player.matches %}
+                            <div class="text-warning small mt-1">Algunas partidas no tienen duración registrada y no se cuentan en las horas.</div>
+                        {% elif player.history_gap > 0 %}
+                            <div class="text-warning small mt-1">{{ player.history_gap }} partidas visibles en el index no están en el historial de duración.</div>
+                        {% endif %}
                     </div>
                 </article>
                 {% endfor %}

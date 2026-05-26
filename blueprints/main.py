@@ -579,6 +579,7 @@ def _build_hours_report_data():
                 "seconds": 0,
                 "recent_seconds": 0,
                 "matches": 0,
+                "raw_matches": 0,
                 "wins": 0,
                 "losses": 0,
                 "riot_ids": set(),
@@ -603,6 +604,7 @@ def _build_hours_report_data():
             matches.append(match)
 
         for match in matches:
+            row["raw_matches"] += 1
             duration = int(match.get("game_duration") or 0)
             if duration <= 0:
                 continue
@@ -648,7 +650,7 @@ def _build_hours_report_data():
         )
         total_games = row["wins"] + row["losses"]
         ranked_visible_matches = ranked_visible_by_player.get(row["player_name"], 0)
-        history_gap = max(0, ranked_visible_matches - row["matches"])
+        history_gap = max(0, ranked_visible_matches - row["raw_matches"])
         player_rows.append({
             "player_name": row["player_name"],
             "accounts_count": len(row["accounts"]),
@@ -657,6 +659,7 @@ def _build_hours_report_data():
             "hours_label": format_seconds(row["seconds"]),
             "recent_label": format_seconds(row["recent_seconds"]),
             "matches": row["matches"],
+            "raw_matches": row["raw_matches"],
             "ranked_visible_matches": ranked_visible_matches,
             "history_gap": history_gap,
             "avg_label": format_seconds(row["seconds"] / row["matches"]) if row["matches"] else "0h 00m",
