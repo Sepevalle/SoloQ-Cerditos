@@ -34,7 +34,7 @@ from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
 from services.riot_api import esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
 from services.live_game_service import get_active_live_games, get_live_game_by_id
-from services.player_service import get_all_players_with_puuids
+from services.player_service import get_all_accounts, get_all_players_with_puuids, get_all_puuids
 from services.achievements_service import (
     calculate_global_achievements,
     get_achievements_config_document,
@@ -523,15 +523,26 @@ def _build_hours_report_data():
         minutes = (seconds % 3600) // 60
         return f"{hours}h {minutes:02d}m"
 
-    players = get_all_players_with_puuids()
+    accounts = dict(get_all_accounts())
+    puuids = get_all_puuids()
+    players = [
+        (riot_id, accounts.get(riot_id) or riot_id, puuid)
+        for riot_id, puuid in puuids.items()
+        if puuid
+    ]
+    players.sort(key=lambda item: (item[1] or item[0]).lower())
     rows_by_player = {}
     unique_matches = {}
     queue_totals = defaultdict(lambda: {"seconds": 0, "matches": 0})
     latest_timestamp = 0
+    processed_puuids = set()
 
     for riot_id, display_name, puuid in players:
         if not puuid:
             continue
+        if puuid in processed_puuids:
+            continue
+        processed_puuids.add(puuid)
 
         player_key = display_name or riot_id
         if player_key not in rows_by_player:
@@ -551,7 +562,16 @@ def _build_hours_report_data():
         row = rows_by_player[player_key]
         row["accounts"].add(riot_id)
         historial = get_player_match_history(puuid, riot_id=riot_id, limit=-1)
-        matches = historial.get("matches", [])
+        raw_matches = historial.get("matches", [])
+        matches = []
+        seen_match_ids = set()
+        for match in raw_matches:
+            match_id = match.get("match_id")
+            if match_id and match_id in seen_match_ids:
+                continue
+            if match_id:
+                seen_match_ids.add(match_id)
+            matches.append(match)
 
         for match in matches:
             duration = int(match.get("game_duration") or 0)
@@ -643,6 +663,10 @@ def _build_hours_report_data():
         "latest_date": latest_date,
         "generated_at": datetime.now(TARGET_TIMEZONE).strftime("%d/%m/%Y %H:%M"),
         "calculated_at_iso": datetime.now(timezone.utc).isoformat(),
+        "schema_version": 2,
+        "accounts_source_count": len(accounts),
+        "puuids_source_count": len(puuids),
+        "accounts_processed_count": len(processed_puuids),
     }
 
     return {
@@ -673,7 +697,11 @@ def _get_time_until_next_hours_generation(snapshot=None):
         if not success:
             snapshot = {}
 
-    calculated_at = (snapshot.get("report") or {}).get("calculated_at_iso")
+    report = snapshot.get("report") or {}
+    if report.get("schema_version") != 2:
+        return True, 0, "0s"
+
+    calculated_at = report.get("calculated_at_iso")
     if not calculated_at:
         return True, 0, "0s"
 

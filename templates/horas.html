@@ -337,6 +337,10 @@
                         <div class="mini-value">{{ report.latest_date }}</div>
                     </div>
                 </div>
+                <div class="score-label mt-2">
+                    Fuente: {{ report.accounts_processed_count | default(report.players_count) }} PUUIDs procesados
+                    {% if report.accounts_source_count is defined %} | {{ report.accounts_source_count }} cuentas nombradas{% endif %}
+                </div>
             </aside>
         </section>
 
