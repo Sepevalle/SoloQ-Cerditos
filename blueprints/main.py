@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 from flask import Blueprint, abort, render_template, request, Response
 from datetime import datetime, timezone, timedelta
@@ -6,7 +7,7 @@ import time
 import threading
 import config.settings as settings
 
-from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS
+from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS, QUEUE_NAMES
 from services.cache_service import (
     player_cache,
     player_stats_cache,
@@ -461,79 +462,140 @@ def logros():
 
 @main_bp.route('/horas')
 def horas():
-    """Informe publico de horas dedicadas al proyecto."""
-    work_blocks = [
-        {
-            "label": "Producto y experiencia",
-            "hours": 18,
-            "icon": "fa-compass-drafting",
-            "tone": "product",
-            "summary": "Navegacion, estructura de pantallas, estados vacios, responsive y detalles visuales.",
-        },
-        {
-            "label": "Datos, Riot API y cache",
-            "hours": 34,
-            "icon": "fa-database",
-            "tone": "data",
-            "summary": "Lectura de cuentas, PUUIDs, historial, cache en memoria y control de llamadas costosas.",
-        },
-        {
-            "label": "Rankings, logros y records",
-            "hours": 46,
-            "icon": "fa-trophy",
-            "tone": "records",
-            "summary": "Metricas globales, records personales, logros configurables y clasificaciones por jugador.",
-        },
-        {
-            "label": "Partidas en vivo",
-            "hours": 22,
-            "icon": "fa-satellite-dish",
-            "tone": "live",
-            "summary": "Deteccion de partidas activas, fichas de participantes, estado en tiempo real y detalle de partida.",
-        },
-        {
-            "label": "Equipo y Flexible",
-            "hours": 20,
-            "icon": "fa-people-group",
-            "tone": "team",
-            "summary": "Dashboard del roster, forma reciente, draft, objetivos, tendencias e historial conjunto.",
-        },
-        {
-            "label": "Precomputado y despliegue",
-            "hours": 20,
-            "icon": "fa-rocket",
-            "tone": "ops",
-            "summary": "HTML pregenerado, manifiestos, persistencia, Render y tareas de mantenimiento.",
-        },
-        {
-            "label": "QA, ajustes y pulido",
-            "hours": 14,
-            "icon": "fa-screwdriver-wrench",
-            "tone": "qa",
-            "summary": "Validaciones, reparacion de errores, compatibilidad de modo oscuro y limpieza de bordes.",
-        },
-    ]
-    total_hours = sum(block["hours"] for block in work_blocks)
-    for block in work_blocks:
-        block["percent"] = round((block["hours"] / total_hours) * 100, 1) if total_hours else 0
+    """Informe secreto de horas dedicadas por los jugadores a partidas."""
 
+    def format_seconds(seconds):
+        seconds = int(seconds or 0)
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        return f"{hours}h {minutes:02d}m"
+
+    players = get_all_players_with_puuids()
+    rows_by_player = {}
+    unique_matches = {}
+    queue_totals = defaultdict(lambda: {"seconds": 0, "matches": 0})
+    latest_timestamp = 0
+
+    for riot_id, display_name, puuid in players:
+        if not puuid:
+            continue
+
+        player_key = display_name or riot_id
+        if player_key not in rows_by_player:
+            rows_by_player[player_key] = {
+                "player_name": player_key,
+                "accounts": set(),
+                "seconds": 0,
+                "recent_seconds": 0,
+                "matches": 0,
+                "wins": 0,
+                "losses": 0,
+                "queues": defaultdict(lambda: {"seconds": 0, "matches": 0}),
+                "last_played_ts": 0,
+                "match_times": [],
+            }
+
+        row = rows_by_player[player_key]
+        row["accounts"].add(riot_id)
+        historial = get_player_match_history(puuid, riot_id=riot_id, limit=-1)
+        matches = historial.get("matches", [])
+
+        for match in matches:
+            duration = int(match.get("game_duration") or 0)
+            if duration <= 0:
+                continue
+
+            queue_id = match.get("queue_id") or 0
+            timestamp = int(match.get("game_end_timestamp") or 0)
+            latest_timestamp = max(latest_timestamp, timestamp)
+
+            row["seconds"] += duration
+            row["matches"] += 1
+            row["last_played_ts"] = max(row["last_played_ts"], timestamp)
+            row["match_times"].append((timestamp, duration))
+            if match.get("win"):
+                row["wins"] += 1
+            else:
+                row["losses"] += 1
+
+            row["queues"][queue_id]["seconds"] += duration
+            row["queues"][queue_id]["matches"] += 1
+            queue_totals[queue_id]["seconds"] += duration
+            queue_totals[queue_id]["matches"] += 1
+
+            match_id = match.get("match_id")
+            if match_id and match_id not in unique_matches:
+                unique_matches[match_id] = duration
+
+    recent_cutoff = latest_timestamp - (30 * 24 * 60 * 60 * 1000) if latest_timestamp else 0
+    if recent_cutoff:
+        for row in rows_by_player.values():
+            row["recent_seconds"] = sum(
+                duration
+                for timestamp, duration in row["match_times"]
+                if timestamp >= recent_cutoff
+            )
+
+    player_rows = []
+    total_player_seconds = sum(row["seconds"] for row in rows_by_player.values())
+    for row in rows_by_player.values():
+        top_queue_id, top_queue = max(
+            row["queues"].items(),
+            key=lambda item: item[1]["seconds"],
+            default=(None, {"seconds": 0, "matches": 0})
+        )
+        total_games = row["wins"] + row["losses"]
+        player_rows.append({
+            "player_name": row["player_name"],
+            "accounts_count": len(row["accounts"]),
+            "hours": row["seconds"] / 3600,
+            "hours_label": format_seconds(row["seconds"]),
+            "recent_label": format_seconds(row["recent_seconds"]),
+            "matches": row["matches"],
+            "avg_label": format_seconds(row["seconds"] / row["matches"]) if row["matches"] else "0h 00m",
+            "win_rate": round((row["wins"] / total_games) * 100, 1) if total_games else 0,
+            "share": round((row["seconds"] / total_player_seconds) * 100, 1) if total_player_seconds else 0,
+            "top_queue": QUEUE_NAMES.get(top_queue_id, f"Cola {top_queue_id}") if top_queue_id else "N/A",
+            "top_queue_label": format_seconds(top_queue["seconds"]),
+            "last_played": datetime.fromtimestamp(row["last_played_ts"] / 1000, TARGET_TIMEZONE).strftime("%d/%m/%Y") if row["last_played_ts"] else "N/A",
+        })
+
+    player_rows.sort(key=lambda row: row["hours"], reverse=True)
+
+    queue_rows = []
+    for queue_id, data in queue_totals.items():
+        queue_rows.append({
+            "name": QUEUE_NAMES.get(queue_id, f"Cola {queue_id}"),
+            "hours": data["seconds"] / 3600,
+            "hours_label": format_seconds(data["seconds"]),
+            "matches": data["matches"],
+            "share": round((data["seconds"] / total_player_seconds) * 100, 1) if total_player_seconds else 0,
+        })
+    queue_rows.sort(key=lambda row: row["hours"], reverse=True)
+
+    leader = player_rows[0] if player_rows else None
+    latest_date = (
+        datetime.fromtimestamp(latest_timestamp / 1000, TARGET_TIMEZONE).strftime("%d/%m/%Y")
+        if latest_timestamp else "N/A"
+    )
     report = {
-        "total_hours": total_hours,
-        "days_equivalent": round(total_hours / 8, 1),
-        "focus_hours": sum(block["hours"] for block in work_blocks if block["tone"] in ("data", "records", "live")),
-        "maintenance_hours": sum(block["hours"] for block in work_blocks if block["tone"] in ("ops", "qa")),
+        "total_player_hours": round(total_player_seconds / 3600, 1),
+        "total_player_label": format_seconds(total_player_seconds),
+        "unique_match_label": format_seconds(sum(unique_matches.values())),
+        "matches_count": sum(row["matches"] for row in rows_by_player.values()),
+        "unique_matches_count": len(unique_matches),
+        "players_count": len(player_rows),
+        "avg_per_player_label": format_seconds(total_player_seconds / len(player_rows)) if player_rows else "0h 00m",
+        "leader": leader,
+        "latest_date": latest_date,
         "generated_at": datetime.now(TARGET_TIMEZONE).strftime("%d/%m/%Y %H:%M"),
-        "phases": [
-            {"name": "Base jugable", "range": "Inicio", "text": "Ranking, perfiles, historial y primera lectura de datos."},
-            {"name": "Capa competitiva", "range": "Iteracion media", "text": "Records, logros, estadisticas globales y estados en vivo."},
-            {"name": "Operacion", "range": "Pulido", "text": "Precomputado, cache, configuracion privada y mejoras de rendimiento."},
-        ],
     }
 
     return render_template(
         'horas.html',
         report=report,
-        work_blocks=work_blocks,
+        player_rows=player_rows,
+        queue_rows=queue_rows,
         has_player_data=True,
     )
 

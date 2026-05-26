@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Informe de horas - Cerditos y Valientes{% endblock %}
+{% block title %}Horas jugadas - Cerditos y Valientes{% endblock %}
 
 {% block extra_styles %}
     .hours-page {
@@ -13,13 +13,13 @@
     }
     .hours-hero {
         display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+        grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
         gap: 18px;
         align-items: stretch;
         border: 1px solid rgba(15, 23, 42, 0.08);
         border-radius: 16px;
         background:
-            linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92)),
+            linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.9)),
             url("https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner5.png");
         background-size: cover;
         background-position: center;
@@ -37,51 +37,50 @@
         text-transform: uppercase;
     }
     .hours-title {
-        max-width: 780px;
+        max-width: 800px;
         margin: 8px 0 12px;
-        font-size: clamp(2rem, 5vw, 4.4rem);
-        line-height: 0.94;
+        font-size: clamp(2rem, 5vw, 4.3rem);
+        line-height: 0.95;
         font-weight: 900;
         letter-spacing: 0;
     }
     .hours-lead {
-        max-width: 760px;
+        max-width: 720px;
         color: #475569;
         font-size: 1rem;
         margin: 0;
     }
-    .hours-scoreboard {
+    .score-panel {
         display: grid;
-        align-content: stretch;
         gap: 10px;
         padding: 18px;
         background: rgba(15, 23, 42, 0.92);
         color: #f8fafc;
     }
-    .hours-total {
+    .score-main {
         display: grid;
         align-content: center;
-        min-height: 190px;
+        min-height: 188px;
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 12px;
         padding: 20px;
         background: rgba(255, 255, 255, 0.06);
     }
-    .hours-total-value {
-        font-size: clamp(3.2rem, 8vw, 5.8rem);
+    .score-value {
+        font-size: clamp(3rem, 8vw, 5.4rem);
         line-height: 0.92;
         font-weight: 900;
     }
-    .hours-total-label {
+    .score-label {
         color: rgba(248, 250, 252, 0.72);
         font-weight: 700;
     }
-    .mini-metrics {
+    .mini-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
     }
-    .mini-metric {
+    .mini-card {
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 8px;
         padding: 12px;
@@ -92,113 +91,135 @@
         font-size: 0.78rem;
     }
     .mini-value {
-        font-size: 1.2rem;
+        font-size: 1.12rem;
         font-weight: 900;
     }
-    .hours-grid {
+    .metric-grid {
         display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 12px;
     }
-    .hours-card {
-        display: grid;
-        gap: 10px;
+    .metric-card,
+    .hours-section {
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 14px;
+        border-radius: 12px;
         background: #fff;
-        min-height: 206px;
         box-shadow: 0 18px 45px rgba(15, 23, 42, 0.04);
     }
-    .hours-icon {
-        display: grid;
-        place-items: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 8px;
-        color: #fff;
-        font-size: 1rem;
+    .metric-card {
+        padding: 18px;
     }
-    .hours-card.product .hours-icon { background: #2563eb; }
-    .hours-card.data .hours-icon { background: #0f766e; }
-    .hours-card.records .hours-icon { background: #b45309; }
-    .hours-card.live .hours-icon { background: #be123c; }
-    .hours-card.team .hours-icon { background: #5b21b6; }
-    .hours-card.ops .hours-icon { background: #334155; }
-    .hours-card.qa .hours-icon { background: #15803d; }
-    .hours-card-title {
-        font-weight: 900;
-        line-height: 1.1;
-    }
-    .hours-card-value {
-        font-size: 1.85rem;
-        font-weight: 900;
-        line-height: 1;
-    }
-    .hours-card-copy {
+    .metric-label {
         color: #64748b;
-        font-size: 0.88rem;
+        font-size: 0.82rem;
+        margin-bottom: 6px;
     }
-    .hours-bar {
+    .metric-value {
+        font-size: 1.65rem;
+        font-weight: 900;
+        line-height: 1.05;
+    }
+    .metric-note,
+    .section-note {
+        color: #64748b;
+        font-size: 0.86rem;
+    }
+    .hours-section {
+        padding: 18px;
+    }
+    .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+    }
+    .section-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 900;
+    }
+    .podium-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 12px;
+    }
+    .podium-card {
+        border-radius: 12px;
+        padding: 18px;
+        color: #f8fafc;
+        min-height: 170px;
+        display: grid;
+        align-content: space-between;
+    }
+    .podium-card.rank-1 { background: linear-gradient(135deg, #8a6a12, #d4a72c); }
+    .podium-card.rank-2 { background: linear-gradient(135deg, #475569, #94a3b8); }
+    .podium-card.rank-3 { background: linear-gradient(135deg, #7c3f1d, #c2783b); }
+    .podium-rank {
+        opacity: 0.72;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .podium-name {
+        font-size: 1.35rem;
+        font-weight: 900;
+        line-height: 1.05;
+    }
+    .podium-hours {
+        font-size: 1.8rem;
+        font-weight: 900;
+    }
+    .hours-table {
+        --bs-table-bg: transparent;
+    }
+    .hours-table th {
+        color: #64748b;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+    }
+    .hours-table td {
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .player-cell {
+        text-align: left !important;
+        white-space: normal !important;
+        min-width: 170px;
+    }
+    .progress-track {
         height: 8px;
+        min-width: 90px;
         border-radius: 999px;
         background: #e2e8f0;
         overflow: hidden;
     }
-    .hours-bar-fill {
+    .progress-fill {
         height: 100%;
         border-radius: 999px;
         background: #0f172a;
     }
-    .phase-panel {
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 18px;
-        background: #fff;
-    }
-    .phase-track {
+    .queue-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 12px;
     }
-    .phase-item {
+    .queue-card {
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 14px;
         background: #f8fafc;
     }
-    .phase-range {
-        color: #64748b;
-        font-size: 0.78rem;
-        font-weight: 800;
-        text-transform: uppercase;
-    }
-    .phase-name {
-        margin: 4px 0 6px;
+    .queue-name {
         font-weight: 900;
+        line-height: 1.1;
     }
-    .phase-text,
-    .hours-note {
-        color: #64748b;
-    }
-    .receipt-panel {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 280px;
-        gap: 16px;
-        align-items: center;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 18px;
-        background: linear-gradient(135deg, #ffffff, #f8fafc);
-    }
-    .receipt-stamp {
-        border: 2px solid #0f172a;
-        border-radius: 8px;
-        padding: 14px;
-        text-align: center;
+    .queue-hours {
+        margin-top: 8px;
+        font-size: 1.45rem;
         font-weight: 900;
-        text-transform: uppercase;
-        transform: rotate(-2deg);
     }
     .dark-mode .hours-hero {
         border-color: #3b4652;
@@ -208,54 +229,51 @@
         background-size: cover;
         background-position: center;
     }
-    .dark-mode .hours-kicker,
     .dark-mode .hours-lead,
-    .dark-mode .hours-card-copy,
-    .dark-mode .phase-range,
-    .dark-mode .phase-text,
-    .dark-mode .hours-note {
+    .dark-mode .hours-kicker,
+    .dark-mode .metric-label,
+    .dark-mode .metric-note,
+    .dark-mode .section-note,
+    .dark-mode .hours-table th {
         color: #aeb8c5 !important;
     }
-    .dark-mode .hours-card,
-    .dark-mode .phase-panel,
-    .dark-mode .phase-item,
-    .dark-mode .receipt-panel {
+    .dark-mode .metric-card,
+    .dark-mode .hours-section,
+    .dark-mode .queue-card {
         background: #1f2933;
         border-color: #3b4652;
     }
-    .dark-mode .phase-item {
+    .dark-mode .queue-card {
         background: #25313d;
     }
-    .dark-mode .hours-bar {
+    .dark-mode .progress-track {
         background: #3b4652;
     }
-    .dark-mode .hours-bar-fill {
+    .dark-mode .progress-fill {
         background: #e9eef5;
     }
-    .dark-mode .receipt-stamp {
-        border-color: #e9eef5;
-    }
     @media (max-width: 1199px) {
-        .hours-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+        .metric-grid,
+        .queue-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .podium-grid {
+            grid-template-columns: 1fr;
         }
     }
     @media (max-width: 991px) {
-        .hours-hero,
-        .receipt-panel {
-            grid-template-columns: 1fr;
-        }
-        .phase-track {
+        .hours-hero {
             grid-template-columns: 1fr;
         }
     }
     @media (max-width: 767px) {
-        .hours-grid,
-        .mini-metrics {
+        .metric-grid,
+        .queue-grid,
+        .mini-grid {
             grid-template-columns: 1fr;
         }
         .hours-hero-copy,
-        .hours-scoreboard {
+        .score-panel {
             padding: 18px;
         }
     }
@@ -266,87 +284,159 @@
     <div class="hours-shell">
         <section class="hours-hero">
             <div class="hours-hero-copy">
-                <div class="hours-kicker">Informe interno</div>
-                <h1 class="hours-title">Horas dedicadas a Cerditos y Valientes</h1>
+                <div class="hours-kicker">Seguimiento secreto</div>
+                <h1 class="hours-title">Horas de partida por jugador</h1>
                 <p class="hours-lead">
-                    Una lectura sin enlaces y sin ruido: cuanto trabajo se ha invertido, donde se ha concentrado
-                    el esfuerzo y que partes del proyecto se llevan la mayor carga.
+                    Tiempo acumulado a partir de la duracion real de las partidas guardadas en el historial.
+                    El total principal suma horas-jugador: una partida de cinco personas cuenta para las cinco.
                 </p>
             </div>
-            <aside class="hours-scoreboard">
-                <div class="hours-total">
-                    <div class="hours-total-value">{{ report.total_hours }}</div>
-                    <div class="hours-total-label">horas estimadas</div>
+            <aside class="score-panel">
+                <div class="score-main">
+                    <div class="score-value">{{ report.total_player_label }}</div>
+                    <div class="score-label">horas-jugador registradas</div>
                 </div>
-                <div class="mini-metrics">
-                    <div class="mini-metric">
-                        <div class="mini-label">Dias de 8h</div>
-                        <div class="mini-value">{{ report.days_equivalent }}</div>
+                <div class="mini-grid">
+                    <div class="mini-card">
+                        <div class="mini-label">Jugadores</div>
+                        <div class="mini-value">{{ report.players_count }}</div>
                     </div>
-                    <div class="mini-metric">
-                        <div class="mini-label">Core competitivo</div>
-                        <div class="mini-value">{{ report.focus_hours }}h</div>
+                    <div class="mini-card">
+                        <div class="mini-label">Partidas vistas</div>
+                        <div class="mini-value">{{ report.matches_count }}</div>
                     </div>
-                    <div class="mini-metric">
-                        <div class="mini-label">Operacion</div>
-                        <div class="mini-value">{{ report.maintenance_hours }}h</div>
+                    <div class="mini-card">
+                        <div class="mini-label">Ultimo dato</div>
+                        <div class="mini-value">{{ report.latest_date }}</div>
                     </div>
                 </div>
             </aside>
         </section>
 
-        <section class="hours-grid" aria-label="Desglose de horas">
-            {% for block in work_blocks %}
-            <article class="hours-card {{ block.tone }}">
-                <div class="d-flex justify-content-between align-items-start gap-2">
-                    <div class="hours-icon"><i class="fas {{ block.icon }}"></i></div>
-                    <div class="text-end">
-                        <div class="hours-card-value">{{ block.hours }}h</div>
-                        <div class="hours-note">{{ block.percent }}%</div>
-                    </div>
-                </div>
-                <div>
-                    <div class="hours-card-title">{{ block.label }}</div>
-                    <div class="hours-card-copy mt-1">{{ block.summary }}</div>
-                </div>
-                <div class="hours-bar" aria-hidden="true">
-                    <div class="hours-bar-fill" style="width: {{ block.percent }}%;"></div>
-                </div>
+        <section class="metric-grid">
+            <article class="metric-card">
+                <div class="metric-label">Partidas unicas</div>
+                <div class="metric-value">{{ report.unique_matches_count }}</div>
+                <div class="metric-note">{{ report.unique_match_label }} de tiempo de partida real sin duplicar jugadores.</div>
             </article>
-            {% endfor %}
+            <article class="metric-card">
+                <div class="metric-label">Media por jugador</div>
+                <div class="metric-value">{{ report.avg_per_player_label }}</div>
+                <div class="metric-note">Promedio entre jugadores con historial disponible.</div>
+            </article>
+            <article class="metric-card">
+                <div class="metric-label">Jugador con mas horas</div>
+                <div class="metric-value">{% if report.leader %}{{ report.leader.player_name }}{% else %}N/A{% endif %}</div>
+                <div class="metric-note">{% if report.leader %}{{ report.leader.hours_label }} acumuladas.{% else %}Sin datos.{% endif %}</div>
+            </article>
+            <article class="metric-card">
+                <div class="metric-label">Generado</div>
+                <div class="metric-value">{{ report.generated_at }}</div>
+                <div class="metric-note">Informe calculado al abrir esta ruta secreta.</div>
+            </article>
         </section>
 
-        <section class="phase-panel">
-            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+        {% if player_rows %}
+        <section class="hours-section">
+            <div class="section-head">
                 <div>
-                    <h2 class="h4 fw-bold mb-1">Linea de trabajo</h2>
-                    <div class="hours-note">Resumen por etapas de construccion, de la base al pulido operativo.</div>
+                    <h2 class="section-title">Podio de vicio</h2>
+                    <div class="section-note">Top 3 por horas acumuladas en partidas registradas.</div>
                 </div>
-                <div class="hours-note">Actualizado: {{ report.generated_at }}</div>
             </div>
-            <div class="phase-track">
-                {% for phase in report.phases %}
-                <article class="phase-item">
-                    <div class="phase-range">{{ phase.range }}</div>
-                    <div class="phase-name">{{ phase.name }}</div>
-                    <div class="phase-text">{{ phase.text }}</div>
+            <div class="podium-grid">
+                {% for player in player_rows[:3] %}
+                <article class="podium-card rank-{{ loop.index }}">
+                    <div>
+                        <div class="podium-rank">Puesto {{ loop.index }}</div>
+                        <div class="podium-name">{{ player.player_name }}</div>
+                    </div>
+                    <div>
+                        <div class="podium-hours">{{ player.hours_label }}</div>
+                        <div class="opacity-75">{{ player.matches }} partidas | {{ player.win_rate }}% WR</div>
+                    </div>
                 </article>
                 {% endfor %}
             </div>
         </section>
+        {% endif %}
 
-        <section class="receipt-panel">
-            <div>
-                <h2 class="h4 fw-bold mb-2">Lectura rapida</h2>
-                <p class="hours-note mb-0">
-                    La mayor inversion esta en el sistema competitivo: datos, records, logros y partida en vivo.
-                    La segunda capa fuerte es hacer que todo aguante en produccion con cache, HTML pregenerado
-                    y pantallas que sigan siendo usables aunque el proyecto crezca.
-                </p>
+        <section class="hours-section">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title">Ranking completo</h2>
+                    <div class="section-note">Incluye todas las cuentas asociadas al mismo nombre de jugador.</div>
+                </div>
             </div>
-            <div class="receipt-stamp">
-                Informe cerrado<br>
-                {{ report.total_hours }} horas
+            <div class="table-responsive">
+                <table class="table table-hover hours-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th class="text-start">Jugador</th>
+                            <th>Horas</th>
+                            <th>Cuota</th>
+                            <th>Partidas</th>
+                            <th>Media</th>
+                            <th>WR</th>
+                            <th>Ultimos 30 dias</th>
+                            <th>Cola principal</th>
+                            <th>Ultima partida</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in player_rows %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td class="player-cell">
+                                <div class="fw-bold">{{ player.player_name }}</div>
+                                <small class="section-note">{{ player.accounts_count }} cuenta{% if player.accounts_count != 1 %}s{% endif %}</small>
+                            </td>
+                            <td class="fw-bold">{{ player.hours_label }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress-track"><div class="progress-fill" style="width: {{ player.share }}%;"></div></div>
+                                    <span>{{ player.share }}%</span>
+                                </div>
+                            </td>
+                            <td>{{ player.matches }}</td>
+                            <td>{{ player.avg_label }}</td>
+                            <td class="{% if player.win_rate >= 50 %}text-success{% else %}text-danger{% endif %} fw-bold">{{ player.win_rate }}%</td>
+                            <td>{{ player.recent_label }}</td>
+                            <td>{{ player.top_queue }} <span class="section-note">({{ player.top_queue_label }})</span></td>
+                            <td>{{ player.last_played }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center section-note py-4">No hay partidas con duracion registrada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="hours-section">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title">Horas por cola</h2>
+                    <div class="section-note">Distribucion de horas-jugador segun el tipo de partida.</div>
+                </div>
+            </div>
+            <div class="queue-grid">
+                {% for queue in queue_rows %}
+                <article class="queue-card">
+                    <div class="d-flex justify-content-between gap-2">
+                        <div class="queue-name">{{ queue.name }}</div>
+                        <div class="section-note">{{ queue.share }}%</div>
+                    </div>
+                    <div class="queue-hours">{{ queue.hours_label }}</div>
+                    <div class="section-note">{{ queue.matches }} partidas de jugador</div>
+                    <div class="progress-track mt-3"><div class="progress-fill" style="width: {{ queue.share }}%;"></div></div>
+                </article>
+                {% else %}
+                <div class="section-note">No hay datos por cola disponibles.</div>
+                {% endfor %}
             </div>
         </section>
     </div>
