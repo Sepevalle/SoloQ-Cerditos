@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block title %}Informe de horas - Cerditos y Valientes{% endblock %}
+
+{% block extra_styles %}
+    .hours-page {
+        padding-top: 86px;
+        padding-bottom: 54px;
+    }
+    .hours-shell {
+        display: grid;
+        gap: 18px;
+    }
+    .hours-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+        gap: 18px;
+        align-items: stretch;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 16px;
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92)),
+            url("https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner5.png");
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 28px 80px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+    }
+    .hours-hero-copy {
+        padding: 28px;
+    }
+    .hours-kicker {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .hours-title {
+        max-width: 780px;
+        margin: 8px 0 12px;
+        font-size: clamp(2rem, 5vw, 4.4rem);
+        line-height: 0.94;
+        font-weight: 900;
+        letter-spacing: 0;
+    }
+    .hours-lead {
+        max-width: 760px;
+        color: #475569;
+        font-size: 1rem;
+        margin: 0;
+    }
+    .hours-scoreboard {
+        display: grid;
+        align-content: stretch;
+        gap: 10px;
+        padding: 18px;
+        background: rgba(15, 23, 42, 0.92);
+        color: #f8fafc;
+    }
+    .hours-total {
+        display: grid;
+        align-content: center;
+        min-height: 190px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .hours-total-value {
+        font-size: clamp(3.2rem, 8vw, 5.8rem);
+        line-height: 0.92;
+        font-weight: 900;
+    }
+    .hours-total-label {
+        color: rgba(248, 250, 252, 0.72);
+        font-weight: 700;
+    }
+    .mini-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .mini-metric {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .mini-label {
+        color: rgba(248, 250, 252, 0.66);
+        font-size: 0.78rem;
+    }
+    .mini-value {
+        font-size: 1.2rem;
+        font-weight: 900;
+    }
+    .hours-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .hours-card {
+        display: grid;
+        gap: 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px;
+        background: #fff;
+        min-height: 206px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.04);
+    }
+    .hours-icon {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+    }
+    .hours-card.product .hours-icon { background: #2563eb; }
+    .hours-card.data .hours-icon { background: #0f766e; }
+    .hours-card.records .hours-icon { background: #b45309; }
+    .hours-card.live .hours-icon { background: #be123c; }
+    .hours-card.team .hours-icon { background: #5b21b6; }
+    .hours-card.ops .hours-icon { background: #334155; }
+    .hours-card.qa .hours-icon { background: #15803d; }
+    .hours-card-title {
+        font-weight: 900;
+        line-height: 1.1;
+    }
+    .hours-card-value {
+        font-size: 1.85rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+    .hours-card-copy {
+        color: #64748b;
+        font-size: 0.88rem;
+    }
+    .hours-bar {
+        height: 8px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+    .hours-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: #0f172a;
+    }
+    .phase-panel {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 18px;
+        background: #fff;
+    }
+    .phase-track {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .phase-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px;
+        background: #f8fafc;
+    }
+    .phase-range {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .phase-name {
+        margin: 4px 0 6px;
+        font-weight: 900;
+    }
+    .phase-text,
+    .hours-note {
+        color: #64748b;
+    }
+    .receipt-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 16px;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 18px;
+        background: linear-gradient(135deg, #ffffff, #f8fafc);
+    }
+    .receipt-stamp {
+        border: 2px solid #0f172a;
+        border-radius: 8px;
+        padding: 14px;
+        text-align: center;
+        font-weight: 900;
+        text-transform: uppercase;
+        transform: rotate(-2deg);
+    }
+    .dark-mode .hours-hero {
+        border-color: #3b4652;
+        background:
+            linear-gradient(135deg, rgba(24, 32, 42, 0.96), rgba(21, 27, 35, 0.92)),
+            url("https://raw.githubusercontent.com/Sepevalle/SoloQ-Cerditos/main/banners/Banner5.png");
+        background-size: cover;
+        background-position: center;
+    }
+    .dark-mode .hours-kicker,
+    .dark-mode .hours-lead,
+    .dark-mode .hours-card-copy,
+    .dark-mode .phase-range,
+    .dark-mode .phase-text,
+    .dark-mode .hours-note {
+        color: #aeb8c5 !important;
+    }
+    .dark-mode .hours-card,
+    .dark-mode .phase-panel,
+    .dark-mode .phase-item,
+    .dark-mode .receipt-panel {
+        background: #1f2933;
+        border-color: #3b4652;
+    }
+    .dark-mode .phase-item {
+        background: #25313d;
+    }
+    .dark-mode .hours-bar {
+        background: #3b4652;
+    }
+    .dark-mode .hours-bar-fill {
+        background: #e9eef5;
+    }
+    .dark-mode .receipt-stamp {
+        border-color: #e9eef5;
+    }
+    @media (max-width: 1199px) {
+        .hours-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 991px) {
+        .hours-hero,
+        .receipt-panel {
+            grid-template-columns: 1fr;
+        }
+        .phase-track {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 767px) {
+        .hours-grid,
+        .mini-metrics {
+            grid-template-columns: 1fr;
+        }
+        .hours-hero-copy,
+        .hours-scoreboard {
+            padding: 18px;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+<main class="container-fluid px-md-5 hours-page">
+    <div class="hours-shell">
+        <section class="hours-hero">
+            <div class="hours-hero-copy">
+                <div class="hours-kicker">Informe interno</div>
+                <h1 class="hours-title">Horas dedicadas a Cerditos y Valientes</h1>
+                <p class="hours-lead">
+                    Una lectura sin enlaces y sin ruido: cuanto trabajo se ha invertido, donde se ha concentrado
+                    el esfuerzo y que partes del proyecto se llevan la mayor carga.
+                </p>
+            </div>
+            <aside class="hours-scoreboard">
+                <div class="hours-total">
+                    <div class="hours-total-value">{{ report.total_hours }}</div>
+                    <div class="hours-total-label">horas estimadas</div>
+                </div>
+                <div class="mini-metrics">
+                    <div class="mini-metric">
+                        <div class="mini-label">Dias de 8h</div>
+                        <div class="mini-value">{{ report.days_equivalent }}</div>
+                    </div>
+                    <div class="mini-metric">
+                        <div class="mini-label">Core competitivo</div>
+                        <div class="mini-value">{{ report.focus_hours }}h</div>
+                    </div>
+                    <div class="mini-metric">
+                        <div class="mini-label">Operacion</div>
+                        <div class="mini-value">{{ report.maintenance_hours }}h</div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="hours-grid" aria-label="Desglose de horas">
+            {% for block in work_blocks %}
+            <article class="hours-card {{ block.tone }}">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="hours-icon"><i class="fas {{ block.icon }}"></i></div>
+                    <div class="text-end">
+                        <div class="hours-card-value">{{ block.hours }}h</div>
+                        <div class="hours-note">{{ block.percent }}%</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="hours-card-title">{{ block.label }}</div>
+                    <div class="hours-card-copy mt-1">{{ block.summary }}</div>
+                </div>
+                <div class="hours-bar" aria-hidden="true">
+                    <div class="hours-bar-fill" style="width: {{ block.percent }}%;"></div>
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="phase-panel">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                <div>
+                    <h2 class="h4 fw-bold mb-1">Linea de trabajo</h2>
+                    <div class="hours-note">Resumen por etapas de construccion, de la base al pulido operativo.</div>
+                </div>
+                <div class="hours-note">Actualizado: {{ report.generated_at }}</div>
+            </div>
+            <div class="phase-track">
+                {% for phase in report.phases %}
+                <article class="phase-item">
+                    <div class="phase-range">{{ phase.range }}</div>
+                    <div class="phase-name">{{ phase.name }}</div>
+                    <div class="phase-text">{{ phase.text }}</div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="receipt-panel">
+            <div>
+                <h2 class="h4 fw-bold mb-2">Lectura rapida</h2>
+                <p class="hours-note mb-0">
+                    La mayor inversion esta en el sistema competitivo: datos, records, logros y partida en vivo.
+                    La segunda capa fuerte es hacer que todo aguante en produccion con cache, HTML pregenerado
+                    y pantallas que sigan siendo usables aunque el proyecto crezca.
+                </p>
+            </div>
+            <div class="receipt-stamp">
+                Informe cerrado<br>
+                {{ report.total_hours }} horas
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

@@ -459,6 +459,85 @@ def logros():
         return render_template('404.html'), 500
 
 
+@main_bp.route('/horas')
+def horas():
+    """Informe publico de horas dedicadas al proyecto."""
+    work_blocks = [
+        {
+            "label": "Producto y experiencia",
+            "hours": 18,
+            "icon": "fa-compass-drafting",
+            "tone": "product",
+            "summary": "Navegacion, estructura de pantallas, estados vacios, responsive y detalles visuales.",
+        },
+        {
+            "label": "Datos, Riot API y cache",
+            "hours": 34,
+            "icon": "fa-database",
+            "tone": "data",
+            "summary": "Lectura de cuentas, PUUIDs, historial, cache en memoria y control de llamadas costosas.",
+        },
+        {
+            "label": "Rankings, logros y records",
+            "hours": 46,
+            "icon": "fa-trophy",
+            "tone": "records",
+            "summary": "Metricas globales, records personales, logros configurables y clasificaciones por jugador.",
+        },
+        {
+            "label": "Partidas en vivo",
+            "hours": 22,
+            "icon": "fa-satellite-dish",
+            "tone": "live",
+            "summary": "Deteccion de partidas activas, fichas de participantes, estado en tiempo real y detalle de partida.",
+        },
+        {
+            "label": "Equipo y Flexible",
+            "hours": 20,
+            "icon": "fa-people-group",
+            "tone": "team",
+            "summary": "Dashboard del roster, forma reciente, draft, objetivos, tendencias e historial conjunto.",
+        },
+        {
+            "label": "Precomputado y despliegue",
+            "hours": 20,
+            "icon": "fa-rocket",
+            "tone": "ops",
+            "summary": "HTML pregenerado, manifiestos, persistencia, Render y tareas de mantenimiento.",
+        },
+        {
+            "label": "QA, ajustes y pulido",
+            "hours": 14,
+            "icon": "fa-screwdriver-wrench",
+            "tone": "qa",
+            "summary": "Validaciones, reparacion de errores, compatibilidad de modo oscuro y limpieza de bordes.",
+        },
+    ]
+    total_hours = sum(block["hours"] for block in work_blocks)
+    for block in work_blocks:
+        block["percent"] = round((block["hours"] / total_hours) * 100, 1) if total_hours else 0
+
+    report = {
+        "total_hours": total_hours,
+        "days_equivalent": round(total_hours / 8, 1),
+        "focus_hours": sum(block["hours"] for block in work_blocks if block["tone"] in ("data", "records", "live")),
+        "maintenance_hours": sum(block["hours"] for block in work_blocks if block["tone"] in ("ops", "qa")),
+        "generated_at": datetime.now(TARGET_TIMEZONE).strftime("%d/%m/%Y %H:%M"),
+        "phases": [
+            {"name": "Base jugable", "range": "Inicio", "text": "Ranking, perfiles, historial y primera lectura de datos."},
+            {"name": "Capa competitiva", "range": "Iteracion media", "text": "Records, logros, estadisticas globales y estados en vivo."},
+            {"name": "Operacion", "range": "Pulido", "text": "Precomputado, cache, configuracion privada y mejoras de rendimiento."},
+        ],
+    }
+
+    return render_template(
+        'horas.html',
+        report=report,
+        work_blocks=work_blocks,
+        has_player_data=True,
+    )
+
+
 @main_bp.route('/configsv', methods=['GET', 'POST'])
 def configsv():
     """
