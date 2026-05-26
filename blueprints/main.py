@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 
-from flask import Blueprint, abort, render_template, request, Response
+from flask import Blueprint, abort, flash, redirect, render_template, request, Response, url_for
 from datetime import datetime, timezone, timedelta
 import time
 import threading
@@ -25,6 +25,8 @@ from services.github_service import (
     ensure_permission_files_for_players,
     read_stats_reload_config,
     save_stats_reload_config,
+    read_hours_report,
+    save_hours_report,
 )
 from services.stats_service import get_top_champions_for_player
 from services.match_service import get_player_match_history, calculate_streaks
@@ -460,10 +462,8 @@ def logros():
         return render_template('404.html'), 500
 
 
-@main_bp.route('/horas')
-def horas():
-    """Informe secreto de horas dedicadas por los jugadores a partidas."""
-
+def _build_hours_report_data():
+    """Construye el snapshot de horas jugadas por jugador."""
     def format_seconds(seconds):
         seconds = int(seconds or 0)
         hours = seconds // 3600
@@ -589,15 +589,115 @@ def horas():
         "leader": leader,
         "latest_date": latest_date,
         "generated_at": datetime.now(TARGET_TIMEZONE).strftime("%d/%m/%Y %H:%M"),
+        "calculated_at_iso": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return {
+        "report": report,
+        "player_rows": player_rows,
+        "queue_rows": queue_rows,
+    }
+
+
+def _format_hours_wait(seconds):
+    seconds = max(0, int(seconds or 0))
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    secs = seconds % 60
+    parts = []
+    if hours:
+        parts.append(f"{hours}h")
+    if minutes:
+        parts.append(f"{minutes}m")
+    if secs or not parts:
+        parts.append(f"{secs}s")
+    return " ".join(parts)
+
+
+def _get_time_until_next_hours_generation(snapshot=None):
+    if not snapshot:
+        success, snapshot = read_hours_report()
+        if not success:
+            snapshot = {}
+
+    calculated_at = (snapshot.get("report") or {}).get("calculated_at_iso")
+    if not calculated_at:
+        return True, 0, "0s"
+
+    try:
+        last_calc = datetime.fromisoformat(str(calculated_at).replace("Z", "+00:00"))
+        if last_calc.tzinfo is None:
+            last_calc = last_calc.replace(tzinfo=timezone.utc)
+        elapsed = (datetime.now(timezone.utc) - last_calc).total_seconds()
+        interval = settings.GLOBAL_STATS_UPDATE_INTERVAL
+        if elapsed >= interval:
+            return True, 0, "0s"
+        remaining = int(interval - elapsed)
+        return False, remaining, _format_hours_wait(remaining)
+    except Exception as e:
+        print(f"[_get_time_until_next_hours_generation] Error parseando fecha: {e}")
+        return True, 0, "0s"
+
+
+@main_bp.route('/horas')
+def horas():
+    """Informe secreto de horas jugadas, leido desde snapshot precalculado."""
+    success, snapshot = read_hours_report()
+    if not success:
+        snapshot = {}
+
+    can_generate, seconds_remaining, time_remaining = _get_time_until_next_hours_generation(snapshot)
+    report_data = snapshot if snapshot else {
+        "report": {
+            "total_player_label": "0h 00m",
+            "players_count": 0,
+            "matches_count": 0,
+            "latest_date": "N/A",
+            "unique_matches_count": 0,
+            "unique_match_label": "0h 00m",
+            "avg_per_player_label": "0h 00m",
+            "leader": None,
+            "generated_at": "N/A",
+        },
+        "player_rows": [],
+        "queue_rows": [],
     }
 
     return render_template(
         'horas.html',
-        report=report,
-        player_rows=player_rows,
-        queue_rows=queue_rows,
+        report=report_data.get("report", {}),
+        player_rows=report_data.get("player_rows", []),
+        queue_rows=report_data.get("queue_rows", []),
+        needs_update=not bool(snapshot),
+        can_generate=can_generate,
+        seconds_remaining=seconds_remaining,
+        time_remaining=time_remaining,
         has_player_data=True,
     )
+
+
+@main_bp.route('/horas/actualizar', methods=['POST'])
+def actualizar_horas():
+    """Genera y guarda el snapshot de horas jugadas, como maximo cada 24h."""
+    success, snapshot = read_hours_report()
+    can_generate, seconds_remaining, time_remaining = _get_time_until_next_hours_generation(snapshot if success else {})
+    if not can_generate:
+        flash(f"El informe de horas se genero recientemente. Espera {time_remaining}.", "warning")
+        return redirect(url_for("main.horas"))
+
+    try:
+        report_data = _build_hours_report_data()
+        if save_hours_report(report_data):
+            flash("Informe de horas jugadas actualizado correctamente.", "success")
+        else:
+            flash("No se pudo guardar el informe de horas. Revisa GITHUB_TOKEN o permisos.", "danger")
+    except Exception as e:
+        print(f"[actualizar_horas] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error al generar el informe de horas: {e}", "danger")
+
+    return redirect(url_for("main.horas"))
 
 
 @main_bp.route('/configsv', methods=['GET', 'POST'])

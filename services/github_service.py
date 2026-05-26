@@ -979,6 +979,25 @@ def read_global_stats():
     return False, {}
 
 
+def read_hours_report():
+    """Lee el informe precalculado de horas jugadas."""
+    content, _ = read_file_from_github("hours_report.json", use_raw=False)
+    if content and isinstance(content, dict):
+        return True, content
+    return False, {}
+
+
+def save_hours_report(report_data):
+    """Guarda el informe precalculado de horas jugadas."""
+    _, sha = read_file_from_github("hours_report.json", use_raw=False)
+    return write_file_to_github(
+        "hours_report.json",
+        report_data,
+        message="Actualizar informe de horas jugadas",
+        sha=sha
+    )
+
+
 def read_stats_reload_config():
     """Lee la configuración de recarga forzada de estadísticas."""
     file_path = "config/stats_reload.json"

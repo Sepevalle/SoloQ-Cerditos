@@ -99,6 +99,20 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 12px;
     }
+    .control-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 16px;
+        background: #fff;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.04);
+    }
+    .control-title {
+        font-weight: 900;
+    }
     .metric-card,
     .hours-section {
         border: 1px solid #e2e8f0;
@@ -238,6 +252,7 @@
         color: #aeb8c5 !important;
     }
     .dark-mode .metric-card,
+    .dark-mode .control-panel,
     .dark-mode .hours-section,
     .dark-mode .queue-card {
         background: #1f2933;
@@ -267,6 +282,10 @@
         }
     }
     @media (max-width: 767px) {
+        .control-panel {
+            align-items: stretch;
+            flex-direction: column;
+        }
         .metric-grid,
         .queue-grid,
         .mini-grid {
@@ -282,6 +301,14 @@
 {% block content %}
 <main class="container-fluid px-md-5 hours-page">
     <div class="hours-shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} mb-0">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <section class="hours-hero">
             <div class="hours-hero-copy">
                 <div class="hours-kicker">Seguimiento secreto</div>
@@ -313,6 +340,32 @@
             </aside>
         </section>
 
+        <section class="control-panel">
+            <div>
+                <div class="control-title">Snapshot precalculado</div>
+                <div class="section-note">
+                    {% if needs_update %}
+                        Todavia no hay informe guardado. Genera el primer snapshot para rellenar la tabla.
+                    {% elif can_generate %}
+                        Disponible para regenerar. Ultimo snapshot: {{ report.generated_at }}.
+                    {% else %}
+                        Ultimo snapshot: {{ report.generated_at }}. Nueva generacion disponible en {{ time_remaining }}.
+                    {% endif %}
+                </div>
+            </div>
+            <form action="{{ url_for('main.actualizar_horas') }}" method="post" class="m-0">
+                {% if can_generate %}
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-rotate me-2"></i>Generar informe
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-secondary" disabled>
+                    <i class="fas fa-clock me-2"></i>{{ time_remaining }}
+                </button>
+                {% endif %}
+            </form>
+        </section>
+
         <section class="metric-grid">
             <article class="metric-card">
                 <div class="metric-label">Partidas unicas</div>
@@ -332,7 +385,7 @@
             <article class="metric-card">
                 <div class="metric-label">Generado</div>
                 <div class="metric-value">{{ report.generated_at }}</div>
-                <div class="metric-note">Informe calculado al abrir esta ruta secreta.</div>
+                <div class="metric-note">Informe guardado y reutilizado hasta la siguiente generacion.</div>
             </article>
         </section>
 
