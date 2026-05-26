@@ -340,6 +340,7 @@
                 <div class="score-label mt-2">
                     Fuente: {{ report.accounts_processed_count | default(report.players_count) }} PUUIDs procesados
                     {% if report.accounts_source_count is defined %} | {{ report.accounts_source_count }} cuentas nombradas{% endif %}
+                    {% if report.stats_index_rows_count is defined %} | {{ report.stats_index_rows_count }} filas del index{% endif %}
                 </div>
             </aside>
         </section>
@@ -434,6 +435,7 @@
                             <th>Horas</th>
                             <th>Cuota</th>
                             <th>Partidas</th>
+                            <th>Ranked visibles</th>
                             <th>Media</th>
                             <th>WR</th>
                             <th>Ultimos 30 dias</th>
@@ -457,6 +459,12 @@
                                 </div>
                             </td>
                             <td>{{ player.matches }}</td>
+                            <td>
+                                {{ player.ranked_visible_matches }}
+                                {% if player.history_gap > 0 %}
+                                    <span class="text-warning fw-bold" title="Partidas ranked visibles en el index que aun no aparecen en el historial guardado">-{{ player.history_gap }}</span>
+                                {% endif %}
+                            </td>
                             <td>{{ player.avg_label }}</td>
                             <td class="{% if player.win_rate >= 50 %}text-success{% else %}text-danger{% endif %} fw-bold">{{ player.win_rate }}%</td>
                             <td>{{ player.recent_label }}</td>
@@ -465,7 +473,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="10" class="text-center section-note py-4">No hay partidas con duracion registrada.</td>
+                            <td colspan="11" class="text-center section-note py-4">No hay partidas con duracion registrada.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

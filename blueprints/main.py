@@ -25,6 +25,7 @@ from services.github_service import (
     ensure_permission_files_for_players,
     read_stats_reload_config,
     save_stats_reload_config,
+    read_stats_index,
     read_hours_report,
     save_hours_report,
     read_achievements_report,
@@ -525,10 +526,36 @@ def _build_hours_report_data():
 
     accounts = dict(get_all_accounts())
     puuids = get_all_puuids()
-    players = [
-        (riot_id, accounts.get(riot_id) or riot_id, puuid)
+    index_ok, index_data = read_stats_index()
+    index_rows = index_data.get("datos_jugadores", []) if index_ok and isinstance(index_data, dict) else []
+
+    players_by_riot_id = {
+        riot_id: {
+            "riot_id": riot_id,
+            "display_name": accounts.get(riot_id) or riot_id,
+            "puuid": puuid,
+        }
         for riot_id, puuid in puuids.items()
         if puuid
+    }
+    ranked_visible_by_player = defaultdict(int)
+
+    for jugador in index_rows:
+        riot_id = jugador.get("game_name") or jugador.get("riot_id")
+        puuid = jugador.get("puuid")
+        display_name = jugador.get("jugador") or accounts.get(riot_id) or riot_id
+        if riot_id and puuid:
+            players_by_riot_id[riot_id] = {
+                "riot_id": riot_id,
+                "display_name": display_name,
+                "puuid": puuid,
+            }
+        if display_name:
+            ranked_visible_by_player[display_name] += int(jugador.get("wins") or 0) + int(jugador.get("losses") or 0)
+
+    players = [
+        (entry["riot_id"], entry["display_name"], entry["puuid"])
+        for entry in players_by_riot_id.values()
     ]
     players.sort(key=lambda item: (item[1] or item[0]).lower())
     rows_by_player = {}
@@ -554,6 +581,7 @@ def _build_hours_report_data():
                 "matches": 0,
                 "wins": 0,
                 "losses": 0,
+                "riot_ids": set(),
                 "queues": defaultdict(lambda: {"seconds": 0, "matches": 0}),
                 "last_played_ts": 0,
                 "match_times": [],
@@ -561,6 +589,7 @@ def _build_hours_report_data():
 
         row = rows_by_player[player_key]
         row["accounts"].add(riot_id)
+        row["riot_ids"].add(riot_id)
         historial = get_player_match_history(puuid, riot_id=riot_id, limit=-1)
         raw_matches = historial.get("matches", [])
         matches = []
@@ -618,13 +647,18 @@ def _build_hours_report_data():
             default=(None, {"seconds": 0, "matches": 0})
         )
         total_games = row["wins"] + row["losses"]
+        ranked_visible_matches = ranked_visible_by_player.get(row["player_name"], 0)
+        history_gap = max(0, ranked_visible_matches - row["matches"])
         player_rows.append({
             "player_name": row["player_name"],
             "accounts_count": len(row["accounts"]),
+            "accounts_list": sorted(row["riot_ids"]),
             "hours": row["seconds"] / 3600,
             "hours_label": format_seconds(row["seconds"]),
             "recent_label": format_seconds(row["recent_seconds"]),
             "matches": row["matches"],
+            "ranked_visible_matches": ranked_visible_matches,
+            "history_gap": history_gap,
             "avg_label": format_seconds(row["seconds"] / row["matches"]) if row["matches"] else "0h 00m",
             "win_rate": round((row["wins"] / total_games) * 100, 1) if total_games else 0,
             "share": round((row["seconds"] / total_player_seconds) * 100, 1) if total_player_seconds else 0,
@@ -663,10 +697,11 @@ def _build_hours_report_data():
         "latest_date": latest_date,
         "generated_at": datetime.now(TARGET_TIMEZONE).strftime("%d/%m/%Y %H:%M"),
         "calculated_at_iso": datetime.now(timezone.utc).isoformat(),
-        "schema_version": 2,
+        "schema_version": 3,
         "accounts_source_count": len(accounts),
         "puuids_source_count": len(puuids),
         "accounts_processed_count": len(processed_puuids),
+        "stats_index_rows_count": len(index_rows),
     }
 
     return {
@@ -698,7 +733,7 @@ def _get_time_until_next_hours_generation(snapshot=None):
             snapshot = {}
 
     report = snapshot.get("report") or {}
-    if report.get("schema_version") != 2:
+    if report.get("schema_version") != 3:
         return True, 0, "0s"
 
     calculated_at = report.get("calculated_at_iso")
