@@ -832,10 +832,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.10.1/img/champion/Briar.png" alt="Briar">
                                         <div class="champion-stats-info">
                                             <h5>Briar</h5>
-                                            <p class="kda-text fw-bold">3.10 KDA</p>
-                                            <p class="small-text-stats">Promedio: 14.9 / 7.0 / 6.6</p>
-                                            <p class="fw-bold win-rate-alto">67% Win Rate</p>
-                                            <p class="small-text-stats">(46V / 23D) - 69 partidas</p>
+                                            <p class="kda-text fw-bold">3.08 KDA</p>
+                                            <p class="small-text-stats">Promedio: 15.2 / 7.1 / 6.7</p>
+                                            <p class="fw-bold win-rate-alto">68% Win Rate</p>
+                                            <p class="small-text-stats">(48V / 23D) - 71 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
@@ -936,7 +936,7 @@
                         </p>
                         <p>
                             Rachas (Max): 
-                            <span class="text-success fw-bold">6V</span> / <span class="text-danger fw-bold">6D</span>
+                            <span class="text-success fw-bold">6V</span> / <span class="text-danger fw-bold">7D</span>
                         </p>
                         <p>
                             Rachas (Actual): 
@@ -1106,6 +1106,8 @@
                     
                     <option value="Garen" >Garen</option>
                     
+                    <option value="Graves" >Graves</option>
+                    
                     <option value="Irelia" >Irelia</option>
                     
                     <option value="Ivern" >Ivern</option>
@@ -1115,6 +1117,8 @@
                     <option value="Jhin" >Jhin</option>
                     
                     <option value="Jinx" >Jinx</option>
+                    
+                    <option value="KSante" >KSante</option>
                     
                     <option value="Kaisa" >Kaisa</option>
                     
@@ -1151,6 +1155,8 @@
                     <option value="MissFortune" >MissFortune</option>
                     
                     <option value="Mordekaiser" >Mordekaiser</option>
+                    
+                    <option value="Morgana" >Morgana</option>
                     
                     <option value="Naafiri" >Naafiri</option>
                     
@@ -1247,7 +1253,7 @@
                 </select>
             </form>
             <div class="small text-muted mb-3">
-                375 partidas encontradas
+                384 partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -13924,7 +13930,7 @@
                         <a class="page-link" href="#">&laquo; Anterior</a>
                     </li>
                     <li class="page-item disabled">
-                        <span class="page-link">PÃ¡gina 1 de 25</span>
+                        <span class="page-link">PÃ¡gina 1 de 26</span>
                     </li>
                     <li class="page-item ">
                         <a class="page-link" href="/jugador/SeputxX%23EUW?page=2&amp;queue=all&amp;champion=all">Siguiente &raquo;</a>
@@ -14508,7 +14514,7 @@
 
         const paginationLabel = document.querySelector('#pagination-controls span.page-link');
         if (paginationLabel) {
-            paginationLabel.textContent = 'Pagina 1 de 25';
+            paginationLabel.textContent = 'Pagina 1 de 26';
         }
 
         return;
