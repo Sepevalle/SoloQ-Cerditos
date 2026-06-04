@@ -949,8 +949,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="">
-                                0 LP
+                            <span class="lp-gain">
+                                +22 LP
                             </span>
                             <span class="small-text-stats">
                                 (1V-0D)
@@ -1287,7 +1287,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+22 LP</span>
+                                    
                                 
                             </td>
 
@@ -14009,7 +14011,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 2400, "timestamp": 1770668426588}, {"elo": 2398, "timestamp": 1777315515170}, {"elo": 2381, "timestamp": 1777318784626}, {"elo": 2364, "timestamp": 1777399401057}, {"elo": 2346, "timestamp": 1777476119022}];
+            const eloHistory = [{"elo": 2400, "timestamp": 1770668426588}, {"elo": 2398, "timestamp": 1777315515170}, {"elo": 2381, "timestamp": 1777318784626}, {"elo": 2364, "timestamp": 1777399401057}, {"elo": 2346, "timestamp": 1777476119022}, {"elo": 2368, "timestamp": 1780570770668}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
