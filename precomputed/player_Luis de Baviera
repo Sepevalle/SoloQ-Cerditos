@@ -817,8 +817,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="">
-                                0 LP
+                            <span class="lp-loss">
+                                -15 LP
                             </span>
                             <span class="small-text-stats">
                                 (0V-1D)
@@ -1162,7 +1162,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-15 LP</span>
+                                    
                                 
                             </td>
 
@@ -13655,7 +13657,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1511, "timestamp": 1780191457181}, {"elo": 1541, "timestamp": 1780333168316}, {"elo": 1571, "timestamp": 1780407341459}, {"elo": 1601, "timestamp": 1780410173230}, {"elo": 1631, "timestamp": 1780565569029}];
+            const eloHistory = [{"elo": 1511, "timestamp": 1780191457181}, {"elo": 1541, "timestamp": 1780333168316}, {"elo": 1571, "timestamp": 1780407341459}, {"elo": 1601, "timestamp": 1780410173230}, {"elo": 1631, "timestamp": 1780565569029}, {"elo": 1621, "timestamp": 1780696448397}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
