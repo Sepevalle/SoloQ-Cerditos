@@ -949,7 +949,7 @@
                             LP en 24h: 
                             
                             <span class="lp-gain">
-                                +21 LP
+                                +43 LP
                             </span>
                             <span class="small-text-stats">
                                 (2V-0D)
@@ -1397,7 +1397,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+22 LP</span>
+                                    
                                 
                             </td>
 
@@ -14091,7 +14093,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 1221, "timestamp": 1772146066177}, {"elo": 1242, "timestamp": 1772148759645}, {"elo": 1223, "timestamp": 1772150693643}, {"elo": 1203, "timestamp": 1775585640859}, {"elo": 1223, "timestamp": 1775668884605}, {"elo": 1244, "timestamp": 1775672067071}, {"elo": 1265, "timestamp": 1775688652037}, {"elo": 1246, "timestamp": 1775691354807}, {"elo": 1227, "timestamp": 1775749710734}, {"elo": 1207, "timestamp": 1775752160169}, {"elo": 1227, "timestamp": 1775754073530}, {"elo": 1207, "timestamp": 1775835135129}, {"elo": 1227, "timestamp": 1775841897088}, {"elo": 1207, "timestamp": 1775846802940}, {"elo": 1247, "timestamp": 1775857092959}, {"elo": 1227, "timestamp": 1775859734398}, {"elo": 1247, "timestamp": 1775908181941}, {"elo": 1227, "timestamp": 1775931003997}, {"elo": 1247, "timestamp": 1775933394028}, {"elo": 1227, "timestamp": 1775941560085}, {"elo": 1247, "timestamp": 1775943762079}, {"elo": 1227, "timestamp": 1775946323112}, {"elo": 1247, "timestamp": 1776203002893}, {"elo": 1267, "timestamp": 1776806773045}, {"elo": 1287, "timestamp": 1776809178797}, {"elo": 1267, "timestamp": 1776883737332}, {"elo": 1287, "timestamp": 1776885293222}, {"elo": 1308, "timestamp": 1776951781558}, {"elo": 1329, "timestamp": 1776963811598}, {"elo": 1310, "timestamp": 1776965869986}, {"elo": 1291, "timestamp": 1776967633929}, {"elo": 1271, "timestamp": 1777045925351}, {"elo": 1291, "timestamp": 1777048448665}, {"elo": 1271, "timestamp": 1777050564054}, {"elo": 1291, "timestamp": 1777052244695}, {"elo": 1311, "timestamp": 1777058647854}, {"elo": 1332, "timestamp": 1777138206726}, {"elo": 1313, "timestamp": 1777140302428}, {"elo": 1293, "timestamp": 1777143345946}, {"elo": 1293, "timestamp": 1777154008586}, {"elo": 1334, "timestamp": 1777200704681}, {"elo": 1315, "timestamp": 1777203028260}, {"elo": 1336, "timestamp": 1777222017563}, {"elo": 1506, "timestamp": 1778543281243}, {"elo": 1551, "timestamp": 1779647400056}, {"elo": 1532, "timestamp": 1780489431034}, {"elo": 1553, "timestamp": 1780567741766}, {"elo": 1574, "timestamp": 1780570770668}, {"elo": 1595, "timestamp": 1780649122070}];
+            const eloHistory = [{"elo": 1221, "timestamp": 1772146066177}, {"elo": 1242, "timestamp": 1772148759645}, {"elo": 1223, "timestamp": 1772150693643}, {"elo": 1203, "timestamp": 1775585640859}, {"elo": 1223, "timestamp": 1775668884605}, {"elo": 1244, "timestamp": 1775672067071}, {"elo": 1265, "timestamp": 1775688652037}, {"elo": 1246, "timestamp": 1775691354807}, {"elo": 1227, "timestamp": 1775749710734}, {"elo": 1207, "timestamp": 1775752160169}, {"elo": 1227, "timestamp": 1775754073530}, {"elo": 1207, "timestamp": 1775835135129}, {"elo": 1227, "timestamp": 1775841897088}, {"elo": 1207, "timestamp": 1775846802940}, {"elo": 1247, "timestamp": 1775857092959}, {"elo": 1227, "timestamp": 1775859734398}, {"elo": 1247, "timestamp": 1775908181941}, {"elo": 1227, "timestamp": 1775931003997}, {"elo": 1247, "timestamp": 1775933394028}, {"elo": 1227, "timestamp": 1775941560085}, {"elo": 1247, "timestamp": 1775943762079}, {"elo": 1227, "timestamp": 1775946323112}, {"elo": 1247, "timestamp": 1776203002893}, {"elo": 1267, "timestamp": 1776806773045}, {"elo": 1287, "timestamp": 1776809178797}, {"elo": 1267, "timestamp": 1776883737332}, {"elo": 1287, "timestamp": 1776885293222}, {"elo": 1308, "timestamp": 1776951781558}, {"elo": 1329, "timestamp": 1776963811598}, {"elo": 1310, "timestamp": 1776965869986}, {"elo": 1291, "timestamp": 1776967633929}, {"elo": 1271, "timestamp": 1777045925351}, {"elo": 1291, "timestamp": 1777048448665}, {"elo": 1271, "timestamp": 1777050564054}, {"elo": 1291, "timestamp": 1777052244695}, {"elo": 1311, "timestamp": 1777058647854}, {"elo": 1332, "timestamp": 1777138206726}, {"elo": 1313, "timestamp": 1777140302428}, {"elo": 1293, "timestamp": 1777143345946}, {"elo": 1293, "timestamp": 1777154008586}, {"elo": 1334, "timestamp": 1777200704681}, {"elo": 1315, "timestamp": 1777203028260}, {"elo": 1336, "timestamp": 1777222017563}, {"elo": 1506, "timestamp": 1778543281243}, {"elo": 1551, "timestamp": 1779647400056}, {"elo": 1532, "timestamp": 1780489431034}, {"elo": 1553, "timestamp": 1780567741766}, {"elo": 1574, "timestamp": 1780570770668}, {"elo": 1595, "timestamp": 1780649122070}, {"elo": 1612, "timestamp": 1780658473529}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
