@@ -925,19 +925,20 @@
                     
                     <img src="" alt="EMERALD" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>EMERALD III (2 LPs)</h4>
-                        <p>Wins: 84 | Losses: 77 | Total: 161</p>
+                        <h4>EMERALD IV (83 LPs)</h4>
+                        <p>Wins: 84 | Losses: 78 | Total: 162</p>
                         
                         
                         <p class="win-rate-alto">
-                            Win Rate: 52.17%
+                            Win Rate: 51.85%
                         </p>
                         <p>
                             Peak Elo:
                             
                             
                             
-                                <span class="peak-elo">EMERALD III (2 LPs)</span>
+                                EMERALD III (2 LPs)
+                                <span class="small-text-stats">(19 LPs por debajo)</span>
                             
                         </p>
                         <p>
@@ -956,7 +957,7 @@
                             LP en 24h: 
                             
                             <span class="lp-gain">
-                                +64 LP
+                                +85 LP
                             </span>
                             <span class="small-text-stats">
                                 (5V-1D)
@@ -1455,7 +1456,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+21 LP</span>
+                                    
                                 
                             </td>
 
@@ -14165,7 +14168,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 1718, "timestamp": 1774300960935}, {"elo": 1756, "timestamp": 1774304111331}, {"elo": 1775, "timestamp": 1774307249933}, {"elo": 1755, "timestamp": 1774387817604}, {"elo": 1734, "timestamp": 1774390115120}, {"elo": 1713, "timestamp": 1774392437279}, {"elo": 1691, "timestamp": 1774466146763}, {"elo": 1709, "timestamp": 1774468698247}, {"elo": 1728, "timestamp": 1774470966963}, {"elo": 1707, "timestamp": 1774476540442}, {"elo": 1726, "timestamp": 1774478754828}, {"elo": 1745, "timestamp": 1774551900242}, {"elo": 1724, "timestamp": 1774553926274}, {"elo": 1743, "timestamp": 1774727818741}, {"elo": 1722, "timestamp": 1774730401928}, {"elo": 1741, "timestamp": 1774821873222}, {"elo": 1750, "timestamp": 1776883737332}, {"elo": 1770, "timestamp": 1776885293222}, {"elo": 1977, "timestamp": 1779647400056}, {"elo": 1977, "timestamp": 1780078395431}, {"elo": 1997, "timestamp": 1780567741766}, {"elo": 2017, "timestamp": 1780570770668}, {"elo": 2037, "timestamp": 1780597243661}, {"elo": 2058, "timestamp": 1780600063945}, {"elo": 2079, "timestamp": 1780649122070}, {"elo": 2060, "timestamp": 1780653229889}, {"elo": 2081, "timestamp": 1780656145111}];
+            const eloHistory = [{"elo": 1718, "timestamp": 1774300960935}, {"elo": 1756, "timestamp": 1774304111331}, {"elo": 1775, "timestamp": 1774307249933}, {"elo": 1755, "timestamp": 1774387817604}, {"elo": 1734, "timestamp": 1774390115120}, {"elo": 1713, "timestamp": 1774392437279}, {"elo": 1691, "timestamp": 1774466146763}, {"elo": 1709, "timestamp": 1774468698247}, {"elo": 1728, "timestamp": 1774470966963}, {"elo": 1707, "timestamp": 1774476540442}, {"elo": 1726, "timestamp": 1774478754828}, {"elo": 1745, "timestamp": 1774551900242}, {"elo": 1724, "timestamp": 1774553926274}, {"elo": 1743, "timestamp": 1774727818741}, {"elo": 1722, "timestamp": 1774730401928}, {"elo": 1741, "timestamp": 1774821873222}, {"elo": 1750, "timestamp": 1776883737332}, {"elo": 1770, "timestamp": 1776885293222}, {"elo": 1977, "timestamp": 1779647400056}, {"elo": 1977, "timestamp": 1780078395431}, {"elo": 1997, "timestamp": 1780567741766}, {"elo": 2017, "timestamp": 1780570770668}, {"elo": 2037, "timestamp": 1780597243661}, {"elo": 2058, "timestamp": 1780600063945}, {"elo": 2079, "timestamp": 1780649122070}, {"elo": 2060, "timestamp": 1780653229889}, {"elo": 2081, "timestamp": 1780656145111}, {"elo": 2102, "timestamp": 1780658473529}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
