@@ -786,12 +786,12 @@
                     
                     <img src="" alt="PLATINUM" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>PLATINUM II (67 LPs)</h4>
-                        <p>Wins: 23 | Losses: 26 | Total: 49</p>
+                        <h4>PLATINUM II (51 LPs)</h4>
+                        <p>Wins: 23 | Losses: 27 | Total: 50</p>
                         
                         
                         <p class="win-rate-bajo">
-                            Win Rate: 46.94%
+                            Win Rate: 46.00%
                         </p>
                         <p>
                             Peak Elo:
@@ -799,7 +799,7 @@
                             
                             
                                 PLATINUM I (11 LPs)
-                                <span class="small-text-stats">(44 LPs por debajo)</span>
+                                <span class="small-text-stats">(60 LPs por debajo)</span>
                             
                         </p>
                         <p>
@@ -809,13 +809,20 @@
                         <p>
                             Rachas (Actual): 
                             
-                                <span class="text-danger fw-bold">3D</span>
+                                <span class="text-danger fw-bold">4D</span>
                             
                         </p>
                         
                         
                         <p>
-                            LP en 24h: <span>0 LP</span>
+                            LP en 24h: 
+                            
+                            <span class="">
+                                0 LP
+                            </span>
+                            <span class="small-text-stats">
+                                (0V-1D)
+                            </span>
                         </p>
                         
 
@@ -1062,6 +1069,8 @@
                 <select id="championFilter" name="champion" class="form-select">
                     <option value="all" selected>Todos</option>
                     
+                    <option value="Ahri" >Ahri</option>
+                    
                     <option value="Amumu" >Amumu</option>
                     
                     <option value="Briar" >Briar</option>
@@ -1099,7 +1108,7 @@
                 </select>
             </form>
             <div class="small text-muted mb-3">
-                99 partidas encontradas
+                100 partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -1128,11 +1137,854 @@
                         
                         
                         <tr 
+                            data-queue-id="420" 
+                            data-champion-name="Ahri"
+                            class="match-row-loss "
+                            style="cursor: pointer;"
+                            onclick="toggleMatchDetails('match-1')"
+                        >
+                            <td>Clasificatoria Solo/Duo</td>
+                            <td>
+                                <div class="champion-level-container">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Ahri.png" alt="Ahri">
+                                    <span class="champion-level">17</span>
+                                </div>
+                                <div>Ahri</div>
+                            </td>
+                            <td>
+                                <span class="kda-text">9/8/7</span>
+                                
+                                
+                                    
+                                    <span class="multikill-badge double-kill">DOUBLE x2</span>
+                                
+                                <br>
+                                <span class="small-text-stats">KDA: 2.00</span>
+                                <br>
+                                <span class="small-text-stats fw-bold" title="Participación en Asesinatos">44% KP</span>
+                            </td>
+                            <td>
+                                <div>32.378</div>
+                                <div>
+                                    <span class="small-text-stats">
+                                        
+                                        
+                                            938,49 DPM
+                                        
+                                    </span>
+                                </div>
+                                
+                                
+                                    
+                                    
+                                    
+                                    <div class="damage-bar mt-1" title="Físico: 3.043 | Mágico: 19.773 | Verdadero: 0">
+                                        <div class="damage-physical" style="width: 13.337131837307153%;"></div>
+                                        <div class="damage-magic" style="width: 86.66286816269285%;"></div>
+                                        <div class="damage-true" style="width: 0.0%;"></div>
+                                    </div>
+                                
+                            </td>
+                            <td title="Daño a Objetivos / Torretas / Inhibidores / Objetivos Robados">
+                                <div>4.639</div>
+                                <span class="small-text-stats">
+                                    <i class="fas fa-chess-rook"></i> 1
+                                </span>
+                                <span class="small-text-stats">
+                                    <i class="fas fa-monument"></i> 0
+                                </span>
+                                
+                            </td>
+                            <td>
+                                14.075
+                                <br>
+                                <span class="small-text-stats">
+                                    
+                                    
+                                        407,97 GPM
+                                    
+                                </span>
+                            </td>
+                            <td>
+                                245
+                                <br>
+                                <span class="small-text-stats">
+                                    
+                                    
+                                        7.1 CS/min
+                                    
+                                </span>
+                            </td>
+                            <td title="Puntuación de Visión (por minuto) | Wards de Control | Wards Colocados / Destruidos">
+                                <span class="fw-bold">31</span>
+                                <br>
+                                <span class="small-text-stats">
+                                    
+                                    
+                                        0.90 VSPM
+                                    
+                                </span>
+                                <br>
+                                <span class="small-text-stats">
+                                    0 | 16 / 2
+                                </span>
+                            </td>
+                            <td>
+                                <div class="summoner-spells">
+                                    
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/spell/SummonerFlash.png" alt="Spell 1">
+                                    
+                                    
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/spell/SummonerDot.png" alt="Spell 2">
+                                    
+                                </div>
+                            </td>
+                            <td>
+                                <div class="runes">
+                                    
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Domination/Electrocute/Electrocute.png" alt="Main Rune" class="keystone">
+                                    
+                                    
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/7203_Whimsy.png" alt="Sub Rune" class="sub-rune">
+                                    
+                                </div>
+                            </td>
+                            <td>
+                                <div class="items-layout">
+                                    <div class="items-grid">
+                                        
+                                            
+                                            
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3089.png" alt="Item">
+                                            
+                                        
+                                            
+                                            
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3118.png" alt="Item">
+                                            
+                                        
+                                            
+                                            
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3175.png" alt="Item">
+                                            
+                                        
+                                            
+                                            
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1058.png" alt="Item">
+                                            
+                                        
+                                            
+                                            
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3157.png" alt="Item">
+                                            
+                                        
+                                            
+                                            
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3145.png" alt="Item">
+                                            
+                                        
+                                    </div>
+                                    <div class="trinket-item">
+                                        
+                                        
+                                            <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Trinket">
+                                        
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                
+                                    <span>N/A</span>
+                                
+                            </td>
+
+                            <td>34m 30s</td>
+                            <td class="text-danger">
+                                Derrota
+                                <br>
+                                <span class="small-text-stats">11/06/2026 13:05</span>
+                            </td>
+                            <td>
+                                <a href="/jugador/partida/EUW1_7883521572"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="Abrir detalles en nueva pestaña">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        
+                        <tr id="match-1" class="hidden">
+                            <td colspan="15" class="p-0"> 
+                                <div class="details-content-wrapper">
+                                    <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
+                                        <div class="row g-2">
+                                            <!-- Equipo Azul (ID 100) -->
+                                            <div class="col-md-6">
+                                                <div class="p-2 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
+                                                    <h6 class="text-primary fw-bold mb-2">
+                                                        
+                                                        
+                                                        Derrota (Equipo Azul)
+                                                    </h6>
+                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                        <div class="text-start" style="width: 110px;">KDA</div>
+                                                        <div class="text-start" style="width: 80px;">Daño</div>
+                                                        <div class="text-start" style="width: 80px;">CS</div>
+                                                        <div class="text-start" style="width: 50px;">Visión</div>
+                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                    </div>
+                                                    <ul class="list-unstyled mb-0">
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Yasuo.png">
+                                                                    <span class="fw-bold text-truncate">Pex Zarate</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">10/11/6</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(44% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">49.727</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">283</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(8.2/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">27</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3033.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3153.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3006.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3026.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3031.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1043.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3363.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>                                                            
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Amumu.png">
+                                                                    <span class="fw-bold text-truncate">Erzek</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">8/11/15</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(64% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">30.025</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">174</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(5.0/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">45</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3047.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6653.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3068.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/8020.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3075.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3082.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>                                                            
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded bg-warning bg-opacity-25">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Ahri.png">
+                                                                    <span class="fw-bold text-truncate">Autopsy GRU</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">9/8/7</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(44% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">32.378</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">245</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(7.1/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">31</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3089.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3118.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3175.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1058.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3157.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3145.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>                                                            
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Caitlyn.png">
+                                                                    <span class="fw-bold text-truncate">XisCoria</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">7/6/8</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(42% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">26.908</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">208</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(6.0/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">28</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6676.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3031.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3036.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3094.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1086.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>                                                            
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Leona.png">
+                                                                    <span class="fw-bold text-truncate">AlanFord</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">2/8/14</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(44% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">13.832</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">31</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(0.9/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">76</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3111.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3190.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3877.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3076.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3110.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1057.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3364.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>                                                            
+                                                            
+                                                        
+                                                            
+                                                        
+                                                            
+                                                        
+                                                            
+                                                        
+                                                            
+                                                        
+                                                            
+                                                        
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <!-- Equipo Rojo (ID 200) -->
+                                            <div class="col-md-6">
+                                                <div class="p-2 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
+                                                    <h6 class="text-danger fw-bold mb-2">
+                                                        
+                                                        
+                                                        Victoria (Equipo Rojo)
+                                                    </h6>
+                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
+                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
+                                                        <div class="text-start" style="width: 110px;">KDA</div>
+                                                        <div class="text-start" style="width: 80px;">Daño</div>
+                                                        <div class="text-start" style="width: 80px;">CS</div>
+                                                        <div class="text-start" style="width: 50px;">Visión</div>
+                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
+                                                    </div>
+                                                    <ul class="list-unstyled mb-0">
+                                                        
+                                                            
+                                                        
+                                                            
+                                                        
+                                                            
+                                                        
+                                                            
+                                                        
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Vladimir.png">
+                                                                    <span class="fw-bold text-truncate">Thetruemagician</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">14/9/6</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(45% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">52.129</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">322</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(9.3/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">27</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3157.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3135.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4629.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3158.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4632.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3089.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Hecarim.png">
+                                                                    <span class="fw-bold text-truncate">SotE Nemet</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">8/5/10</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(41% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">24.817</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">323</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(9.4/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">18</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3158.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3053.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3066.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3161.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3071.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6333.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3364.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Galio.png">
+                                                                    <span class="fw-bold text-truncate">Falck</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">14/8/18</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(73% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">44.231</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">203</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(5.9/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">33</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3157.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3152.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4633.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3041.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3173.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3110.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Jinx.png">
+                                                                    <span class="fw-bold text-truncate">Affenjunge420</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">7/7/7</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(32% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">27.043</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">262</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(7.6/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">33</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3140.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3036.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3046.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3031.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/2523.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3363.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>
+                                                            
+                                                        
+                                                            
+                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
+                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
+                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Rakan.png">
+                                                                    <span class="fw-bold text-truncate">CuniNoJutsu</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 110px;">
+                                                                    <span class="fw-bold font-monospace">1/7/20</span>
+                                                                    <br>
+                                                                    <span class="small-text-stats">(48% KP)</span>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">6.943</span>
+                                                                </div>
+                                                                <div class="text-start" style="width: 80px;">
+                                                                    <span class="fw-bold">32</span>
+                                                                    <br>
+                                                                    
+                                                                    
+                                                                    <span class="small-text-stats">(0.9/m)</span>
+                                                                    
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
+                                                                    <span class="fw-bold">89</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3869.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/2065.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3190.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3121.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1028.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3009.png" alt="Item">
+                                                                        
+                                                                    
+                                                                        
+                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3364.png" alt="Item">
+                                                                        
+                                                                    
+                                                                </div>
+                                                            </li>
+                                                            
+                                                        
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        
+                        
+                        <tr 
                             data-queue-id="440" 
                             data-champion-name="Sejuani"
                             class="match-row-loss "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-1')"
+                            onclick="toggleMatchDetails('match-2')"
                         >
                             <td>Clasificatoria Flexible</td>
                             <td>
@@ -1304,7 +2156,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-1" class="hidden">
+                        <tr id="match-2" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -1974,7 +2826,7 @@
                             data-champion-name="Ornn"
                             class="match-row-loss "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-2')"
+                            onclick="toggleMatchDetails('match-3')"
                         >
                             <td>Clasificatoria Flexible</td>
                             <td>
@@ -2146,7 +2998,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-2" class="hidden">
+                        <tr id="match-3" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -2816,7 +3668,7 @@
                             data-champion-name="Vex"
                             class="match-row-loss "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-3')"
+                            onclick="toggleMatchDetails('match-4')"
                         >
                             <td>Clasificatoria Flexible</td>
                             <td>
@@ -2988,7 +3840,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-3" class="hidden">
+                        <tr id="match-4" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -3658,7 +4510,7 @@
                             data-champion-name="Sejuani"
                             class="match-row-win highlight-performance"
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-4')"
+                            onclick="toggleMatchDetails('match-5')"
                         >
                             <td>Clasificatoria Flexible</td>
                             <td>
@@ -3833,7 +4685,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-4" class="hidden">
+                        <tr id="match-5" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -4503,7 +5355,7 @@
                             data-champion-name="Sejuani"
                             class="match-row-loss highlight-performance"
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-5')"
+                            onclick="toggleMatchDetails('match-6')"
                         >
                             <td>Clasificatoria Flexible</td>
                             <td>
@@ -4675,7 +5527,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-5" class="hidden">
+                        <tr id="match-6" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -5345,7 +6197,7 @@
                             data-champion-name="Naafiri"
                             class="match-row-loss "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-6')"
+                            onclick="toggleMatchDetails('match-7')"
                         >
                             <td>Clasificatoria Flexible</td>
                             <td>
@@ -5520,7 +6372,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-6" class="hidden">
+                        <tr id="match-7" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -6190,7 +7042,7 @@
                             data-champion-name="Vex"
                             class="match-row-win "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-7')"
+                            onclick="toggleMatchDetails('match-8')"
                         >
                             <td>Clasificatoria Flexible</td>
                             <td>
@@ -6362,7 +7214,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-7" class="hidden">
+                        <tr id="match-8" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -7032,7 +7884,7 @@
                             data-champion-name="Naafiri"
                             class="match-row-loss "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-8')"
+                            onclick="toggleMatchDetails('match-9')"
                         >
                             <td>Clasificatoria Solo/Duo</td>
                             <td>
@@ -7207,7 +8059,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-8" class="hidden">
+                        <tr id="match-9" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -7877,7 +8729,7 @@
                             data-champion-name="XinZhao"
                             class="match-row-loss "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-9')"
+                            onclick="toggleMatchDetails('match-10')"
                         >
                             <td>Clasificatoria Solo/Duo</td>
                             <td>
@@ -8049,7 +8901,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-9" class="hidden">
+                        <tr id="match-10" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -8719,7 +9571,7 @@
                             data-champion-name="MonkeyKing"
                             class="match-row-loss "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-10')"
+                            onclick="toggleMatchDetails('match-11')"
                         >
                             <td>Clasificatoria Solo/Duo</td>
                             <td>
@@ -8894,7 +9746,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-10" class="hidden">
+                        <tr id="match-11" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -9564,7 +10416,7 @@
                             data-champion-name="MonkeyKing"
                             class="match-row-win highlight-performance"
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-11')"
+                            onclick="toggleMatchDetails('match-12')"
                         >
                             <td>Clasificatoria Solo/Duo</td>
                             <td>
@@ -9739,7 +10591,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-11" class="hidden">
+                        <tr id="match-12" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -10409,7 +11261,7 @@
                             data-champion-name="MonkeyKing"
                             class="match-row-loss highlight-performance"
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-12')"
+                            onclick="toggleMatchDetails('match-13')"
                         >
                             <td>Clasificatoria Solo/Duo</td>
                             <td>
@@ -10584,7 +11436,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-12" class="hidden">
+                        <tr id="match-13" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -11254,7 +12106,7 @@
                             data-champion-name="Shyvana"
                             class="match-row-win "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-13')"
+                            onclick="toggleMatchDetails('match-14')"
                         >
                             <td>Clasificatoria Solo/Duo</td>
                             <td>
@@ -11429,7 +12281,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-13" class="hidden">
+                        <tr id="match-14" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -12099,7 +12951,7 @@
                             data-champion-name="Elise"
                             class="match-row-win "
                             style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-14')"
+                            onclick="toggleMatchDetails('match-15')"
                         >
                             <td>Clasificatoria Solo/Duo</td>
                             <td>
@@ -12271,7 +13123,7 @@
                             </td>
                         </tr>
                         
-                        <tr id="match-14" class="hidden">
+                        <tr id="match-15" class="hidden">
                             <td colspan="15" class="p-0"> 
                                 <div class="details-content-wrapper">
                                     <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
@@ -12915,851 +13767,6 @@
                                                                     
                                                                         
                                                                             <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3047.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3364.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>
-                                                            
-                                                        
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        
-                        
-                        
-                        <tr 
-                            data-queue-id="420" 
-                            data-champion-name="Nocturne"
-                            class="match-row-loss "
-                            style="cursor: pointer;"
-                            onclick="toggleMatchDetails('match-15')"
-                        >
-                            <td>Clasificatoria Solo/Duo</td>
-                            <td>
-                                <div class="champion-level-container">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Nocturne.png" alt="Nocturne">
-                                    <span class="champion-level">17</span>
-                                </div>
-                                <div>Nocturne</div>
-                            </td>
-                            <td>
-                                <span class="kda-text">9/7/13</span>
-                                
-                                
-                                    
-                                    <span class="multikill-badge double-kill">DOUBLE</span>
-                                
-                                <br>
-                                <span class="small-text-stats">KDA: 3.14</span>
-                                <br>
-                                <span class="small-text-stats fw-bold" title="Participación en Asesinatos">73% KP</span>
-                            </td>
-                            <td>
-                                <div>24.014</div>
-                                <div>
-                                    <span class="small-text-stats">
-                                        
-                                        
-                                            675,82 DPM
-                                        
-                                    </span>
-                                </div>
-                                
-                                
-                                    
-                                    
-                                    
-                                    <div class="damage-bar mt-1" title="Físico: 18.086 | Mágico: 1.624 | Verdadero: 0">
-                                        <div class="damage-physical" style="width: 91.7605276509386%;"></div>
-                                        <div class="damage-magic" style="width: 8.23947234906139%;"></div>
-                                        <div class="damage-true" style="width: 0.0%;"></div>
-                                    </div>
-                                
-                            </td>
-                            <td title="Daño a Objetivos / Torretas / Inhibidores / Objetivos Robados">
-                                <div>25.056</div>
-                                <span class="small-text-stats">
-                                    <i class="fas fa-chess-rook"></i> 1
-                                </span>
-                                <span class="small-text-stats">
-                                    <i class="fas fa-monument"></i> 0
-                                </span>
-                                
-                            </td>
-                            <td>
-                                15.686
-                                <br>
-                                <span class="small-text-stats">
-                                    
-                                    
-                                        441,44 GPM
-                                    
-                                </span>
-                            </td>
-                            <td>
-                                223
-                                <br>
-                                <span class="small-text-stats">
-                                    
-                                    
-                                        6.3 CS/min
-                                    
-                                </span>
-                            </td>
-                            <td title="Puntuación de Visión (por minuto) | Wards de Control | Wards Colocados / Destruidos">
-                                <span class="fw-bold">30</span>
-                                <br>
-                                <span class="small-text-stats">
-                                    
-                                    
-                                        0.84 VSPM
-                                    
-                                </span>
-                                <br>
-                                <span class="small-text-stats">
-                                    0 | 12 / 1
-                                </span>
-                            </td>
-                            <td>
-                                <div class="summoner-spells">
-                                    
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/spell/SummonerFlash.png" alt="Spell 1">
-                                    
-                                    
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/spell/SummonerSmite.png" alt="Spell 2">
-                                    
-                                </div>
-                            </td>
-                            <td>
-                                <div class="runes">
-                                    
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Domination/HailOfBlades/HailOfBlades.png" alt="Main Rune" class="keystone">
-                                    
-                                    
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/7201_Precision.png" alt="Sub Rune" class="sub-rune">
-                                    
-                                </div>
-                            </td>
-                            <td>
-                                <div class="items-layout">
-                                    <div class="items-grid">
-                                        
-                                            
-                                            
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3071.png" alt="Item">
-                                            
-                                        
-                                            
-                                            
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3073.png" alt="Item">
-                                            
-                                        
-                                            
-                                            
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3111.png" alt="Item">
-                                            
-                                        
-                                            
-                                            
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6333.png" alt="Item">
-                                            
-                                        
-                                            
-                                            
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6631.png" alt="Item">
-                                            
-                                        
-                                            
-                                            
-                                                <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/2019.png" alt="Item">
-                                            
-                                        
-                                    </div>
-                                    <div class="trinket-item">
-                                        
-                                        
-                                            <img src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Trinket">
-                                        
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                
-                                    
-                                        <span class="lp-loss">-13 LP</span>
-                                    
-                                
-                            </td>
-
-                            <td>35m 32s</td>
-                            <td class="text-danger">
-                                Derrota
-                                <br>
-                                <span class="small-text-stats">27/05/2026 18:08</span>
-                            </td>
-                            <td>
-                                <a href="/jugador/partida/EUW1_7867610299"
-                                   target="_blank"
-                                   class="btn btn-sm btn-outline-primary" 
-                                   title="Abrir detalles en nueva pestaña">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        
-                        <tr id="match-15" class="hidden">
-                            <td colspan="15" class="p-0"> 
-                                <div class="details-content-wrapper">
-                                    <div class="p-3" style="background-color: rgba(0,0,0,0.05);">
-                                        <div class="row g-2">
-                                            <!-- Equipo Azul (ID 100) -->
-                                            <div class="col-md-6">
-                                                <div class="p-2 rounded" style="background-color: rgba(0, 123, 255, 0.1);">
-                                                    <h6 class="text-primary fw-bold mb-2">
-                                                        
-                                                        
-                                                        Victoria (Equipo Azul)
-                                                    </h6>
-                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
-                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
-                                                        <div class="text-start" style="width: 110px;">KDA</div>
-                                                        <div class="text-start" style="width: 80px;">Daño</div>
-                                                        <div class="text-start" style="width: 80px;">CS</div>
-                                                        <div class="text-start" style="width: 50px;">Visión</div>
-                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
-                                                    </div>
-                                                    <ul class="list-unstyled mb-0">
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Garen.png">
-                                                                    <span class="fw-bold text-truncate">iamhistop</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">10/4/4</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(33% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">32.619</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">238</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(6.7/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">40</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6631.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3071.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3046.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3031.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1037.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3006.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>                                                            
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Naafiri.png">
-                                                                    <span class="fw-bold text-truncate">EL 3ADAB</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">16/8/11</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(64% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">41.523</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">258</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(7.3/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">26</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6696.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3158.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6694.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3814.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6333.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6697.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3364.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>                                                            
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Lissandra.png">
-                                                                    <span class="fw-bold text-truncate">opareala</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">9/7/14</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(55% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">36.493</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">201</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(5.7/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">30</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3175.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3118.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3157.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4645.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1058.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1058.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>                                                            
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/MissFortune.png">
-                                                                    <span class="fw-bold text-truncate">FannySushi</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">3/4/13</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(38% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">21.338</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">221</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(6.2/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">22</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1055.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6676.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3072.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3033.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/2021.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3134.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>                                                            
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/JarvanIV.png">
-                                                                    <span class="fw-bold text-truncate">KFÇ</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">4/7/25</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(69% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">20.445</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">51</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(1.4/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">116</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3179.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3009.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3877.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3742.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3071.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3364.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>                                                            
-                                                            
-                                                        
-                                                            
-                                                        
-                                                            
-                                                        
-                                                            
-                                                        
-                                                            
-                                                        
-                                                            
-                                                        
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                            <!-- Equipo Rojo (ID 200) -->
-                                            <div class="col-md-6">
-                                                <div class="p-2 rounded" style="background-color: rgba(220, 53, 69, 0.1);">
-                                                    <h6 class="text-danger fw-bold mb-2">
-                                                        
-                                                        
-                                                        Derrota (Equipo Rojo)
-                                                    </h6>
-                                                    <div class="d-flex justify-content-between small fw-bold text-muted p-1 border-bottom mb-1 d-none d-md-flex">
-                                                        <div style="flex: 1 1 150px; min-width: 150px;">Jugador</div>
-                                                        <div class="text-start" style="width: 110px;">KDA</div>
-                                                        <div class="text-start" style="width: 80px;">Daño</div>
-                                                        <div class="text-start" style="width: 80px;">CS</div>
-                                                        <div class="text-start" style="width: 50px;">Visión</div>
-                                                        <div class="text-center" style="width: 180px; padding-left: 0.5rem;">Objetos</div>
-                                                    </div>
-                                                    <ul class="list-unstyled mb-0">
-                                                        
-                                                            
-                                                        
-                                                            
-                                                        
-                                                            
-                                                        
-                                                            
-                                                        
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Malphite.png">
-                                                                    <span class="fw-bold text-truncate">K2 Simono</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">3/7/13</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(53% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">35.386</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">242</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(6.8/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">23</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3076.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3068.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3047.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3110.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/2504.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1011.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded bg-warning bg-opacity-25">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Nocturne.png">
-                                                                    <span class="fw-bold text-truncate">Autopsy GRU</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">9/7/13</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(73% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">24.014</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">223</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(6.3/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">30</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3071.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3073.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3111.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6333.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6631.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/2019.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Aurora.png">
-                                                                    <span class="fw-bold text-truncate">LinkSock</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">8/10/9</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(57% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">40.630</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">253</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(7.1/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">19</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3152.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3157.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4645.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4646.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3175.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <div style="width:22px; height:22px; background-color: rgba(0,0,0,0.2); border-radius: 3px;"></div>
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3364.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Jhin.png">
-                                                                    <span class="fw-bold text-truncate">ShinyArise</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">4/9/6</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(33% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">12.578</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">233</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(6.6/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">23</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1055.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6697.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6676.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3031.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6670.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1036.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3340.png" alt="Item">
-                                                                        
-                                                                    
-                                                                </div>
-                                                            </li>
-                                                            
-                                                        
-                                                            
-                                                            <li class="d-flex align-items-center justify-content-between small p-1 rounded ">
-                                                                <div class="d-flex align-items-center text-truncate" style="flex: 1 1 150px; min-width: 150px;">
-                                                                    <img class="rounded-circle me-2" style="width:24px; height:24px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/champion/Ashe.png">
-                                                                    <span class="fw-bold text-truncate">2912xmen</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 110px;">
-                                                                    <span class="fw-bold font-monospace">6/9/13</span>
-                                                                    <br>
-                                                                    <span class="small-text-stats">(63% KP)</span>
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">20.554</span>
-                                                                </div>
-                                                                <div class="text-start" style="width: 80px;">
-                                                                    <span class="fw-bold">55</span>
-                                                                    <br>
-                                                                    
-                                                                    
-                                                                    <span class="small-text-stats">(1.5/m)</span>
-                                                                    
-                                                                </div>
-                                                                <div class="d-flex flex-column justify-content-center text-start" style="width: 50px;">
-                                                                    <span class="fw-bold">106</span>
-                                                                </div>
-                                                                <div class="d-flex align-items-center justify-content-center ms-2 gap-1" style="width: 180px;">
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3158.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3871.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3118.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4005.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6696.png" alt="Item">
-                                                                        
-                                                                    
-                                                                        
-                                                                            <img style="width:22px; height:22px; border-radius: 3px;" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3123.png" alt="Item">
                                                                         
                                                                     
                                                                         
