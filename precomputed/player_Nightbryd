@@ -817,8 +817,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="">
-                                0 LP
+                            <span class="lp-loss">
+                                -19 LP
                             </span>
                             <span class="small-text-stats">
                                 (0V-1D)
@@ -863,10 +863,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.12.1/img/champion/Zac.png" alt="Zac">
                                         <div class="champion-stats-info">
                                             <h5>Zac</h5>
-                                            <p class="kda-text fw-bold">3.29 KDA</p>
-                                            <p class="small-text-stats">Promedio: 3.7 / 3.9 / 9.1</p>
-                                            <p class="fw-bold win-rate-bajo">44% Win Rate</p>
-                                            <p class="small-text-stats">(4V / 5D) - 9 partidas</p>
+                                            <p class="kda-text fw-bold">2.93 KDA</p>
+                                            <p class="small-text-stats">Promedio: 3.6 / 4.0 / 8.1</p>
+                                            <p class="fw-bold win-rate-bajo">43% Win Rate</p>
+                                            <p class="small-text-stats">(3V / 4D) - 7 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
@@ -1092,10 +1092,6 @@
                     
                     <option value="Nocturne" >Nocturne</option>
                     
-                    <option value="Nunu" >Nunu</option>
-                    
-                    <option value="Ornn" >Ornn</option>
-                    
                     <option value="Sejuani" >Sejuani</option>
                     
                     <option value="Shyvana" >Shyvana</option>
@@ -1119,7 +1115,7 @@
                 </select>
             </form>
             <div class="small text-muted mb-3">
-                106 partidas encontradas
+                96 partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -1302,7 +1298,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-19 LP</span>
+                                    
                                 
                             </td>
 
@@ -13797,7 +13795,7 @@
                         <a class="page-link" href="#">&laquo; Anterior</a>
                     </li>
                     <li class="page-item disabled">
-                        <span class="page-link">PÃ¡gina 1 de 8</span>
+                        <span class="page-link">PÃ¡gina 1 de 7</span>
                     </li>
                     <li class="page-item ">
                         <a class="page-link" href="/jugador/Nightbryd%23EUW?page=2&amp;queue=all&amp;champion=all">Siguiente &raquo;</a>
@@ -13821,7 +13819,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1918, "timestamp": 1771459223058}, {"elo": 1905, "timestamp": 1771801814904}, {"elo": 1932, "timestamp": 1771869619854}, {"elo": 1918, "timestamp": 1772047841597}, {"elo": 1944, "timestamp": 1772749942697}, {"elo": 1930, "timestamp": 1773250482339}, {"elo": 1912, "timestamp": 1775589367243}, {"elo": 1897, "timestamp": 1777490069982}, {"elo": 1922, "timestamp": 1777644007493}, {"elo": 1947, "timestamp": 1777731603640}, {"elo": 1972, "timestamp": 1777918140361}, {"elo": 1956, "timestamp": 1777921435236}, {"elo": 1981, "timestamp": 1778087430180}, {"elo": 1965, "timestamp": 1778089189360}, {"elo": 1989, "timestamp": 1778178962465}, {"elo": 1973, "timestamp": 1778188473135}, {"elo": 1973, "timestamp": 1778189786227}, {"elo": 1956, "timestamp": 1778843493039}, {"elo": 1939, "timestamp": 1779297241671}, {"elo": 1946, "timestamp": 1779903580948}, {"elo": 1946, "timestamp": 1779907095000}, {"elo": 1929, "timestamp": 1779909321748}, {"elo": 1911, "timestamp": 1779987703934}, {"elo": 1893, "timestamp": 1780090920981}, {"elo": 1860, "timestamp": 1780865416602}, {"elo": 1841, "timestamp": 1781196490504}, {"elo": 1862, "timestamp": 1781198499344}, {"elo": 1843, "timestamp": 1781200127259}, {"elo": 1864, "timestamp": 1781716145387}];
+            const eloHistory = [{"elo": 1918, "timestamp": 1771459223058}, {"elo": 1905, "timestamp": 1771801814904}, {"elo": 1932, "timestamp": 1771869619854}, {"elo": 1918, "timestamp": 1772047841597}, {"elo": 1944, "timestamp": 1772749942697}, {"elo": 1930, "timestamp": 1773250482339}, {"elo": 1912, "timestamp": 1775589367243}, {"elo": 1897, "timestamp": 1777490069982}, {"elo": 1922, "timestamp": 1777644007493}, {"elo": 1947, "timestamp": 1777731603640}, {"elo": 1972, "timestamp": 1777918140361}, {"elo": 1956, "timestamp": 1777921435236}, {"elo": 1981, "timestamp": 1778087430180}, {"elo": 1965, "timestamp": 1778089189360}, {"elo": 1989, "timestamp": 1778178962465}, {"elo": 1973, "timestamp": 1778188473135}, {"elo": 1973, "timestamp": 1778189786227}, {"elo": 1956, "timestamp": 1778843493039}, {"elo": 1939, "timestamp": 1779297241671}, {"elo": 1946, "timestamp": 1779903580948}, {"elo": 1946, "timestamp": 1779907095000}, {"elo": 1929, "timestamp": 1779909321748}, {"elo": 1911, "timestamp": 1779987703934}, {"elo": 1893, "timestamp": 1780090920981}, {"elo": 1860, "timestamp": 1780865416602}, {"elo": 1841, "timestamp": 1781196490504}, {"elo": 1862, "timestamp": 1781198499344}, {"elo": 1843, "timestamp": 1781200127259}, {"elo": 1864, "timestamp": 1781716145387}, {"elo": 1845, "timestamp": 1782039615487}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
@@ -14381,7 +14379,7 @@
 
         const paginationLabel = document.querySelector('#pagination-controls span.page-link');
         if (paginationLabel) {
-            paginationLabel.textContent = 'Pagina 1 de 8';
+            paginationLabel.textContent = 'Pagina 1 de 7';
         }
 
         return;
