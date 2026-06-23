@@ -856,10 +856,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.12.1/img/champion/Zac.png" alt="Zac">
                                         <div class="champion-stats-info">
                                             <h5>Zac</h5>
-                                            <p class="kda-text fw-bold">2.93 KDA</p>
-                                            <p class="small-text-stats">Promedio: 3.6 / 4.0 / 8.1</p>
-                                            <p class="fw-bold win-rate-bajo">43% Win Rate</p>
-                                            <p class="small-text-stats">(3V / 4D) - 7 partidas</p>
+                                            <p class="kda-text fw-bold">3.29 KDA</p>
+                                            <p class="small-text-stats">Promedio: 3.7 / 3.9 / 9.1</p>
+                                            <p class="fw-bold win-rate-bajo">44% Win Rate</p>
+                                            <p class="small-text-stats">(4V / 5D) - 9 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
@@ -1085,6 +1085,10 @@
                     
                     <option value="Nocturne" >Nocturne</option>
                     
+                    <option value="Nunu" >Nunu</option>
+                    
+                    <option value="Ornn" >Ornn</option>
+                    
                     <option value="Sejuani" >Sejuani</option>
                     
                     <option value="Shyvana" >Shyvana</option>
@@ -1108,7 +1112,7 @@
                 </select>
             </form>
             <div class="small text-muted mb-3">
-                97 partidas encontradas
+                107 partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -13787,7 +13791,7 @@
                         <a class="page-link" href="#">&laquo; Anterior</a>
                     </li>
                     <li class="page-item disabled">
-                        <span class="page-link">PÃ¡gina 1 de 7</span>
+                        <span class="page-link">PÃ¡gina 1 de 8</span>
                     </li>
                     <li class="page-item ">
                         <a class="page-link" href="/jugador/Nightbryd%23EUW?page=2&amp;queue=all&amp;champion=all">Siguiente &raquo;</a>
@@ -14371,7 +14375,7 @@
 
         const paginationLabel = document.querySelector('#pagination-controls span.page-link');
         if (paginationLabel) {
-            paginationLabel.textContent = 'Pagina 1 de 7';
+            paginationLabel.textContent = 'Pagina 1 de 8';
         }
 
         return;
