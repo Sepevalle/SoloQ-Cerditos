@@ -786,19 +786,20 @@
                     
                     <img src="" alt="PLATINUM" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>PLATINUM III (93 LPs)</h4>
-                        <p>Wins: 99 | Losses: 98 | Total: 197</p>
+                        <h4>PLATINUM III (73 LPs)</h4>
+                        <p>Wins: 99 | Losses: 99 | Total: 198</p>
                         
                         
                         <p class="win-rate-alto">
-                            Win Rate: 50.25%
+                            Win Rate: 50.00%
                         </p>
                         <p>
                             Peak Elo:
                             
                             
                             
-                                <span class="peak-elo">PLATINUM III (93 LPs)</span>
+                                PLATINUM III (93 LPs)
+                                <span class="small-text-stats">(20 LPs por debajo)</span>
                             
                         </p>
                         <p>
@@ -817,7 +818,7 @@
                             LP en 24h: 
                             
                             <span class="lp-gain">
-                                +63 LP
+                                +83 LP
                             </span>
                             <span class="small-text-stats">
                                 (5V-2D)
@@ -1301,7 +1302,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+20 LP</span>
+                                    
                                 
                             </td>
 
@@ -13809,7 +13812,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1476, "timestamp": 1771540069084}, {"elo": 1476, "timestamp": 1771758701940}, {"elo": 1523, "timestamp": 1771760785117}, {"elo": 1600, "timestamp": 1773050506570}, {"elo": 1621, "timestamp": 1773052689052}, {"elo": 1642, "timestamp": 1773054971852}, {"elo": 1664, "timestamp": 1773068076906}, {"elo": 1686, "timestamp": 1773070529145}, {"elo": 1668, "timestamp": 1773136819287}, {"elo": 1650, "timestamp": 1773141348844}, {"elo": 1671, "timestamp": 1773157258119}, {"elo": 1652, "timestamp": 1773158867813}, {"elo": 1677, "timestamp": 1776073255720}, {"elo": 1657, "timestamp": 1776163870139}, {"elo": 1677, "timestamp": 1776189799763}, {"elo": 1677, "timestamp": 1776260587386}, {"elo": 1656, "timestamp": 1776262594789}, {"elo": 1675, "timestamp": 1776289662244}, {"elo": 1694, "timestamp": 1776291472120}, {"elo": 1713, "timestamp": 1776465786143}, {"elo": 1737, "timestamp": 1778679529460}, {"elo": 1718, "timestamp": 1779317062479}, {"elo": 1738, "timestamp": 1780179018662}, {"elo": 1759, "timestamp": 1780223151888}, {"elo": 1670, "timestamp": 1782121670586}, {"elo": 1650, "timestamp": 1782124329440}, {"elo": 1670, "timestamp": 1782139705527}, {"elo": 1690, "timestamp": 1782163068054}, {"elo": 1710, "timestamp": 1782165492233}, {"elo": 1730, "timestamp": 1782205580686}, {"elo": 1751, "timestamp": 1782208497347}, {"elo": 1793, "timestamp": 1782227483351}, {"elo": 1773, "timestamp": 1782229480151}, {"elo": 1793, "timestamp": 1782251191870}, {"elo": 1773, "timestamp": 1782253175977}];
+            const eloHistory = [{"elo": 1476, "timestamp": 1771540069084}, {"elo": 1476, "timestamp": 1771758701940}, {"elo": 1523, "timestamp": 1771760785117}, {"elo": 1600, "timestamp": 1773050506570}, {"elo": 1621, "timestamp": 1773052689052}, {"elo": 1642, "timestamp": 1773054971852}, {"elo": 1664, "timestamp": 1773068076906}, {"elo": 1686, "timestamp": 1773070529145}, {"elo": 1668, "timestamp": 1773136819287}, {"elo": 1650, "timestamp": 1773141348844}, {"elo": 1671, "timestamp": 1773157258119}, {"elo": 1652, "timestamp": 1773158867813}, {"elo": 1677, "timestamp": 1776073255720}, {"elo": 1657, "timestamp": 1776163870139}, {"elo": 1677, "timestamp": 1776189799763}, {"elo": 1677, "timestamp": 1776260587386}, {"elo": 1656, "timestamp": 1776262594789}, {"elo": 1675, "timestamp": 1776289662244}, {"elo": 1694, "timestamp": 1776291472120}, {"elo": 1713, "timestamp": 1776465786143}, {"elo": 1737, "timestamp": 1778679529460}, {"elo": 1718, "timestamp": 1779317062479}, {"elo": 1738, "timestamp": 1780179018662}, {"elo": 1759, "timestamp": 1780223151888}, {"elo": 1670, "timestamp": 1782121670586}, {"elo": 1650, "timestamp": 1782124329440}, {"elo": 1670, "timestamp": 1782139705527}, {"elo": 1690, "timestamp": 1782163068054}, {"elo": 1710, "timestamp": 1782165492233}, {"elo": 1730, "timestamp": 1782205580686}, {"elo": 1751, "timestamp": 1782208497347}, {"elo": 1793, "timestamp": 1782227483351}, {"elo": 1773, "timestamp": 1782229480151}, {"elo": 1793, "timestamp": 1782251191870}, {"elo": 1773, "timestamp": 1782253175977}, {"elo": 1793, "timestamp": 1782255373780}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
