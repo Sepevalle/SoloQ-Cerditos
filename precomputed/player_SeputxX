@@ -784,14 +784,14 @@
                 </div>
                 <div class="card-body">
                     
-                    <img src="" alt="PLATINUM" class="elo-image-lg">
+                    <img src="" alt="EMERALD" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>PLATINUM I (95 LPs)</h4>
-                        <p>Wins: 160 | Losses: 162 | Total: 322</p>
+                        <h4>EMERALD IV (15 LPs)</h4>
+                        <p>Wins: 161 | Losses: 162 | Total: 323</p>
                         
                         
                         <p class="win-rate-bajo">
-                            Win Rate: 49.69%
+                            Win Rate: 49.85%
                         </p>
                         <p>
                             Peak Elo:
@@ -799,7 +799,7 @@
                             
                             
                                 EMERALD III (95 LPs)
-                                <span class="small-text-stats">(200 LPs por debajo)</span>
+                                <span class="small-text-stats">(180 LPs por debajo)</span>
                             
                         </p>
                         <p>
@@ -818,10 +818,10 @@
                             LP en 24h: 
                             
                             <span class="lp-gain">
-                                +34 LP
+                                +75 LP
                             </span>
                             <span class="small-text-stats">
-                                (6V-2D)
+                                (6V-1D)
                             </span>
                         </p>
                         
@@ -1454,7 +1454,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+20 LP</span>
+                                    
                                 
                             </td>
 
@@ -13980,7 +13982,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1907, "timestamp": 1782206836669}, {"elo": 1886, "timestamp": 1782240713004}, {"elo": 1924, "timestamp": 1782292810327}, {"elo": 1943, "timestamp": 1782295113061}, {"elo": 1922, "timestamp": 1782298480033}, {"elo": 1901, "timestamp": 1782300626430}, {"elo": 1920, "timestamp": 1782322391474}, {"elo": 1920, "timestamp": 1782324481405}, {"elo": 1918, "timestamp": 1782326341877}, {"elo": 1937, "timestamp": 1782380310296}, {"elo": 1956, "timestamp": 1782381741646}, {"elo": 1975, "timestamp": 1782384006460}];
+            const eloHistory = [{"elo": 1907, "timestamp": 1782206836669}, {"elo": 1886, "timestamp": 1782240713004}, {"elo": 1924, "timestamp": 1782292810327}, {"elo": 1943, "timestamp": 1782295113061}, {"elo": 1922, "timestamp": 1782298480033}, {"elo": 1901, "timestamp": 1782300626430}, {"elo": 1920, "timestamp": 1782322391474}, {"elo": 1920, "timestamp": 1782324481405}, {"elo": 1918, "timestamp": 1782326341877}, {"elo": 1937, "timestamp": 1782380310296}, {"elo": 1956, "timestamp": 1782381741646}, {"elo": 1975, "timestamp": 1782384006460}, {"elo": 1995, "timestamp": 1782386302355}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
