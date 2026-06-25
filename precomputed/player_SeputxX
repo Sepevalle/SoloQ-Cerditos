@@ -786,12 +786,12 @@
                     
                     <img src="" alt="PLATINUM" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>PLATINUM I (56 LPs)</h4>
-                        <p>Wins: 158 | Losses: 162 | Total: 320</p>
+                        <h4>PLATINUM I (75 LPs)</h4>
+                        <p>Wins: 159 | Losses: 162 | Total: 321</p>
                         
                         
                         <p class="win-rate-bajo">
-                            Win Rate: 49.38%
+                            Win Rate: 49.53%
                         </p>
                         <p>
                             Peak Elo:
@@ -799,7 +799,7 @@
                             
                             
                                 EMERALD III (95 LPs)
-                                <span class="small-text-stats">(239 LPs por debajo)</span>
+                                <span class="small-text-stats">(220 LPs por debajo)</span>
                             
                         </p>
                         <p>
@@ -817,11 +817,11 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="lp-loss">
-                                -25 LP
+                            <span class="lp-gain">
+                                +15 LP
                             </span>
                             <span class="small-text-stats">
-                                (4V-3D)
+                                (4V-2D)
                             </span>
                         </p>
                         
@@ -1454,7 +1454,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+19 LP</span>
+                                    
                                 
                             </td>
 
@@ -13970,7 +13972,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1907, "timestamp": 1782206836669}, {"elo": 1886, "timestamp": 1782240713004}, {"elo": 1924, "timestamp": 1782292810327}, {"elo": 1943, "timestamp": 1782295113061}, {"elo": 1922, "timestamp": 1782298480033}, {"elo": 1901, "timestamp": 1782300626430}, {"elo": 1920, "timestamp": 1782322391474}, {"elo": 1920, "timestamp": 1782324481405}, {"elo": 1918, "timestamp": 1782326341877}, {"elo": 1937, "timestamp": 1782380310296}];
+            const eloHistory = [{"elo": 1907, "timestamp": 1782206836669}, {"elo": 1886, "timestamp": 1782240713004}, {"elo": 1924, "timestamp": 1782292810327}, {"elo": 1943, "timestamp": 1782295113061}, {"elo": 1922, "timestamp": 1782298480033}, {"elo": 1901, "timestamp": 1782300626430}, {"elo": 1920, "timestamp": 1782322391474}, {"elo": 1920, "timestamp": 1782324481405}, {"elo": 1918, "timestamp": 1782326341877}, {"elo": 1937, "timestamp": 1782380310296}, {"elo": 1956, "timestamp": 1782381741646}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
