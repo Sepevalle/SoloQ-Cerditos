@@ -786,12 +786,12 @@
                     
                     <img src="" alt="EMERALD" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>EMERALD IV (35 LPs)</h4>
-                        <p>Wins: 162 | Losses: 162 | Total: 324</p>
+                        <h4>EMERALD IV (75 LPs)</h4>
+                        <p>Wins: 163 | Losses: 162 | Total: 325</p>
                         
                         
                         <p class="win-rate-alto">
-                            Win Rate: 50.00%
+                            Win Rate: 50.15%
                         </p>
                         <p>
                             Peak Elo:
@@ -799,7 +799,7 @@
                             
                             
                                 EMERALD III (95 LPs)
-                                <span class="small-text-stats">(160 LPs por debajo)</span>
+                                <span class="small-text-stats">(120 LPs por debajo)</span>
                             
                         </p>
                         <p>
@@ -818,7 +818,7 @@
                             LP en 24h: 
                             
                             <span class="lp-gain">
-                                +97 LP
+                                +117 LP
                             </span>
                             <span class="small-text-stats">
                                 (6V-0D)
@@ -1452,7 +1452,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+20 LP</span>
+                                    
                                 
                             </td>
 
@@ -13978,7 +13980,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1907, "timestamp": 1782206836669}, {"elo": 1886, "timestamp": 1782240713004}, {"elo": 1924, "timestamp": 1782292810327}, {"elo": 1943, "timestamp": 1782295113061}, {"elo": 1922, "timestamp": 1782298480033}, {"elo": 1901, "timestamp": 1782300626430}, {"elo": 1920, "timestamp": 1782322391474}, {"elo": 1920, "timestamp": 1782324481405}, {"elo": 1918, "timestamp": 1782326341877}, {"elo": 1937, "timestamp": 1782380310296}, {"elo": 1956, "timestamp": 1782381741646}, {"elo": 1975, "timestamp": 1782384006460}, {"elo": 1995, "timestamp": 1782386302355}, {"elo": 2015, "timestamp": 1782388445702}];
+            const eloHistory = [{"elo": 1907, "timestamp": 1782206836669}, {"elo": 1886, "timestamp": 1782240713004}, {"elo": 1924, "timestamp": 1782292810327}, {"elo": 1943, "timestamp": 1782295113061}, {"elo": 1922, "timestamp": 1782298480033}, {"elo": 1901, "timestamp": 1782300626430}, {"elo": 1920, "timestamp": 1782322391474}, {"elo": 1920, "timestamp": 1782324481405}, {"elo": 1918, "timestamp": 1782326341877}, {"elo": 1937, "timestamp": 1782380310296}, {"elo": 1956, "timestamp": 1782381741646}, {"elo": 1975, "timestamp": 1782384006460}, {"elo": 1995, "timestamp": 1782386302355}, {"elo": 2015, "timestamp": 1782388445702}, {"elo": 2035, "timestamp": 1782461548999}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
