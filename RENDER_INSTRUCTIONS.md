@@ -14,6 +14,7 @@ Variables de entorno necesarias
 - `PRECOMPUTE_INTERVAL_SECONDS`: intervalo del worker interno de HTML. Opcional, default `600`.
 - `PRECOMPUTE_MAX_PLAYERS`: maximo de perfiles pregenerados por ciclo. Opcional, default `50`.
 - `PRECOMPUTE_INITIAL_DELAY_SECONDS`: espera inicial antes del primer ciclo. Opcional, default `30`.
+- `PRECOMPUTE_HISTORIAL_GLOBAL`: activa el precompute de historial global. Opcional, default `1`. El historial global esta limitado a 2 paginas.
 
 Servicio web
 - `Procfile` debe usar `gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4`.

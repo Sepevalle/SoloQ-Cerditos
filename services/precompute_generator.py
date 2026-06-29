@@ -79,7 +79,7 @@ def _render_historial(app) -> None:
 
 
 def _precompute_historial_enabled() -> bool:
-    return os.environ.get("PRECOMPUTE_HISTORIAL_GLOBAL", "0").lower() in ("1", "true", "yes", "si")
+    return os.environ.get("PRECOMPUTE_HISTORIAL_GLOBAL", "1").lower() in ("1", "true", "yes", "si")
 
 
 def _render_players(app, max_players: int) -> None:
