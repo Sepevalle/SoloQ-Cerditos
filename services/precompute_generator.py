@@ -51,10 +51,12 @@ def _render_historial(app) -> None:
 
     print("[precompute_generator] Generando historial_global pregenerado...")
     dataset = main_bp._build_historial_global_dataset()
-    all_matches = dataset.get("matches", [])
-    per_page = 15
+    per_page = main_bp.HISTORIAL_GLOBAL_PER_PAGE
+    max_pages = main_bp.HISTORIAL_GLOBAL_MAX_PAGES
+    max_matches = main_bp.HISTORIAL_GLOBAL_MAX_MATCHES
+    all_matches = dataset.get("matches", [])[:max_matches]
     total_matches = len(all_matches)
-    total_pages = max(1, (total_matches + per_page - 1) // per_page)
+    total_pages = min(max_pages, max(1, (total_matches + per_page - 1) // per_page))
 
     for page in range(1, total_pages + 1):
         start = (page - 1) * per_page
@@ -74,6 +76,10 @@ def _render_historial(app) -> None:
             generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
         write_all(f"historial_global_page_{page}", rendered)
+
+
+def _precompute_historial_enabled() -> bool:
+    return os.environ.get("PRECOMPUTE_HISTORIAL_GLOBAL", "0").lower() in ("1", "true", "yes", "si")
 
 
 def _render_players(app, max_players: int) -> None:
@@ -140,7 +146,10 @@ def generate_precomputed_html(app, max_players: int | None = None) -> bool:
     try:
         with app.test_request_context("/"):
             _render_index(app)
-            _render_historial(app)
+            if _precompute_historial_enabled():
+                _render_historial(app)
+            else:
+                print("[precompute_generator] Historial global omitido (PRECOMPUTE_HISTORIAL_GLOBAL=0)")
             _render_players(app, max_players=max_players)
         print(f"[precompute_generator] HTML pregenerado en {time.time() - started_at:.1f}s")
         return True

@@ -284,6 +284,11 @@ def detalle_partida_en_vivo(game_id):
     )
 
 
+HISTORIAL_GLOBAL_PER_PAGE = 15
+HISTORIAL_GLOBAL_MAX_PAGES = 2
+HISTORIAL_GLOBAL_MAX_MATCHES = HISTORIAL_GLOBAL_PER_PAGE * HISTORIAL_GLOBAL_MAX_PAGES
+
+
 def _build_historial_global_dataset():
     """Construye un snapshot ligero del historial global."""
 
@@ -301,7 +306,7 @@ def _build_historial_global_dataset():
             continue
 
         players_with_puuid += 1
-        historial = get_player_match_history(puuid, limit=-1)
+        historial = get_player_match_history(puuid, limit=HISTORIAL_GLOBAL_MAX_MATCHES)
         matches = historial.get('matches', [])
 
         for match in matches:
@@ -328,6 +333,7 @@ def _build_historial_global_dataset():
                 })
 
     all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+    all_matches = all_matches[:HISTORIAL_GLOBAL_MAX_MATCHES]
 
     dataset = {
         'matches': all_matches,
@@ -364,7 +370,7 @@ def historial_global():
         page = request.args.get('page', 1, type=int)
         if page is None or page < 1:
             page = 1
-        per_page = 15
+        per_page = HISTORIAL_GLOBAL_PER_PAGE
 
         cache_data = historial_global_cache.get()
         dataset = cache_data.get('data')
@@ -374,12 +380,15 @@ def historial_global():
             cache_data = historial_global_cache.get()
         elif historial_global_cache.is_stale() and not historial_global_cache.is_calculating():
             threading.Thread(target=_refresh_historial_global_in_background, daemon=True).start()
-        all_matches = dataset.get('matches', [])
+        all_matches = dataset.get('matches', [])[:HISTORIAL_GLOBAL_MAX_MATCHES]
         players_total = dataset.get('players_total', 0)
         players_with_puuid = dataset.get('players_with_puuid', 0)
 
         total_matches = len(all_matches)
-        total_pages = max(1, (total_matches + per_page - 1) // per_page)
+        total_pages = min(
+            HISTORIAL_GLOBAL_MAX_PAGES,
+            max(1, (total_matches + per_page - 1) // per_page)
+        )
         if page > total_pages:
             page = total_pages
         start = (page - 1) * per_page
@@ -392,7 +401,7 @@ def historial_global():
         # Intentar servir HTML precomputado por página (solo para primeras 5 páginas)
         pre_key = f"historial_global_page_{page}"
         try:
-            if page <= 5:
+            if page <= HISTORIAL_GLOBAL_MAX_PAGES:
                 # historial paginado: 120 minutes
                 content = pre_read_fresh(pre_key, max_age_seconds=7200)
                 if content:

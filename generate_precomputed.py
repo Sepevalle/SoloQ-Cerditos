@@ -60,12 +60,14 @@ def render_index(app):
 def render_historial(app, max_pages=5):
     print('[generate] Generando historial_global...')
     dataset = main_bp._build_historial_global_dataset()
-    all_matches = dataset.get('matches', [])
-    per_page = 15
+    per_page = main_bp.HISTORIAL_GLOBAL_PER_PAGE
+    max_allowed_pages = main_bp.HISTORIAL_GLOBAL_MAX_PAGES
+    max_matches = main_bp.HISTORIAL_GLOBAL_MAX_MATCHES
+    all_matches = dataset.get('matches', [])[:max_matches]
     total_matches = len(all_matches)
-    total_pages = max(1, (total_matches + per_page - 1) // per_page)
+    total_pages = min(max_allowed_pages, max(1, (total_matches + per_page - 1) // per_page))
 
-    pages_to_generate = min(total_pages, max_pages)
+    pages_to_generate = min(total_pages, max_pages, max_allowed_pages)
 
     for page in range(1, pages_to_generate + 1):
         start = (page - 1) * per_page
@@ -157,13 +159,17 @@ def render_players(app, max_players=50):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--players', type=int, default=50, help='Número máximo de perfiles a generar')
-    parser.add_argument('--max-historial-pages', type=int, default=5, help='Número máximo de páginas de historial_global a generar')
+    parser.add_argument('--max-historial-pages', type=int, default=2, help='Número máximo de páginas de historial_global a generar')
+    parser.add_argument('--include-historial', action='store_true', help='Generar tambien paginas de historial_global')
     args = parser.parse_args()
 
     app = create_app()
     with app.test_request_context("/"):
         render_index(app)
-        render_historial(app, max_pages=args.max_historial_pages)
+        if args.include_historial:
+            render_historial(app, max_pages=args.max_historial_pages)
+        else:
+            print('[generate] historial_global omitido (usa --include-historial para generarlo)')
         render_players(app, max_players=args.players)
 
     print('[generate] Trabajo completado')
