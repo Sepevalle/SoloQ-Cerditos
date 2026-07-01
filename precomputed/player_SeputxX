@@ -817,11 +817,11 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="lp-gain">
-                                +15 LP
+                            <span class="lp-loss">
+                                -21 LP
                             </span>
                             <span class="small-text-stats">
-                                (1V-1D)
+                                (0V-1D)
                             </span>
                         </p>
                         
@@ -863,10 +863,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.13.1/img/champion/Shaco.png" alt="Shaco">
                                         <div class="champion-stats-info">
                                             <h5>Shaco</h5>
-                                            <p class="kda-text fw-bold">2.29 KDA</p>
-                                            <p class="small-text-stats">Promedio: 7.5 / 8.3 / 11.5</p>
-                                            <p class="fw-bold win-rate-bajo">38% Win Rate</p>
-                                            <p class="small-text-stats">(6V / 10D) - 16 partidas</p>
+                                            <p class="kda-text fw-bold">2.33 KDA</p>
+                                            <p class="small-text-stats">Promedio: 7.7 / 8.2 / 11.4</p>
+                                            <p class="fw-bold win-rate-bajo">40% Win Rate</p>
+                                            <p class="small-text-stats">(6V / 9D) - 15 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
@@ -887,10 +887,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.13.1/img/champion/Irelia.png" alt="Irelia">
                                         <div class="champion-stats-info">
                                             <h5>Irelia</h5>
-                                            <p class="kda-text fw-bold">1.52 KDA</p>
-                                            <p class="small-text-stats">Promedio: 8.1 / 8.0 / 4.0</p>
-                                            <p class="fw-bold win-rate-alto">57% Win Rate</p>
-                                            <p class="small-text-stats">(8V / 6D) - 14 partidas</p>
+                                            <p class="kda-text fw-bold">1.50 KDA</p>
+                                            <p class="small-text-stats">Promedio: 7.8 / 7.5 / 3.5</p>
+                                            <p class="fw-bold win-rate-alto">54% Win Rate</p>
+                                            <p class="small-text-stats">(7V / 6D) - 13 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
@@ -943,7 +943,7 @@
                         </p>
                         <p>
                             Rachas (Max): 
-                            <span class="text-success fw-bold">10V</span> / <span class="text-danger fw-bold">7D</span>
+                            <span class="text-success fw-bold">10V</span> / <span class="text-danger fw-bold">6D</span>
                         </p>
                         <p>
                             Rachas (Actual): 
@@ -1200,8 +1200,6 @@
                     
                     <option value="Renata" >Renata</option>
                     
-                    <option value="Renekton" >Renekton</option>
-                    
                     <option value="Rengar" >Rengar</option>
                     
                     <option value="Samira" >Samira</option>
@@ -1240,8 +1238,6 @@
                     
                     <option value="Thresh" >Thresh</option>
                     
-                    <option value="Trundle" >Trundle</option>
-                    
                     <option value="Tryndamere" >Tryndamere</option>
                     
                     <option value="TwistedFate" >TwistedFate</option>
@@ -1279,7 +1275,7 @@
                 </select>
             </form>
             <div class="small text-muted mb-3">
-                516 partidas encontradas
+                498 partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -1462,7 +1458,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-21 LP</span>
+                                    
                                 
                             </td>
 
@@ -13937,7 +13935,7 @@
                         <a class="page-link" href="#">&laquo; Anterior</a>
                     </li>
                     <li class="page-item disabled">
-                        <span class="page-link">PÃ¡gina 1 de 35</span>
+                        <span class="page-link">PÃ¡gina 1 de 34</span>
                     </li>
                     <li class="page-item ">
                         <a class="page-link" href="/jugador/SeputxX%23EUW?page=2&amp;queue=all&amp;champion=all">Siguiente &raquo;</a>
@@ -13961,7 +13959,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1907, "timestamp": 1782206836669}, {"elo": 1886, "timestamp": 1782240713004}, {"elo": 1924, "timestamp": 1782292810327}, {"elo": 1943, "timestamp": 1782295113061}, {"elo": 1922, "timestamp": 1782298480033}, {"elo": 1901, "timestamp": 1782300626430}, {"elo": 1920, "timestamp": 1782322391474}, {"elo": 1920, "timestamp": 1782324481405}, {"elo": 1918, "timestamp": 1782326341877}, {"elo": 1937, "timestamp": 1782380310296}, {"elo": 1956, "timestamp": 1782381741646}, {"elo": 1975, "timestamp": 1782384006460}, {"elo": 1995, "timestamp": 1782386302355}, {"elo": 2015, "timestamp": 1782388445702}, {"elo": 2035, "timestamp": 1782461548999}, {"elo": 2075, "timestamp": 1782463492089}, {"elo": 2054, "timestamp": 1782465940013}, {"elo": 2033, "timestamp": 1782474412880}, {"elo": 2052, "timestamp": 1782493526678}, {"elo": 2071, "timestamp": 1782559796933}, {"elo": 2050, "timestamp": 1782561684810}, {"elo": 2069, "timestamp": 1782564049622}, {"elo": 2048, "timestamp": 1782566411362}, {"elo": 2027, "timestamp": 1782574757673}, {"elo": 2006, "timestamp": 1782576724059}, {"elo": 2025, "timestamp": 1782579098737}, {"elo": 2044, "timestamp": 1782581291689}, {"elo": 2023, "timestamp": 1782583280951}, {"elo": 2002, "timestamp": 1782586450302}, {"elo": 2000, "timestamp": 1782588558161}, {"elo": 1975, "timestamp": 1782642432822}, {"elo": 1994, "timestamp": 1782644168339}, {"elo": 1973, "timestamp": 1782646487163}, {"elo": 1963, "timestamp": 1782841199899}];
+            const eloHistory = [{"elo": 1907, "timestamp": 1782206836669}, {"elo": 1886, "timestamp": 1782240713004}, {"elo": 1924, "timestamp": 1782292810327}, {"elo": 1943, "timestamp": 1782295113061}, {"elo": 1922, "timestamp": 1782298480033}, {"elo": 1901, "timestamp": 1782300626430}, {"elo": 1920, "timestamp": 1782322391474}, {"elo": 1920, "timestamp": 1782324481405}, {"elo": 1918, "timestamp": 1782326341877}, {"elo": 1937, "timestamp": 1782380310296}, {"elo": 1956, "timestamp": 1782381741646}, {"elo": 1975, "timestamp": 1782384006460}, {"elo": 1995, "timestamp": 1782386302355}, {"elo": 2015, "timestamp": 1782388445702}, {"elo": 2035, "timestamp": 1782461548999}, {"elo": 2075, "timestamp": 1782463492089}, {"elo": 2054, "timestamp": 1782465940013}, {"elo": 2033, "timestamp": 1782474412880}, {"elo": 2052, "timestamp": 1782493526678}, {"elo": 2071, "timestamp": 1782559796933}, {"elo": 2050, "timestamp": 1782561684810}, {"elo": 2069, "timestamp": 1782564049622}, {"elo": 2048, "timestamp": 1782566411362}, {"elo": 2027, "timestamp": 1782574757673}, {"elo": 2006, "timestamp": 1782576724059}, {"elo": 2025, "timestamp": 1782579098737}, {"elo": 2044, "timestamp": 1782581291689}, {"elo": 2023, "timestamp": 1782583280951}, {"elo": 2002, "timestamp": 1782586450302}, {"elo": 2000, "timestamp": 1782588558161}, {"elo": 1975, "timestamp": 1782642432822}, {"elo": 1994, "timestamp": 1782644168339}, {"elo": 1973, "timestamp": 1782646487163}, {"elo": 1963, "timestamp": 1782841199899}, {"elo": 1942, "timestamp": 1782925209731}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
@@ -14521,7 +14519,7 @@
 
         const paginationLabel = document.querySelector('#pagination-controls span.page-link');
         if (paginationLabel) {
-            paginationLabel.textContent = 'Pagina 1 de 35';
+            paginationLabel.textContent = 'Pagina 1 de 34';
         }
 
         return;
