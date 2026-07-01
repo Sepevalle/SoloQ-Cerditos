@@ -817,8 +817,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="">
-                                0 LP
+                            <span class="lp-loss">
+                                -15 LP
                             </span>
                             <span class="small-text-stats">
                                 (0V-1D)
@@ -956,8 +956,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="">
-                                0 LP
+                            <span class="lp-gain">
+                                +15 LP
                             </span>
                             <span class="small-text-stats">
                                 (2V-0D)
@@ -1304,7 +1304,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+15 LP</span>
+                                    
                                 
                             </td>
 
@@ -2987,7 +2989,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-15 LP</span>
+                                    
                                 
                             </td>
 
@@ -13820,7 +13824,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1872, "timestamp": 1771500676753}, {"elo": 1862, "timestamp": 1771502885781}, {"elo": 1852, "timestamp": 1772017289014}, {"elo": 1841, "timestamp": 1772188896663}, {"elo": 1830, "timestamp": 1773851613701}, {"elo": 1818, "timestamp": 1773922700761}, {"elo": 1841, "timestamp": 1778669097584}, {"elo": 1869, "timestamp": 1778673304703}, {"elo": 1857, "timestamp": 1778769760799}, {"elo": 1885, "timestamp": 1778772563165}, {"elo": 1872, "timestamp": 1778774713002}, {"elo": 1859, "timestamp": 1778776435889}, {"elo": 1846, "timestamp": 1779898110295}, {"elo": 1872, "timestamp": 1779965935643}, {"elo": 1899, "timestamp": 1779968674595}, {"elo": 1885, "timestamp": 1780045016654}, {"elo": 1911, "timestamp": 1780047281846}, {"elo": 1897, "timestamp": 1780055300311}, {"elo": 1882, "timestamp": 1780328511959}, {"elo": 1867, "timestamp": 1780330429433}, {"elo": 1851, "timestamp": 1781175911204}, {"elo": 1875, "timestamp": 1781179295805}, {"elo": 1899, "timestamp": 1781523220316}, {"elo": 1924, "timestamp": 1781538109890}, {"elo": 1908, "timestamp": 1781546464633}, {"elo": 1892, "timestamp": 1781705942127}, {"elo": 1876, "timestamp": 1782129479526}, {"elo": 1899, "timestamp": 1782223259344}, {"elo": 1923, "timestamp": 1782303125388}, {"elo": 1906, "timestamp": 1782470463251}];
+            const eloHistory = [{"elo": 1872, "timestamp": 1771500676753}, {"elo": 1862, "timestamp": 1771502885781}, {"elo": 1852, "timestamp": 1772017289014}, {"elo": 1841, "timestamp": 1772188896663}, {"elo": 1830, "timestamp": 1773851613701}, {"elo": 1818, "timestamp": 1773922700761}, {"elo": 1841, "timestamp": 1778669097584}, {"elo": 1869, "timestamp": 1778673304703}, {"elo": 1857, "timestamp": 1778769760799}, {"elo": 1885, "timestamp": 1778772563165}, {"elo": 1872, "timestamp": 1778774713002}, {"elo": 1859, "timestamp": 1778776435889}, {"elo": 1846, "timestamp": 1779898110295}, {"elo": 1872, "timestamp": 1779965935643}, {"elo": 1899, "timestamp": 1779968674595}, {"elo": 1885, "timestamp": 1780045016654}, {"elo": 1911, "timestamp": 1780047281846}, {"elo": 1897, "timestamp": 1780055300311}, {"elo": 1882, "timestamp": 1780328511959}, {"elo": 1867, "timestamp": 1780330429433}, {"elo": 1851, "timestamp": 1781175911204}, {"elo": 1875, "timestamp": 1781179295805}, {"elo": 1899, "timestamp": 1781523220316}, {"elo": 1924, "timestamp": 1781538109890}, {"elo": 1908, "timestamp": 1781546464633}, {"elo": 1892, "timestamp": 1781705942127}, {"elo": 1876, "timestamp": 1782129479526}, {"elo": 1899, "timestamp": 1782223259344}, {"elo": 1923, "timestamp": 1782303125388}, {"elo": 1906, "timestamp": 1782470463251}, {"elo": 1850, "timestamp": 1782814934712}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
@@ -14007,7 +14011,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 2400, "timestamp": 1770668426588}, {"elo": 2398, "timestamp": 1777315515170}, {"elo": 2381, "timestamp": 1777318784626}, {"elo": 2364, "timestamp": 1777399401057}, {"elo": 2346, "timestamp": 1777476119022}, {"elo": 2368, "timestamp": 1780570770668}, {"elo": 2350, "timestamp": 1780581777014}, {"elo": 2332, "timestamp": 1780586335352}, {"elo": 2354, "timestamp": 1780654035497}, {"elo": 2336, "timestamp": 1780655978888}, {"elo": 2317, "timestamp": 1780928695615}, {"elo": 2298, "timestamp": 1780930925767}, {"elo": 2319, "timestamp": 1781535182289}, {"elo": 2300, "timestamp": 1782144369470}];
+            const eloHistory = [{"elo": 2400, "timestamp": 1770668426588}, {"elo": 2398, "timestamp": 1777315515170}, {"elo": 2381, "timestamp": 1777318784626}, {"elo": 2364, "timestamp": 1777399401057}, {"elo": 2346, "timestamp": 1777476119022}, {"elo": 2368, "timestamp": 1780570770668}, {"elo": 2350, "timestamp": 1780581777014}, {"elo": 2332, "timestamp": 1780586335352}, {"elo": 2354, "timestamp": 1780654035497}, {"elo": 2336, "timestamp": 1780655978888}, {"elo": 2317, "timestamp": 1780928695615}, {"elo": 2298, "timestamp": 1780930925767}, {"elo": 2319, "timestamp": 1781535182289}, {"elo": 2300, "timestamp": 1782144369470}, {"elo": 2364, "timestamp": 1782861704261}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
