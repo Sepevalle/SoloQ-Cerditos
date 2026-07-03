@@ -817,8 +817,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="lp-loss">
-                                -16 LP
+                            <span class="lp-gain">
+                                +2 LP
                             </span>
                             <span class="small-text-stats">
                                 (2V-3D)
@@ -1435,7 +1435,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+18 LP</span>
+                                    
                                 
                             </td>
 
@@ -13958,7 +13960,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1963, "timestamp": 1782841199899}, {"elo": 1942, "timestamp": 1782925209731}, {"elo": 1961, "timestamp": 1782931051508}, {"elo": 1980, "timestamp": 1782933658791}, {"elo": 1959, "timestamp": 1783010486590}, {"elo": 1978, "timestamp": 1783012575393}, {"elo": 1997, "timestamp": 1783014708120}, {"elo": 2016, "timestamp": 1783017271432}, {"elo": 2000, "timestamp": 1783096036578}, {"elo": 2000, "timestamp": 1783097694984}, {"elo": 2018, "timestamp": 1783099453958}, {"elo": 2000, "timestamp": 1783102399027}];
+            const eloHistory = [{"elo": 1963, "timestamp": 1782841199899}, {"elo": 1942, "timestamp": 1782925209731}, {"elo": 1961, "timestamp": 1782931051508}, {"elo": 1980, "timestamp": 1782933658791}, {"elo": 1959, "timestamp": 1783010486590}, {"elo": 1978, "timestamp": 1783012575393}, {"elo": 1997, "timestamp": 1783014708120}, {"elo": 2016, "timestamp": 1783017271432}, {"elo": 2000, "timestamp": 1783096036578}, {"elo": 2000, "timestamp": 1783097694984}, {"elo": 2018, "timestamp": 1783099453958}, {"elo": 2000, "timestamp": 1783102399027}, {"elo": 2018, "timestamp": 1783104993559}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
