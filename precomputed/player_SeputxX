@@ -1450,7 +1450,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-15 LP</span>
+                                    
                                 
                             </td>
 
@@ -3130,7 +3132,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-15 LP</span>
+                                    
                                 
                             </td>
 
@@ -13939,7 +13943,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [];
+            const eloHistory = [{"elo": 2085, "timestamp": 1782668202109}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
@@ -14126,7 +14130,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 1750, "timestamp": 1776883737332}, {"elo": 1770, "timestamp": 1776885293222}];
+            const eloHistory = [{"elo": 1750, "timestamp": 1776883737332}, {"elo": 1770, "timestamp": 1776885293222}, {"elo": 2036, "timestamp": 1782675829019}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
