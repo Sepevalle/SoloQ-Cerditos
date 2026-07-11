@@ -786,12 +786,12 @@
                     
                     <img src="" alt="EMERALD" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>EMERALD III (23 LPs)</h4>
-                        <p>Wins: 189 | Losses: 186 | Total: 375</p>
+                        <h4>EMERALD III (1 LPs)</h4>
+                        <p>Wins: 189 | Losses: 187 | Total: 376</p>
                         
                         
                         <p class="win-rate-alto">
-                            Win Rate: 50.40%
+                            Win Rate: 50.27%
                         </p>
                         <p>
                             Peak Elo:
@@ -799,7 +799,7 @@
                             
                             
                                 EMERALD III (95 LPs)
-                                <span class="small-text-stats">(72 LPs por debajo)</span>
+                                <span class="small-text-stats">(94 LPs por debajo)</span>
                             
                         </p>
                         <p>
@@ -817,8 +817,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="">
-                                0 LP
+                            <span class="lp-gain">
+                                +19 LP
                             </span>
                             <span class="small-text-stats">
                                 (2V-0D)
@@ -839,10 +839,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.13.1/img/champion/Briar.png" alt="Briar">
                                         <div class="champion-stats-info">
                                             <h5>Briar</h5>
-                                            <p class="kda-text fw-bold">3.08 KDA</p>
-                                            <p class="small-text-stats">Promedio: 14.7 / 6.9 / 6.6</p>
-                                            <p class="fw-bold win-rate-alto">69% Win Rate</p>
-                                            <p class="small-text-stats">(61V / 28D) - 89 partidas</p>
+                                            <p class="kda-text fw-bold">3.09 KDA</p>
+                                            <p class="small-text-stats">Promedio: 14.5 / 6.8 / 6.5</p>
+                                            <p class="fw-bold win-rate-alto">68% Win Rate</p>
+                                            <p class="small-text-stats">(59V / 28D) - 87 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
@@ -943,7 +943,7 @@
                         </p>
                         <p>
                             Rachas (Max): 
-                            <span class="text-success fw-bold">6V</span> / <span class="text-danger fw-bold">7D</span>
+                            <span class="text-success fw-bold">6V</span> / <span class="text-danger fw-bold">6D</span>
                         </p>
                         <p>
                             Rachas (Actual): 
@@ -1113,8 +1113,6 @@
                     
                     <option value="Garen" >Garen</option>
                     
-                    <option value="Graves" >Graves</option>
-                    
                     <option value="Irelia" >Irelia</option>
                     
                     <option value="Ivern" >Ivern</option>
@@ -1126,8 +1124,6 @@
                     <option value="Jhin" >Jhin</option>
                     
                     <option value="Jinx" >Jinx</option>
-                    
-                    <option value="KSante" >KSante</option>
                     
                     <option value="Kaisa" >Kaisa</option>
                     
@@ -1274,7 +1270,7 @@
                 </select>
             </form>
             <div class="small text-muted mb-3">
-                524 partidas encontradas
+                515 partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -1460,7 +1456,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+19 LP</span>
+                                    
                                 
                             </td>
 
@@ -13964,7 +13962,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 2085, "timestamp": 1782668202109}, {"elo": 2067, "timestamp": 1783263962528}, {"elo": 2085, "timestamp": 1783265802026}, {"elo": 2085, "timestamp": 1783763766595}];
+            const eloHistory = [{"elo": 2085, "timestamp": 1782668202109}, {"elo": 2067, "timestamp": 1783263962528}, {"elo": 2085, "timestamp": 1783265802026}, {"elo": 2085, "timestamp": 1783763766595}, {"elo": 2123, "timestamp": 1783766420137}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
