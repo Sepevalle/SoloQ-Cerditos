@@ -1000,19 +1000,19 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.13.1/img/champion/Naafiri.png" alt="Naafiri">
                                         <div class="champion-stats-info">
                                             <h5>Naafiri</h5>
-                                            <p class="kda-text fw-bold">3.87 KDA</p>
-                                            <p class="small-text-stats">Promedio: 15.8 / 6.2 / 8.2</p>
-                                            <p class="fw-bold win-rate-alto">60% Win Rate</p>
-                                            <p class="small-text-stats">(3V / 2D) - 5 partidas</p>
+                                            <p class="kda-text fw-bold">4.45 KDA</p>
+                                            <p class="small-text-stats">Promedio: 16.3 / 5.5 / 8.2</p>
+                                            <p class="fw-bold win-rate-alto">67% Win Rate</p>
+                                            <p class="small-text-stats">(4V / 2D) - 6 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
                                                     <i class="fas fa-star fa-lg" style="color: gold;"></i>
                                                     <div>
                                                         <strong style="color: #adb5bd;">Mejor Partida:</strong>
-                                                        <span class="small-text-stats">9.00 KDA (14/2/4)</span>
+                                                        <span class="small-text-stats">13.50 KDA (19/2/8)</span>
                                                         <br>
-                                                        <span class="small-text-stats">12/07/2026 23:52</span>
+                                                        <span class="small-text-stats">09/03/2026 20:25</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1129,7 +1129,7 @@
                 </select>
             </form>
             <div class="small text-muted mb-3">
-                131 partidas encontradas
+                133 partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -14025,7 +14025,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 1614, "timestamp": 1771605310244}, {"elo": 1600, "timestamp": 1771607800234}, {"elo": 1626, "timestamp": 1771610890960}, {"elo": 1612, "timestamp": 1771613410248}, {"elo": 1663, "timestamp": 1773872995500}, {"elo": 1689, "timestamp": 1775147403464}, {"elo": 1675, "timestamp": 1777198348592}, {"elo": 1701, "timestamp": 1777200704681}, {"elo": 1727, "timestamp": 1778090860293}, {"elo": 1754, "timestamp": 1778175070586}, {"elo": 1741, "timestamp": 1778177088268}, {"elo": 1727, "timestamp": 1778691725726}, {"elo": 1752, "timestamp": 1778694419488}, {"elo": 1737, "timestamp": 1778705859663}, {"elo": 1825, "timestamp": 1781729616986}, {"elo": 1811, "timestamp": 1781809896993}, {"elo": 1811, "timestamp": 1781883288465}, {"elo": 1823, "timestamp": 1782242625238}, {"elo": 1808, "timestamp": 1782420393443}, {"elo": 1792, "timestamp": 1782572693392}, {"elo": 1816, "timestamp": 1782672000689}, {"elo": 1841, "timestamp": 1783284667964}, {"elo": 1866, "timestamp": 1783287433783}, {"elo": 1851, "timestamp": 1783289561011}, {"elo": 1876, "timestamp": 1783893138653}];
+            const eloHistory = [{"elo": 1614, "timestamp": 1771605310244}, {"elo": 1600, "timestamp": 1771607800234}, {"elo": 1626, "timestamp": 1771610890960}, {"elo": 1612, "timestamp": 1771613410248}, {"elo": 1637, "timestamp": 1773080713847}, {"elo": 1663, "timestamp": 1773872995500}, {"elo": 1689, "timestamp": 1775147403464}, {"elo": 1675, "timestamp": 1777198348592}, {"elo": 1701, "timestamp": 1777200704681}, {"elo": 1727, "timestamp": 1778090860293}, {"elo": 1754, "timestamp": 1778175070586}, {"elo": 1741, "timestamp": 1778177088268}, {"elo": 1727, "timestamp": 1778691725726}, {"elo": 1752, "timestamp": 1778694419488}, {"elo": 1737, "timestamp": 1778705859663}, {"elo": 1825, "timestamp": 1781729616986}, {"elo": 1811, "timestamp": 1781809896993}, {"elo": 1811, "timestamp": 1781883288465}, {"elo": 1823, "timestamp": 1782242625238}, {"elo": 1808, "timestamp": 1782420393443}, {"elo": 1792, "timestamp": 1782572693392}, {"elo": 1816, "timestamp": 1782672000689}, {"elo": 1841, "timestamp": 1783284667964}, {"elo": 1866, "timestamp": 1783287433783}, {"elo": 1851, "timestamp": 1783289561011}, {"elo": 1876, "timestamp": 1783893138653}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
