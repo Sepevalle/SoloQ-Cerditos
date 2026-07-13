@@ -786,12 +786,12 @@
                     
                     <img src="" alt="PLATINUM" class="elo-image-lg">
                     <div class="rank-details">
-                        <h4>PLATINUM IV (98 LPs)</h4>
-                        <p>Wins: 117 | Losses: 121 | Total: 238</p>
+                        <h4>PLATINUM IV (78 LPs)</h4>
+                        <p>Wins: 117 | Losses: 122 | Total: 239</p>
                         
                         
                         <p class="win-rate-bajo">
-                            Win Rate: 49.16%
+                            Win Rate: 48.95%
                         </p>
                         <p>
                             Peak Elo:
@@ -799,7 +799,7 @@
                             
                             
                                 PLATINUM II (14 LPs)
-                                <span class="small-text-stats">(116 LPs por debajo)</span>
+                                <span class="small-text-stats">(136 LPs por debajo)</span>
                             
                         </p>
                         <p>
@@ -817,8 +817,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="lp-gain">
-                                +20 LP
+                            <span class="">
+                                0 LP
                             </span>
                             <span class="small-text-stats">
                                 (1V-1D)
@@ -1315,7 +1315,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-20 LP</span>
+                                    
                                 
                             </td>
 
@@ -13816,7 +13818,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1476, "timestamp": 1771540069084}, {"elo": 1476, "timestamp": 1771758701940}, {"elo": 1523, "timestamp": 1771760785117}, {"elo": 1718, "timestamp": 1779317062479}, {"elo": 1738, "timestamp": 1780179018662}, {"elo": 1759, "timestamp": 1780223151888}, {"elo": 1670, "timestamp": 1782121670586}, {"elo": 1650, "timestamp": 1782124329440}, {"elo": 1670, "timestamp": 1782139705527}, {"elo": 1690, "timestamp": 1782163068054}, {"elo": 1710, "timestamp": 1782165492233}, {"elo": 1730, "timestamp": 1782205580686}, {"elo": 1751, "timestamp": 1782208497347}, {"elo": 1793, "timestamp": 1782227483351}, {"elo": 1773, "timestamp": 1782229480151}, {"elo": 1793, "timestamp": 1782251191870}, {"elo": 1773, "timestamp": 1782253175977}, {"elo": 1793, "timestamp": 1782255373780}, {"elo": 1773, "timestamp": 1782257664449}, {"elo": 1753, "timestamp": 1782292133933}, {"elo": 1773, "timestamp": 1782294106239}, {"elo": 1793, "timestamp": 1782295276909}, {"elo": 1793, "timestamp": 1782487957657}, {"elo": 1793, "timestamp": 1782489968016}, {"elo": 1773, "timestamp": 1782492238717}, {"elo": 1793, "timestamp": 1782494477008}, {"elo": 1773, "timestamp": 1782497410285}, {"elo": 1793, "timestamp": 1782499424648}, {"elo": 1773, "timestamp": 1782516989688}, {"elo": 1793, "timestamp": 1782519412431}, {"elo": 1814, "timestamp": 1782521780991}, {"elo": 1718, "timestamp": 1783628848424}, {"elo": 1738, "timestamp": 1783630393673}, {"elo": 1718, "timestamp": 1783638706745}, {"elo": 1698, "timestamp": 1783641438448}, {"elo": 1718, "timestamp": 1783643302458}, {"elo": 1698, "timestamp": 1783870358886}, {"elo": 1718, "timestamp": 1783982120990}];
+            const eloHistory = [{"elo": 1476, "timestamp": 1771540069084}, {"elo": 1476, "timestamp": 1771758701940}, {"elo": 1523, "timestamp": 1771760785117}, {"elo": 1718, "timestamp": 1779317062479}, {"elo": 1738, "timestamp": 1780179018662}, {"elo": 1759, "timestamp": 1780223151888}, {"elo": 1670, "timestamp": 1782121670586}, {"elo": 1650, "timestamp": 1782124329440}, {"elo": 1670, "timestamp": 1782139705527}, {"elo": 1690, "timestamp": 1782163068054}, {"elo": 1710, "timestamp": 1782165492233}, {"elo": 1730, "timestamp": 1782205580686}, {"elo": 1751, "timestamp": 1782208497347}, {"elo": 1793, "timestamp": 1782227483351}, {"elo": 1773, "timestamp": 1782229480151}, {"elo": 1793, "timestamp": 1782251191870}, {"elo": 1773, "timestamp": 1782253175977}, {"elo": 1793, "timestamp": 1782255373780}, {"elo": 1773, "timestamp": 1782257664449}, {"elo": 1753, "timestamp": 1782292133933}, {"elo": 1773, "timestamp": 1782294106239}, {"elo": 1793, "timestamp": 1782295276909}, {"elo": 1793, "timestamp": 1782487957657}, {"elo": 1793, "timestamp": 1782489968016}, {"elo": 1773, "timestamp": 1782492238717}, {"elo": 1793, "timestamp": 1782494477008}, {"elo": 1773, "timestamp": 1782497410285}, {"elo": 1793, "timestamp": 1782499424648}, {"elo": 1773, "timestamp": 1782516989688}, {"elo": 1793, "timestamp": 1782519412431}, {"elo": 1814, "timestamp": 1782521780991}, {"elo": 1718, "timestamp": 1783628848424}, {"elo": 1738, "timestamp": 1783630393673}, {"elo": 1718, "timestamp": 1783638706745}, {"elo": 1698, "timestamp": 1783641438448}, {"elo": 1718, "timestamp": 1783643302458}, {"elo": 1698, "timestamp": 1783870358886}, {"elo": 1718, "timestamp": 1783982120990}, {"elo": 1698, "timestamp": 1783984091264}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
