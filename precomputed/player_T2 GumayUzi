@@ -860,6 +860,30 @@
                                     </div>
                                 
                                     <div class="champion-stats-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/champion/Jinx.png" alt="Jinx">
+                                        <div class="champion-stats-info">
+                                            <h5>Jinx</h5>
+                                            <p class="kda-text fw-bold">2.00 KDA</p>
+                                            <p class="small-text-stats">Promedio: 8.1 / 7.9 / 7.6</p>
+                                            <p class="fw-bold win-rate-bajo">48% Win Rate</p>
+                                            <p class="small-text-stats">(13V / 14D) - 27 partidas</p>
+                                            
+                                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
+                                                <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
+                                                    <i class="fas fa-star fa-lg" style="color: gold;"></i>
+                                                    <div>
+                                                        <strong style="color: #adb5bd;">Mejor Partida:</strong>
+                                                        <span class="small-text-stats">10.00 KDA (11/2/9)</span>
+                                                        <br>
+                                                        <span class="small-text-stats">05/05/2026 00:06</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                
+                                    <div class="champion-stats-item">
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/champion/Vayne.png" alt="Vayne">
                                         <div class="champion-stats-info">
                                             <h5>Vayne</h5>
@@ -876,30 +900,6 @@
                                                         <span class="small-text-stats">7.00 KDA (11/2/3)</span>
                                                         <br>
                                                         <span class="small-text-stats">02/02/2026 16:48</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                        </div>
-                                    </div>
-                                
-                                    <div class="champion-stats-item">
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/champion/Jinx.png" alt="Jinx">
-                                        <div class="champion-stats-info">
-                                            <h5>Jinx</h5>
-                                            <p class="kda-text fw-bold">2.08 KDA</p>
-                                            <p class="small-text-stats">Promedio: 8.2 / 7.7 / 7.7</p>
-                                            <p class="fw-bold win-rate-alto">50% Win Rate</p>
-                                            <p class="small-text-stats">(13V / 13D) - 26 partidas</p>
-                                            
-                                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
-                                                <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
-                                                    <i class="fas fa-star fa-lg" style="color: gold;"></i>
-                                                    <div>
-                                                        <strong style="color: #adb5bd;">Mejor Partida:</strong>
-                                                        <span class="small-text-stats">10.00 KDA (11/2/9)</span>
-                                                        <br>
-                                                        <span class="small-text-stats">05/05/2026 00:06</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1095,6 +1095,8 @@
                     
                     <option value="Corki" >Corki</option>
                     
+                    <option value="Diana" >Diana</option>
+                    
                     <option value="DrMundo" >DrMundo</option>
                     
                     <option value="Draven" >Draven</option>
@@ -1224,7 +1226,7 @@
                 </select>
             </form>
             <div class="small text-muted mb-3">
-                404 partidas encontradas
+                417 partidas encontradas
             </div>
 
             <div class="table-responsive">
@@ -13921,7 +13923,7 @@
                         <a class="page-link" href="#">&laquo; Anterior</a>
                     </li>
                     <li class="page-item disabled">
-                        <span class="page-link">PÃ¡gina 1 de 27</span>
+                        <span class="page-link">PÃ¡gina 1 de 28</span>
                     </li>
                     <li class="page-item ">
                         <a class="page-link" href="/jugador/T2%20GumayUzi%23T2G?page=2&amp;queue=all&amp;champion=all">Siguiente &raquo;</a>
@@ -14505,7 +14507,7 @@
 
         const paginationLabel = document.querySelector('#pagination-controls span.page-link');
         if (paginationLabel) {
-            paginationLabel.textContent = 'Pagina 1 de 27';
+            paginationLabel.textContent = 'Pagina 1 de 28';
         }
 
         return;
