@@ -817,8 +817,8 @@
                         <p>
                             LP en 24h: 
                             
-                            <span class="">
-                                0 LP
+                            <span class="lp-gain">
+                                +19 LP
                             </span>
                             <span class="small-text-stats">
                                 (2V-2D)
@@ -1312,7 +1312,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-gain">+19 LP</span>
+                                    
                                 
                             </td>
 
@@ -13826,7 +13828,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1476, "timestamp": 1771540069084}, {"elo": 1476, "timestamp": 1771758701940}, {"elo": 1523, "timestamp": 1771760785117}, {"elo": 1718, "timestamp": 1779317062479}, {"elo": 1738, "timestamp": 1780179018662}, {"elo": 1759, "timestamp": 1780223151888}, {"elo": 1718, "timestamp": 1783628848424}, {"elo": 1738, "timestamp": 1783630393673}, {"elo": 1718, "timestamp": 1783638706745}, {"elo": 1698, "timestamp": 1783641438448}, {"elo": 1718, "timestamp": 1783643302458}, {"elo": 1698, "timestamp": 1783870358886}, {"elo": 1765, "timestamp": 1784540774659}, {"elo": 1746, "timestamp": 1784542920830}, {"elo": 1767, "timestamp": 1784569758689}, {"elo": 1748, "timestamp": 1784571937615}, {"elo": 1729, "timestamp": 1784642254818}, {"elo": 1771, "timestamp": 1784644442647}, {"elo": 1791, "timestamp": 1784646576374}, {"elo": 1771, "timestamp": 1784669385071}, {"elo": 1791, "timestamp": 1784671251026}, {"elo": 1771, "timestamp": 1784673665868}, {"elo": 1751, "timestamp": 1784676011191}, {"elo": 1771, "timestamp": 1784712526075}, {"elo": 1791, "timestamp": 1784714418263}, {"elo": 1771, "timestamp": 1784717010999}, {"elo": 1791, "timestamp": 1784843866325}, {"elo": 1771, "timestamp": 1784845182718}, {"elo": 1771, "timestamp": 1784845757993}];
+            const eloHistory = [{"elo": 1476, "timestamp": 1771540069084}, {"elo": 1476, "timestamp": 1771758701940}, {"elo": 1523, "timestamp": 1771760785117}, {"elo": 1718, "timestamp": 1779317062479}, {"elo": 1738, "timestamp": 1780179018662}, {"elo": 1759, "timestamp": 1780223151888}, {"elo": 1718, "timestamp": 1783628848424}, {"elo": 1738, "timestamp": 1783630393673}, {"elo": 1718, "timestamp": 1783638706745}, {"elo": 1698, "timestamp": 1783641438448}, {"elo": 1718, "timestamp": 1783643302458}, {"elo": 1698, "timestamp": 1783870358886}, {"elo": 1765, "timestamp": 1784540774659}, {"elo": 1746, "timestamp": 1784542920830}, {"elo": 1767, "timestamp": 1784569758689}, {"elo": 1748, "timestamp": 1784571937615}, {"elo": 1729, "timestamp": 1784642254818}, {"elo": 1771, "timestamp": 1784644442647}, {"elo": 1791, "timestamp": 1784646576374}, {"elo": 1771, "timestamp": 1784669385071}, {"elo": 1791, "timestamp": 1784671251026}, {"elo": 1771, "timestamp": 1784673665868}, {"elo": 1751, "timestamp": 1784676011191}, {"elo": 1771, "timestamp": 1784712526075}, {"elo": 1791, "timestamp": 1784714418263}, {"elo": 1771, "timestamp": 1784717010999}, {"elo": 1791, "timestamp": 1784843866325}, {"elo": 1771, "timestamp": 1784845182718}, {"elo": 1771, "timestamp": 1784845757993}, {"elo": 1790, "timestamp": 1784847730740}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
