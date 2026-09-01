@@ -842,9 +842,13 @@ def start_data_updater(riot_api_key):
     live_game_thread.start()
     print("[data_updater] ✓ Worker de verificación de 'en partida' iniciado (cada 2 min)")
     
-    # Worker de generación de JSON para el index
-    from services.index_json_generator import start_json_generator_thread
-    start_json_generator_thread(interval_seconds=130)  # Cada ~2 minutos
-    print("[data_updater] ✓ Worker de generación de JSON iniciado")
+    # En Render no arrancamos el hilo periódico del JSON para evitar consumo excesivo.
+    render_mode = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RENDER_EXTERNAL_URL"))
+    if not render_mode:
+        from services.index_json_generator import start_json_generator_thread
+        start_json_generator_thread(interval_seconds=130)  # Cada ~2 minutos
+        print("[data_updater] ✓ Worker de generación de JSON iniciado")
+    else:
+        print("[data_updater] Render detectado: generación de JSON desactivada en bucle por consumo.")
     
     print("[data_updater] Todos los workers de actualización iniciados")

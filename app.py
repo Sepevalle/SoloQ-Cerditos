@@ -187,6 +187,10 @@ else:
     print("[main] Iniciando servicios en segundo plano...")
     start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
 
+# En Render, no arrancamos bucles periódicos del index. Se regenerará solo al servir la home si está obsoleto.
+if render_environment:
+    print("[main] Render detectado: index refresh solo bajo demanda.")
+
 # Precargar JSON del index si no existe o está antiguo
 print("[main] Verificando JSON del index...")
 json_data = load_index_json()

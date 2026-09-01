@@ -220,12 +220,12 @@ def index():
                                    cache_stale=True,
                                    minutos_desde_actualizacion=999)
     
-    # Si el JSON existe pero está antiguo (>5 min), iniciar regeneración en background
+    # Si el JSON existe pero está antiguo (>5 min), regenerarlo directamente en la petición.
+    # Esto evita bucles de refresh en Render sin bloquear la carga de la página.
     elif not is_json_fresh(max_age_seconds=300):
-        print("[index] JSON antiguo detectado, iniciando regeneración en background...")
-        # Iniciar thread para regenerar sin bloquear
-        thread = threading.Thread(target=generate_index_json, daemon=True)
-        thread.start()
+        print("[index] JSON antiguo detectado, regenerando bajo demanda...")
+        generate_index_json(force=True)
+        json_data = load_index_json()
     
     # Extraer datos del JSON
     datos_jugadores = json_data.get('datos_jugadores', [])
