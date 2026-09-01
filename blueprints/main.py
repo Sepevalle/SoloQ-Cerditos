@@ -54,8 +54,16 @@ from services.index_json_generator import (
 main_bp = Blueprint('main', __name__)
 
 
+def _achievements_feature_enabled():
+    """Indica si la funcionalidad de logros está habilitada."""
+    return bool(getattr(settings, 'ACHIEVEMENTS_ENABLED', False))
+
+
 def _refresh_achievements_in_background():
     """Recalcula logros en background si no hay otro calculo en marcha."""
+    if not _achievements_feature_enabled():
+        print("[logros-background] Funcionalidad de logros deshabilitada por configuración.")
+        return
     if achievements_cache.is_calculating():
         return
 
@@ -379,6 +387,10 @@ def historial_global():
 @main_bp.route('/logros')
 def logros():
     """Renderiza la página de logros globales por jugador."""
+    if not _achievements_feature_enabled():
+        print("[logros] Ruta deshabilitada por configuración.")
+        return render_template('404.html'), 404
+
     print("[logros] Petición recibida.")
     try:
         cache_data = achievements_cache.get()
@@ -417,6 +429,9 @@ def configsv():
     Editor visual de desafios (/configsv).
     No se enlaza desde la navegacion normal.
     """
+    if not _achievements_feature_enabled():
+        print("[configsv] Ruta deshabilitada por configuración.")
+        return render_template('404.html'), 404
     status_message = None
     status_kind = "info"
 

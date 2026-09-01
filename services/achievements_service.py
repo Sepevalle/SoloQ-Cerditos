@@ -7,7 +7,7 @@ import json
 import os
 import time
 from datetime import datetime, timezone
-from config.settings import ACHIEVEMENTS_CONFIG_PATH
+from config.settings import ACHIEVEMENTS_CONFIG_PATH, ACHIEVEMENTS_ENABLED
 from services.github_service import read_file_from_github, write_file_to_github
 from services.player_service import get_all_accounts, get_all_puuids
 from services.match_service import get_player_match_history
@@ -1300,6 +1300,9 @@ def calculate_global_achievements():
     """
     Calculate a lightweight achievements overview centered on memorable unlocks.
     """
+    if not ACHIEVEMENTS_ENABLED:
+        raise RuntimeError("La funcionalidad de logros está deshabilitada por configuración.")
+
     accounts = get_all_accounts()
     puuids = get_all_puuids()
     config_doc, config_source, config_errors = get_achievements_config_document(force_refresh=False)

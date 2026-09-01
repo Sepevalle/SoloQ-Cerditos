@@ -916,6 +916,12 @@ def request_global_stats_update():
 
 @api_bp.route('/update-achievements', methods=['POST'])
 def request_achievements_update():
+    if not settings.ACHIEVEMENTS_ENABLED:
+        return jsonify({
+            "status": "disabled",
+            "message": "La funcionalidad de logros está deshabilitada."
+        }), 403
+
     from services.achievements_service import calculate_global_achievements
 
     try:

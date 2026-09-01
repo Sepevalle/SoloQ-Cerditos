@@ -34,6 +34,8 @@ BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 GITHUB_REPO = "Sepevalle/SoloQ-Cerditos"
 LP_HISTORY_FILE_PATH = "lp_history.json"
 ACHIEVEMENTS_CONFIG_PATH = "config/logros/achievements_config.json"
+# Desactiva la hoja de logros y sus puntos de entrada de forma centralizada.
+ACHIEVEMENTS_ENABLED = False
 
 # ============================================================================
 # CONFIGURACIÓN DE ZONA HORARIA
