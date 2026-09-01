@@ -818,7 +818,7 @@
                             LP en 24h: 
                             
                             <span class="lp-loss">
-                                -22 LP
+                                -43 LP
                             </span>
                             <span class="small-text-stats">
                                 (0V-2D)
@@ -839,10 +839,10 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zaahen.png" alt="Zaahen">
                                         <div class="champion-stats-info">
                                             <h5>Zaahen</h5>
-                                            <p class="kda-text fw-bold">2.82 KDA</p>
-                                            <p class="small-text-stats">Promedio: 6.8 / 5.0 / 7.2</p>
-                                            <p class="fw-bold win-rate-bajo">46% Win Rate</p>
-                                            <p class="small-text-stats">(11V / 13D) - 24 partidas</p>
+                                            <p class="kda-text fw-bold">2.80 KDA</p>
+                                            <p class="small-text-stats">Promedio: 7.1 / 5.1 / 7.3</p>
+                                            <p class="fw-bold win-rate-bajo">45% Win Rate</p>
+                                            <p class="small-text-stats">(10V / 12D) - 22 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
@@ -863,8 +863,8 @@
                                         <img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zac.png" alt="Zac">
                                         <div class="champion-stats-info">
                                             <h5>Zac</h5>
-                                            <p class="kda-text fw-bold">4.12 KDA</p>
-                                            <p class="small-text-stats">Promedio: 4.4 / 4.0 / 12.2</p>
+                                            <p class="kda-text fw-bold">4.22 KDA</p>
+                                            <p class="small-text-stats">Promedio: 4.4 / 4.1 / 12.9</p>
                                             <p class="fw-bold win-rate-alto">52% Win Rate</p>
                                             <p class="small-text-stats">(11V / 10D) - 21 partidas</p>
                                             
@@ -884,22 +884,22 @@
                                     </div>
                                 
                                     <div class="champion-stats-item">
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Naafiri.png" alt="Naafiri">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png" alt="Vi">
                                         <div class="champion-stats-info">
-                                            <h5>Naafiri</h5>
-                                            <p class="kda-text fw-bold">2.43 KDA</p>
-                                            <p class="small-text-stats">Promedio: 8.6 / 6.0 / 6.0</p>
-                                            <p class="fw-bold win-rate-bajo">33% Win Rate</p>
-                                            <p class="small-text-stats">(3V / 6D) - 9 partidas</p>
+                                            <h5>Vi</h5>
+                                            <p class="kda-text fw-bold">4.02 KDA</p>
+                                            <p class="small-text-stats">Promedio: 8.5 / 5.2 / 12.6</p>
+                                            <p class="fw-bold win-rate-alto">75% Win Rate</p>
+                                            <p class="small-text-stats">(6V / 2D) - 8 partidas</p>
                                             
                                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #495057; font-size: 0.9em;">
                                                 <div style="display: inline-flex; align-items: center; gap: 8px; text-align: left;">
                                                     <i class="fas fa-star fa-lg" style="color: gold;"></i>
                                                     <div>
                                                         <strong style="color: #adb5bd;">Mejor Partida:</strong>
-                                                        <span class="small-text-stats">17.00 KDA (13/0/4)</span>
+                                                        <span class="small-text-stats">20.00 KDA (10/1/10)</span>
                                                         <br>
-                                                        <span class="small-text-stats">08/02/2026 19:23</span>
+                                                        <span class="small-text-stats">27/06/2026 13:30</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1072,8 +1072,6 @@
                     
                     <option value="Amumu" >Amumu</option>
                     
-                    <option value="Azir" >Azir</option>
-                    
                     <option value="Diana" >Diana</option>
                     
                     <option value="DrMundo" >DrMundo</option>
@@ -1081,8 +1079,6 @@
                     <option value="Elise" >Elise</option>
                     
                     <option value="Fiddlesticks" >Fiddlesticks</option>
-                    
-                    <option value="Hwei" >Hwei</option>
                     
                     <option value="Ivern" >Ivern</option>
                     
@@ -1095,6 +1091,8 @@
                     <option value="Naafiri" >Naafiri</option>
                     
                     <option value="Nocturne" >Nocturne</option>
+                    
+                    <option value="Nunu" >Nunu</option>
                     
                     <option value="Ornn" >Ornn</option>
                     
@@ -1306,7 +1304,9 @@
                             </td>
                             <td>
                                 
-                                    <span>N/A</span>
+                                    
+                                        <span class="lp-loss">-21 LP</span>
+                                    
                                 
                             </td>
 
@@ -13828,7 +13828,7 @@
         const ctx = document.getElementById('soloqEloChart');
         if (ctx) {
             // Obtener datos pasados desde Flask
-            const eloHistory = [{"elo": 1918, "timestamp": 1771459223058}, {"elo": 1905, "timestamp": 1771801814904}, {"elo": 1932, "timestamp": 1771869619854}, {"elo": 1918, "timestamp": 1772047841597}, {"elo": 1944, "timestamp": 1772749942697}, {"elo": 1912, "timestamp": 1775589367243}, {"elo": 1897, "timestamp": 1777490069982}, {"elo": 1922, "timestamp": 1777644007493}, {"elo": 1947, "timestamp": 1777731603640}, {"elo": 1972, "timestamp": 1777918140361}, {"elo": 1956, "timestamp": 1777921435236}, {"elo": 1981, "timestamp": 1778087430180}, {"elo": 1965, "timestamp": 1778089189360}, {"elo": 1989, "timestamp": 1778178962465}, {"elo": 1973, "timestamp": 1778188473135}, {"elo": 1973, "timestamp": 1778189786227}, {"elo": 1956, "timestamp": 1778843493039}, {"elo": 1939, "timestamp": 1779297241671}, {"elo": 1946, "timestamp": 1779903580948}, {"elo": 1946, "timestamp": 1779907095000}, {"elo": 1929, "timestamp": 1779909321748}, {"elo": 1911, "timestamp": 1779987703934}, {"elo": 1893, "timestamp": 1780090920981}, {"elo": 1860, "timestamp": 1780865416602}, {"elo": 1864, "timestamp": 1781716145387}, {"elo": 1845, "timestamp": 1782039615487}, {"elo": 1866, "timestamp": 1782079131948}, {"elo": 1847, "timestamp": 1782233561940}, {"elo": 1868, "timestamp": 1782240082256}, {"elo": 1889, "timestamp": 1782486192951}, {"elo": 1910, "timestamp": 1782488092479}, {"elo": 1932, "timestamp": 1782559832388}, {"elo": 1913, "timestamp": 1782561866706}, {"elo": 1935, "timestamp": 1782564316351}, {"elo": 1958, "timestamp": 1782764630330}, {"elo": 1939, "timestamp": 1783433874732}, {"elo": 1960, "timestamp": 1783451068830}, {"elo": 1941, "timestamp": 1783521827568}, {"elo": 1962, "timestamp": 1783610663830}, {"elo": 1983, "timestamp": 1783613714982}, {"elo": 2004, "timestamp": 1783616093006}, {"elo": 2000, "timestamp": 1783618608606}, {"elo": 2021, "timestamp": 1783855562536}, {"elo": 2001, "timestamp": 1783971755879}, {"elo": 2000, "timestamp": 1784048642978}, {"elo": 2075, "timestamp": 1788185716595}, {"elo": 2053, "timestamp": 1788281472339}];
+            const eloHistory = [{"elo": 1918, "timestamp": 1771459223058}, {"elo": 1905, "timestamp": 1771801814904}, {"elo": 1932, "timestamp": 1771869619854}, {"elo": 1918, "timestamp": 1772047841597}, {"elo": 1944, "timestamp": 1772749942697}, {"elo": 1912, "timestamp": 1775589367243}, {"elo": 1897, "timestamp": 1777490069982}, {"elo": 1922, "timestamp": 1777644007493}, {"elo": 1947, "timestamp": 1777731603640}, {"elo": 1956, "timestamp": 1778843493039}, {"elo": 1939, "timestamp": 1779297241671}, {"elo": 1946, "timestamp": 1779903580948}, {"elo": 1946, "timestamp": 1779907095000}, {"elo": 1929, "timestamp": 1779909321748}, {"elo": 1911, "timestamp": 1779987703934}, {"elo": 1893, "timestamp": 1780090920981}, {"elo": 1860, "timestamp": 1780865416602}, {"elo": 1864, "timestamp": 1781716145387}, {"elo": 1845, "timestamp": 1782039615487}, {"elo": 1866, "timestamp": 1782079131948}, {"elo": 1847, "timestamp": 1782233561940}, {"elo": 1868, "timestamp": 1782240082256}, {"elo": 1889, "timestamp": 1782486192951}, {"elo": 1910, "timestamp": 1782488092479}, {"elo": 1932, "timestamp": 1782559832388}, {"elo": 1913, "timestamp": 1782561866706}, {"elo": 1935, "timestamp": 1782564316351}, {"elo": 1958, "timestamp": 1782764630330}, {"elo": 1939, "timestamp": 1783433874732}, {"elo": 1960, "timestamp": 1783451068830}, {"elo": 1941, "timestamp": 1783521827568}, {"elo": 1962, "timestamp": 1783610663830}, {"elo": 1983, "timestamp": 1783613714982}, {"elo": 2004, "timestamp": 1783616093006}, {"elo": 2000, "timestamp": 1783618608606}, {"elo": 2021, "timestamp": 1783855562536}, {"elo": 2001, "timestamp": 1783971755879}, {"elo": 2000, "timestamp": 1784048642978}, {"elo": 2075, "timestamp": 1788185716595}, {"elo": 2053, "timestamp": 1788281472339}, {"elo": 2032, "timestamp": 1788287607728}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
@@ -14015,7 +14015,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('flexqEloChart');
         if (ctx) {
-            const eloHistory = [{"elo": 1614, "timestamp": 1771605310244}, {"elo": 1600, "timestamp": 1771607800234}, {"elo": 1626, "timestamp": 1771610890960}, {"elo": 1612, "timestamp": 1771613410248}, {"elo": 1637, "timestamp": 1773080713847}, {"elo": 1663, "timestamp": 1773872995500}, {"elo": 1689, "timestamp": 1775147403464}, {"elo": 1675, "timestamp": 1777198348592}, {"elo": 1701, "timestamp": 1777200704681}, {"elo": 1727, "timestamp": 1778090860293}, {"elo": 1754, "timestamp": 1778175070586}, {"elo": 1741, "timestamp": 1778177088268}, {"elo": 1727, "timestamp": 1778691725726}, {"elo": 1752, "timestamp": 1778694419488}, {"elo": 1737, "timestamp": 1778705859663}, {"elo": 1825, "timestamp": 1781729616986}, {"elo": 1811, "timestamp": 1781809896993}, {"elo": 1811, "timestamp": 1781883288465}, {"elo": 1823, "timestamp": 1782242625238}, {"elo": 1808, "timestamp": 1782420393443}, {"elo": 1792, "timestamp": 1782572693392}, {"elo": 1816, "timestamp": 1782672000689}, {"elo": 1841, "timestamp": 1783284667964}, {"elo": 1866, "timestamp": 1783287433783}, {"elo": 1851, "timestamp": 1783289561011}, {"elo": 1876, "timestamp": 1783893138653}, {"elo": 1861, "timestamp": 1783954825318}, {"elo": 1861, "timestamp": 1786120003056}, {"elo": 1861, "timestamp": 1787001282438}, {"elo": 1896, "timestamp": 1787597433673}];
+            const eloHistory = [{"elo": 1614, "timestamp": 1771605310244}, {"elo": 1600, "timestamp": 1771607800234}, {"elo": 1626, "timestamp": 1771610890960}, {"elo": 1612, "timestamp": 1771613410248}, {"elo": 1637, "timestamp": 1773080713847}, {"elo": 1663, "timestamp": 1773872995500}, {"elo": 1689, "timestamp": 1775147403464}, {"elo": 1675, "timestamp": 1777198348592}, {"elo": 1701, "timestamp": 1777200704681}, {"elo": 1727, "timestamp": 1778691725726}, {"elo": 1752, "timestamp": 1778694419488}, {"elo": 1737, "timestamp": 1778705859663}, {"elo": 1825, "timestamp": 1781729616986}, {"elo": 1811, "timestamp": 1781809896993}, {"elo": 1811, "timestamp": 1781883288465}, {"elo": 1823, "timestamp": 1782242625238}, {"elo": 1808, "timestamp": 1782420393443}, {"elo": 1792, "timestamp": 1782572693392}, {"elo": 1816, "timestamp": 1782672000689}, {"elo": 1841, "timestamp": 1783284667964}, {"elo": 1866, "timestamp": 1783287433783}, {"elo": 1851, "timestamp": 1783289561011}, {"elo": 1876, "timestamp": 1783893138653}, {"elo": 1861, "timestamp": 1783954825318}, {"elo": 1861, "timestamp": 1786120003056}, {"elo": 1861, "timestamp": 1787001282438}, {"elo": 1896, "timestamp": 1787597433673}];
             
             if (eloHistory && eloHistory.length > 1) {
                 const labels = eloHistory.map(entry => {
