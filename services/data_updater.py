@@ -3,13 +3,15 @@ Servicio de actualización de datos en segundo plano.
 Contiene los hilos worker para mantener los datos actualizados.
 """
 
+import os
 import time
 import threading
 import requests
 from datetime import datetime, timezone, timedelta
 from config.settings import (
     RIOT_API_KEY, RIOT_API_KEY_2, GITHUB_TOKEN, CACHE_UPDATE_INTERVAL,
-    BASE_URL_DDRAGON, DDRAGON_VERSION, FULL_HISTORY_UPDATE_INTERVAL
+    BASE_URL_DDRAGON, DDRAGON_VERSION, FULL_HISTORY_UPDATE_INTERVAL,
+    LIVE_GAME_CHECK_INTERVAL
 )
 from services.cache_service import player_cache, global_stats_cache, personal_records_cache
 from services.github_service import (
@@ -779,6 +781,19 @@ def start_data_updater(riot_api_key):
     if not riot_api_key:
         print("[data_updater] ⚠ Advertencia: RIOT_API_KEY no configurada")
         print("[data_updater] El servicio de actualización no funcionará correctamente")
+        return
+
+    render_mode = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RENDER_EXTERNAL_URL"))
+    if render_mode:
+        print("[data_updater] Render detectado: activando modo ligero para seguir actualizando datos sin consumo excesivo.")
+
+        cache_thread = threading.Thread(target=actualizar_cache_periodicamente, daemon=True)
+        cache_thread.start()
+        print("[data_updater] ✓ Worker de caché iniciado (modo ligero)")
+
+        live_game_thread = threading.Thread(target=_check_all_players_live_games, daemon=True)
+        live_game_thread.start()
+        print(f"[data_updater] ✓ Worker de 'en partida' iniciado (cada {LIVE_GAME_CHECK_INTERVAL} s)")
         return
     
     # Iniciar workers en threads separados

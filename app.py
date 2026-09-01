@@ -178,8 +178,14 @@ if not GITHUB_TOKEN:
 app = create_app()
 print("[main] ✓ Aplicación Flask creada")
 
-# Iniciar servicios en segundo plano
-start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
+# En Render, desactivar servicios de fondo por defecto para evitar consumo excesivo.
+# El keep_alive debe seguir activo para que la app cargue directamente.
+render_environment = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RENDER_EXTERNAL_URL"))
+if render_environment:
+    print("[main] Render detectado: background services desactivados automáticamente para reducir consumo.")
+else:
+    print("[main] Iniciando servicios en segundo plano...")
+    start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
 
 # Precargar JSON del index si no existe o está antiguo
 print("[main] Verificando JSON del index...")

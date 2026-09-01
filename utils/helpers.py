@@ -109,7 +109,8 @@ def parse_json_safe(json_str, default=None):
 
 def keep_alive():
     """Hilo que mantiene la aplicación activa con pings periódicos a sí misma."""
-    
+    # El keep_alive debe permanecer activo para que la página cargue de forma directa
+    # y no se duerma la instancia gratuita de Render.
     # URL fija de la aplicación en Render
     APP_URL = "https://soloq-cerditos.onrender.com"
     

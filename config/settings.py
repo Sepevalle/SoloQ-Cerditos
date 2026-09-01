@@ -184,17 +184,17 @@ GEMINI_MODEL = GEMINI_MODELS[0]
 # INTERVALOS DE ACTUALIZACIÓN (para hilos de background)
 # ============================================================================
 
-CACHE_UPDATE_INTERVAL = 130  # segundos - actualización de caché de jugadores
-LP_TRACKER_INTERVAL = 300    # segundos - snapshots de LP
+CACHE_UPDATE_INTERVAL = 1800  # 30 minutos - actualización de caché de jugadores
+LP_TRACKER_INTERVAL = 1800    # 30 minutos - snapshots de LP
 
 # ============================================================================
 # CONFIGURACIÓN DE ACTUALIZACIÓN DE HISTORIAL DE PARTIDAS
 # ============================================================================
 
-# Intervalo de actualización global completa (48 horas en segundos)
-FULL_HISTORY_UPDATE_INTERVAL = 48 * 60 * 60  # 48 horas
+# Intervalo de actualización global completa (24 horas en segundos)
+FULL_HISTORY_UPDATE_INTERVAL = 24 * 60 * 60  # 24 horas
 
-# Intervalo de verificación de jugadores en partida (2 minutos)
-LIVE_GAME_CHECK_INTERVAL = 120  # segundos
+# Intervalo de verificación de jugadores en partida (10 minutos)
+LIVE_GAME_CHECK_INTERVAL = 600  # segundos
 
 
