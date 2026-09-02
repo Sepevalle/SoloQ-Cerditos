@@ -19,12 +19,12 @@ from config.settings import (
     GITHUB_TOKEN,
     PORT,
     DEBUG,
-    SECRET_KEY
+    SECRET_KEY,
+    PRECOMPUTE_ENABLED,
 )
 
 # Importar utilidades
 from utils.filters import register_filters
-from utils.helpers import keep_alive
 
 # Importar blueprints
 from blueprints import (
@@ -38,11 +38,9 @@ from blueprints import (
 
 # Importar servicios
 from services import (
-    start_cache_service,
     start_github_service,
     start_lp_tracker,
     start_data_updater,
-    start_stats_calculator,
     start_rate_limiter
 )
 
@@ -55,7 +53,6 @@ from services.index_json_generator import (
     generate_index_json, 
     load_index_json, 
     is_json_fresh,
-    start_json_generator_thread
 )
 from services.precompute_generator import start_precompute_generator_thread
 
@@ -97,6 +94,11 @@ def create_app():
     def internal_error(error):
         from flask import render_template
         return render_template('404.html'), 500
+
+    @app.get('/healthz')
+    def healthz():
+        """Sonda ligera: no consulta Riot, GitHub ni renderiza plantillas."""
+        return {'status': 'ok'}, 200
     
     return app
 
@@ -117,40 +119,32 @@ def start_background_services(riot_api_key, github_token):
     start_rate_limiter()
     time.sleep(0.5)  # Pequeña pausa entre inicios
     
-    # 2. Servicio de Caché (en thread daemon)
-    cache_thread = threading.Thread(target=start_cache_service, daemon=True)
-    cache_thread.start()
-    time.sleep(0.5)
-    
-    # 3. Servicio de GitHub
+    # 2. Servicio de GitHub
     start_github_service()
 
     time.sleep(0.5)
     
-    # 4. LP Tracker (tracker de ELO - en thread daemon)
+    # 3. LP Tracker (tracker de ELO - en thread daemon)
     lp_thread = threading.Thread(target=start_lp_tracker, args=(riot_api_key, github_token), daemon=True)
     lp_thread.start()
     time.sleep(0.5)
 
     
-    # 5. Data Updater (actualización de datos)
+    # 4. Data Updater (actualización de datos)
     start_data_updater(riot_api_key)
     time.sleep(0.5)
     
-    # 6. Stats Calculator (cálculo de estadísticas - en thread daemon)
-    stats_thread = threading.Thread(target=start_stats_calculator, daemon=True)
-    stats_thread.start()
-    time.sleep(0.5)
+    # El limpiador anterior vaciaba todas las cachés cada cinco minutos y el
+    # worker de stats solo comprobaba un flag. Ambos provocaban trabajo extra
+    # en cada petición, por lo que no se inician.
 
-    
-    # 7. Keep Alive (mantener app activa)
-    keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
-    keep_alive_thread.start()
-    print("[main] ✓ Keep-alive iniciado")
-
-    # 8. HTML pregenerado persistente (GitHub + cache local)
-    start_precompute_generator_thread(app)
-    print("[main] ✓ Worker de HTML pregenerado iniciado")
+    # 5. HTML pregenerado persistente (opcional; genera muchas escrituras en
+    # GitHub y está desactivado por defecto en Render Free).
+    if PRECOMPUTE_ENABLED:
+        start_precompute_generator_thread(app)
+        print("[main] ✓ Worker de HTML pregenerado iniciado")
+    else:
+        print("[main] HTML pregenerado continuo desactivado (PRECOMPUTE_ENABLED=0)")
     
     print("\n" + "="*60)
     print("TODOS LOS SERVICIOS INICIADOS CORRECTAMENTE")
@@ -196,7 +190,8 @@ if START_SERVICES:
     # Precargar JSON del index si no existe o está antiguo
     print("[main] Verificando JSON del index...")
     json_data = load_index_json()
-    if json_data is None or not is_json_fresh(max_age_seconds=300):
+    from config.settings import INDEX_JSON_MAX_AGE
+    if json_data is None or not is_json_fresh(max_age_seconds=INDEX_JSON_MAX_AGE):
         print("[main] Generando JSON del index (primera vez o antiguo)...")
         if generate_index_json(force=True):
             print("[main] ✓ JSON del index generado correctamente")

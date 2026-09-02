@@ -33,7 +33,6 @@ BASE_URL_DDRAGON = "https://ddragon.leagueoflegends.com"
 
 GITHUB_REPO = "Sepevalle/SoloQ-Cerditos"
 LP_HISTORY_FILE_PATH = "lp_history.json"
-ACHIEVEMENTS_CONFIG_PATH = "config/logros/achievements_config.json"
 
 # ============================================================================
 # CONFIGURACIÓN DE ZONA HORARIA
@@ -182,8 +181,15 @@ GEMINI_MODEL = GEMINI_MODELS[0]
 # INTERVALOS DE ACTUALIZACIÓN (para hilos de background)
 # ============================================================================
 
-CACHE_UPDATE_INTERVAL = 130  # segundos - actualización de caché de jugadores
-LP_TRACKER_INTERVAL = 300    # segundos - snapshots de LP
+# Render Free tiene 0.1 CPU y 512 MB. Consultar Riot cada dos minutos para
+# todos los jugadores no aporta una diferencia perceptible y sí consume CPU,
+# red y cuota de API. Los valores se pueden ajustar desde Render sin redeploy.
+CACHE_UPDATE_INTERVAL = int(os.environ.get("CACHE_UPDATE_INTERVAL", 900))
+INDEX_JSON_MAX_AGE = int(os.environ.get("INDEX_JSON_MAX_AGE", 900))
+LP_TRACKER_INTERVAL = int(os.environ.get("LP_TRACKER_INTERVAL", 1800))
+GLOBAL_STATS_REFRESH_INTERVAL = int(os.environ.get("GLOBAL_STATS_REFRESH_INTERVAL", 1800))
+PERSONAL_RECORDS_REFRESH_INTERVAL = int(os.environ.get("PERSONAL_RECORDS_REFRESH_INTERVAL", 7200))
+DDRAGON_REFRESH_INTERVAL = int(os.environ.get("DDRAGON_REFRESH_INTERVAL", 86400))
 
 # ============================================================================
 # CONFIGURACIÓN DE ACTUALIZACIÓN DE HISTORIAL DE PARTIDAS
@@ -193,6 +199,11 @@ LP_TRACKER_INTERVAL = 300    # segundos - snapshots de LP
 FULL_HISTORY_UPDATE_INTERVAL = 48 * 60 * 60  # 48 horas
 
 # Intervalo de verificación de jugadores en partida (2 minutos)
-LIVE_GAME_CHECK_INTERVAL = 120  # segundos
+LIVE_GAME_CHECK_INTERVAL = int(os.environ.get("LIVE_GAME_CHECK_INTERVAL", 300))
+
+# El HTML pregenerado escribe varios ficheros en GitHub por ciclo. En el plan
+# gratuito se desactiva por defecto: Flask usa el JSON persistente y sus cachés
+# en memoria. Actívalo solo si existe una necesidad medida de esas copias HTML.
+PRECOMPUTE_ENABLED = os.environ.get("PRECOMPUTE_ENABLED", "0").lower() in ("true", "1", "yes")
 
 

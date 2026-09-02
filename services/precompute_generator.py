@@ -166,9 +166,11 @@ def start_precompute_generator_thread(app, interval_seconds: int | None = None) 
         print(f"[precompute_generator] Worker iniciado (intervalo: {interval_seconds}s)")
         time.sleep(int(os.environ.get("PRECOMPUTE_INITIAL_DELAY_SECONDS", "30")))
         while True:
-            generate_precomputed_html(app)
             _refresh_event.clear()
+            # Esperar un cambio real. El timeout es solo una red de seguridad;
+            # antes se subían todas las páginas aunque ningún dato cambiara.
             _refresh_event.wait(interval_seconds)
+            generate_precomputed_html(app)
 
     thread = threading.Thread(target=_loop, daemon=True)
     thread.start()

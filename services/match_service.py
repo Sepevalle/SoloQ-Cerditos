@@ -10,7 +10,6 @@ from services.cache_service import (
     player_match_history_cache,
     player_profile_cache,
     page_data_cache,
-    achievements_cache,
     historial_global_cache,
 )
 from services.player_service import get_riot_id_for_puuid
@@ -66,7 +65,6 @@ def save_player_matches(puuid, historial_data, riot_id=None):
     player_match_history_cache.set(puuid, historial_data)
     player_profile_cache.invalidate(puuid)
     page_data_cache.invalidate("historial_global_dataset")
-    achievements_cache.invalidate()
     historial_global_cache.invalidate()
     
     # Guardar en GitHub

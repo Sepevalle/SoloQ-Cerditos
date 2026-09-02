@@ -6,13 +6,12 @@ import time
 import threading
 import config.settings as settings
 
-from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS
+from config.settings import TARGET_TIMEZONE, ACTIVE_SPLIT_KEY, SPLITS, INDEX_JSON_MAX_AGE
 from services.cache_service import (
     player_cache,
     player_stats_cache,
     page_data_cache,
     match_lookup_cache,
-    achievements_cache,
     historial_global_cache,
 )
 
@@ -30,12 +29,6 @@ from services.match_service import get_player_match_history, calculate_streaks
 from services.riot_api import esta_en_partida, obtener_nombre_campeon, RIOT_API_KEY
 from services.live_game_service import get_active_live_games, get_live_game_by_id
 from services.player_service import get_all_players_with_puuids
-from services.achievements_service import (
-    calculate_global_achievements,
-    get_achievements_config_document,
-    get_achievement_editor_options,
-    save_achievements_config_document,
-)
 from utils.helpers import calcular_valor_clasificacion
 
 # Importar el generador de JSON para el index
@@ -53,25 +46,6 @@ from services.precompute_service import read_fresh as pre_read_fresh, write_asyn
 
 
 main_bp = Blueprint('main', __name__)
-
-
-def _refresh_achievements_in_background():
-    """Recalcula logros en background si no hay otro calculo en marcha."""
-    if achievements_cache.is_calculating():
-        return
-
-    achievements_cache.set_calculating(True)
-    try:
-        print("[logros-background] Iniciando refresco de logros...")
-        data = calculate_global_achievements()
-        achievements_cache.set(data)
-        print("[logros-background] Refresco de logros completado.")
-    except Exception as e:
-        print(f"[logros-background] Error: {e}")
-        import traceback
-        traceback.print_exc()
-    finally:
-        achievements_cache.set_calculating(False)
 
 
 def _get_peak_elo_key(jugador):
@@ -224,7 +198,7 @@ def index():
                                    minutos_desde_actualizacion=999)
     
     # Si el JSON existe pero está antiguo (>5 min), iniciar regeneración en background
-    elif not is_json_fresh(max_age_seconds=300):
+    elif not is_json_fresh(max_age_seconds=INDEX_JSON_MAX_AGE):
         print("[index] JSON antiguo detectado, iniciando regeneración en background...")
         # Iniciar thread para regenerar sin bloquear
         thread = threading.Thread(target=generate_index_json, daemon=True)
@@ -419,81 +393,6 @@ def historial_global():
         return Response(rendered, mimetype='text/html')
     except Exception as e:
         print(f"[historial_global] Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return render_template('404.html'), 500
-
-
-@main_bp.route('/logros')
-def logros():
-    """Renderiza la página de logros globales por jugador."""
-    print("[logros] Petición recibida.")
-    try:
-        cache_data = achievements_cache.get()
-        data = cache_data.get("data")
-        if not data:
-            data = calculate_global_achievements()
-            achievements_cache.set(data)
-            cache_data = achievements_cache.get()
-        elif achievements_cache.is_stale() and not achievements_cache.is_calculating():
-            threading.Thread(target=_refresh_achievements_in_background, daemon=True).start()
-        return render_template(
-            'logros.html',
-            players=data.get('players', []),
-            achievements_catalog=data.get('achievements_catalog', []),
-            achievements_view=data.get('achievements_view', []),
-            negative_achievements_view=data.get('negative_achievements_view', []),
-            secret_achievements_view=data.get('secret_achievements_view', []),
-            achievements_config_source=data.get('config_source', 'unknown'),
-            achievements_config_errors=data.get('config_errors', []),
-            global_stats=data.get('global_stats', {}),
-            achievements_cache_stale=achievements_cache.is_stale(),
-            achievements_cache_timestamp=cache_data.get("timestamp", 0),
-            ddragon_version=settings.DDRAGON_VERSION,
-            has_player_data=True
-        )
-    except Exception as e:
-        print(f"[logros] Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return render_template('404.html'), 500
-
-
-@main_bp.route('/configsv', methods=['GET', 'POST'])
-def configsv():
-    """
-    Editor visual de desafios (/configsv).
-    No se enlaza desde la navegacion normal.
-    """
-    status_message = None
-    status_kind = "info"
-
-    if request.method == 'POST':
-        raw_json = request.form.get('config_json', '')
-        try:
-            payload = json.loads(raw_json)
-            ok, msg = save_achievements_config_document(payload)
-            status_message = msg
-            status_kind = "success" if ok else "danger"
-        except Exception as e:
-            status_message = f"Error guardando configuracion: {e}"
-            status_kind = "danger"
-
-    try:
-        config_doc, source, errors = get_achievements_config_document(force_refresh=True)
-        return render_template(
-            'configsv.html',
-            config_doc=config_doc,
-            config_source=source,
-            config_errors=errors,
-            editor_options=get_achievement_editor_options(),
-            status_message=status_message,
-            status_kind=status_kind,
-            ddragon_version=settings.DDRAGON_VERSION,
-            has_player_data=True,
-        )
-    except Exception as e:
-        print(f"[configsv] Error: {e}")
         import traceback
         traceback.print_exc()
         return render_template('404.html'), 500

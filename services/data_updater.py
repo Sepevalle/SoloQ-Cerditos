@@ -9,7 +9,9 @@ import requests
 from datetime import datetime, timezone, timedelta
 from config.settings import (
     RIOT_API_KEY, RIOT_API_KEY_2, GITHUB_TOKEN, CACHE_UPDATE_INTERVAL,
-    BASE_URL_DDRAGON, DDRAGON_VERSION, FULL_HISTORY_UPDATE_INTERVAL
+    BASE_URL_DDRAGON, DDRAGON_VERSION, FULL_HISTORY_UPDATE_INTERVAL,
+    GLOBAL_STATS_REFRESH_INTERVAL, PERSONAL_RECORDS_REFRESH_INTERVAL,
+    LIVE_GAME_CHECK_INTERVAL, DDRAGON_REFRESH_INTERVAL
 )
 from services.cache_service import player_cache, global_stats_cache, personal_records_cache
 from services.github_service import (
@@ -55,6 +57,7 @@ def actualizar_cache_periodicamente():
     """Actualiza la caché de jugadores periódicamente."""
     print("[actualizar_cache_periodicamente] Hilo iniciado.")
     
+    last_ddragon_refresh = 0
     while True:
         try:
             print("[actualizar_cache_periodicamente] Actualizando caché de jugadores...")
@@ -124,8 +127,12 @@ def actualizar_cache_periodicamente():
             else:
                 print("[actualizar_cache_periodicamente] ⚠ Error generando JSON del index")
             
-            # Actualizar datos de DDragon
-            actualizar_ddragon_data()
+            # Los datos de Data Dragon cambian con mucha menos frecuencia que
+            # el rango de los jugadores; descargarlos en cada ciclo era gasto
+            # de red innecesario.
+            if time.time() - last_ddragon_refresh >= DDRAGON_REFRESH_INTERVAL:
+                actualizar_ddragon_data()
+                last_ddragon_refresh = time.time()
 
             
         except Exception as e:
@@ -476,7 +483,7 @@ def _calculate_and_cache_global_stats_periodically():
             import traceback
             traceback.print_exc()
         
-        time.sleep(300)  # 5 minutos
+        time.sleep(GLOBAL_STATS_REFRESH_INTERVAL)
 
 
 def _calculate_and_cache_personal_records_periodically():
@@ -523,7 +530,7 @@ def _calculate_and_cache_personal_records_periodically():
             import traceback
             traceback.print_exc()
         
-        time.sleep(3600)  # 1 hora
+        time.sleep(PERSONAL_RECORDS_REFRESH_INTERVAL)
 
 
 def _check_all_players_live_games():
@@ -599,8 +606,7 @@ def _check_all_players_live_games():
             import traceback
             traceback.print_exc()
         
-        # Verificar cada 2 minutos (120 segundos)
-        time.sleep(120)
+        time.sleep(LIVE_GAME_CHECK_INTERVAL)
 
 
 def actualizar_jugador_especifico(puuid, riot_id, jugador_nombre):
@@ -829,11 +835,10 @@ def start_data_updater(riot_api_key):
     # Worker de verificación de estado "en partida" (INDEPENDIENTE del JSON)
     live_game_thread = threading.Thread(target=_check_all_players_live_games, daemon=True)
     live_game_thread.start()
-    print("[data_updater] ✓ Worker de verificación de 'en partida' iniciado (cada 2 min)")
+    print(f"[data_updater] ✓ Worker de verificación de 'en partida' iniciado (cada {LIVE_GAME_CHECK_INTERVAL}s)")
     
-    # Worker de generación de JSON para el index
-    from services.index_json_generator import start_json_generator_thread
-    start_json_generator_thread(interval_seconds=130)  # Cada ~2 minutos
-    print("[data_updater] ✓ Worker de generación de JSON iniciado")
+    # `actualizar_cache_periodicamente` ya genera el JSON después de obtener
+    # los datos de Riot. Un segundo hilo cada 130 s duplicaba cálculos y
+    # escrituras a GitHub, por lo que se elimina.
     
     print("[data_updater] Todos los workers de actualización iniciados")

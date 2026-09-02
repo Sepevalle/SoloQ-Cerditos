@@ -2,7 +2,7 @@ import os
 import time
 import threading
 from datetime import datetime, timezone
-from config.settings import GITHUB_TOKEN
+from config.settings import GITHUB_TOKEN, PRECOMPUTE_ENABLED
 from services.github_service import (
     write_file_to_github,
     delete_file_from_github,
@@ -120,6 +120,8 @@ def read_github(key: str, folder: str = GITHUB_FOLDER):
 
 def read_fresh(key: str, max_age_seconds: int = 600, folder: str = GITHUB_FOLDER):
     """Devuelve HTML fresco, usando disco local primero y GitHub como fuente persistente."""
+    if not PRECOMPUTE_ENABLED:
+        return None
     try:
         if is_fresh(key, max_age_seconds=max_age_seconds):
             content = read(key)
@@ -162,7 +164,7 @@ def write_all(key: str, html: str) -> bool:
     except Exception as e:
         print(f"[precompute_service.write_all] Error local: {e}")
 
-    if GITHUB_TOKEN:
+    if GITHUB_TOKEN and PRECOMPUTE_ENABLED:
         return write_github(key, html)
     return True
 
@@ -204,7 +206,7 @@ def write_all_async(key: str, html: str) -> None:
             pass
 
     # Intentar subir a GitHub en background
-    if GITHUB_TOKEN:
+    if GITHUB_TOKEN and PRECOMPUTE_ENABLED:
         try:
             t_git = threading.Thread(target=write_github, args=(key, html), daemon=True)
             t_git.start()

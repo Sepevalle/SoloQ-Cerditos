@@ -9,6 +9,7 @@ import json
 import base64
 import requests
 from datetime import datetime, timezone
+from config.settings import LP_TRACKER_INTERVAL
 
 # --- CONFIGURACIÓN ---
 LP_HISTORY_FILE_PATH = "lp_history.json"
@@ -296,7 +297,7 @@ def elo_tracker_worker(riot_api_key, github_token):
         except Exception as e:
             print(f"[LP_TRACKER] Error inesperado en el worker de ELO: {e}")
             
-        time.sleep(1800) # OPTIMIZACIÓN RENDER: 30 minutos (1800 seg) en lugar de 5 minutos
+        time.sleep(LP_TRACKER_INTERVAL)
 
 
 def start_lp_tracker(riot_api_key, github_token):

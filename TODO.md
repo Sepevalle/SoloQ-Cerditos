@@ -19,7 +19,6 @@ Esto da mucho rendimiento con muy poco coste de RAM.
 - [ ] Identificar duplicaciones entre:
 - [ ] `player_match_history_cache`
 - [ ] snapshots de historial global
-- [ ] snapshots de logros
 - [ ] `global_stats_cache`
 - [ ] perfil de jugador
 - [ ] Dejar una sola copia completa de cada historial cuando sea posible
@@ -39,7 +38,6 @@ Es una de las caches con mas papeletas de comer RAM.
 ## Prioridad 2 - Alto impacto en rendimiento
 
 ### 4. Extender el patron snapshot ligero a todas las vistas pesadas
-- [ ] Mantener `logros` como snapshot ligero con refresco on demand
 - [ ] Mantener `historial_global` como snapshot ligero con refresco on demand
 - [ ] Evaluar que otras vistas agregadas deben pasar a snapshot
 - [ ] Evitar recalculos completos dentro de requests HTTP normales
@@ -82,7 +80,6 @@ Ahora ya hay buenos patrones, pero conviene hacerlos coherentes globalmente.
 
 ### 8. Anadir endpoints manuales para precalentar snapshots
 - [ ] Crear `POST /api/update-historial-global`
-- [ ] Mantener `POST /api/update-achievements`
 - [ ] Revisar `POST /api/update-global-stats`
 - [ ] Dejar un flujo operativo para recalcular tras deploy o mantenimiento
 
@@ -90,7 +87,6 @@ Motivo:
 En Render gratis interesa precalentar manualmente en vez de hacer esperar al primer usuario.
 
 ### 9. Mostrar estado de snapshots en las paginas criticas
-- [ ] Mostrar ultima actualizacion en `logros`
 - [ ] Mostrar ultima actualizacion en `historial_global`
 - [ ] Mostrar si el snapshot esta stale
 - [ ] Anadir boton de recarga manual donde tenga sentido
@@ -132,30 +128,12 @@ Mantener el sistema pequeno y entendible tambien mejora estabilidad.
 
 ## Ajustes funcionales pendientes
 
-### 13. Rebalancear sistema de logros y ligas
-- [ ] Ajustar cortes de ligas altas en `services/achievements_service.py`
-- [ ] Reequilibrar el peso de logros negativos frente a positivos
-- [ ] Revisar logros publicos que puntuan demasiado para su frecuencia
-- [ ] Preparar una version `balance v2` del catalogo
-
-Motivo:
-El sistema ya esta mejor, pero aun puede quedar mas competitivo y justo.
-
-### 14. Mejorar UX de la pagina de logros
-- [ ] Reforzar la narrativa de portada: top 3, logro raro, error mas repetido, ultimo secreto
-- [ ] Diferenciar mejor prestigio, alertas y secretos
-- [ ] Mostrar estado de cache y recarga manual en la propia pagina
-- [ ] Reducir densidad inicial mostrando top N y "ver todos"
-
-Motivo:
-La pagina ya funciona mejor, pero aun puede ganar bastante en claridad.
-
 ## Despliegue
 
-### 15. Checklist antes de subir a produccion
+### 13. Checklist antes de subir a produccion
 - [ ] Validar sintaxis Python de archivos tocados
 - [ ] Validar JSONs de configuracion
-- [ ] Probar carga en frio de index, logros, historial global y perfil jugador
+- [ ] Probar carga en frio de index, historial global y perfil jugador
 - [ ] Probar recarga manual de snapshots
 - [ ] Verificar que las invalidaciones funcionan al guardar nuevas partidas
 - [ ] Revisar logs de memoria y tiempos tras desplegar
