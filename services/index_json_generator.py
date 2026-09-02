@@ -401,6 +401,12 @@ def generate_index_json(force: bool = False, lightweight: bool = False) -> bool:
                     )
                 else:
                     jugador_procesado = _calculate_player_stats(jugador, peak_elo_dict, lp_history)
+                jugador_procesado.setdefault('valor_clasificacion', calcular_valor_clasificacion(
+                    jugador_procesado.get('tier', 'Unranked'),
+                    jugador_procesado.get('rank', 'IV'),
+                    jugador_procesado.get('league_points', 0),
+                ))
+                jugador_procesado.setdefault('peak_elo', jugador_procesado['valor_clasificacion'])
                 jugadores_procesados.append(jugador_procesado)
                 
                 # Verificar si se actualizó/migró el peak
@@ -409,6 +415,12 @@ def generate_index_json(force: bool = False, lightweight: bool = False) -> bool:
             except Exception as e:
                 print(f"[generate_index_json] Error procesando {jugador.get('jugador', 'unknown')}: {e}")
                 # Incluir jugador con datos básicos aunque falle el cálculo
+                jugador.setdefault('valor_clasificacion', calcular_valor_clasificacion(
+                    jugador.get('tier', 'Unranked'),
+                    jugador.get('rank', 'IV'),
+                    jugador.get('league_points', 0),
+                ))
+                jugador.setdefault('peak_elo', jugador['valor_clasificacion'])
                 jugadores_procesados.append(jugador)
         
         # Guardar peak elo actualizado si hubo cambios
