@@ -186,6 +186,7 @@ GEMINI_MODEL = GEMINI_MODELS[0]
 
 CACHE_UPDATE_INTERVAL = 1800  # 30 minutos - actualización de caché de jugadores
 LP_TRACKER_INTERVAL = 1800    # 30 minutos - snapshots de LP
+INDEX_FULL_STATS_INTERVAL = 43200  # 12 horas - estadísticas completas del index
 
 # ============================================================================
 # CONFIGURACIÓN DE ACTUALIZACIÓN DE HISTORIAL DE PARTIDAS

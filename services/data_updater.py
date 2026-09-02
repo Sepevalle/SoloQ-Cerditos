@@ -119,7 +119,13 @@ def actualizar_cache_periodicamente():
 
             # Generar JSON del index con los nuevos datos
             print("[actualizar_cache_periodicamente] Generando JSON del index...")
-            if generate_index_json():
+            render_mode = bool(
+                os.environ.get("PORT")
+                or os.environ.get("RENDER")
+                or os.environ.get("RENDER_SERVICE_ID")
+                or os.environ.get("RENDER_EXTERNAL_URL")
+            )
+            if generate_index_json(lightweight=render_mode):
                 print("[actualizar_cache_periodicamente] ✓ JSON del index generado correctamente")
             else:
                 print("[actualizar_cache_periodicamente] ⚠ Error generando JSON del index")

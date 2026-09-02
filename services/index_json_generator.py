@@ -19,7 +19,8 @@ from config.settings import (
     ACTIVE_SPLIT_KEY, 
     DDRAGON_VERSION,
     RIOT_API_KEY,
-    BASE_URL_DDRAGON
+    BASE_URL_DDRAGON,
+    INDEX_FULL_STATS_INTERVAL,
 )
 from services.cache_service import player_cache
 from services.github_service import (
@@ -252,7 +253,41 @@ def _calculate_player_stats(
     return jugador
 
 
-def generate_index_json(force: bool = False) -> bool:
+def _get_lightweight_player_stats(jugador, previous_stats, lp_history):
+    """Completa el jugador sin leer su historial de partidas."""
+    queue_type = jugador.get('queue_type')
+    puuid = jugador.get('puuid')
+    queue_history = sorted(
+        (lp_history.get(puuid, {}) or {}).get(queue_type, []),
+        key=lambda snapshot: snapshot.get('timestamp', 0),
+    )
+    cutoff = int((time.time() - 86400) * 1000)
+    recent_snapshots = [snapshot for snapshot in queue_history if snapshot.get('timestamp', 0) >= cutoff]
+    reference_snapshot = next(
+        (snapshot for snapshot in reversed(queue_history) if snapshot.get('timestamp', 0) < cutoff),
+        None,
+    )
+
+    stats = dict(previous_stats or {})
+    stats['lp_change_24h'] = 0
+    if recent_snapshots:
+        first_snapshot = reference_snapshot or recent_snapshots[0]
+        stats['lp_change_24h'] = (
+            recent_snapshots[-1].get('elo', 0)
+            - first_snapshot.get('elo', 0)
+        )
+    stats.setdefault('wins_24h', 0)
+    stats.setdefault('losses_24h', 0)
+    stats.setdefault('top_champion_stats', [])
+    stats.setdefault('current_win_streak', 0)
+    stats.setdefault('current_loss_streak', 0)
+    stats.setdefault('en_partida', False)
+    stats.setdefault('nombre_campeon', None)
+    jugador.update(stats)
+    return jugador
+
+
+def generate_index_json(force: bool = False, lightweight: bool = False) -> bool:
     """
     Genera el archivo JSON con todas las estadísticas para el index.
     Guarda tanto localmente como en GitHub.
@@ -283,6 +318,18 @@ def generate_index_json(force: bool = False) -> bool:
             
         _, lp_history = read_lp_history()
         
+        previous_index = load_index_json() if lightweight else None
+        full_stats_timestamp = (previous_index or {}).get('stats_updated_timestamp', 0)
+        stats_are_recent = (
+            full_stats_timestamp > 0
+            and time.time() - full_stats_timestamp < INDEX_FULL_STATS_INTERVAL
+        )
+        use_lightweight = lightweight and stats_are_recent
+        previous_players = {
+            (player.get('puuid'), player.get('queue_type')): player
+            for player in (previous_index or {}).get('datos_jugadores', [])
+        }
+
         # Calcular estadísticas para cada jugador
         jugadores_procesados = []
         peak_elo_actualizado = False
@@ -291,7 +338,14 @@ def generate_index_json(force: bool = False) -> bool:
             try:
                 key = _get_peak_elo_key(jugador)
                 peak_antes = peak_elo_dict.get(key, 0)
-                jugador_procesado = _calculate_player_stats(jugador, peak_elo_dict, lp_history)
+                if use_lightweight:
+                    jugador_procesado = _get_lightweight_player_stats(
+                        jugador,
+                        previous_players.get((jugador.get('puuid'), jugador.get('queue_type'))),
+                        lp_history,
+                    )
+                else:
+                    jugador_procesado = _calculate_player_stats(jugador, peak_elo_dict, lp_history)
                 jugadores_procesados.append(jugador_procesado)
                 
                 # Verificar si se actualizó/migró el peak
@@ -319,6 +373,9 @@ def generate_index_json(force: bool = False) -> bool:
             'ultima_actualizacion': ultima_actualizacion,
             'minutos_desde_actualizacion': minutos_desde_actualizacion,
             'timestamp_generacion': int(time.time()),
+            'stats_updated_timestamp': (
+                full_stats_timestamp if use_lightweight else int(time.time())
+            ),
             'ddragon_version': DDRAGON_VERSION,
             'split_activo_nombre': "Temporada 2026 - Split 1",
             'total_jugadores': len(jugadores_procesados),

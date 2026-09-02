@@ -1,4 +1,5 @@
 import json
+import os
 
 from flask import Blueprint, abort, render_template, request
 from datetime import datetime, timezone, timedelta
@@ -71,7 +72,13 @@ def _refresh_index_in_background():
         _index_refresh_running = True
 
     try:
-        generate_index_json(force=True)
+        render_mode = bool(
+            os.environ.get("PORT")
+            or os.environ.get("RENDER")
+            or os.environ.get("RENDER_SERVICE_ID")
+            or os.environ.get("RENDER_EXTERNAL_URL")
+        )
+        generate_index_json(force=True, lightweight=render_mode)
     except Exception as e:
         print(f"[index-background] Error actualizando index: {e}")
     finally:
