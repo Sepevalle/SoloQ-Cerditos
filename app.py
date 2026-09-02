@@ -155,14 +155,18 @@ print("\n" + "="*60)
 print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
 print("="*60 + "\n")
 
-# Actualizar versión y datos de Data Dragon al inicio (DEBE SER PRIMERO)
-print("[main] Actualizando versión de Data Dragon...")
-actualizar_version_ddragon()
-print("[main] ✓ Versión de Data Dragon actualizada")
+# En Render se aplazan las peticiones externas para que Flask abra el puerto primero.
+render_environment = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RENDER_EXTERNAL_URL"))
+if render_environment:
+    print("[main] Render: actualización de Data Dragon aplazada.")
+else:
+    print("[main] Actualizando versión de Data Dragon...")
+    actualizar_version_ddragon()
+    print("[main] ✓ Versión de Data Dragon actualizada")
 
-print("[main] Cargando datos de campeones, runas y hechizos de Data Dragon...")
-actualizar_ddragon_data()
-print("[main] ✓ Datos de Data Dragon cargados correctamente")
+    print("[main] Cargando datos de campeones, runas y hechizos de Data Dragon...")
+    actualizar_ddragon_data()
+    print("[main] ✓ Datos de Data Dragon cargados correctamente")
 
 
 # Validar configuración esencial
@@ -180,9 +184,11 @@ print("[main] ✓ Aplicación Flask creada")
 
 # En Render, desactivar servicios de fondo por defecto para evitar consumo excesivo.
 # El keep_alive debe seguir activo para que la app cargue directamente.
-render_environment = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RENDER_EXTERNAL_URL"))
 if render_environment:
     print("[main] Render detectado: background services desactivados automáticamente para reducir consumo.")
+    keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+    keep_alive_thread.start()
+    print("[main] ✓ Keep-alive iniciado en Render")
 else:
     print("[main] Iniciando servicios en segundo plano...")
     start_background_services(RIOT_API_KEY, GITHUB_TOKEN)
@@ -191,17 +197,21 @@ else:
 if render_environment:
     print("[main] Render detectado: index refresh solo bajo demanda.")
 
-# Precargar JSON del index si no existe o está antiguo
-print("[main] Verificando JSON del index...")
-json_data = load_index_json()
-if json_data is None or not is_json_fresh(max_age_seconds=300):
-    print("[main] Generando JSON del index (primera vez o antiguo)...")
-    if generate_index_json(force=True):
-        print("[main] ✓ JSON del index generado correctamente")
-    else:
-        print("[main] ⚠ No se pudo generar el JSON del index")
+# No bloquear el bind del puerto con llamadas a Riot/GitHub durante el arranque.
+# La página principal regenera el index bajo demanda si falta o está antiguo.
+if render_environment:
+    print("[main] Render: generación inicial del index aplazada hasta la primera petición.")
 else:
-    print("[main] ✓ JSON del index ya existe y está actualizado")
+    print("[main] Verificando JSON del index...")
+    json_data = load_index_json()
+    if json_data is None or not is_json_fresh(max_age_seconds=300):
+        print("[main] Generando JSON del index (primera vez o antiguo)...")
+        if generate_index_json(force=True):
+            print("[main] ✓ JSON del index generado correctamente")
+        else:
+            print("[main] ⚠ No se pudo generar el JSON del index")
+    else:
+        print("[main] ✓ JSON del index ya existe y está actualizado")
 
 print(f"\n[main] 🚀 Aplicación lista para servir en http://0.0.0.0:{PORT}")
 print(f"[main] Modo DEBUG: {DEBUG}\n")
