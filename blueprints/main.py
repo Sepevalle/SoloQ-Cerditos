@@ -53,10 +53,30 @@ from services.index_json_generator import (
 
 main_bp = Blueprint('main', __name__)
 
+_index_refresh_lock = threading.Lock()
+_index_refresh_running = False
+
 
 def _achievements_feature_enabled():
     """Indica si la funcionalidad de logros está habilitada."""
     return bool(getattr(settings, 'ACHIEVEMENTS_ENABLED', False))
+
+
+def _refresh_index_in_background():
+    """Regenera el index sin bloquear la respuesta de la página principal."""
+    global _index_refresh_running
+    with _index_refresh_lock:
+        if _index_refresh_running:
+            return
+        _index_refresh_running = True
+
+    try:
+        generate_index_json(force=True)
+    except Exception as e:
+        print(f"[index-background] Error actualizando index: {e}")
+    finally:
+        with _index_refresh_lock:
+            _index_refresh_running = False
 
 
 def _refresh_achievements_in_background():
@@ -201,31 +221,23 @@ def index():
     # Intentar cargar desde JSON pre-generado
     json_data = load_index_json()
     
-    # Si no existe JSON o está muy antiguo (>10 min), generarlo sincrónicamente
+    # Si no existe JSON, usar el caché disponible y actualizar en segundo plano.
     if json_data is None:
-        print("[index] JSON no encontrado, generando sincrónicamente...")
-        if generate_index_json(force=True):
-            json_data = load_index_json()
-        else:
-            # Fallback: usar datos del caché básico sin estadísticas
-            print("[index] ERROR: No se pudo generar JSON, usando caché básico")
-            datos_jugadores, timestamp = player_cache.get()
-            return render_template('index.html',
-                                   datos_jugadores=datos_jugadores,
-                                   active_live_games=get_active_live_games(),
-                                   ultima_actualizacion="N/A",
-                                   ddragon_version=settings.DDRAGON_VERSION,
-                                   split_activo_nombre=SPLITS[ACTIVE_SPLIT_KEY]['name'],
-                                   has_player_data=bool(datos_jugadores),
-                                   cache_stale=True,
-                                   minutos_desde_actualizacion=999)
+        threading.Thread(target=_refresh_index_in_background, daemon=True).start()
+        datos_jugadores, timestamp = player_cache.get()
+        return render_template('index.html',
+                               datos_jugadores=datos_jugadores,
+                               active_live_games=get_active_live_games(),
+                               ultima_actualizacion="N/A",
+                               ddragon_version=settings.DDRAGON_VERSION,
+                               split_activo_nombre=SPLITS[ACTIVE_SPLIT_KEY]['name'],
+                               has_player_data=bool(datos_jugadores),
+                               cache_stale=True,
+                               minutos_desde_actualizacion=999)
     
-    # Si el JSON existe pero está antiguo (>5 min), regenerarlo directamente en la petición.
-    # Esto evita bucles de refresh en Render sin bloquear la carga de la página.
+    # Si el JSON existe pero está antiguo, servirlo y refrescar una sola vez aparte.
     elif not is_json_fresh(max_age_seconds=300):
-        print("[index] JSON antiguo detectado, regenerando bajo demanda...")
-        generate_index_json(force=True)
-        json_data = load_index_json()
+        threading.Thread(target=_refresh_index_in_background, daemon=True).start()
     
     # Extraer datos del JSON
     datos_jugadores = json_data.get('datos_jugadores', [])

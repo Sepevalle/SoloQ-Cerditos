@@ -11,6 +11,8 @@ import threading
 import time
 from datetime import datetime, timezone
 
+import sitecustomize
+
 from flask import Flask
 
 # Importar configuración
@@ -55,6 +57,13 @@ from services.index_json_generator import (
     load_index_json, 
     is_json_fresh,
     start_json_generator_thread
+)
+
+render_environment = bool(
+    os.environ.get("PORT")
+    or os.environ.get("RENDER")
+    or os.environ.get("RENDER_SERVICE_ID")
+    or os.environ.get("RENDER_EXTERNAL_URL")
 )
 
 
@@ -156,12 +165,6 @@ print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
 print("="*60 + "\n")
 
 # En Render se aplazan las peticiones externas para que Flask abra el puerto primero.
-render_environment = bool(
-    os.environ.get("PORT")
-    or os.environ.get("RENDER")
-    or os.environ.get("RENDER_SERVICE_ID")
-    or os.environ.get("RENDER_EXTERNAL_URL")
-)
 if render_environment:
     print("[main] Render: actualización de Data Dragon aplazada.")
 else:
