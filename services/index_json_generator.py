@@ -268,7 +268,21 @@ def _get_lightweight_player_stats(jugador, previous_stats, lp_history):
         None,
     )
 
-    stats = dict(previous_stats or {})
+    previous_stats = previous_stats or {}
+    preserved_fields = (
+        'top_champion_stats',
+        'current_win_streak',
+        'current_loss_streak',
+        'wins_24h',
+        'losses_24h',
+        'en_partida',
+        'nombre_campeon',
+    )
+    stats = {
+        field: previous_stats[field]
+        for field in preserved_fields
+        if field in previous_stats
+    }
     stats['lp_change_24h'] = 0
     if recent_snapshots:
         first_snapshot = reference_snapshot or recent_snapshots[0]
