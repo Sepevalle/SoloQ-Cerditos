@@ -320,11 +320,10 @@ def generate_index_json(force: bool = False, lightweight: bool = False) -> bool:
         
         previous_index = load_index_json() if lightweight else None
         full_stats_timestamp = (previous_index or {}).get('stats_updated_timestamp', 0)
-        stats_are_recent = (
-            full_stats_timestamp > 0
-            and time.time() - full_stats_timestamp < INDEX_FULL_STATS_INTERVAL
-        )
-        use_lightweight = lightweight and stats_are_recent
+        # En Render el snapshot ligero debe guardarse siempre sin esperar a
+        # recalcular historiales completos. Las estadísticas anteriores se
+        # conservan y se pueden actualizar en una tarea separada.
+        use_lightweight = lightweight
         previous_players = {
             (player.get('puuid'), player.get('queue_type')): player
             for player in (previous_index or {}).get('datos_jugadores', [])
@@ -373,9 +372,7 @@ def generate_index_json(force: bool = False, lightweight: bool = False) -> bool:
             'ultima_actualizacion': ultima_actualizacion,
             'minutos_desde_actualizacion': minutos_desde_actualizacion,
             'timestamp_generacion': int(time.time()),
-            'stats_updated_timestamp': (
-                full_stats_timestamp if use_lightweight else int(time.time())
-            ),
+            'stats_updated_timestamp': full_stats_timestamp or int(time.time()),
             'ddragon_version': DDRAGON_VERSION,
             'split_activo_nombre': "Temporada 2026 - Split 1",
             'total_jugadores': len(jugadores_procesados),
