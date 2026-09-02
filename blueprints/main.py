@@ -1,5 +1,3 @@
-import json
-
 from flask import Blueprint, abort, render_template, request, Response
 from datetime import datetime, timezone, timedelta
 import time
@@ -11,8 +9,6 @@ from services.cache_service import (
     player_cache,
     player_stats_cache,
     page_data_cache,
-    match_lookup_cache,
-    historial_global_cache,
 )
 
 from services.github_service import read_peak_elo, save_peak_elo, read_lp_history
@@ -250,152 +246,6 @@ def detalle_partida_en_vivo(game_id):
         live_game=live_game,
         ddragon_version=settings.DDRAGON_VERSION,
     )
-
-
-def _build_historial_global_dataset():
-    """Construye un snapshot ligero del historial global."""
-
-    from services.player_service import get_all_accounts, get_all_puuids
-
-    cuentas = get_all_accounts()
-    puuids = get_all_puuids()
-    players_total = len(cuentas)
-    players_with_puuid = 0
-    all_matches = []
-
-    for riot_id, jugador_nombre in cuentas:
-        puuid = puuids.get(riot_id)
-        if not puuid:
-            continue
-
-        players_with_puuid += 1
-        historial = get_player_match_history(puuid, limit=-1)
-        matches = historial.get('matches', [])
-
-        for match in matches:
-            match_summary = {
-                'match_id': match.get('match_id'),
-                'jugador_nombre': jugador_nombre,
-                'riot_id': riot_id,
-                'champion_name': match.get('champion_name'),
-                'win': match.get('win'),
-                'kills': match.get('kills', 0),
-                'deaths': match.get('deaths', 0),
-                'assists': match.get('assists', 0),
-                'queue_id': match.get('queue_id'),
-                'lp_change_this_game': match.get('lp_change_this_game'),
-                'game_end_timestamp': match.get('game_end_timestamp', 0),
-            }
-            all_matches.append(match_summary)
-
-            match_id = match_summary.get('match_id')
-            if match_id:
-                match_lookup_cache.set(match_id, {
-                    'game_name': riot_id,
-                    'puuid': puuid
-                })
-
-    all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
-
-    dataset = {
-        'matches': all_matches,
-        'players_total': players_total,
-        'players_with_puuid': players_with_puuid,
-    }
-    return dataset
-
-
-def _refresh_historial_global_in_background():
-    """Recalcula el historial global en background si no hay otro calculo en marcha."""
-    if historial_global_cache.is_calculating():
-        return
-
-    historial_global_cache.set_calculating(True)
-    try:
-        print("[historial-global-background] Iniciando refresco...")
-        dataset = _build_historial_global_dataset()
-        historial_global_cache.set(dataset)
-        print("[historial-global-background] Refresco completado.")
-    except Exception as e:
-        print(f"[historial-global-background] Error: {e}")
-        import traceback
-        traceback.print_exc()
-    finally:
-        historial_global_cache.set_calculating(False)
-
-
-@main_bp.route('/historial_global')
-def historial_global():
-    """Renderiza la página de historial global de partidas."""
-    print("[historial_global] Petición recibida.")
-    try:
-        page = request.args.get('page', 1, type=int)
-        if page is None or page < 1:
-            page = 1
-        per_page = 15
-
-        cache_data = historial_global_cache.get()
-        dataset = cache_data.get('data')
-        if not dataset:
-            dataset = _build_historial_global_dataset()
-            historial_global_cache.set(dataset)
-            cache_data = historial_global_cache.get()
-        elif historial_global_cache.is_stale() and not historial_global_cache.is_calculating():
-            threading.Thread(target=_refresh_historial_global_in_background, daemon=True).start()
-        all_matches = dataset.get('matches', [])
-        players_total = dataset.get('players_total', 0)
-        players_with_puuid = dataset.get('players_with_puuid', 0)
-
-        total_matches = len(all_matches)
-        total_pages = max(1, (total_matches + per_page - 1) // per_page)
-        if page > total_pages:
-            page = total_pages
-        start = (page - 1) * per_page
-        end = start + per_page
-        page_matches = all_matches[start:end]
-        page_start = max(1, page - 2)
-        page_end = min(total_pages, page + 2)
-        page_numbers = list(range(page_start, page_end + 1))
-        
-        # Intentar servir HTML precomputado por página (solo para primeras 5 páginas)
-        pre_key = f"historial_global_page_{page}"
-        try:
-            if page <= 5:
-                # historial paginado: 120 minutes
-                content = pre_read_fresh(pre_key, max_age_seconds=7200)
-                if content:
-                    return Response(content, mimetype='text/html')
-        except Exception:
-            pass
-
-        generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        rendered = render_template('historial_global.html',
-                             matches=page_matches,
-                             page=page,
-                             per_page=per_page,
-                             total_matches=total_matches,
-                             total_pages=total_pages,
-                             page_numbers=page_numbers,
-                             players_total=players_total,
-                             players_with_puuid=players_with_puuid,
-                             ddragon_version=settings.DDRAGON_VERSION,
-                             has_player_data=True,
-                             generated_at=generated_at)
-
-        try:
-            pre_write_all_async(pre_key, rendered)
-        except Exception:
-            try:
-                pre_write_async(pre_key, rendered)
-            except Exception:
-                pass
-
-        return Response(rendered, mimetype='text/html')
-    except Exception as e:
-        print(f"[historial_global] Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return render_template('404.html'), 500
 
 
 @main_bp.route('/configops', methods=['GET', 'POST'])

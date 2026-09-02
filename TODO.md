@@ -18,7 +18,6 @@ Esto da mucho rendimiento con muy poco coste de RAM.
 - [ ] Revisar donde se guardan listas completas de partidas
 - [ ] Identificar duplicaciones entre:
 - [ ] `player_match_history_cache`
-- [ ] snapshots de historial global
 - [ ] `global_stats_cache`
 - [ ] perfil de jugador
 - [ ] Dejar una sola copia completa de cada historial cuando sea posible
@@ -38,7 +37,6 @@ Es una de las caches con mas papeletas de comer RAM.
 ## Prioridad 2 - Alto impacto en rendimiento
 
 ### 4. Extender el patron snapshot ligero a todas las vistas pesadas
-- [ ] Mantener `historial_global` como snapshot ligero con refresco on demand
 - [ ] Evaluar que otras vistas agregadas deben pasar a snapshot
 - [ ] Evitar recalculos completos dentro de requests HTTP normales
 
@@ -87,7 +85,6 @@ Motivo:
 En Render gratis interesa precalentar manualmente en vez de hacer esperar al primer usuario.
 
 ### 9. Mostrar estado de snapshots en las paginas criticas
-- [ ] Mostrar ultima actualizacion en `historial_global`
 - [ ] Mostrar si el snapshot esta stale
 - [ ] Anadir boton de recarga manual donde tenga sentido
 
@@ -133,7 +130,7 @@ Mantener el sistema pequeno y entendible tambien mejora estabilidad.
 ### 13. Checklist antes de subir a produccion
 - [ ] Validar sintaxis Python de archivos tocados
 - [ ] Validar JSONs de configuracion
-- [ ] Probar carga en frio de index, historial global y perfil jugador
+- [ ] Probar carga en frio de index y perfil jugador
 - [ ] Probar recarga manual de snapshots
 - [ ] Verificar que las invalidaciones funcionan al guardar nuevas partidas
 - [ ] Revisar logs de memoria y tiempos tras desplegar

@@ -46,36 +46,6 @@ def _render_index(app) -> None:
     write_all("index", rendered)
 
 
-def _render_historial(app) -> None:
-    from blueprints import main as main_bp
-
-    print("[precompute_generator] Generando historial_global pregenerado...")
-    dataset = main_bp._build_historial_global_dataset()
-    all_matches = dataset.get("matches", [])
-    per_page = 15
-    total_matches = len(all_matches)
-    total_pages = max(1, (total_matches + per_page - 1) // per_page)
-
-    for page in range(1, total_pages + 1):
-        start = (page - 1) * per_page
-        end = start + per_page
-        page_numbers = list(range(max(1, page - 2), min(total_pages, page + 2) + 1))
-        rendered = app.jinja_env.get_template("historial_global.html").render(
-            matches=all_matches[start:end],
-            page=page,
-            per_page=per_page,
-            total_matches=total_matches,
-            total_pages=total_pages,
-            page_numbers=page_numbers,
-            players_total=dataset.get("players_total", 0),
-            players_with_puuid=dataset.get("players_with_puuid", 0),
-            ddragon_version=settings.DDRAGON_VERSION,
-            has_player_data=True,
-            generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        )
-        write_all(f"historial_global_page_{page}", rendered)
-
-
 def _render_players(app, max_players: int) -> None:
     from blueprints import player as player_bp
 
@@ -140,7 +110,6 @@ def generate_precomputed_html(app, max_players: int | None = None) -> bool:
     try:
         with app.test_request_context("/"):
             _render_index(app)
-            _render_historial(app)
             _render_players(app, max_players=max_players)
         print(f"[precompute_generator] HTML pregenerado en {time.time() - started_at:.1f}s")
         return True
