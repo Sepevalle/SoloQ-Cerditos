@@ -193,7 +193,15 @@ print("[main] ✓ Aplicación Flask creada")
 # En Render, desactivar servicios de fondo por defecto para evitar consumo excesivo.
 # El keep_alive debe seguir activo para que la app cargue directamente.
 if render_environment:
-    print("[main] Render detectado: background services desactivados automáticamente para reducir consumo.")
+    print("[main] Render detectado: iniciando workers ligeros de caché, LP y partidas.")
+    start_data_updater(RIOT_API_KEY)
+    lp_thread = threading.Thread(
+        target=start_lp_tracker,
+        args=(RIOT_API_KEY, GITHUB_TOKEN),
+        daemon=True,
+        name="LPTrackerWorker",
+    )
+    lp_thread.start()
     keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
     keep_alive_thread.start()
     print("[main] ✓ Keep-alive iniciado en Render")

@@ -124,8 +124,9 @@ def actualizar_cache_periodicamente():
             else:
                 print("[actualizar_cache_periodicamente] ⚠ Error generando JSON del index")
             
-            # Actualizar datos de DDragon
-            actualizar_ddragon_data()
+            # Data Dragon se actualiza durante el arranque local, no en cada ciclo de Render.
+            if not os.environ.get("PORT"):
+                actualizar_ddragon_data()
 
             
         except Exception as e:
@@ -598,8 +599,8 @@ def _check_all_players_live_games():
             import traceback
             traceback.print_exc()
         
-        # Verificar cada 2 minutos (120 segundos)
-        time.sleep(120)
+        # Verificar según el intervalo configurado para Render.
+        time.sleep(LIVE_GAME_CHECK_INTERVAL)
 
 
 def actualizar_jugador_especifico(puuid, riot_id, jugador_nombre):
@@ -783,7 +784,12 @@ def start_data_updater(riot_api_key):
         print("[data_updater] El servicio de actualización no funcionará correctamente")
         return
 
-    render_mode = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RENDER_EXTERNAL_URL"))
+    render_mode = bool(
+        os.environ.get("PORT")
+        or os.environ.get("RENDER")
+        or os.environ.get("RENDER_SERVICE_ID")
+        or os.environ.get("RENDER_EXTERNAL_URL")
+    )
     if render_mode:
         print("[data_updater] Render detectado: activando modo ligero para seguir actualizando datos sin consumo excesivo.")
 
@@ -843,7 +849,12 @@ def start_data_updater(riot_api_key):
     print("[data_updater] ✓ Worker de verificación de 'en partida' iniciado (cada 2 min)")
     
     # En Render no arrancamos el hilo periódico del JSON para evitar consumo excesivo.
-    render_mode = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RENDER_EXTERNAL_URL"))
+    render_mode = bool(
+        os.environ.get("PORT")
+        or os.environ.get("RENDER")
+        or os.environ.get("RENDER_SERVICE_ID")
+        or os.environ.get("RENDER_EXTERNAL_URL")
+    )
     if not render_mode:
         from services.index_json_generator import start_json_generator_thread
         start_json_generator_thread(interval_seconds=130)  # Cada ~2 minutos

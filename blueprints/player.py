@@ -7,6 +7,7 @@ from services.cache_service import player_cache, player_profile_cache, match_loo
 from services.match_service import get_player_match_history, calculate_streaks
 from services.stats_service import get_top_champions_for_player
 from services.github_service import read_peak_elo
+from services.index_json_generator import load_index_json
 
 player_bp = Blueprint('player', __name__)
 MATCHES_PER_PAGE = 15
@@ -27,6 +28,13 @@ def _build_player_profile(game_name):
     # Obtener datos del caché principal
     all_players, _ = player_cache.get()
     player_entries = [dict(p) for p in all_players if p.get('game_name') == game_name]
+
+    if not player_entries:
+        index_data = load_index_json() or {}
+        player_entries = [
+            dict(p) for p in index_data.get('datos_jugadores', [])
+            if p.get('game_name') == game_name
+        ]
     
     if not player_entries:
         return None
@@ -223,6 +231,9 @@ def _find_player_for_match_id(match_id):
         return cached_match_owner
 
     all_players, _ = player_cache.get()
+    if not all_players:
+        index_data = load_index_json() or {}
+        all_players = index_data.get('datos_jugadores', [])
     seen_puuids = set()
 
     for player_entry in all_players:
