@@ -803,8 +803,6 @@ def start_data_updater(riot_api_key):
         return
     
     # Iniciar workers en threads separados
-    import threading
-    
     # Worker de caché
     cache_thread = threading.Thread(target=actualizar_cache_periodicamente, daemon=True)
     cache_thread.start()
