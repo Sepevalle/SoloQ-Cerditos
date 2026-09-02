@@ -347,53 +347,8 @@ def _refresh_historial_global_in_background():
 
 @main_bp.route('/historial_global')
 def historial_global():
-    """Renderiza la página de historial global de partidas."""
-    print("[historial_global] Petición recibida.")
-    try:
-        page = request.args.get('page', 1, type=int)
-        if page is None or page < 1:
-            page = 1
-        per_page = 15
-
-        cache_data = historial_global_cache.get()
-        dataset = cache_data.get('data')
-        if not dataset:
-            dataset = _build_historial_global_dataset()
-            historial_global_cache.set(dataset)
-            cache_data = historial_global_cache.get()
-        elif historial_global_cache.is_stale() and not historial_global_cache.is_calculating():
-            threading.Thread(target=_refresh_historial_global_in_background, daemon=True).start()
-        all_matches = dataset.get('matches', [])
-        players_total = dataset.get('players_total', 0)
-        players_with_puuid = dataset.get('players_with_puuid', 0)
-
-        total_matches = len(all_matches)
-        total_pages = max(1, (total_matches + per_page - 1) // per_page)
-        if page > total_pages:
-            page = total_pages
-        start = (page - 1) * per_page
-        end = start + per_page
-        page_matches = all_matches[start:end]
-        page_start = max(1, page - 2)
-        page_end = min(total_pages, page + 2)
-        page_numbers = list(range(page_start, page_end + 1))
-        
-        return render_template('historial_global.html',
-                             matches=page_matches,
-                             page=page,
-                             per_page=per_page,
-                             total_matches=total_matches,
-                             total_pages=total_pages,
-                             page_numbers=page_numbers,
-                             players_total=players_total,
-                             players_with_puuid=players_with_puuid,
-                             ddragon_version=settings.DDRAGON_VERSION,
-                             has_player_data=True)
-    except Exception as e:
-        print(f"[historial_global] Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return render_template('404.html'), 500
+    """Ruta retirada para evitar lecturas masivas del historial en GitHub."""
+    abort(404)
 
 
 @main_bp.route('/logros')
