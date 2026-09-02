@@ -11,8 +11,6 @@ import threading
 import time
 from datetime import datetime, timezone
 
-import sitecustomize
-
 from flask import Flask
 
 # Importar configuración
