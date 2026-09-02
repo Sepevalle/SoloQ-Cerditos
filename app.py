@@ -192,6 +192,7 @@ print("[main] ✓ Aplicación Flask creada")
 # El keep_alive debe seguir activo para que la app cargue directamente.
 if render_environment:
     print("[main] Render detectado: iniciando workers ligeros de caché, LP y partidas.")
+    start_rate_limiter()
     start_data_updater(RIOT_API_KEY)
     lp_thread = threading.Thread(
         target=start_lp_tracker,
