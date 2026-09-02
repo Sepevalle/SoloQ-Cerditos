@@ -273,10 +273,12 @@ def _get_lightweight_player_stats(
         jugador.get('league_points', 0),
     )
     jugador['valor_clasificacion'] = current_value
-    jugador['peak_elo'] = max(
-        current_value,
-        peak_elo_dict.get(peak_key, peak_elo_dict.get(legacy_peak_key, 0)),
-    )
+    stored_peak = peak_elo_dict.get(peak_key)
+    if stored_peak is None:
+        stored_peak = peak_elo_dict.get(legacy_peak_key, 0)
+    jugador['peak_elo'] = max(current_value, stored_peak or 0)
+    if current_value > (stored_peak or 0):
+        peak_elo_dict[peak_key] = current_value
     queue_history = sorted(
         (lp_history.get(puuid, {}) or {}).get(queue_type, []),
         key=lambda snapshot: snapshot.get('timestamp', 0),

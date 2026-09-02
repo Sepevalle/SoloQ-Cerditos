@@ -634,7 +634,7 @@
                     </td>
                     <td class="hidden">{{ jugador.valor_clasificacion }}</td>
                     <td>
-                        {% set diff_peak = jugador.valor_clasificacion|default(0, true) - jugador.peak_elo|default(jugador.valor_clasificacion|default(0, true), true) %}
+                        {% set diff_peak = jugador.peak_elo|default(jugador.valor_clasificacion|default(0, true), true) - jugador.valor_clasificacion|default(0, true) %}
                         {% if diff_peak == 0 %}
                             <span class="peak-elo">PEAK</span>
                         {% else %}
