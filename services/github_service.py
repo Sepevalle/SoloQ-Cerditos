@@ -579,6 +579,30 @@ def read_player_match_history(puuid):
     return {}
 
 
+def read_current_week_match_history(puuid):
+    """Lee únicamente el archivo de partidas de la semana ISO actual."""
+    current_week = datetime.utcnow().strftime("%G-W%V")
+    week_path = f"match_history/{puuid}/weeks/{current_week}.json"
+    content, _ = read_file_from_github(week_path)
+    if content and isinstance(content, dict):
+        return content.get('matches', [])
+
+    # Las semanas grandes pueden estar divididas en varios chunks.
+    index_path = f"match_history/{puuid}/index.json"
+    index_content, _ = read_file_from_github(index_path)
+    if not index_content or not isinstance(index_content, dict):
+        return []
+
+    matches = []
+    for file_path in index_content.get('files', []):
+        if not file_path.startswith(f"weeks/{current_week}-"):
+            continue
+        chunk_content, _ = read_file_from_github(f"match_history/{puuid}/{file_path}")
+        if chunk_content and isinstance(chunk_content, dict):
+            matches.extend(chunk_content.get('matches', []))
+    return matches
+
+
 def save_player_match_history(puuid, historial_data):
     """
     Guarda el historial de partidas de un jugador usando formato v3 (chunked).

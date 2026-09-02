@@ -27,7 +27,8 @@ from services.github_service import (
     read_peak_elo, 
     read_lp_history,
     read_stats_index,
-    save_stats_index
+    save_stats_index,
+    read_current_week_match_history,
 )
 from services.match_service import get_player_match_history, calculate_streaks
 from services.stats_service import get_top_champions_for_player
@@ -253,8 +254,8 @@ def _calculate_player_stats(
     return jugador
 
 
-def _get_lightweight_player_stats(jugador, previous_stats, lp_history):
-    """Completa el jugador sin leer su historial de partidas."""
+def _get_lightweight_player_stats(jugador, previous_stats, lp_history, current_week_matches=None):
+    """Completa el jugador leyendo solo las partidas de la semana actual."""
     queue_type = jugador.get('queue_type')
     puuid = jugador.get('puuid')
     queue_history = sorted(
@@ -283,6 +284,22 @@ def _get_lightweight_player_stats(jugador, previous_stats, lp_history):
         for field in preserved_fields
         if field in previous_stats
     }
+    matches = current_week_matches or []
+    queue_matches = [
+        match for match in matches
+        if match.get('queue_id') == (420 if queue_type == 'RANKED_SOLO_5x5' else 440)
+    ]
+    if queue_matches:
+        stats['top_champion_stats'] = get_top_champions_for_player(queue_matches, limit=3)
+        streaks = calculate_streaks(queue_matches)
+        stats['current_win_streak'] = streaks.get('current_win_streak', 0)
+        stats['current_loss_streak'] = streaks.get('current_loss_streak', 0)
+        recent_matches = [
+            match for match in queue_matches
+            if match.get('game_end_timestamp', 0) >= cutoff
+        ]
+        stats['wins_24h'] = sum(1 for match in recent_matches if match.get('win'))
+        stats['losses_24h'] = sum(1 for match in recent_matches if not match.get('win'))
     stats['lp_change_24h'] = 0
     if recent_snapshots:
         first_snapshot = reference_snapshot or recent_snapshots[0]
@@ -342,6 +359,10 @@ def generate_index_json(force: bool = False, lightweight: bool = False) -> bool:
             (player.get('puuid'), player.get('queue_type')): player
             for player in (previous_index or {}).get('datos_jugadores', [])
         }
+        current_week_matches = {}
+        if use_lightweight:
+            for puuid in {player.get('puuid') for player in datos_jugadores if player.get('puuid')}:
+                current_week_matches[puuid] = read_current_week_match_history(puuid)
 
         # Calcular estadísticas para cada jugador
         jugadores_procesados = []
@@ -356,6 +377,7 @@ def generate_index_json(force: bool = False, lightweight: bool = False) -> bool:
                         jugador,
                         previous_players.get((jugador.get('puuid'), jugador.get('queue_type'))),
                         lp_history,
+                        current_week_matches.get(jugador.get('puuid'), []),
                     )
                 else:
                     jugador_procesado = _calculate_player_stats(jugador, peak_elo_dict, lp_history)
