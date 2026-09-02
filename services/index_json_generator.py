@@ -254,10 +254,29 @@ def _calculate_player_stats(
     return jugador
 
 
-def _get_lightweight_player_stats(jugador, previous_stats, lp_history, current_week_matches=None):
+def _get_lightweight_player_stats(
+    jugador,
+    previous_stats,
+    lp_history,
+    current_week_matches=None,
+    peak_elo_dict=None,
+):
     """Completa el jugador leyendo solo las partidas de la semana actual."""
     queue_type = jugador.get('queue_type')
     puuid = jugador.get('puuid')
+    peak_elo_dict = peak_elo_dict or {}
+    peak_key = _get_peak_elo_key(jugador)
+    legacy_peak_key = _get_legacy_peak_elo_key(jugador)
+    current_value = calcular_valor_clasificacion(
+        jugador.get('tier', 'Unranked'),
+        jugador.get('rank', 'IV'),
+        jugador.get('league_points', 0),
+    )
+    jugador['valor_clasificacion'] = current_value
+    jugador['peak_elo'] = max(
+        current_value,
+        peak_elo_dict.get(peak_key, peak_elo_dict.get(legacy_peak_key, 0)),
+    )
     queue_history = sorted(
         (lp_history.get(puuid, {}) or {}).get(queue_type, []),
         key=lambda snapshot: snapshot.get('timestamp', 0),
@@ -378,6 +397,7 @@ def generate_index_json(force: bool = False, lightweight: bool = False) -> bool:
                         previous_players.get((jugador.get('puuid'), jugador.get('queue_type'))),
                         lp_history,
                         current_week_matches.get(jugador.get('puuid'), []),
+                        peak_elo_dict,
                     )
                 else:
                     jugador_procesado = _calculate_player_stats(jugador, peak_elo_dict, lp_history)
