@@ -55,14 +55,18 @@ def keep_alive():
 def actualizar_cache_periodicamente():
     """Actualiza la caché de jugadores periódicamente."""
     print("[actualizar_cache_periodicamente] Hilo iniciado.")
+    print("[DIAG_RENDER] cache_worker_started")
     
     while True:
+        cycle_started_at = time.time()
         try:
             print("[actualizar_cache_periodicamente] Actualizando caché de jugadores...")
             
             # Obtener cuentas y PUUIDs
             cuentas = get_all_accounts()
+            print(f"[DIAG_RENDER] accounts_loaded count={len(cuentas)}")
             puuids, nuevos_puuids = ensure_puuids_for_accounts(cuentas, api_key=RIOT_API_KEY)
+            print(f"[DIAG_RENDER] puuids_loaded count={len(puuids)} new={nuevos_puuids}")
             if nuevos_puuids:
                 print(f"[actualizar_cache_periodicamente] PUUIDs nuevos guardados: {nuevos_puuids}")
 
@@ -113,8 +117,23 @@ def actualizar_cache_periodicamente():
                             'perfil_icon_url': perfil_icon_url
                         })
             
+            # No borrar datos válidos si una consulta externa devuelve vacío.
+            if not datos_jugadores:
+                print(
+                    f"[DIAG_RENDER] cache_empty accounts={len(cuentas)} "
+                    f"puuids={len(puuids)} elapsed={time.time() - cycle_started_at:.1f}s"
+                )
+                print("[actualizar_cache_periodicamente] Sin datos válidos; se conserva el caché anterior")
+                time.sleep(CACHE_UPDATE_INTERVAL)
+                continue
+
             # Actualizar caché
             player_cache.set(datos_jugadores)
+            print(
+                f"[DIAG_RENDER] cache_ready entries={len(datos_jugadores)} "
+                f"players={len({player.get('puuid') for player in datos_jugadores})} "
+                f"elapsed={time.time() - cycle_started_at:.1f}s"
+            )
             print(f"[actualizar_cache_periodicamente] Caché actualizada con {len(datos_jugadores)} entradas")
 
             # Generar JSON del index con los nuevos datos
@@ -126,8 +145,10 @@ def actualizar_cache_periodicamente():
                 or os.environ.get("RENDER_EXTERNAL_URL")
             )
             if generate_index_json(lightweight=render_mode):
+                print(f"[DIAG_RENDER] index_saved elapsed={time.time() - cycle_started_at:.1f}s")
                 print("[actualizar_cache_periodicamente] ✓ JSON del index generado correctamente")
             else:
+                print(f"[DIAG_RENDER] index_save_failed elapsed={time.time() - cycle_started_at:.1f}s")
                 print("[actualizar_cache_periodicamente] ⚠ Error generando JSON del index")
             
             # Data Dragon se actualiza durante el arranque local, no en cada ciclo de Render.
@@ -136,6 +157,10 @@ def actualizar_cache_periodicamente():
 
             
         except Exception as e:
+            print(
+                f"[DIAG_RENDER] cache_cycle_error type={type(e).__name__} "
+                f"elapsed={time.time() - cycle_started_at:.1f}s"
+            )
             print(f"[actualizar_cache_periodicamente] Error: {e}")
             import traceback
             traceback.print_exc()
@@ -538,15 +563,18 @@ def _check_all_players_live_games():
     Este hilo se ejecuta independientemente de la generación del JSON.
     """
     print("[_check_all_players_live_games] Hilo iniciado.")
+    print("[DIAG_RENDER] live_game_worker_started interval_seconds=" + str(LIVE_GAME_CHECK_INTERVAL))
     
     from services.riot_api import esta_en_partida, obtener_nombre_campeon
     
     while True:
+        cycle_started_at = time.time()
         try:
             print("[_check_all_players_live_games] Verificando estado de todos los jugadores...")
             
             cuentas = get_all_accounts()
             puuids = get_all_puuids()
+            print(f"[DIAG_RENDER] live_cycle_started accounts={len(cuentas)} puuids={len(puuids)}")
             
             jugadores_en_partida = 0
             total_verificados = 0
@@ -599,8 +627,16 @@ def _check_all_players_live_games():
                     continue
             
             print(f"[_check_all_players_live_games] ✓ Verificación completada: {jugadores_en_partida}/{total_verificados} jugadores en partida")
+            print(
+                f"[DIAG_RENDER] live_cycle_done checked={total_verificados} "
+                f"in_game={jugadores_en_partida} elapsed={time.time() - cycle_started_at:.1f}s"
+            )
             
         except Exception as e:
+            print(
+                f"[DIAG_RENDER] live_cycle_error type={type(e).__name__} "
+                f"elapsed={time.time() - cycle_started_at:.1f}s"
+            )
             print(f"[_check_all_players_live_games] Error general: {e}")
             import traceback
             traceback.print_exc()

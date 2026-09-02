@@ -400,6 +400,12 @@ def read_accounts_file():
     """Lee el archivo de cuentas (cuentas.txt)."""
     content, _ = read_file_from_github("cuentas.txt", use_raw=False)
     if not content:
+        try:
+            with open("cuentas.txt", "r", encoding="utf-8") as file:
+                content = file.read()
+        except (FileNotFoundError, OSError):
+            content = None
+    if not content:
         return []
     
     try:
@@ -422,6 +428,12 @@ def read_accounts_file():
 def read_puuids():
     """Lee el archivo de PUUIDs."""
     content, _ = read_file_from_github("puuids.json")
+    if not content:
+        try:
+            with open("puuids.json", "r", encoding="utf-8") as file:
+                content = json.load(file)
+        except (FileNotFoundError, OSError, json.JSONDecodeError):
+            content = None
     if content and isinstance(content, dict):
         return True, content
     return False, {}
