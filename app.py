@@ -156,7 +156,12 @@ print("SOLOQ-CERDITOS - INICIANDO APLICACIÓN")
 print("="*60 + "\n")
 
 # En Render se aplazan las peticiones externas para que Flask abra el puerto primero.
-render_environment = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RENDER_EXTERNAL_URL"))
+render_environment = bool(
+    os.environ.get("PORT")
+    or os.environ.get("RENDER")
+    or os.environ.get("RENDER_SERVICE_ID")
+    or os.environ.get("RENDER_EXTERNAL_URL")
+)
 if render_environment:
     print("[main] Render: actualización de Data Dragon aplazada.")
 else:

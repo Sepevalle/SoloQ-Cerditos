@@ -107,7 +107,7 @@ DDRAGON_VERSION = "16.3.1"
 # CONFIGURACIÓN DEL SERVIDOR
 # ============================================================================
 
-PORT = int(os.environ.get("PORT", 5000))
+PORT = int(os.environ.get("PORT", 10000))
 HOST = "0.0.0.0"
 DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 SECRET_KEY = os.environ.get("SECRET_KEY", "soloq-cerditos-dev-key-change-in-production")
