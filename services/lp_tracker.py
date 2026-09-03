@@ -50,30 +50,34 @@ def _read_cuentas_from_github(token):
     return []
 
 def _read_json_from_github(file_path, token):
-    """Lee un archivo JSON desde el repositorio de GitHub."""
+    """Lee un archivo JSON desde el repositorio de GitHub con soporte para archivos grandes."""
     url = f"{GITHUB_API_BASE_URL}{file_path}"
-    headers = {"Accept": "application/vnd.github.v3+json"}
+    
+    # Para archivos grandes (>1MB), usar header raw para obtener contenido completo
+    headers = {"Accept": "application/vnd.github.v3.raw"}
     if token:
         headers["Authorization"] = f"token {token}"
     
     try:
         resp = requests.get(url, headers=headers, timeout=30)
         if resp.status_code == 200:
-            content = resp.json()
-            file_content = base64.b64decode(content['content']).decode('utf-8')
-            # Manejar archivo vacío - CRÍTICO: No inicializar con datos vacíos
-            if not file_content or not file_content.strip():
-                print(f"[LP_TRACKER] ⚠️ CRÍTICO: Archivo {file_path} está vacío en GitHub.")
-                print(f"[LP_TRACKER] ⚠️ ERROR: No se puede continuar - se perderían datos históricos.")
-                print(f"[LP_TRACKER] ⚠️ Solución: Revisar archivo en GitHub y restaurar si es necesario.")
-                return None, content.get('sha')  # Retornar None para indicar error crítico
+            # Con header raw, el contenido viene directamente como JSON
             try:
-                return json.loads(file_content), content.get('sha')
+                content = resp.json()
+                # Necesitamos obtener el SHA por separado
+                sha_headers = {"Accept": "application/vnd.github.v3+json"}
+                if token:
+                    sha_headers["Authorization"] = f"token {token}"
+                sha_resp = requests.get(url, headers=sha_headers, timeout=30)
+                if sha_resp.status_code == 200:
+                    sha = sha_resp.json().get('sha')
+                else:
+                    sha = None
+                return content, sha
             except json.JSONDecodeError:
                 print(f"[LP_TRACKER] ⚠️ CRÍTICO: Archivo {file_path} tiene JSON inválido.")
                 print(f"[LP_TRACKER] ⚠️ ERROR: No se puede continuar - se perderían datos históricos.")
-                print(f"[LP_TRACKER] ⚠️ Solución: Revisar archivo en GitHub y corregir formato JSON.")
-                return None, content.get('sha')  # Retornar None para indicar error crítico
+                return None, None
         elif resp.status_code == 404:
             print(f"[LP_TRACKER] Archivo no encontrado en GitHub: {file_path}. Se creará uno nuevo.")
             return {}, None  # Solo permitir crear archivo nuevo si realmente no existe
