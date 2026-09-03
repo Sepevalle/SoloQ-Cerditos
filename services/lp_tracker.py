@@ -61,27 +61,50 @@ def _read_json_from_github(file_path, token):
         if resp.status_code == 200:
             content = resp.json()
             file_content = base64.b64decode(content['content']).decode('utf-8')
-            # Manejar archivo vacío
+            # Manejar archivo vacío - CRÍTICO: No inicializar con datos vacíos
             if not file_content or not file_content.strip():
-                print(f"[LP_TRACKER] Archivo {file_path} está vacío. Inicializando...")
-                return {}, content.get('sha')
+                print(f"[LP_TRACKER] ⚠️ CRÍTICO: Archivo {file_path} está vacío en GitHub.")
+                print(f"[LP_TRACKER] ⚠️ ERROR: No se puede continuar - se perderían datos históricos.")
+                print(f"[LP_TRACKER] ⚠️ Solución: Revisar archivo en GitHub y restaurar si es necesario.")
+                return None, content.get('sha')  # Retornar None para indicar error crítico
             try:
                 return json.loads(file_content), content.get('sha')
             except json.JSONDecodeError:
-                print(f"[LP_TRACKER] Archivo {file_path} tiene JSON inválido. Inicializando...")
-                return {}, content.get('sha')
+                print(f"[LP_TRACKER] ⚠️ CRÍTICO: Archivo {file_path} tiene JSON inválido.")
+                print(f"[LP_TRACKER] ⚠️ ERROR: No se puede continuar - se perderían datos históricos.")
+                print(f"[LP_TRACKER] ⚠️ Solución: Revisar archivo en GitHub y corregir formato JSON.")
+                return None, content.get('sha')  # Retornar None para indicar error crítico
         elif resp.status_code == 404:
             print(f"[LP_TRACKER] Archivo no encontrado en GitHub: {file_path}. Se creará uno nuevo.")
-            return {}, None
+            return {}, None  # Solo permitir crear archivo nuevo si realmente no existe
         else:
             print(f"[LP_TRACKER] Error al leer {file_path} desde GitHub: {resp.status_code}")
-            return {}, None
+            return None, None
     except Exception as e:
         print(f"[LP_TRACKER] Excepción al leer {file_path} de GitHub: {e}")
-    return {}, None
+        return None, None
 
 
-def _write_to_github(file_path, data, sha, token):
+def _create_backup(file_path, data, token):
+    """Crea un backup del archivo antes de sobrescribirlo."""
+    if not data or len(data) == 0:
+        print(f"[LP_TRACKER] No se crea backup - datos vacíos")
+        return False
+    
+    timestamp = int(datetime.now(timezone.utc).timestamp())
+    backup_path = f"{file_path}.backup_{timestamp}"
+    
+    try:
+        success = _write_to_github(backup_path, data, None, token, is_backup=True)
+        if success:
+            print(f"[LP_TRACKER] ✅ Backup creado: {backup_path}")
+        return success
+    except Exception as e:
+        print(f"[LP_TRACKER] ⚠️ Error creando backup: {e}")
+        return False
+
+
+def _write_to_github(file_path, data, sha, token, is_backup=False):
     """Escribe o actualiza un archivo en el repositorio de GitHub."""
     url = f"{GITHUB_API_BASE_URL}{file_path}"
     headers = {"Authorization": f"token {token}"}
@@ -89,8 +112,9 @@ def _write_to_github(file_path, data, sha, token):
     content_json = json.dumps(data, indent=2, ensure_ascii=False)
     content_b64 = base64.b64encode(content_json.encode('utf-8')).decode('utf-8')
     
+    message = f"Actualizar {file_path}" if not is_backup else f"Backup automático: {file_path}"
     payload = {
-        "message": f"Actualizar {file_path}",
+        "message": message,
         "content": content_b64,
         "branch": "main"
     }
@@ -102,27 +126,25 @@ def _write_to_github(file_path, data, sha, token):
     try:
         response = requests.put(url, headers=headers, json=payload, timeout=30)
         if response.status_code in (200, 201):
-            print(f"[LP_TRACKER] Archivo {file_path} actualizado correctamente en GitHub.")
+            if not is_backup:
+                print(f"[LP_TRACKER] ✅ Archivo {file_path} actualizado correctamente en GitHub.")
             return True
         elif response.status_code == 422:
-            # Error 422: intentar sin SHA (crear nuevo archivo)
-            print(f"[LP_TRACKER] Error 422, intentando crear archivo nuevo...")
-            if "sha" in payload:
-                del payload["sha"]
+            # Error 422: conflicto de SHA - CRÍTICO para lp_history.json
+            if file_path == LP_HISTORY_FILE_PATH and not is_backup:
+                print(f"[LP_TRACKER] ⚠️ CRÍTICO: Error 422 para {file_path} - conflicto de SHA.")
+                print(f"[LP_TRACKER] ⚠️ ERROR: No se creará archivo nuevo para evitar pérdida de datos.")
+                print(f"[LP_TRACKER] ⚠️ Solución: Reintentar en el próximo ciclo con SHA actualizado.")
+                return False
             
-            response = requests.put(url, headers=headers, json=payload, timeout=30)
-            if response.status_code in (200, 201):
-                print(f"[LP_TRACKER] Archivo {file_path} creado correctamente en GitHub.")
-                return True
-            
-            # Si sigue fallando, intentar obtener SHA fresco
-            print(f"[LP_TRACKER] Reintentando con SHA actualizado...")
+            # Para otros archivos, intentar con SHA fresco
+            print(f"[LP_TRACKER] Error 422 para {file_path}, obteniendo SHA fresco...")
             _, fresh_sha = _read_json_from_github(file_path, token)
             if fresh_sha:
                 payload["sha"] = fresh_sha
                 response = requests.put(url, headers=headers, json=payload, timeout=30)
                 if response.status_code in (200, 201):
-                    print(f"[LP_TRACKER] Archivo {file_path} actualizado con SHA fresco.")
+                    print(f"[LP_TRACKER] ✅ Archivo {file_path} actualizado con SHA fresco.")
                     return True
             
             print(f"[LP_TRACKER] Error al actualizar {file_path}: {response.status_code} - {response.text}")
@@ -224,10 +246,23 @@ def elo_tracker_worker(riot_api_key, github_token):
                 time.sleep(600)
                 continue
 
-            # 2. Leer historial de LP existente
+            # 2. Leer historial de LP existente con protección de datos
             lp_history, lp_history_sha = _read_json_from_github(LP_HISTORY_FILE_PATH, github_token)
+            
+            # CRÍTICO: Si lp_history es None, hubo un error de lectura (archivo vacío/corrupto)
+            # NO continuar para evitar sobrescribir datos históricos
+            if lp_history is None:
+                print(f"[LP_TRACKER] ⛔ CRÍTICO: No se pudo leer lp_history.json correctamente.")
+                print(f"[LP_TRACKER] ⛔ Abortando ciclo para evitar pérdida de datos históricos.")
+                print(f"[LP_TRACKER] ⛔ Revisar archivo en GitHub manualmente.")
+                time.sleep(LP_TRACKER_INTERVAL)
+                continue
 
-            # 3. Iterar sobre los jugadores y actualizar su historial de LP
+            # 3. Crear backup antes de modificar (solo si hay datos y vamos a escribir)
+            if lp_history and len(lp_history) > 0:
+                _create_backup(LP_HISTORY_FILE_PATH, lp_history, github_token)
+
+            # 4. Iterar sobre los jugadores y actualizar su historial de LP
             snapshots_added = 0
             snapshots_skipped = 0
             
@@ -282,17 +317,35 @@ def elo_tracker_worker(riot_api_key, github_token):
                         print(f"[LP_TRACKER] Snapshot añadido para {riot_id} en {queue_type}: {valor} ELO (Raw LP: {entry.get('leaguePoints', 0)})")
                         snapshots_added += 1
 
-            # 4. Guardar el historial actualizado en GitHub
+            # 5. Guardar el historial actualizado en GitHub con validación
             if snapshots_added > 0:
+                # CRÍTICO: Validar que lp_history no está vacío antes de guardar
+                if not lp_history or len(lp_history) == 0:
+                    print(f"[LP_TRACKER] ⛔ CRÍTICO: lp_history está vacío antes de guardar.")
+                    print(f"[LP_TRACKER] ⛔ Abortando escritura para evitar sobrescribir datos existentes.")
+                    time.sleep(LP_TRACKER_INTERVAL)
+                    continue
+                
                 # RELEER PARA OBTENER SHA ACTUAL (puede haber cambiado)
                 _, current_sha = _read_json_from_github(LP_HISTORY_FILE_PATH, github_token)
-                _write_to_github(LP_HISTORY_FILE_PATH, lp_history, current_sha, github_token)
-                print(f"[{datetime.now()}] [LP_TRACKER] Snapshot de ELO completado. "
-                      f"Añadidos: {snapshots_added}, Saltados: {snapshots_skipped}. "
-                      f"Próxima ejecución en 5 minutos.")
+                
+                # CRÍTICO: Si no se puede obtener SHA actual, no escribir
+                if current_sha is None and lp_history_sha is None:
+                    print(f"[LP_TRACKER] ⛔ CRÍTICO: No se puede obtener SHA actual para lp_history.json")
+                    print(f"[LP_TRACKER] ⛔ Abortando escritura para evitar conflicto.")
+                    time.sleep(LP_TRACKER_INTERVAL)
+                    continue
+                
+                success = _write_to_github(LP_HISTORY_FILE_PATH, lp_history, current_sha or lp_history_sha, github_token)
+                if success:
+                    print(f"[{datetime.now()}] [LP_TRACKER] ✅ Snapshot de ELO completado. "
+                          f"Añadidos: {snapshots_added}, Saltados: {snapshots_skipped}. "
+                          f"Próxima ejecución en {LP_TRACKER_INTERVAL} segundos.")
+                else:
+                    print(f"[LP_TRACKER] ⛔ Error al guardar lp_history.json - datos NO sobrescritos.")
             else:
                 print(f"[{datetime.now()}] [LP_TRACKER] No se añadieron snapshots nuevos (todos duplicados o sin cambios). "
-                      f"Próxima ejecución en 5 minutos.")
+                      f"Próxima ejecución en {LP_TRACKER_INTERVAL} segundos.")
             
         except Exception as e:
             print(f"[LP_TRACKER] Error inesperado en el worker de ELO: {e}")
