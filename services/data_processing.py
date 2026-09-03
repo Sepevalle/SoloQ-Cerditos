@@ -65,13 +65,37 @@ def calculate_lp_change_robust(match, all_matches_for_player, player_queue_lp_hi
                 lp_change = elo_after - elo_before
                 return lp_change, elo_before, elo_after
 
-            # Si hay varias partidas entre snapshots, asignar todo el delta
-            # únicamente al ÚLTIMO partido (mayor timestamp) dentro del intervalo.
-            last_match = max(matches_between_snapshots, key=lambda x: x.get('game_end_timestamp', 0))
-            if last_match.get('match_id') == match_id:
-                lp_change = elo_after - elo_before
+            # Si hay varias partidas entre snapshots, distribuir el delta proporcionalmente
+            # entre todas las partidas del intervalo para maximizar cobertura.
+            total_delta = elo_after - elo_before
+            num_matches = len(matches_between_snapshots)
+            
+            if num_matches > 0:
+                # Asignar una fracción proporcional del delta a cada partida
+                # Si todas perdieron/ganaron similar, distribuir equitativamente
+                avg_lp_change = total_delta / num_matches
+                
+                # Pero si hay victorias/derrotas, intentar respetar el signo
+                wins = sum(1 for m in matches_between_snapshots if m.get('win', False))
+                losses = num_matches - wins
+                
+                if wins > 0 and losses > 0:
+                    # Mezcla de victorias y derrotas - distribuir más complejo
+                    win_lp = total_delta * 0.7 / wins if wins > 0 else 0
+                    loss_lp = total_delta * 0.3 / losses if losses > 0 else 0
+                    
+                    if match.get('win', False):
+                        lp_change = win_lp
+                    else:
+                        lp_change = loss_lp
+                elif wins > 0:
+                    # Solo victorias - distribuir delta entre victorias
+                    lp_change = total_delta / wins
+                else:
+                    # Solo derrotas - distribuir delta entre derrotas
+                    lp_change = total_delta / losses
+                
                 return lp_change, elo_before, elo_after
-            # Si no somos el último partido, no asignamos aquí.
 
     # === ESTRATEGIA 2: Usar la diferencia entre partidas consecutivas ===
     # Ordenar partidas de la misma cola por tiempo
