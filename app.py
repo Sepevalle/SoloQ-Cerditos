@@ -25,6 +25,7 @@ from config.settings import (
 
 # Importar utilidades
 from utils.filters import register_filters
+from utils.helpers import keep_alive
 
 # Importar blueprints
 from blueprints import (
@@ -150,6 +151,10 @@ def start_background_services(riot_api_key, github_token):
     print("TODOS LOS SERVICIOS INICIADOS CORRECTAMENTE")
     print("="*60 + "\n")
 
+    # 7. Keep Alive (mantener app activa)
+    keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+    keep_alive_thread.start()
+    print("[main] ✓ Keep-alive iniciado")
 
 # Crear aplicación Flask a nivel de módulo (para Gunicorn)
 app = create_app()
