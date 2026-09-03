@@ -480,13 +480,38 @@ def save_peak_elo(peak_elo_dict):
 
 
 def read_lp_history():
-    """Lee el archivo de historial de LP."""
+    """Lee el archivo de historial de LP con soporte para chunking."""
     from services.cache_service import lp_history_cache
 
     cached_data = lp_history_cache.get()
     if cached_data is not None:
         return True, cached_data
 
+    # Intentar primero formato chunked (nuevo)
+    index_path = "lp_history/index.json"
+    index_content, _ = read_file_from_github(index_path)
+    
+    if index_content and isinstance(index_content, dict):
+        # Formato chunked detectado
+        print("[read_lp_history] Usando formato chunked para lp_history...")
+        chunks = index_content.get('chunks', [])
+        lp_history = {}
+        
+        for chunk_info in chunks:
+            chunk_path = chunk_info.get('path')
+            puuid = chunk_info.get('puuid')
+            
+            if chunk_path and puuid:
+                chunk_content, _ = read_file_from_github(chunk_path)
+                if chunk_content and isinstance(chunk_content, dict):
+                    lp_history[puuid] = chunk_content
+                    print(f"[read_lp_history] ✓ Cargado chunk para {puuid[:16]}...")
+        
+        lp_history_cache.set(lp_history)
+        return True, lp_history
+    
+    # Fallback a formato legacy (archivo único grande)
+    print("[read_lp_history] Usando formato legacy para lp_history...")
     content, _ = read_file_from_github("lp_history.json")
     if content and isinstance(content, dict):
         lp_history_cache.set(content)
@@ -495,14 +520,62 @@ def read_lp_history():
 
 
 def save_lp_history(lp_history):
-    """Guarda el historial de LP."""
+    """Guarda el historial de LP con soporte para chunking."""
     from services.cache_service import lp_history_cache
 
-    _, sha = read_file_from_github("lp_history.json", use_raw=False)
-    ok = write_file_to_github("lp_history.json", lp_history, message="Actualizar LP History", sha=sha)
+    # Si el lp_history es muy grande (>500KB), usar formato chunked
+    import json
+    lp_history_size = len(json.dumps(lp_history).encode('utf-8'))
+    
+    if lp_history_size > 500 * 1024:  # > 500KB
+        print(f"[save_lp_history] lp_history grande ({lp_history_size/1024:.1f}KB), usando formato chunked...")
+        return _save_lp_history_chunked(lp_history)
+    else:
+        print(f"[save_lp_history] lp_history pequeño ({lp_history_size/1024:.1f}KB), usando formato legacy...")
+        # Formato legacy (archivo único)
+        _, sha = read_file_from_github("lp_history.json", use_raw=False)
+        ok = write_file_to_github("lp_history.json", lp_history, message="Actualizar LP History", sha=sha)
+        if ok:
+            lp_history_cache.set(lp_history)
+        return ok
+
+
+def _save_lp_history_chunked(lp_history):
+    """Guarda lp_history en formato chunked por jugador."""
+    from services.cache_service import lp_history_cache
+    
+    chunks = []
+    lp_history_index = {"chunks": chunks, "last_updated": time.time()}
+    
+    # Crear directorio de chunks si no existe
+    for puuid, player_data in lp_history.items():
+        if not isinstance(player_data, dict):
+            continue
+            
+        # Guardar cada jugador en su propio chunk
+        chunk_path = f"lp_history/chunks/{puuid}.json"
+        chunk_info = {
+            "puuid": puuid,
+            "path": chunk_path,
+            "last_updated": time.time()
+        }
+        
+        ok = write_file_to_github(chunk_path, player_data, message=f"Actualizar LP chunk {puuid[:16]}", sha=None)
+        if ok:
+            chunks.append(chunk_info)
+            print(f"[save_lp_history] ✓ Guardado chunk para {puuid[:16]}...")
+        else:
+            print(f"[save_lp_history] ⚠️ Error guardando chunk para {puuid[:16]}...")
+    
+    # Guardar índice
+    ok = write_file_to_github("lp_history/index.json", lp_history_index, message="Actualizar LP History index", sha=None)
     if ok:
         lp_history_cache.set(lp_history)
-    return ok
+        print(f"[save_lp_history] ✓ Índice guardado con {len(chunks)} chunks")
+        return True
+    else:
+        print(f"[save_lp_history] ⚠️ Error guardando índice")
+        return False
 
 
 def get_iso_week(timestamp_ms):
