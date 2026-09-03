@@ -404,9 +404,13 @@ def recalcular_lp_partidas_existentes():
                     print(f"[recalcular_lp] {jugador_nombre}: No hay historial de LP disponible")
                     continue
                 
+                print(f"[recalcular_lp] {jugador_nombre}: LP history disponible - SoloQ: {len(player_lp_history.get('RANKED_SOLO_5x5', []))} snapshots, Flex: {len(player_lp_history.get('RANKED_FLEX_SR', []))} snapshots")
+                
                 # Recalcular LP para todas las partidas
                 from services.data_processing import process_player_match_history
                 matches_procesadas = process_player_match_history(matches, player_lp_history)
+                
+                print(f"[recalcular_lp] {jugador_nombre}: Procesadas {len(matches_procesadas)} partidas")
                 
                 # Contar cuántas se recalcularon
                 recalculadas = len([
@@ -414,6 +418,8 @@ def recalcular_lp_partidas_existentes():
                     if m.get('lp_change_this_game') is not None and m.get('match_id') in 
                        [x.get('match_id') for x in matches_sin_lp]
                 ])
+                
+                print(f"[recalcular_lp] {jugador_nombre}: {recalculadas} partidas obtuvieron LP calculado")
                 
                 if recalculadas > 0:
                     # Guardar historial actualizado
