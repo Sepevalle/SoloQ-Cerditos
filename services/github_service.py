@@ -66,19 +66,33 @@ def read_file_from_github(file_path, use_raw=True, timeout=30):
     url = get_github_file_url(file_path, raw=False)
     print(f"[read_file_from_github] Leyendo desde API: {url}")
     try:
-        response = requests.get(url, headers=get_github_headers(), timeout=timeout)
+        # Para archivos grandes (>1MB), usar header raw para obtener contenido completo
+        headers = get_github_headers()
+        headers["Accept"] = "application/vnd.github.v3.raw"
+        
+        response = requests.get(url, headers=headers, timeout=timeout)
         print(f"[read_file_from_github] Respuesta API: {response.status_code}")
         
         if response.status_code == 200:
-            content = response.json()
-            file_content = decode_github_content(content['content'])
-            sha = content.get('sha')
-            print(f"[read_file_from_github] SHA obtenido: {sha[:8] if sha else 'None'}")
-            if file_content:
-                try:
-                    return json.loads(file_content), sha
-                except:
-                    return file_content, sha
+            # Con header raw, el contenido viene directamente como texto/JSON
+            try:
+                content = response.json()
+                # Necesitamos obtener el SHA por separado
+                sha_response = requests.get(url, headers=get_github_headers(), timeout=timeout)
+                if sha_response.status_code == 200:
+                    sha = sha_response.json().get('sha')
+                else:
+                    sha = None
+                print(f"[read_file_from_github] SHA obtenido: {sha[:8] if sha else 'None'}")
+                return content, sha
+            except:
+                # Si no es JSON, devolver texto
+                sha_response = requests.get(url, headers=get_github_headers(), timeout=timeout)
+                if sha_response.status_code == 200:
+                    sha = sha_response.json().get('sha')
+                else:
+                    sha = None
+                return response.text, sha
         elif response.status_code == 404:
             print(f"[read_file_from_github] Archivo no encontrado (404)")
             return None, None
