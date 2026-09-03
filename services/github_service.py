@@ -479,8 +479,43 @@ def save_peak_elo(peak_elo_dict):
     return ok
 
 
+def deduplicate_lp_history(lp_history):
+    """
+    Elimina snapshots consecutivos con el mismo ELO para cada jugador y cola.
+    Conserva el primer y último snapshot de cada racha de ELO idéntico, reduciendo drásticamente
+    el tamaño del archivo sin perder ninguna información sobre cuándo cambió el ELO.
+    """
+    if not lp_history or not isinstance(lp_history, dict):
+        return lp_history
+    cleaned = {}
+    for puuid, queue_dict in lp_history.items():
+        if not isinstance(queue_dict, dict):
+            cleaned[puuid] = queue_dict
+            continue
+        cleaned[puuid] = {}
+        for queue_name, snapshots in queue_dict.items():
+            if not isinstance(snapshots, list) or not snapshots:
+                cleaned[puuid][queue_name] = snapshots
+                continue
+            sorted_snaps = sorted(snapshots, key=lambda s: s.get('timestamp', 0))
+            deduped = []
+            for snap in sorted_snaps:
+                elo = snap.get('elo')
+                if not deduped:
+                    deduped.append(dict(snap))
+                else:
+                    last = deduped[-1]
+                    if last.get('elo') == elo:
+                        last['timestamp'] = snap.get('timestamp', last.get('timestamp'))
+                        last['league_points_raw'] = snap.get('league_points_raw', last.get('league_points_raw'))
+                    else:
+                        deduped.append(dict(snap))
+            cleaned[puuid][queue_name] = deduped
+    return cleaned
+
+
 def read_lp_history():
-    """Lee el archivo de historial de LP con soporte para chunking."""
+    """Lee el archivo de historial de LP con soporte para chunking y deduplicación."""
     from services.cache_service import lp_history_cache
 
     cached_data = lp_history_cache.get()
@@ -507,6 +542,7 @@ def read_lp_history():
                     lp_history[puuid] = chunk_content
                     print(f"[read_lp_history] ✓ Cargado chunk para {puuid[:16]}...")
         
+        lp_history = deduplicate_lp_history(lp_history)
         lp_history_cache.set(lp_history)
         return True, lp_history
     
@@ -514,14 +550,17 @@ def read_lp_history():
     print("[read_lp_history] Usando formato legacy para lp_history...")
     content, _ = read_file_from_github("lp_history.json")
     if content and isinstance(content, dict):
+        content = deduplicate_lp_history(content)
         lp_history_cache.set(content)
         return True, content
     return False, {}
 
 
 def save_lp_history(lp_history):
-    """Guarda el historial de LP con soporte para chunking."""
+    """Guarda el historial de LP con soporte para chunking y deduplicación."""
     from services.cache_service import lp_history_cache
+
+    lp_history = deduplicate_lp_history(lp_history)
 
     # Si el lp_history es muy grande (>500KB), usar formato chunked
     import json
@@ -770,8 +809,13 @@ def save_player_match_history(puuid, historial_data):
     for file_name, content in chunks_to_save:
         full_path = f"{base_path}/{file_name}"
         
-        # Intentar obtener SHA existente
-        _, sha = read_file_from_github(full_path, use_raw=False)
+        # Intentar obtener contenido y SHA existente
+        existing_content, sha = read_file_from_github(full_path, use_raw=False)
+        
+        # Si el archivo ya existe y su contenido es idéntico, no gastar llamadas a la API de GitHub
+        if sha is not None and existing_content == content:
+            successfully_saved.append(file_name)
+            continue
         
         success = write_file_to_github(
             full_path,

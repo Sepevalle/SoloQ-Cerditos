@@ -390,33 +390,24 @@ def actualizar_historial_partidas_en_segundo_plano():
                                     # Combinar partidas existentes con las nuevas para cálculo correcto
                                     all_matches_for_calc = existing_matches + matches_to_add
                                     
-                                    # Procesar SOLO si hay partidas que necesitan LP
+                                    # Procesar partidas con historial de LP
                                     processed_matches = process_player_match_history(all_matches_for_calc, player_lp_history)
-                                    
-                                    # Extraer solo las partidas nuevas procesadas que necesitaban LP
-                                    new_match_ids = {m.get('match_id') for m in matches_to_add}
-                                    processed_new_matches = [
-                                        m for m in processed_matches 
-                                        if m.get('match_id') in new_match_ids
-                                    ]
-                                    
-                                    # Reemplazar matches_to_add con las versiones procesadas (con LP calculado)
-                                    matches_to_add = processed_new_matches
-                                    calculated_count = len([m for m in matches_to_add if m.get('lp_change_this_game') is not None])
-                                    print(f"[actualizar_historial] LP calculado para {calculated_count} de {len(matches_needing_lp)} partidas nuevas")
+                                    all_matches = processed_matches
+                                    calculated_count = len([m for m in all_matches if m.get('lp_change_this_game') is not None])
+                                    print(f"[actualizar_historial] LP calculado para {calculated_count} de {len(all_matches)} partidas de {jugador_nombre}")
                                 else:
-                                    print(f"[actualizar_historial] Todas las partidas nuevas de {jugador_nombre} ya tienen LP asignado, omitiendo cálculo")
+                                    print(f"[actualizar_historial] No hay historial de LP para {jugador_nombre}, combinando partidas")
+                                    all_matches = existing_matches + matches_to_add
                             else:
-                                print(f"[actualizar_historial] No hay historial de LP para {jugador_nombre}, las partidas se guardarán sin cálculo de LP")
+                                print(f"[actualizar_historial] No hay historial de LP para {jugador_nombre}, combinando partidas")
+                                all_matches = existing_matches + matches_to_add
                         except Exception as e:
                             print(f"[actualizar_historial] Error calculando LP para {jugador_nombre}: {e}")
                             import traceback
                             traceback.print_exc()
-                            # Continuar sin cálculo de LP si hay error
+                            all_matches = existing_matches + matches_to_add
 
-                        
                         # Combinar y ordenar por timestamp descendente (más reciente primero)
-                        all_matches = existing_matches + matches_to_add
                         all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0) if x.get('game_end_timestamp') else 0, reverse=True)
                         
                         # Verificar ordenación
@@ -863,21 +854,18 @@ def actualizar_jugador_especifico(puuid, riot_id, jugador_nombre):
                 _, lp_history_data = read_lp_history()
                 player_lp_history = lp_history_data.get(puuid, {}) if lp_history_data else {}
                 
-                if player_lp_history and matches_to_add:
-                    matches_needing_lp = [m for m in matches_to_add if m.get('lp_change_this_game') is None]
-                    if matches_needing_lp:
-                        all_matches_for_calc = existing_matches + matches_to_add
-                        processed_matches = process_player_match_history(all_matches_for_calc, player_lp_history)
-                        
-                        new_match_ids = {m.get('match_id') for m in matches_to_add}
-                        processed_new_matches = [m for m in processed_matches if m.get('match_id') in new_match_ids]
-                        matches_to_add = processed_new_matches
+                if player_lp_history:
+                    all_matches_for_calc = existing_matches + matches_to_add
+                    processed_matches = process_player_match_history(all_matches_for_calc, player_lp_history)
+                    all_matches = processed_matches
+                else:
+                    all_matches = existing_matches + matches_to_add
             except Exception as e:
                 print(f"[actualizar_jugador_especifico] Error calculando LP: {e}")
+                all_matches = existing_matches + matches_to_add
             
-            # Combinar y ordenar
-            all_matches = existing_matches + matches_to_add
-            all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+            # Ordenar por timestamp descendente
+            all_matches.sort(key=lambda x: x.get('game_end_timestamp', 0) if x.get('game_end_timestamp') else 0, reverse=True)
             
             # Guardar
             save_player_matches(puuid, {'matches': all_matches}, riot_id=riot_id)

@@ -60,6 +60,39 @@ def _build_player_profile(game_name):
         reverse=True
     )
 
+    # Construir mapa de ELO actual del jugador
+    current_elo_dict = {}
+    for entry in player_entries:
+        qt = entry.get('queue_type')
+        val = entry.get('valor_clasificacion')
+        if qt and val:
+            current_elo_dict[qt] = val
+
+    # Obtener snapshots de LP del jugador
+    player_lp_history = {}
+    try:
+        from services.github_service import read_lp_history
+        _, lp_history_data = read_lp_history()
+        player_lp_history = lp_history_data.get(puuid, {}) if lp_history_data else {}
+    except Exception as e:
+        print(f"[_build_player_profile] Error leyendo lp_history para {game_name}: {e}")
+
+    # Si hay partidas clasificatorias que necesitan LP o ELO, procesarlas al vuelo
+    matches_needing_lp = any(
+        m.get('queue_id') in [420, 440] and (m.get('lp_change_this_game') is None or m.get('post_game_valor_clasificacion') is None)
+        for m in matches
+    )
+
+    if matches_needing_lp and matches:
+        try:
+            from services.data_processing import process_player_match_history
+            from services.cache_service import player_match_history_cache
+            matches = process_player_match_history(matches, player_lp_history, current_elo_dict)
+            historial['matches'] = matches
+            player_match_history_cache.set(puuid, historial)
+        except Exception as pe:
+            print(f"[_build_player_profile] Error procesando LP al vuelo para {game_name}: {pe}")
+
     for match in matches:
         match_id = match.get('match_id')
         if match_id:
@@ -106,6 +139,29 @@ def _build_player_profile(game_name):
         {'timestamp': m['game_end_timestamp'], 'elo': m['post_game_valor_clasificacion']}
         for m in flexq_matches
     ]
+
+    # Fallback a snapshots históricos si el historial de partidas tiene pocos datos
+    if len(perfil['elo_history_soloq']) <= 1 and player_lp_history:
+        soloq_snaps = sorted(
+            [s for s in player_lp_history.get('RANKED_SOLO_5x5', []) if s.get('elo', 0) > 0],
+            key=lambda s: s.get('timestamp', 0)
+        )
+        if soloq_snaps:
+            perfil['elo_history_soloq'] = [
+                {'timestamp': s['timestamp'], 'elo': s['elo']}
+                for s in soloq_snaps
+            ]
+
+    if len(perfil['elo_history_flexq']) <= 1 and player_lp_history:
+        flexq_snaps = sorted(
+            [s for s in player_lp_history.get('RANKED_FLEX_SR', []) if s.get('elo', 0) > 0],
+            key=lambda s: s.get('timestamp', 0)
+        )
+        if flexq_snaps:
+            perfil['elo_history_flexq'] = [
+                {'timestamp': s['timestamp'], 'elo': s['elo']}
+                for s in flexq_snaps
+            ]
     
     # Calcular rachas
     if 'soloq' in perfil:

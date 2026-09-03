@@ -262,8 +262,13 @@ def elo_tracker_worker(riot_api_key, github_token):
                 time.sleep(LP_TRACKER_INTERVAL)
                 continue
 
-            # 3. Crear backup antes de modificar (solo si hay datos y vamos a escribir)
+            # 3. Deduplicar en memoria y crear backup antes de modificar
             if lp_history and len(lp_history) > 0:
+                try:
+                    from services.github_service import deduplicate_lp_history
+                    lp_history = deduplicate_lp_history(lp_history)
+                except Exception as de:
+                    print(f"[LP_TRACKER] Error deduplicando en lectura: {de}")
                 _create_backup(LP_HISTORY_FILE_PATH, lp_history, github_token)
 
             # 4. Iterar sobre los jugadores y actualizar su historial de LP
@@ -300,25 +305,23 @@ def elo_tracker_worker(riot_api_key, github_token):
                         queue_history = lp_history[puuid][queue_type]
                         last_snapshot = queue_history[-1] if queue_history else None
                         
-                        # Evitar duplicados: no guardar si el valor ELO es idéntico al último snapshot
-                        # dentro de los últimos 10 minutos (600000 ms)
+                        # Evitar duplicados: si el valor ELO no ha cambiado, no añadir nuevo snapshot
+                        # simplemente actualizar el timestamp de la última verificación
                         if last_snapshot:
-                            time_diff = timestamp - last_snapshot['timestamp']
-                            elo_diff = abs(valor - last_snapshot['elo'])
-                            
-                            if time_diff < 600000 and elo_diff == 0:
-                                # Es un duplicado - mismo ELO dentro de 10 minutos
-                                print(f"[LP_TRACKER] Snapshot duplicado detectado para {riot_id} en {queue_type}. Saltando.")
+                            elo_diff = abs(valor - last_snapshot.get('elo', 0))
+                            if elo_diff == 0:
+                                last_snapshot['timestamp'] = timestamp
+                                last_snapshot['league_points_raw'] = entry.get('leaguePoints', 0)
                                 snapshots_skipped += 1
                                 continue
                         
-                        # Añadir el nuevo snapshot
+                        # Añadir el nuevo snapshot (solo cuando el ELO realmente cambia)
                         lp_history[puuid][queue_type].append({
                             "timestamp": timestamp,
                             "elo": valor,
                             "league_points_raw": entry.get('leaguePoints', 0)
                         })
-                        print(f"[LP_TRACKER] Snapshot añadido para {riot_id} en {queue_type}: {valor} ELO (Raw LP: {entry.get('leaguePoints', 0)})")
+                        print(f"[LP_TRACKER] Cambio de ELO detectado para {riot_id} en {queue_type}: {valor} ELO (Raw LP: {entry.get('leaguePoints', 0)})")
                         snapshots_added += 1
 
             # 5. Guardar el historial actualizado en GitHub con validación
@@ -340,8 +343,19 @@ def elo_tracker_worker(riot_api_key, github_token):
                     time.sleep(LP_TRACKER_INTERVAL)
                     continue
                 
+                try:
+                    from services.github_service import deduplicate_lp_history
+                    lp_history = deduplicate_lp_history(lp_history)
+                except Exception as de:
+                    print(f"[LP_TRACKER] Error deduplicando antes de escribir: {de}")
+                
                 success = _write_to_github(LP_HISTORY_FILE_PATH, lp_history, current_sha or lp_history_sha, github_token)
                 if success:
+                    try:
+                        from services.cache_service import lp_history_cache
+                        lp_history_cache.set(lp_history)
+                    except Exception as ce:
+                        print(f"[LP_TRACKER] Error actualizando cache en memoria: {ce}")
                     print(f"[{datetime.now()}] [LP_TRACKER] ✅ Snapshot de ELO completado. "
                           f"Añadidos: {snapshots_added}, Saltados: {snapshots_skipped}. "
                           f"Próxima ejecución en {LP_TRACKER_INTERVAL} segundos.")

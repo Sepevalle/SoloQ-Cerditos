@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
+import time
 
 def calculate_lp_change_robust(match, all_matches_for_player, player_queue_lp_history):
     """
-    VERSIÓN MEJORADA: Calcula el cambio de LP para una partida de forma robusta y consistente.
-    Usa múltiples estrategias de fallback para garantizar resultados precisos.
+    Calcula el cambio de LP para una partida de forma robusta y consistente.
+    Usa la lógica unificada de anclajes y propagación de ELO.
 
     Args:
         match (dict): La partida para la que calcular el cambio de LP.
@@ -17,200 +18,20 @@ def calculate_lp_change_robust(match, all_matches_for_player, player_queue_lp_hi
     queue_id = match.get('queue_id')
     match_id = match.get('match_id')
 
-    if not game_end_ts or not queue_id:
+    if not game_end_ts or queue_id not in [420, 440]:
         return None, None, None
 
-    # === ESTRATEGIA 1: Usar snapshots históricos con validación estricta ===
-    snapshots = sorted(player_queue_lp_history, key=lambda x: x['timestamp'])
+    # Mapear cola
+    queue_name = "RANKED_SOLO_5x5" if queue_id == 420 else "RANKED_FLEX_SR"
+    mock_history = {queue_name: player_queue_lp_history or []}
     
-    if not snapshots:
-        return None, None, None
+    # Procesar la lista completa de partidas del jugador para obtener la cadena coherente
+    processed = process_player_match_history([m for m in all_matches_for_player if m.get('queue_id') == queue_id], mock_history)
+    for m in processed:
+        if m.get('match_id') == match_id:
+            return m.get('lp_change_this_game'), m.get('pre_game_valor_clasificacion'), m.get('post_game_valor_clasificacion')
 
-    # Encontrar el snapshot justo antes y después de la partida
-    snapshot_before = None
-    snapshot_after = None
-    
-    for snapshot in reversed(snapshots):
-        if snapshot['timestamp'] < game_end_ts:
-            snapshot_before = snapshot
-            break
-    
-    for snapshot in snapshots:
-        if snapshot['timestamp'] > game_end_ts:
-            snapshot_after = snapshot
-            break
-
-    # Si tenemos ambos snapshots, verificar partidas entre ellos.
-    # Nuevo comportamiento: si hay múltiples partidas entre snapshots, aplicar
-    # todo el delta de ELO al ÚLTIMO partido dentro del intervalo.
-    if snapshot_before and snapshot_after:
-        # Filtrar solo partidas de la misma cola (incluyendo la actual)
-        matches_in_queue = [
-            m for m in all_matches_for_player 
-            if m.get('queue_id') == queue_id
-        ]
-
-        # Buscar partidas cuyo timestamp esté entre los dos snapshots
-        matches_between_snapshots = [
-            m for m in matches_in_queue
-            if snapshot_before['timestamp'] < m.get('game_end_timestamp', 0) < snapshot_after['timestamp']
-        ]
-
-        elo_before = snapshot_before.get('elo', 0)
-        elo_after = snapshot_after.get('elo', 0)
-
-        if elo_before > 0 and elo_after > 0:
-            # Si no hay partidas entre snapshots, asignar directamente (caso simple)
-            if len(matches_between_snapshots) == 0:
-                lp_change = elo_after - elo_before
-                return lp_change, elo_before, elo_after
-
-            # Si hay varias partidas entre snapshots, distribuir el delta proporcionalmente
-            # entre todas las partidas del intervalo para maximizar cobertura.
-            total_delta = elo_after - elo_before
-            num_matches = len(matches_between_snapshots)
-            
-            if num_matches > 0:
-                # Asignar una fracción proporcional del delta a cada partida
-                # Si todas perdieron/ganaron similar, distribuir equitativamente
-                avg_lp_change = total_delta / num_matches
-                
-                # Pero si hay victorias/derrotas, intentar respetar el signo
-                wins = sum(1 for m in matches_between_snapshots if m.get('win', False))
-                losses = num_matches - wins
-                
-                if wins > 0 and losses > 0:
-                    # Mezcla de victorias y derrotas - distribuir más complejo
-                    win_lp = total_delta * 0.7 / wins if wins > 0 else 0
-                    loss_lp = total_delta * 0.3 / losses if losses > 0 else 0
-                    
-                    if match.get('win', False):
-                        lp_change = win_lp
-                    else:
-                        lp_change = loss_lp
-                elif wins > 0:
-                    # Solo victorias - distribuir delta entre victorias
-                    lp_change = total_delta / wins
-                else:
-                    # Solo derrotas - distribuir delta entre derrotas
-                    lp_change = total_delta / losses
-                
-                return lp_change, elo_before, elo_after
-
-    # === ESTRATEGIA 2: Usar la diferencia entre partidas consecutivas ===
-    # Ordenar partidas de la misma cola por tiempo
-    queue_matches = sorted(
-        [m for m in all_matches_for_player if m.get('queue_id') == queue_id],
-        key=lambda x: x.get('game_end_timestamp', 0)
-    )
-    
-    # Encontrar el índice de la partida actual
-    current_idx = next((i for i, m in enumerate(queue_matches) if m.get('match_id') == match_id), None)
-    
-    if current_idx is not None:
-        # Si hay una partida anterior con ELO post-match, usarlo como ELO pre-match
-        if current_idx > 0:
-            prev_match = queue_matches[current_idx - 1]
-            elo_before = prev_match.get('post_game_valor_clasificacion')
-            
-            # Si hay una partida siguiente con ELO pre-match, usarlo como ELO post-match
-            if current_idx < len(queue_matches) - 1:
-                next_match = queue_matches[current_idx + 1]
-                elo_after = next_match.get('pre_game_valor_clasificacion')
-                
-                if elo_before is not None and elo_after is not None:
-                    lp_change = elo_after - elo_before
-                    return lp_change, elo_before, elo_after
-
-    # === ESTRATEGIA 3: Usar snapshots más cercanos (con riesgo de ambigüedad) ===
-    # Este método es menos preciso pero útil cuando hay múltiples partidas entre snapshots
-    closest_snapshot_before = None
-    closest_snapshot_after = None
-    
-    min_time_before = float('inf')
-    min_time_after = float('inf')
-    
-    for snapshot in snapshots:
-        if snapshot['timestamp'] < game_end_ts:
-            time_diff = game_end_ts - snapshot['timestamp']
-            if time_diff < min_time_before:
-                min_time_before = time_diff
-                closest_snapshot_before = snapshot
-        else:
-            time_diff = snapshot['timestamp'] - game_end_ts
-            if time_diff < min_time_after:
-                min_time_after = time_diff
-                closest_snapshot_after = snapshot
-    
-    if closest_snapshot_before and closest_snapshot_after:
-        elo_before = closest_snapshot_before.get('elo', 0)
-        elo_after = closest_snapshot_after.get('elo', 0)
-        
-        if elo_before > 0 and elo_after > 0:
-            # Validación: si hay múltiples partidas, usar estimación conservadora
-            matches_between = [
-                m for m in all_matches_for_player
-                if m.get('queue_id') == queue_id 
-                and m.get('match_id') != match_id
-                and closest_snapshot_before['timestamp'] < m.get('game_end_timestamp', 0) < closest_snapshot_after['timestamp']
-            ]
-            
-            lp_change = elo_after - elo_before
-            
-            # Marcar como ambiguo si hay múltiples partidas
-            if len(matches_between) > 0:
-                # Devolver con cautela - solo si es una estimación razonable
-                return None, elo_before, elo_after
-            
-            return lp_change, elo_before, elo_after
-
-    # === ESTRATEGIA 4: Para la partida más reciente, usar el snapshot más reciente ===
-    # Esta estrategia asegura que la última partida siempre tenga LP calculado
-    # Verificar si esta es la partida más reciente de la cola
-    queue_matches_sorted = sorted(
-        [m for m in all_matches_for_player if m.get('queue_id') == queue_id],
-        key=lambda x: x.get('game_end_timestamp', 0),
-        reverse=True
-    )
-    
-    if queue_matches_sorted and queue_matches_sorted[0].get('match_id') == match_id:
-        # Es la partida más reciente
-        if snapshots:
-            # Usar el snapshot más reciente como referencia
-            latest_snapshot = max(snapshots, key=lambda x: x['timestamp'])
-            latest_snapshot_ts = latest_snapshot['timestamp']
-            latest_elo = latest_snapshot.get('elo', 0)
-            
-            # Si el snapshot es posterior a la partida, podemos estimar
-            if latest_snapshot_ts > game_end_ts and latest_elo > 0:
-                # Buscar el snapshot anterior más cercano para estimar el ELO pre-partida
-                previous_snapshot = None
-                min_time_diff = float('inf')
-                
-                for snapshot in snapshots:
-                    if snapshot['timestamp'] < game_end_ts:
-                        time_diff = game_end_ts - snapshot['timestamp']
-                        if time_diff < min_time_diff:
-                            min_time_diff = time_diff
-                            previous_snapshot = snapshot
-                
-                if previous_snapshot:
-                    elo_before = previous_snapshot.get('elo', 0)
-                    elo_after = latest_elo
-                    
-                    if elo_before > 0:
-                        lp_change = elo_after - elo_before
-                        return lp_change, elo_before, elo_after
-                else:
-                    # No hay snapshot anterior, usar estimación basada en victoria/derrota
-                    # Esto es menos preciso pero da un valor aproximado
-                    is_win = match.get('win', False)
-                    estimated_lp = 15 if is_win else -15  # Estimación estándar
-                    return estimated_lp, latest_elo - estimated_lp, latest_elo
-
-    # Fallback: retornar None si no se puede determinar con confianza
     return None, None, None
-
 
 
 def calculate_lp_change(match, all_matches_for_player, player_queue_lp_history):
@@ -219,57 +40,234 @@ def calculate_lp_change(match, all_matches_for_player, player_queue_lp_history):
     """
     return calculate_lp_change_robust(match, all_matches_for_player, player_queue_lp_history)
 
-def process_player_match_history(matches, player_lp_history):
+
+def _distribute_interval_lp(matches_in_interval, elo_start, elo_end):
     """
-    Procesa el historial de partidas de un jugador para calcular cambios de LP.
-    MEJORADO: Usa la función calculate_lp_change_robust para mayor precisión.
+    Distribuye un cambio de ELO total (elo_end - elo_start) entre una lista de partidas
+    cronológicamente ordenadas (de más antigua a más reciente), respetando victorias y derrotas.
+    
+    Garantiza:
+    1. Las victorias tienen cambio de LP positivo (o 0 en casos extremos).
+    2. Las derrotas tienen cambio de LP negativo (o 0 si escudo de descenso).
+    3. Para cada partida j: match[j].post == match[j+1].pre.
+    4. La primera partida empieza en elo_start y la última termina en elo_end.
+    """
+    m_count = len(matches_in_interval)
+    if m_count == 0:
+        return
+    
+    total_delta = elo_end - elo_start
+
+    # Caso simple: 1 sola partida
+    if m_count == 1:
+        single_match = matches_in_interval[0]
+        single_match['lp_change_this_game'] = int(round(total_delta))
+        single_match['pre_game_valor_clasificacion'] = int(round(elo_start))
+        single_match['post_game_valor_clasificacion'] = int(round(elo_end))
+        return
+
+    # Múltiples partidas: contar victorias y derrotas
+    wins = [i for i, m in enumerate(matches_in_interval) if m.get('win', False)]
+    losses = [i for i, m in enumerate(matches_in_interval) if not m.get('win', False)]
+    w = len(wins)
+    l = len(losses)
+
+    lp_changes = [0] * m_count
+
+    if l == 0:
+        # Solo victorias
+        base = total_delta // w if w > 0 else 20
+        rem = total_delta % w if w > 0 else 0
+        for idx in range(m_count):
+            lp_changes[idx] = int(base + (1 if idx < rem else 0))
+    elif w == 0:
+        # Solo derrotas
+        base = total_delta // l if l > 0 else -19
+        rem = total_delta % l if l > 0 else 0
+        for idx in range(m_count):
+            lp_changes[idx] = int(base + (1 if idx < rem else 0))
+    else:
+        # Mezcla de victorias y derrotas
+        # En League of Legends el promedio base de victoria es ~+20 y derrota ~-20
+        # Ecuación: w * g - l * p = total_delta
+        expected_at_base = 20 * (w - l)
+        discrepancy = total_delta - expected_at_base
+        adj_per_match = round(discrepancy / m_count)
+        
+        g = max(12, min(38, int(round(20 + adj_per_match))))
+        p = max(12, min(38, int(round(20 - adj_per_match))))
+
+        for i in wins:
+            lp_changes[i] = g
+        for i in losses:
+            lp_changes[i] = -p
+
+        # Ajustar diferencia para que la suma sea exactamente total_delta
+        current_sum = sum(lp_changes)
+        diff = total_delta - current_sum
+        if diff != 0:
+            # Distribuir la diferencia
+            step = 1 if diff > 0 else -1
+            cand_indices = wins if diff > 0 else losses
+            if not cand_indices:
+                cand_indices = list(range(m_count))
+            idx_i = 0
+            while diff != 0:
+                target_idx = cand_indices[idx_i % len(cand_indices)]
+                lp_changes[target_idx] += step
+                diff -= step
+                idx_i += 1
+
+    # Asignar pre y post encadenados
+    current_elo = elo_start
+    for idx, match in enumerate(matches_in_interval):
+        match['pre_game_valor_clasificacion'] = int(round(current_elo))
+        match['lp_change_this_game'] = int(round(lp_changes[idx]))
+        current_elo += lp_changes[idx]
+        match['post_game_valor_clasificacion'] = int(round(current_elo))
+
+    # Asegurar que el último post_game coincida exactamente con elo_end
+    matches_in_interval[-1]['post_game_valor_clasificacion'] = int(round(elo_end))
+    matches_in_interval[-1]['lp_change_this_game'] = int(round(
+        matches_in_interval[-1]['post_game_valor_clasificacion'] - matches_in_interval[-1]['pre_game_valor_clasificacion']
+    ))
+
+
+def process_player_match_history(matches, player_lp_history, current_elo_dict=None):
+    """
+    Procesa el historial de partidas de un jugador para calcular cambios de LP y ELO
+    utilizando puntos de anclaje (snapshots históricos y ELO actual) y propagación coherente.
 
     Args:
         matches (list): Lista de partidas del jugador.
-        player_lp_history (dict): Diccionario de snapshots de LP del jugador, indexado por nombre de cola.
+        player_lp_history (dict): Diccionario de snapshots de LP indexado por nombre de cola.
+        current_elo_dict (dict, optional): ELO actual por cola {'RANKED_SOLO_5x5': elo, 'RANKED_FLEX_SR': elo}.
 
     Returns:
-        list: Lista de partidas con información de cambio de LP añadida.
+        list: Lista de partidas con LP y ELO calculados, ordenada descendente por fecha.
     """
-    # Ordenar partidas por timestamp descendente (más recientes primero)
-    matches_sorted = sorted(matches, key=lambda x: x.get('game_end_timestamp', 0), reverse=True)
+    if not matches:
+        return []
 
-    # Inicializar campos de LP para todas las partidas
-    for match in matches_sorted:
-        if 'lp_change_this_game' not in match:
-            match['lp_change_this_game'] = None
-        if 'pre_game_valor_clasificacion' not in match:
-            match['pre_game_valor_clasificacion'] = None
-        if 'post_game_valor_clasificacion' not in match:
-            match['post_game_valor_clasificacion'] = None
+    # Copia defensiva superficial de los objetos de partida
+    matches_list = [dict(m) for m in matches]
 
-    # Procesar cada partida usando la estrategia robusta mejorada
-    for match in matches_sorted:
-        # Solo calcular si no tiene valor válido
-        if match.get('lp_change_this_game') is None:
-            queue_id = match.get('queue_id')
+    # Procesar colas clasificatorias de forma independiente
+    queue_configs = [
+        (420, "RANKED_SOLO_5x5"),
+        (440, "RANKED_FLEX_SR")
+    ]
+
+    for queue_id, queue_name in queue_configs:
+        # Filtrar partidas de esta cola
+        q_matches = [m for m in matches_list if m.get('queue_id') == queue_id]
+        if not q_matches:
+            continue
+
+        # Ordenar cronológicamente (más antigua primero)
+        q_matches.sort(key=lambda x: x.get('game_end_timestamp', 0))
+
+        # Obtener snapshots de esta cola
+        raw_snapshots = player_lp_history.get(queue_name, []) if player_lp_history else []
+        snapshots = sorted([s for s in raw_snapshots if s.get('elo', 0) > 0], key=lambda x: x.get('timestamp', 0))
+
+        # Construir lista de anclajes [(timestamp, elo)]
+        anchors = []
+        for s in snapshots:
+            ts = s.get('timestamp', 0)
+            elo = s.get('elo', 0)
+            if ts > 0 and elo > 0:
+                anchors.append((ts, elo))
+
+        # Si tenemos ELO actual para la cola, agregarlo como anclaje presente
+        now_ts = int(time.time() * 1000)
+        curr_elo = current_elo_dict.get(queue_name) if current_elo_dict else None
+        if curr_elo and curr_elo > 0:
+            anchors.append((now_ts, curr_elo))
+
+        # Deduplicar y ordenar anclajes
+        anchors.sort(key=lambda a: a[0])
+        unique_anchors = []
+        for a in anchors:
+            if not unique_anchors or unique_anchors[-1][0] != a[0]:
+                unique_anchors.append(a)
+        anchors = unique_anchors
+
+        # Si no hay anclajes externos, intentar usar alguna partida con ELO ya conocido
+        if not anchors:
+            for m in q_matches:
+                p_elo = m.get('post_game_valor_clasificacion')
+                ts = m.get('game_end_timestamp', 0)
+                if p_elo and p_elo > 0 and ts > 0:
+                    anchors.append((ts, p_elo))
+            anchors.sort(key=lambda a: a[0])
+
+        # Si aún no hay anclajes, establecer un anclaje base razonable (Plata/Oro: 1200 o 1400)
+        if not anchors:
+            first_ts = q_matches[0].get('game_end_timestamp', 0)
+            anchors.append((first_ts, 1400))
+
+        # Procesar partidas entre anclajes
+        first_anchor = anchors[0]
+        last_anchor = anchors[-1]
+
+        # 1. Partidas previas al primer anclaje (encadenar hacia atrás)
+        pre_anchor_matches = [m for m in q_matches if m.get('game_end_timestamp', 0) < first_anchor[0]]
+        if pre_anchor_matches:
+            next_elo = first_anchor[1]
+            for m in reversed(pre_anchor_matches):
+                is_win = m.get('win', False)
+                delta = 20 if is_win else -19
+                m['post_game_valor_clasificacion'] = int(round(next_elo))
+                m['lp_change_this_game'] = int(round(delta))
+                m['pre_game_valor_clasificacion'] = int(round(next_elo - delta))
+                next_elo = m['pre_game_valor_clasificacion']
+
+        # 2. Partidas posteriores al último anclaje (encadenar hacia adelante)
+        post_anchor_matches = [m for m in q_matches if m.get('game_end_timestamp', 0) > last_anchor[0]]
+        if post_anchor_matches:
+            prev_elo = last_anchor[1]
+            for m in post_anchor_matches:
+                is_win = m.get('win', False)
+                delta = 20 if is_win else -19
+                m['pre_game_valor_clasificacion'] = int(round(prev_elo))
+                m['lp_change_this_game'] = int(round(delta))
+                m['post_game_valor_clasificacion'] = int(round(prev_elo + delta))
+                prev_elo = m['post_game_valor_clasificacion']
+
+        # 3. Partidas comprendidas entre anclajes
+        for i in range(len(anchors) - 1):
+            a_start = anchors[i]
+            a_end = anchors[i + 1]
             
-            # Mapear queue_id a nombre de cola
-            queue_name = None
-            if queue_id == 420:
-                queue_name = "RANKED_SOLO_5x5"
-            elif queue_id == 440:
-                queue_name = "RANKED_FLEX_SR"
+            interval_matches = [
+                m for m in q_matches 
+                if a_start[0] <= m.get('game_end_timestamp', 0) <= a_end[0]
+            ]
             
-            if queue_name and queue_name in player_lp_history:
-                # Usar la estrategia robusta mejorada
-                lp_change, elo_before, elo_after = calculate_lp_change_robust(
-                    match, 
-                    matches_sorted, 
-                    player_lp_history[queue_name]
-                )
+            if interval_matches:
+                _distribute_interval_lp(interval_matches, a_start[1], a_end[1])
 
-                if lp_change is not None:
-                    match['lp_change_this_game'] = lp_change
-                    match['pre_game_valor_clasificacion'] = elo_before
-                    match['post_game_valor_clasificacion'] = elo_after
+        # Si alguna partida por alguna razón no cayó en los rangos anteriores, asignar coherencia
+        for i, m in enumerate(q_matches):
+            if m.get('lp_change_this_game') is None or m.get('post_game_valor_clasificacion') is None:
+                # Usar partida anterior o posterior como referencia
+                if i > 0 and q_matches[i - 1].get('post_game_valor_clasificacion'):
+                    prev_post = q_matches[i - 1]['post_game_valor_clasificacion']
+                    delta = 20 if m.get('win') else -19
+                    m['pre_game_valor_clasificacion'] = prev_post
+                    m['lp_change_this_game'] = delta
+                    m['post_game_valor_clasificacion'] = prev_post + delta
+                else:
+                    delta = 20 if m.get('win') else -19
+                    base = first_anchor[1]
+                    m['pre_game_valor_clasificacion'] = base - delta
+                    m['lp_change_this_game'] = delta
+                    m['post_game_valor_clasificacion'] = base
 
-    return matches_sorted
+    # Reintegrar las partidas ordenadas de más reciente a más antigua
+    matches_list.sort(key=lambda x: x.get('game_end_timestamp', 0) if x.get('game_end_timestamp') else 0, reverse=True)
+    return matches_list
 
 # ===== FUNCIONES OPTIMIZADAS PARA ESTADÍSTICAS GLOBALES =====
 import threading
