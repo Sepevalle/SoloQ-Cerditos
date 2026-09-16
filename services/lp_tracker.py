@@ -8,6 +8,7 @@ import time
 import json
 import base64
 import requests
+import copy
 from datetime import datetime, timezone
 from config.settings import LP_TRACKER_INTERVAL
 
@@ -89,22 +90,58 @@ def _read_json_from_github(file_path, token):
         return None, None
 
 
+def _cleanup_old_timestamped_backups(token):
+    """Elimina archivos antiguos de tipo lp_history.json.backup_* en GitHub para que no se acumulen."""
+    if not token:
+        return
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/"
+    headers = {"Accept": "application/vnd.github.v3+json", "Authorization": f"token {token}"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=30)
+        if resp.status_code != 200:
+            return
+        files = resp.json()
+        if not isinstance(files, list):
+            return
+        for item in files:
+            name = item.get("name", "")
+            if name.startswith("lp_history.json.backup_"):
+                path = item.get("path")
+                sha = item.get("sha")
+                if path and sha:
+                    del_url = f"{GITHUB_API_BASE_URL}{path}"
+                    del_payload = {
+                        "message": f"Limpieza automática de backup antiguo: {name}",
+                        "sha": sha,
+                        "branch": "main"
+                    }
+                    del_resp = requests.delete(del_url, headers=headers, json=del_payload, timeout=30)
+                    if del_resp.status_code in (200, 204):
+                        print(f"[LP_TRACKER] 🗑️ Backup antiguo eliminado de GitHub: {name}")
+    except Exception as e:
+        print(f"[LP_TRACKER] ⚠️ Excepción al limpiar backups antiguos: {e}")
+
+
 def _create_backup(file_path, data, token):
-    """Crea un backup del archivo antes de sobrescribirlo."""
+    """Crea o actualiza únicamente el último backup del archivo antes de sobrescribirlo."""
     if not data or len(data) == 0:
         print(f"[LP_TRACKER] No se crea backup - datos vacíos")
         return False
     
-    timestamp = int(datetime.now(timezone.utc).timestamp())
-    backup_path = f"{file_path}.backup_{timestamp}"
+    # Mantener un único archivo fijo para no acumular backups históricos en el repositorio
+    backup_path = f"{file_path}.backup"
     
     try:
-        success = _write_to_github(backup_path, data, None, token, is_backup=True)
+        # Obtener SHA si ya existe un backup previo para sobrescribirlo
+        _, existing_sha = _read_json_from_github(backup_path, token)
+        success = _write_to_github(backup_path, data, existing_sha, token, is_backup=True)
         if success:
-            print(f"[LP_TRACKER] ✅ Backup creado: {backup_path}")
+            print(f"[LP_TRACKER] ✅ Último backup actualizado: {backup_path}")
+            # Limpiar backups antiguos con timestamp si quedaba alguno
+            _cleanup_old_timestamped_backups(token)
         return success
     except Exception as e:
-        print(f"[LP_TRACKER] ⚠️ Error creando backup: {e}")
+        print(f"[LP_TRACKER] ⚠️ Error actualizando backup: {e}")
         return False
 
 
@@ -136,7 +173,7 @@ def _write_to_github(file_path, data, sha, token, is_backup=False):
         elif response.status_code == 422:
             # Error 422: conflicto de SHA - CRÍTICO para lp_history.json
             if file_path == LP_HISTORY_FILE_PATH and not is_backup:
-                print(f"[LP_TRACKER] ⚠️ CRÍTICO: Error 422 para {file_path} - conflicto de SHA.")
+                print(f"[LP_TRACKER] ⚠️ CRÍTICO: Error 422 para lp_history.json - conflicto de SHA.")
                 print(f"[LP_TRACKER] ⚠️ ERROR: No se creará archivo nuevo para evitar pérdida de datos.")
                 print(f"[LP_TRACKER] ⚠️ Solución: Reintentar en el próximo ciclo con SHA actualizado.")
                 return False
@@ -237,6 +274,7 @@ def elo_tracker_worker(riot_api_key, github_token):
     """
     print("[LP_TRACKER] Iniciando el worker de seguimiento de ELO...")
     print("[LP_TRACKER] OPTIMIZACIÓN RENDER: Se ejecutará cada 30 minutos para reducir consumo de API")
+    _cleanup_old_timestamped_backups(github_token)
     while True:
         try:
             print(f"[{datetime.now()}] [LP_TRACKER] Iniciando snapshot de ELO...")
@@ -262,14 +300,15 @@ def elo_tracker_worker(riot_api_key, github_token):
                 time.sleep(LP_TRACKER_INTERVAL)
                 continue
 
-            # 3. Deduplicar en memoria y crear backup antes de modificar
+            # 3. Deduplicar en memoria y preparar copia para backup antes de modificar
+            backup_source = None
             if lp_history and len(lp_history) > 0:
                 try:
                     from services.github_service import deduplicate_lp_history
                     lp_history = deduplicate_lp_history(lp_history)
                 except Exception as de:
                     print(f"[LP_TRACKER] Error deduplicando en lectura: {de}")
-                _create_backup(LP_HISTORY_FILE_PATH, lp_history, github_token)
+                backup_source = copy.deepcopy(lp_history)
 
             # 4. Iterar sobre los jugadores y actualizar su historial de LP
             snapshots_added = 0
@@ -333,6 +372,10 @@ def elo_tracker_worker(riot_api_key, github_token):
                     time.sleep(LP_TRACKER_INTERVAL)
                     continue
                 
+                # Actualizar el último backup antes de sobrescribir lp_history.json
+                if backup_source:
+                    _create_backup(LP_HISTORY_FILE_PATH, backup_source, github_token)
+
                 # RELEER PARA OBTENER SHA ACTUAL (puede haber cambiado)
                 _, current_sha = _read_json_from_github(LP_HISTORY_FILE_PATH, github_token)
                 
