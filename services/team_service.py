@@ -47,11 +47,14 @@ def get_team_config():
             "display_name": _get_display_name(riot_id),
             "puuid": puuid,
             "role": "",
+            "is_substitute": False,
         })
 
     return {
         "name": "Equipo Principal",
         "players": players,
+        "starters": players,
+        "substitutes": [],
         "logo_path": "",
         "config_path": TEAM_CONFIG_PATH,
         "is_fallback": True,
@@ -103,7 +106,7 @@ def build_team_dashboard():
     players = config.get("players", [])
     complete_roster = [p for p in players if p.get("puuid")]
 
-    if len(complete_roster) != 5:
+    if len(complete_roster) < 5:
         return {
             "config": config,
             "summary": _empty_summary(),
@@ -147,19 +150,37 @@ def _normalize_team_config(config):
     puuids = _get_known_puuids()
     puuids_by_lower_riot_id = {riot_id.lower(): puuid for riot_id, puuid in puuids.items()}
     players = []
-    for player in config.get("players", []):
+
+    raw_players = list(config.get("players", []))
+    for sub in config.get("substitutes", []):
+        sub_copy = dict(sub)
+        sub_copy["is_substitute"] = True
+        raw_players.append(sub_copy)
+
+    for player in raw_players:
         riot_id = player.get("riot_id", "").strip()
         puuid = player.get("puuid") or puuids.get(riot_id) or puuids_by_lower_riot_id.get(riot_id.lower())
+        is_sub = bool(
+            player.get("is_substitute")
+            or player.get("substitute")
+            or str(player.get("role", "")).upper() in ("SUB", "SUPLENTE")
+        )
         players.append({
             "riot_id": riot_id,
             "display_name": player.get("display_name") or _get_display_name(riot_id),
             "puuid": puuid,
             "role": player.get("role", ""),
+            "is_substitute": is_sub,
         })
+
+    starters = [p for p in players if not p["is_substitute"]]
+    substitutes = [p for p in players if p["is_substitute"]]
 
     return {
         "name": config.get("name", "Equipo Principal"),
         "players": players,
+        "starters": starters,
+        "substitutes": substitutes,
         "logo_path": config.get("logo_path", ""),
         "config_path": TEAM_CONFIG_PATH,
         "is_fallback": False,
@@ -176,6 +197,7 @@ def _update_team_config(updates):
                 {
                     "riot_id": p.get("riot_id", ""),
                     "role": p.get("role", ""),
+                    "is_substitute": p.get("is_substitute", False),
                 }
                 for p in current.get("players", [])
             ],
@@ -349,18 +371,22 @@ def _read_json_file(path):
         return None
 
 
-def _match_contains_roster(match, team_puuids):
+def _match_contains_roster(match, team_puuids, min_roster_players=5):
     participants = match.get("all_participants") or []
-    participant_by_puuid = {p.get("puuid"): p for p in participants if p.get("puuid")}
-    if not team_puuids.issubset(set(participant_by_puuid.keys())):
-        return False
+    by_team = defaultdict(list)
+    for p in participants:
+        puuid = p.get("puuid")
+        if puuid and puuid in team_puuids:
+            by_team[p.get("team_id")].append(puuid)
 
-    team_ids = {participant_by_puuid[puuid].get("team_id") for puuid in team_puuids}
-    return len(team_ids) == 1
+    for team_id, members in by_team.items():
+        if len(members) >= min_roster_players:
+            return True
+    return False
 
 
 def _compute_team_matches(roster):
-    """Calcula las partidas donde los 5 jugadores aparecen en el mismo equipo."""
+    """Calcula las partidas donde al menos 5 jugadores del roster aparecen en el mismo equipo."""
     matches_by_id = defaultdict(dict)
     candidate_matches = {}
 
@@ -387,21 +413,17 @@ def _compute_team_matches(roster):
     team_puuids = {p["puuid"] for p in roster}
     team_matches = []
     print(f"[team_service] Partidas candidatas del roster: {len(candidate_matches)}")
-    full_history_matches = 0
     rejected_missing_roster = 0
     for match_id, representative in candidate_matches.items():
         player_matches = matches_by_id.get(match_id, {})
-        has_full_history = team_puuids.issubset(set(player_matches.keys()))
-        if has_full_history:
-            full_history_matches += 1
-        if not has_full_history and not _match_contains_roster(representative, team_puuids):
+        has_min_roster = len(player_matches) >= 5 or _match_contains_roster(representative, team_puuids)
+        if not has_min_roster:
             rejected_missing_roster += 1
             continue
         team_match = _build_team_match(match_id, representative, player_matches, roster)
         if team_match:
             team_matches.append(team_match)
 
-    print(f"[team_service] Match IDs presentes en los 5 historiales: {full_history_matches}")
     print(f"[team_service] Candidatas descartadas por faltar roster: {rejected_missing_roster}")
     print(f"[team_service] Partidas de equipo detectadas: {len(team_matches)}")
     return _normalize_team_matches(team_matches)
@@ -445,37 +467,57 @@ def _build_team_match(match_id, representative, player_matches, roster):
         participants.extend(match.get("all_participants") or [])
 
     participant_by_puuid = {p.get("puuid"): p for p in participants if p.get("puuid")}
-    roster_puuids = [p["puuid"] for p in roster]
-    team_participants = [participant_by_puuid.get(puuid) for puuid in roster_puuids]
-    known_participants = [p for p in team_participants if p]
+    roster_by_puuid = {p["puuid"]: p for p in roster}
+    team_puuids = set(roster_by_puuid.keys())
 
-    team_id = None
-    same_team = True
-    if len(known_participants) == 5:
-        team_ids = {p.get("team_id") for p in known_participants}
-        if len(team_ids) != 1:
-            same_team = False
-        else:
-            team_id = next(iter(team_ids))
-    elif len(player_matches) == 5:
-        wins = {bool(match.get("win")) for match in player_matches.values()}
-        same_team = len(wins) == 1
+    # Agrupar participantes del roster por team_id
+    by_team_id = defaultdict(list)
+    for puuid in team_puuids:
+        if puuid in participant_by_puuid:
+            p_data = participant_by_puuid[puuid]
+            t_id = p_data.get("team_id")
+            by_team_id[t_id].append((roster_by_puuid[puuid], p_data))
 
-    if not same_team:
+    selected_team_id = None
+    active_roster_pairs = []
+
+    # Buscar el team_id que tenga al menos 5 integrantes del roster
+    for t_id, pairs in by_team_id.items():
+        if len(pairs) >= 5:
+            selected_team_id = t_id
+            active_roster_pairs = pairs
+            break
+
+    # Si all_participants no tiene team_id suficiente pero hay >=5 player_matches con mismo resultado
+    if not active_roster_pairs and len(player_matches) >= 5:
+        wins_groups = defaultdict(list)
+        for puuid, p_match in player_matches.items():
+            if puuid in roster_by_puuid:
+                wins_groups[bool(p_match.get("win"))].append((roster_by_puuid[puuid], p_match))
+        for win_val, pairs in wins_groups.items():
+            if len(pairs) >= 5:
+                active_roster_pairs = pairs
+                break
+
+    if len(active_roster_pairs) < 5:
         return None
 
+    # Tomar los 5 participantes del equipo que jugaron esta partida
+    active_roster_pairs = active_roster_pairs[:5]
+
     player_rows = []
-    for roster_player in roster:
+    for roster_player, p_or_m in active_roster_pairs:
         puuid = roster_player["puuid"]
         match = player_matches.get(puuid) or {}
         participant = participant_by_puuid.get(puuid) or {}
-        position = match.get("individual_position") or roster_player.get("role") or ""
+        position = match.get("individual_position") or participant.get("individual_position") or roster_player.get("role") or ""
         player_rows.append({
             "display_name": roster_player.get("display_name") or roster_player.get("riot_id"),
             "riot_id": roster_player.get("riot_id"),
             "puuid": puuid,
             "role": roster_player.get("role", ""),
             "position": position,
+            "is_substitute": roster_player.get("is_substitute", False),
             "champion_name": match.get("champion_name") or participant.get("champion_name") or "Desconocido",
             "kills": _num(match.get("kills", participant.get("kills"))),
             "deaths": _num(match.get("deaths", participant.get("deaths"))),
@@ -487,7 +529,7 @@ def _build_team_match(match_id, representative, player_matches, roster):
                 _num(match.get("total_minions_killed", participant.get("total_minions_killed")))
                 + _num(match.get("neutral_minions_killed", participant.get("neutral_minions_killed")))
             ),
-            "team_id": participant.get("team_id", team_id),
+            "team_id": participant.get("team_id", selected_team_id),
         })
 
     player_rows.sort(key=lambda p: ROLE_ORDER.get((p.get("position") or p.get("role") or "").upper(), 99))
@@ -495,8 +537,14 @@ def _build_team_match(match_id, representative, player_matches, roster):
     kills = sum(p["kills"] for p in player_rows)
     deaths = sum(p["deaths"] for p in player_rows)
     assists = sum(p["assists"] for p in player_rows)
-    win = bool(known_participants[0].get("win") if known_participants else representative.get("win"))
-    lp_change = sum(_num(m.get("lp_change_this_game")) for m in player_matches.values())
+
+    first_puuid = active_roster_pairs[0][0]["puuid"]
+    win = bool(
+        participant_by_puuid.get(first_puuid, {}).get("win")
+        if first_puuid in participant_by_puuid
+        else player_matches.get(first_puuid, {}).get("win", representative.get("win"))
+    )
+    lp_change = sum(_num(player_matches[r[0]["puuid"]].get("lp_change_this_game")) for r in active_roster_pairs if r[0]["puuid"] in player_matches)
 
     return {
         "match_id": match_id,
@@ -507,7 +555,7 @@ def _build_team_match(match_id, representative, player_matches, roster):
         "duration_label": _format_duration(representative.get("game_duration", 0)),
         "win": win,
         "result_label": "Victoria" if win else "Derrota",
-        "team_id": team_id,
+        "team_id": selected_team_id,
         "players": player_rows,
         "composition": [p["champion_name"] for p in player_rows],
         "team_kills": kills,
@@ -518,11 +566,11 @@ def _build_team_match(match_id, representative, player_matches, roster):
         "team_vision": sum(p["vision"] for p in player_rows),
         "team_gold": sum(p["gold"] for p in player_rows),
         "team_cs": sum(p["cs"] for p in player_rows),
-        "turret_kills": sum(_num(m.get("turret_kills")) for m in player_matches.values()),
-        "inhibitor_kills": sum(_num(m.get("inhibitor_kills")) for m in player_matches.values()),
-        "dragon_kills": sum(_num(m.get("dragon_kills")) for m in player_matches.values()),
-        "baron_kills": sum(_num(m.get("baron_kills")) for m in player_matches.values()),
-        "objectives_stolen": sum(_num(m.get("objectives_stolen")) for m in player_matches.values()),
+        "turret_kills": sum(_num(player_matches[r[0]["puuid"]].get("turret_kills")) for r in active_roster_pairs if r[0]["puuid"] in player_matches),
+        "inhibitor_kills": sum(_num(player_matches[r[0]["puuid"]].get("inhibitor_kills")) for r in active_roster_pairs if r[0]["puuid"] in player_matches),
+        "dragon_kills": sum(_num(player_matches[r[0]["puuid"]].get("dragon_kills")) for r in active_roster_pairs if r[0]["puuid"] in player_matches),
+        "baron_kills": sum(_num(player_matches[r[0]["puuid"]].get("baron_kills")) for r in active_roster_pairs if r[0]["puuid"] in player_matches),
+        "objectives_stolen": sum(_num(player_matches[r[0]["puuid"]].get("objectives_stolen")) for r in active_roster_pairs if r[0]["puuid"] in player_matches),
         "lp_change": lp_change,
     }
 
@@ -622,6 +670,7 @@ def _build_player_stats(team_matches):
                 "display_name": player.get("display_name") or player.get("riot_id"),
                 "riot_id": player.get("riot_id"),
                 "role": player.get("role") or player.get("position") or "",
+                "is_substitute": player.get("is_substitute", False),
                 "matches": 0,
                 "wins": 0,
                 "kills": 0,
@@ -671,6 +720,7 @@ def _build_player_stats(team_matches):
             "display_name": row["display_name"],
             "riot_id": row["riot_id"],
             "role": row["role"],
+            "is_substitute": row.get("is_substitute", False),
             "matches": row["matches"],
             "wins": row["wins"],
             "losses": row["matches"] - row["wins"],
@@ -689,7 +739,7 @@ def _build_player_stats(team_matches):
             "champion_pool": champion_pool,
         })
 
-    return sorted(players, key=lambda p: ROLE_ORDER.get((p.get("role") or "").upper(), 99))
+    return sorted(players, key=lambda p: (1 if p.get("is_substitute") else 0, ROLE_ORDER.get((p.get("role") or "").upper(), 99)))
 
 
 def _build_duration_buckets(team_matches):

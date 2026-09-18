@@ -25,18 +25,18 @@ def generate_team_matches_json():
     config = get_team_config()
     players = config.get("players", [])
 
-    if len(players) != 5:
-        print(f"Error: El equipo debe tener exactamente 5 jugadores. Encontrados: {len(players)}")
+    if len(players) < 5:
+        print(f"Error: El equipo debe tener al menos 5 jugadores. Encontrados: {len(players)}")
         return False
 
-    # Verificar que todos tienen PUUID
+    # Verificar que al menos 5 tienen PUUID
     complete_roster = [p for p in players if p.get("puuid")]
-    if len(complete_roster) != 5:
-        print("Error: No todos los jugadores tienen PUUID asignado.")
+    if len(complete_roster) < 5:
+        print("Error: Se necesitan al menos 5 jugadores con PUUID asignado.")
         return False
 
     print(f"Equipo: {config.get('name', 'Equipo Principal')}")
-    print(f"Jugadores: {len(complete_roster)}")
+    print(f"Jugadores en plantilla: {len(complete_roster)}")
 
     # Obtener historiales de cada jugador
     matches_by_id = defaultdict(dict)
@@ -64,20 +64,16 @@ def generate_team_matches_json():
 
     for match_id, representative_match in candidate_matches.items():
         participants = representative_match.get("all_participants") or []
-        participant_puuids = {p.get("puuid") for p in participants if p.get("puuid")}
+        by_team = defaultdict(list)
+        for p in participants:
+            puuid = p.get("puuid")
+            if puuid and puuid in team_puuids:
+                by_team[p.get("team_id")].append(puuid)
 
-        # Verificar que todos los miembros del equipo están en la partida
-        if not team_puuids.issubset(participant_puuids):
+        has_team = any(len(members) >= 5 for members in by_team.values())
+        if not has_team and len(matches_by_id.get(match_id, {})) < 5:
             continue
 
-        # Verificar que están en el mismo equipo
-        participant_by_puuid = {p.get("puuid"): p for p in participants if p.get("puuid")}
-        team_ids = {participant_by_puuid[puuid].get("team_id") for puuid in team_puuids if puuid in participant_by_puuid}
-
-        if len(team_ids) != 1:
-            continue
-
-        # Construir datos de la partida del equipo
         team_match = build_team_match_data(
             match_id,
             representative_match,
@@ -117,39 +113,59 @@ def generate_team_matches_json():
 def build_team_match_data(match_id, representative, player_matches, roster):
     """Construye los datos de una partida del equipo."""
     participants = representative.get("all_participants") or []
-    participant_by_puuid = {p.get("puuid"): p for p in participants if p.get("puuid")}
-    roster_puuids = [p["puuid"] for p in roster]
+    for m in player_matches.values():
+        participants.extend(m.get("all_participants") or [])
 
-    # Encontrar el team_id del equipo
-    team_id = None
-    for puuid in roster_puuids:
+    participant_by_puuid = {p.get("puuid"): p for p in participants if p.get("puuid")}
+    roster_by_puuid = {p["puuid"]: p for p in roster}
+    team_puuids = set(roster_by_puuid.keys())
+
+    by_team_id = defaultdict(list)
+    for puuid in team_puuids:
         if puuid in participant_by_puuid:
-            team_id = participant_by_puuid[puuid].get("team_id")
+            p_data = participant_by_puuid[puuid]
+            t_id = p_data.get("team_id")
+            by_team_id[t_id].append((roster_by_puuid[puuid], p_data))
+
+    selected_team_id = None
+    active_roster_pairs = []
+    for t_id, pairs in by_team_id.items():
+        if len(pairs) >= 5:
+            selected_team_id = t_id
+            active_roster_pairs = pairs
             break
 
-    if team_id is None:
+    if not active_roster_pairs and len(player_matches) >= 5:
+        wins_groups = defaultdict(list)
+        for puuid, p_match in player_matches.items():
+            if puuid in roster_by_puuid:
+                wins_groups[bool(p_match.get("win"))].append((roster_by_puuid[puuid], p_match))
+        for win_val, pairs in wins_groups.items():
+            if len(pairs) >= 5:
+                active_roster_pairs = pairs
+                break
+
+    if len(active_roster_pairs) < 5:
         return None
 
-    # Datos de los participantes del equipo
+    active_roster_pairs = active_roster_pairs[:5]
+
     team_participants = []
-    for puuid in roster_puuids:
-        if puuid in participant_by_puuid:
-            p = participant_by_puuid[puuid]
-            if p.get("team_id") == team_id:
-                team_participants.append({
-                    "puuid": puuid,
-                    "riot_id": next((r.get("riot_id") for r in roster if r["puuid"] == puuid), ""),
-                    "champion_name": p.get("champion_name", ""),
-                    "champion_id": p.get("champion_id", 0),
-                    "kills": p.get("kills", 0),
-                    "deaths": p.get("deaths", 0),
-                    "assists": p.get("assists", 0),
-                    "win": p.get("win", False),
-                    "lp_change": p.get("lp_change", 0),
-                })
-
-    if len(team_participants) != 5:
-        return None
+    for roster_player, p_or_m in active_roster_pairs:
+        puuid = roster_player["puuid"]
+        p = participant_by_puuid.get(puuid) or {}
+        p_match = player_matches.get(puuid) or {}
+        team_participants.append({
+            "puuid": puuid,
+            "riot_id": roster_player.get("riot_id", ""),
+            "champion_name": p_match.get("champion_name") or p.get("champion_name", ""),
+            "champion_id": p_match.get("champion_id") or p.get("champion_id", 0),
+            "kills": p_match.get("kills", p.get("kills", 0)),
+            "deaths": p_match.get("deaths", p.get("deaths", 0)),
+            "assists": p_match.get("assists", p.get("assists", 0)),
+            "win": p_match.get("win", p.get("win", False)),
+            "lp_change": p_match.get("lp_change_this_game", p_match.get("lp_change", 0)),
+        })
 
     # Calcular estadísticas del equipo
     total_kills = sum(p["kills"] for p in team_participants)
@@ -163,7 +179,7 @@ def build_team_match_data(match_id, representative, player_matches, roster):
         "game_end_timestamp": representative.get("game_end_timestamp", 0),
         "queue_id": representative.get("queue_id", 0),
         "game_duration": representative.get("game_duration", 0),
-        "team_id": team_id,
+        "team_id": selected_team_id,
         "win": team_win,
         "lp_change": total_lp_change,
         "team_kills": total_kills,
