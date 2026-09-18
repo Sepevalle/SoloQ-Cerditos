@@ -123,11 +123,58 @@ La limitacion principal del hosting es RAM, no solo CPU.
 Motivo:
 Mantener el sistema pequeno y entendible tambien mejora estabilidad.
 
-## Ajustes funcionales pendientes
+## Prioridad 6 - Implementación PWA (Progressive Web App)
 
-## Despliegue
+### 13. Preparación base para PWA
+- [ ] Crear `manifest.json` con metadata de la app (nombre, iconos, colores, tema)
+- [ ] Crear `service-worker.js` para caché offline y notificaciones
+- [ ] Añadir `<link rel="manifest">` y `<meta>` tags en templates base
+- [ ] Configurar iconos en múltiples tamaños (192x192, 512x512, etc.)
+- [ ] Implementar estrategia de caché para recursos estáticos (CSS, JS, imágenes)
 
-### 13. Checklist antes de subir a produccion
+### 14. Implementación de notificaciones push
+- [ ] Configurar VAPID keys para Web Push API
+- [ ] Crear endpoint `/api/push/subscribe` para registrar dispositivos
+- [ ] Crear endpoint `/api/push/unsubscribe` para eliminar dispositivos
+- [ ] Guardar suscripciones en GitHub (archivo `push_subscriptions.json`)
+- [ ] Implementar servicio de background para enviar notificaciones
+- [ ] Integrar notificaciones con eventos existentes (LP changes, live games, análisis IA)
+
+### 15. Optimización móvil
+- [ ] Hacer plantillas responsive (mobile-first approach)
+- [ ] Optimizar tiempos de carga para conexión móvil
+- [ ] Implementar lazy loading para imágenes grandes
+- [ ] Añadir meta tags para móvil (viewport, theme-color, apple-touch-icon)
+- [ ] Testing en múltiples dispositivos móviles
+
+### 16. Experiencia offline
+- [ ] Implementar caché de datos esenciales para modo offline
+- [ ] Crear página de fallback para cuando no hay conexión
+- [ ] Sincronización automática al recuperar conexión
+- [ ] Estrategia de actualización de caché en background
+
+### 17. Instalación y discoverability
+- [ ] Implementar prompt de instalación personalizado
+- [ ] Añadir botón "Instalar App" en UI
+- [ ] Configurar criterios de instalación automática
+- [ ] Testing de instalación en diferentes navegadores
+
+### 18. Integración con servicios existentes
+- [ ] Integrar notificaciones con LP tracker (alertas de cambios de rango)
+- [ ] Integrar con live game checker (alertas de inicio/fin de partida)
+- [ ] Integrar con análisis IA (notificación cuando análisis está listo)
+- [ ] Configurar preferencias de notificaciones por usuario
+
+### 19. Testing y despliegue
+- [ ] Testing PWA con Lighthouse (score >90 en PWA criteria)
+- [ ] Testing de notificaciones en navegadores principales (Chrome, Firefox, Safari)
+- [ ] Testing de instalación en Android e iOS
+- [ ] Validar funcionamiento en Render Free con recursos limitados
+- [ ] Documentar proceso de actualización de service worker
+
+## Prioridad 7 - Despliegue
+
+### 20. Checklist antes de subir a produccion
 - [ ] Validar sintaxis Python de archivos tocados
 - [ ] Validar JSONs de configuracion
 - [ ] Probar carga en frio de index y perfil jugador
